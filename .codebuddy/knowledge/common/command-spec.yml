@@ -27,7 +27,7 @@
 | 15 | `/change` | 核心生命周期 | ✅ | 变更请求 |
 | 16 | `/fix` | 核心生命周期 | ✅ | Bug修复 |
 | 17 | `/deploy` | 特殊入口 | ❌ | 手动部署/重试/查看状态（V1.0.0新增） |
-| 18 | `/register-member` | 管理员专用 | ✅ | 注册新成员+新项目，一个命令搞定（V1.1.0新增） |
+| 18 | `/register-member` | 管理员专用 | ✅ | 注册新项目+授权成员（V1.2.0升级：按项目隔离） |
 
 ---
 
@@ -809,7 +809,7 @@ conflict_detection:
 
 ---
 
-### 3.18 /register-member — 注册新成员（V1.1.0新增）
+### 3.18 /register-member — 注册新项目+授权成员（V1.2.0升级）
 
 ```yaml
 command: "/register-member"
@@ -817,32 +817,25 @@ category: "管理员专用"
 pm_controlled: true
 workflow: "member-manager.yml V1.0.0"
 
-usage: "/register-member --name=姓名 --git=Gitee用户名 --project=项目名 [--role=admin|member]"
-example: "/register-member --name=李四 --git=lisi --project=crm-portal"
+usage: "/register-member --project=项目名 --prefix=编号前缀 --member=成员Gitee用户名 [--member=成员2]"
+example: "/register-member --project=crm-portal --prefix=CRM --member=zhangsan"
 
 parameters:
-  - name: "--name"
-    type: "string"
-    required: true
-    description: "成员姓名（如'李四'）"
-
-  - name: "--git"
-    type: "string"
-    required: true
-    description: "Gitee用户名（如'lisi'），用于Git身份识别和CODEOWNERS"
-
   - name: "--project"
     type: "string"
     required: true
     description: "项目名（如'crm-portal'），自动创建项目骨架"
 
-  - name: "--role"
-    type: "enum"
-    required: false
-    default: "member"
-    description: "角色"
-    enum: ["admin", "member"]
-    smart_hint: "默认member，管理员可设为admin"
+  - name: "--prefix"
+    type: "string"
+    required: true
+    description: "项目编号前缀（如'CRM'），用于FN/UC/PG等所有编号"
+
+  - name: "--member"
+    type: "string"
+    required: true
+    description: "被授权的成员Gitee用户名（如'zhangsan'），可多次指定授权多人"
+    smart_hint: "成员需已在 .access-control.yml 中注册"
 
 auto_actions:
   - "更新 .access-control.yml 添加成员"
@@ -854,9 +847,9 @@ auto_actions:
   - "更新 deploy/edgeone-pages.json 添加部署路由"
 
 missing_arg_prompt:
-  "--name": "请提供成员姓名（例如：--name=李四）。"
-  "--git": "请提供Gitee用户名（例如：--git=lisi）。"
   "--project": "请提供项目名（例如：--project=crm-portal）。"
+  "--prefix": "请提供项目编号前缀（例如：--prefix=CRM）。"
+  "--member": "请提供被授权成员的Gitee用户名（例如：--member=zhangsan）。"
 ```
 
 ---

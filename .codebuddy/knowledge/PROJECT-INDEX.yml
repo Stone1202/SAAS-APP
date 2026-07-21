@@ -1,52 +1,49 @@
-# PROJECT-INDEX.yml — POM V5.0 全局项目注册表
-# V2.0.0 — 多人多项目部署运营方案升级
+# PROJECT-INDEX.yml — POM 全局项目注册表
+# V2.1.0 — 按项目隔离（不按owner），项目有 members 列表
 # 维护者：PM Agent | 每次 /init 和 /close 时更新
-# V2.0.0变更：新增 members 注册表 + projects 加 owner/deploy/db_name/dev_port 字段
 
-version: "2.0.0"
+version: "2.1.0"
 active_project: "AI-SCRM"
 current_stream: ""
-last_activity: "2026-07-21T15:00+08:00"
+last_activity: "2026-07-21T16:50+08:00"
 
 # ============================================
-# 成员注册表（V2.0.0新增）
+# 成员注册表
 # ============================================
 members:
   - id: "jojo"
     name: "Jojo"
     role: "admin"
     git_name: "jojo"
-    active_project: "AI-SCRM"
+    accessible_projects: ["AI-SCRM"]
 
   # 示例：新增成员时在此追加
   # - id: "zhangsan"
   #   name: "张三"
   #   role: "member"
   #   git_name: "zhangsan"
-  #   active_project: "erp-portal"
+  #   accessible_projects: ["erp-portal", "AI-SCRM"]
 
 # ============================================
-# 项目注册表
+# 项目注册表（按项目隔离，不按owner）
 # ============================================
 projects:
   - id: "AI-SCRM"
     name: "AI-SCRM 智能SCRM平台"
-    owner: "jojo"                          # V2.0.0新增：归属成员
-    path: "projects/jojo/AI-SCRM"          # V2.0.0新增：完整路径
-    project_prefix: "ACRM"                 # V1.1.0新增：项目编号前缀（所有FN/UC/PG/MD/SC/ENT/BR/CONFIG/METRIC/BG/BO使用）
+    path: "projects/AI-SCRM"                      # V2.1.0: 按项目隔离（无owner维度）
+    project_prefix: "ACRM"                        # 编号前缀（所有FN/UC/PG/MD/SC等使用）
+    members: ["jojo"]                             # V2.1.0: 项目成员列表（多人可协作同一项目）
     status: "active"
     stage: "acceptance"
     domain: "SAAS/SCRM"
     industries: ["大健康", "药业", "美妆", "百货"]
     po_planning_completed: true
-    dev_port: 3333                         # V2.0.0新增：开发态端口
-    db_name: "jojo-ai-scrm-sim"            # V2.0.0新增：IndexedDB数据库名
-    deploy:                                # V2.0.0新增：部署信息
+    dev_port: 3333
+    db_name: "ai-scrm-sim"                        # V2.1.0: 数据库名不含owner
+    deploy:
       current_version: "v1.0.0"
       deploy_url: "https://ai-scrm-dpzzl2eobkr6.edgeone.dev"
       deploy_history:
         - { version: "v1.0.0", status: "success", deployed_at: "2026-07-21T15:45+08:00" }
     streams:
-      - { id: "STR-001", version: "v1.0.0", type: "新增", priority: "P0", stage: "acceptance", po_version: "v2.0.0", desc: "AI-SCRM全面重构：双系统+AI沟通辅助闭环" }
-
-  # SAAS项目已于2026-07-20完全删除（代码+文档），待learn-project全量重新学习后重新注册
+      - { id: "STR-ACRM-001", version: "v1.0.0", type: "新增", priority: "P0", stage: "acceptance", po_version: "v2.0.0", desc: "AI-SCRM全面重构：双系统+AI沟通辅助闭环" }

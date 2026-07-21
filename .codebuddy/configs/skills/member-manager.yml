@@ -1,17 +1,17 @@
-# Skill: 成员管理器（Member Manager）
-# V1.0.0 — 管理员一个命令完成成员注册（自动配置所有文件）
+# Skill: 项目管理器（Project Manager）
+# V1.2.0 — 按项目隔离，注册项目+授权成员
 # ============================================
 skill:
   id: "member-manager"
   name: "member-manager"
-  version: "1.0.0"
+  version: "1.2.0"
   agents: ["pm-agent"]
-  description: "/register-member 一个命令完成成员注册：自动更新 .access-control.yml + PROJECT-INDEX.yml + config.yml port_pool + CODEOWNERS + ensure-project.sh 创建骨架 + deploy/edgeone-pages.json 路由。管理员无需手动编辑任何文件。"
+  description: "/register-member 注册新项目并授权成员。自动创建项目骨架+分配端口+更新所有配置。成员可被授权访问多个项目（跨项目协作）。"
 
   triggers:
     - command: "/register-member"
-      stage: "成员注册"
-      description: "管理员注册新成员+新项目，一个命令搞定"
+      stage: "项目注册"
+      description: "管理员注册新项目+授权成员"
 
   config:
     access_control: ".access-control.yml"
@@ -27,100 +27,74 @@ skill:
     - name: "1.解析参数"
       rule: |
         从命令参数获取：
-        - --name: 成员姓名（如"李四"）
-        - --git: Gitee用户名（如"lisi"）
         - --project: 项目名（如"crm-portal"）
-        - --role: 角色（可选，默认member）
+        - --prefix: 项目编号前缀（如"CRM"）
+        - --member: 被授权的成员Gitee用户名（如"zhangsan"，可多次指定）
         自动生成：
-        - owner_id: --git 的值（如"lisi"）
-        - project_id: f"{owner}-{project}".lower().replace("_","-")（如"lisi-crm-portal"）
-        - db_name: f"{project_id}-sim"（如"lisi-crm-portal-sim"）
+        - project_id: --project 的值小写（如"crm-portal"）
+        - db_name: f"{project_id}-sim"（如"crm-portal-sim"）
 
-    - name: "2.更新 .access-control.yml"
+    - name: "2.更新 PROJECT-INDEX.yml"
       rule: |
-        在 members 列表追加：
-          - id: "{git}"
-            name: "{name}"
-            git_name: "{git}"
-            role: "{role}"
-            active_project: "{project}"
-
-    - name: "3.更新 PROJECT-INDEX.yml"
-      rule: |
-        ① members 列表追加成员条目
-        ② projects 列表追加项目条目：
+        ① projects 列表追加项目条目：
           - id: "{project}"
-            owner: "{git}"
-            path: "projects/{git}/{project}"
             name: "{project}"
+            path: "projects/{project}"
+            project_prefix: "{prefix}"
+            members: [{member1}, {member2}, ...]
             status: "active"
             stage: "pending_init"
             dev_port: {自动分配的端口}
             db_name: "{db_name}"
-            deploy:
-              current_version: null
-              deploy_url: null
-              deploy_history: []
+            deploy: {current_version: null, deploy_url: null, deploy_history: []}
+        ② members 列表中为每个被授权的成员追加 accessible_projects
+
+    - name: "3.更新 .access-control.yml"
+      rule: |
+        为每个被授权的成员在 accessible_projects 中追加新项目
+        如果成员不存在，则新增成员条目
 
     - name: "4.自动分配端口"
       rule: |
-        从 config.yml port_pool.range 读取端口池范围（默认4000-4099）
-        解析已占用端口（port_pool.reserved）
-        检测系统端口占用（socket检测）
+        从 config.yml port_pool.range 读取端口池范围
         分配第一个空闲端口
-        自动追加到 config.yml port_pool.reserved：
-          - { owner: "{git}", project: "{project}", port: {分配的端口} }
+        自动追加到 config.yml port_pool.reserved（格式: { project, port }）
 
     - name: "5.更新 CODEOWNERS"
       rule: |
-        在 CODEOWNERS 文件追加：
-          projects/{git}/  @{git}
+        追加：projects/{project}/  @{member1} @{member2}
 
     - name: "6.创建项目骨架"
       rule: |
-        执行：bash .codebuddy/scripts/ensure-project.sh {git} {project}
-        自动创建：
-        - projects/{git}/{project}/ 目录结构
-        - package.json / vite.config.ts / .env.* / tsconfig.json
-        - .env 中注入 VITE_PROJECT_ID={project_id} + VITE_DEV_PORT={端口}
-        - src/ + tests/ + docs/ 骨架
+        执行：bash .codebuddy/scripts/ensure-project.sh {project}
+        自动创建 projects/{project}/ 目录结构 + .env + vite.config.ts 等
 
     - name: "7.更新部署配置"
       rule: |
-        在 deploy/edgeone-pages.json 的 projects 中追加：
-          "{git}-{project}": {
-            "owner": "{git}",
-            "project": "{project}",
-            "root": "projects/{git}/{project}",
-            "build_command": "npm run build:sim",
-            "output_directory": "dist",
-            "env": { "VITE_PROJECT_ID": "{project_id}", "VITE_MODE": "sim" },
-            "routes": [{ "src": "/{git}/{project}/(.*)", "dest": "/$1" }]
-          }
+        在 deploy/edgeone-pages.json 的 projects 中追加项目路由配置
 
   # ============================================
   # 输出
   # ============================================
   outputs:
-    - type: "member-registered"
-      description: "成员注册完成，输出摘要"
+    - type: "project-registered"
+      description: "项目注册完成，输出摘要"
       format: |
-        ✅ 成员注册完成
+        ✅ 项目注册完成
         ┌──────────────────────────────────────────┐
-        │  成员：{name}（{git}）                    │
-        │  角色：{role}                             │
         │  项目：{project}                          │
+        │  编号前缀：{prefix}                       │
+        │  授权成员：{members}                      │
         │  端口：{port}                             │
         │  数据库：{db_name}                        │
-        │  项目路径：projects/{git}/{project}/      │
+        │  项目路径：projects/{project}/            │
         │                                          │
         │  通知成员：                               │
-        │  1. 在 Gitee 邀请 {git} 加入仓库          │
+        │  1. 在 Gitee 邀请成员加入仓库             │
         │  2. 成员克隆仓库后开始使用                │
         └──────────────────────────────────────────┘
 
   inputs:
-    - "--name: 成员姓名"
-    - "--git: Gitee用户名"
     - "--project: 项目名"
-    - "--role: 角色（可选，默认member）"
+    - "--prefix: 项目编号前缀"
+    - "--member: 被授权成员（可多次指定）"

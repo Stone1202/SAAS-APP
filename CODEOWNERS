@@ -9,8 +9,8 @@
 deploy/                       @jojo180712
 .access-control.yml           @jojo180712
 
-# === 项目代码（各自 owner） ===
-projects/jojo/                @jojo180712
+# === 项目代码（按项目，授权成员可改） ===
+projects/AI-SCRM/             @jojo180712
 
 # === 共享知识库（admin 审核） ===
 .codebuddy/knowledge/domains/        @jojo180712

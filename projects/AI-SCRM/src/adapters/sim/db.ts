@@ -6,7 +6,7 @@ import { openDB, type IDBPDatabase } from 'idb';
 
 // V4.0.0: 数据库名加项目标识（IndexedDB 数据隔离）
 // 不同项目用不同的数据库名，同项目不同版本数据延续
-const OLD_DB_NAME = 'ai-scrm-sim';
+const OLD_DB_NAME = 'jojo-ai-scrm-sim';
 const PROJECT_ID = import.meta.env.VITE_PROJECT_ID || 'ai-scrm';
 const DB_NAME = `${PROJECT_ID}-sim`;
 const DB_VERSION = 1;

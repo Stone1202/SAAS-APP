@@ -19,11 +19,11 @@
     "jojo-ai-scrm": {
       "owner": "jojo",
       "project": "AI-SCRM",
-      "root": "projects/jojo/AI-SCRM",
+      "root": "projects/AI-SCRM",
       "build_command": "npm run build:sim",
       "output_directory": "dist",
       "env": {
-        "VITE_PROJECT_ID": "jojo-ai-scrm",
+        "VITE_PROJECT_ID": "ai-scrm",
         "VITE_MODE": "sim"
       },
       "routes": [

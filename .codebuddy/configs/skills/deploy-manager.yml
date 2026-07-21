@@ -34,7 +34,7 @@ skill:
         确认以下条件全部满足：
         - stage-8 版本快照已完成（Git Tag + build:sim 产物存在）
         - deploy/edgeone-pages.json 配置存在且有效
-        - PROJECT-INDEX.yml 中对应项目的 owner 和 path 存在
+        - PROJECT-INDEX.yml 中对应项目的 path 存在
         如不满足则跳过部署，提示用户。
 
     - name: "2.读取项目部署配置"
@@ -48,7 +48,7 @@ skill:
 
     - name: "3.注入环境变量并构建"
       rule: |
-        设置环境变量（VITE_PROJECT_ID={owner}-{project} + VITE_MODE=sim）
+        设置环境变量（VITE_PROJECT_ID={project} + VITE_MODE=sim）
         执行构建命令：npm run build:sim
         如 stage-8 已构建则复用产物（检查 dist/ 是否存在且为最新）
         构建失败则标记部署失败，不阻断 /close
@@ -63,26 +63,26 @@ skill:
     - name: "4.推送产物到 EdgeOne Pages"
       rule: |
         通过 EdgeOne Pages 集成推送构建产物：
-        - 产物路径：projects/{owner}/{project}/dist/
-        - 部署路径：/{owner}/{project}/{version}/
+        - 产物路径：projects/{project}/dist/
+        - 部署路径：/{project}/{version}/
         - 访问保护：使用 edgeone-pages.json 中配置的 access_protection
         推送失败则标记部署失败，记录 error_msg
 
     - name: "5.生成访问 URL"
       rule: |
-        生成访问 URL：https://{workspace}.edgeone.app/{owner}/{project}/{version}/
-        同时生成 latest 重定向 URL：https://{workspace}.edgeone.app/{owner}/{project}/latest/
+        生成访问 URL：https://{workspace}.edgeone.app/{project}/{version}/
+        同时生成 latest 重定向 URL：https://{workspace}.edgeone.app/{project}/latest/
 
     - name: "6.更新部署记录"
       rule: |
         ① 追加部署记录到 deploy/DEPLOY-MANIFEST.yml：
-          - owner/project/version/deployed_at/git_tag/build_mode/url/status/db_name/build_duration
+          - project/version/deployed_at/git_tag/build_mode/url/status/db_name/build_duration
         ② 更新 PROJECT-INDEX.yml 对应项目的 deploy 字段：
           - deploy.current_version = {version}
           - deploy.deploy_url = {url}
           - deploy.deploy_history 追加本次记录
         ③ 更新 deploy/access-portal/index.html：
-          - 在对应 owner 分组下追加项目版本条目
+          - 在对应 project 分组下追加项目版本条目
           - 包含 [访问] [差异报告] [PRD快照] 链接
 
     - name: "7.输出部署结果"
@@ -90,9 +90,9 @@ skill:
         向用户展示部署结果：
         ┌──────────────────────────────────────────────┐
         │  ✅ 部署成功                                  │
-        │  访问URL: https://xxx.edgeone.app/{owner}/   │
+        │  访问URL: https://xxx.edgeone.app/           │
         │           {project}/{version}/               │
-        │  IndexedDB: {owner}-{project}-sim（数据隔离）  │
+        │  IndexedDB: {project}-sim（数据隔离）  │
         │  耗时: {build_duration}s构建 + {deploy_duration}s部署 │
         │  状态: live                                  │
         └──────────────────────────────────────────────┘
@@ -118,10 +118,10 @@ skill:
   inputs:
     - "stage-8 版本快照产物（dist/ + docs/09-versions/v{version}/）"
     - "deploy/edgeone-pages.json 部署配置"
-    - "PROJECT-INDEX.yml 项目信息（owner/path/dev_port/db_name）"
+    - "PROJECT-INDEX.yml 项目信息（path/dev_port/db_name）"
   outputs:
     - type: "deployment"
-      path: "EdgeOne Pages（/{owner}/{project}/{version}/）"
+      path: "EdgeOne Pages（/{project}/{version}/）"
       description: "部署的仿真原型，可通过 URL 访问"
     - type: "manifest-update"
       path: "deploy/DEPLOY-MANIFEST.yml"
