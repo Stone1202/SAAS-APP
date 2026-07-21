@@ -13,6 +13,9 @@ agent:
     - "human-confirm-handler"     # V5.1.0同步：与config.yml对齐
     - "version-manager"           # V5.1.0合并：version-snapshotter+version-diff-reporter→version-manager
     - "feedback-processor"        # V5.1.0合并：feedback-analyzer→feedback-processor
+    - "deploy-manager"            # V5.2.0同步：多人多项目部署
+    - "member-manager"            # V1.1.0同步：成员注册命令
+    - "process-improvement-collector"  # V5.3.0同步：流程改进建议收集
 
   # V5.1.0新增：PM大脑编排能力声明
   brain_capability:

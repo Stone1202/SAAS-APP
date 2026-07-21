@@ -468,7 +468,7 @@ missing_arg_prompt:
 command: "/learn-project"
 category: "特殊入口"
 pm_controlled: false
-workflow: "learn-project.yml v6.1.0"
+workflow: "learn-project.yml v7.0.0"
 
 usage: "/learn-project --project=项目名 --source=scheme:value [--source=...] [--module=模块名] [--cookie=xxx] [--auth=xxx] [--transcript=文字稿.txt]"
 
@@ -621,7 +621,7 @@ automation_support: "可通过 automations 定时触发（如每月1日）"
 command: "/rebuild"
 category: "特殊入口"
 pm_controlled: false
-workflow: "learn-project.yml v6.1.0"
+workflow: "learn-project.yml v7.0.0"
 
 usage: "/rebuild --project=项目名"
 
