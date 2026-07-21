@@ -449,8 +449,6 @@ commands:
     example: "/register-member --name=李四 --git=lisi --project=crm-portal"
     required_args: ["--name", "--git", "--project"]
     optional_args: ["--role"]
-    required_args: ["--project", "--desc"]
-    optional_args: ["--priority"]
 
 # ============================================
 # 生命周期与阶段模型（PM 总控编排依据）
@@ -687,8 +685,9 @@ testing:
   auto_trigger: true
   layers:
     - name: contract
-      skill: contract-consistency-tester
-      description: "契约测试：Zod Schema一致性校验、sim/real响应结构一致性（V3.0.0新增）"
+      skill: test-runner
+      layer: contract
+      description: "契约测试：Zod Schema一致性校验、sim/real响应结构一致性（V5.1.0合并到test-runner）"
     - name: unit
       skill: test-runner
       layer: unit
@@ -702,8 +701,9 @@ testing:
       layer: whitebox
       description: "白盒测试：状态覆盖、路径覆盖、边界注入"
     - name: visual
-      skill: visual-regression-runner
-      description: "视觉回归：设计稿→代码视觉一致性校验"
+      skill: test-runner
+      layer: visual
+      description: "视觉回归：设计稿→代码视觉一致性校验（V5.1.0合并到test-runner）"
   bug_dir: "projects/{project}/docs/04-testing/bugs/"
 
 # ============================================
