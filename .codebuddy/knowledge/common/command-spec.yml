@@ -668,9 +668,9 @@ missing_arg_prompt:
 command: "/change"
 category: "核心生命周期"
 pm_controlled: true
-workflow: "change-request.yml v2.0.0"
+workflow: "change-request.yml v3.0.0"
 
-usage: "/change --project=X --desc=变更描述 [--priority=P0|P1|P2|P3]"
+usage: "/change --project=X --desc=变更概述 [--module=模块] [--file=变更文档] [--api=接口文档] [--source=来源] [--platform=pc,app] [--priority=P0|P1|P2|P3]"
 
 parameters:
   - name: "--project"
@@ -682,14 +682,44 @@ parameters:
   - name: "--desc"
     type: "string"
     required: true
-    description: "变更描述（自然语言）"
+    description: "变更概述（一句话，详细内容用--file）"
     smart_hint: "描述变更内容和影响范围"
+
+  - name: "--module"
+    type: "string"
+    required: false
+    description: "变更模块（逗号分隔多个模块，影响分析聚焦指定模块）"
+    smart_hint: "如 --module=客户管理,订单管理"
+
+  - name: "--file"
+    type: "string"
+    required: false
+    description: "详细变更需求文档路径（当--desc一句话不够时提供）"
+    smart_hint: "支持 local-dir:./变更文档.md 格式"
+
+  - name: "--api"
+    type: "string"
+    required: false
+    description: "变更涉及的接口文档路径"
+    smart_hint: "变更涉及接口契约时提供"
+
+  - name: "--source"
+    type: "string"
+    required: false
+    description: "变更需求来源（scheme:value格式，与/init一致）"
+    smart_hint: "如 --source=website:https://xxx 或 --source=file:./需求.md"
+
+  - name: "--platform"
+    type: "string"
+    required: false
+    description: "受影响的端（逗号分隔，影响分析逐端展开+跨端一致性风险）"
+    smart_hint: "如 --platform=pc,app（不指定则全端分析）"
 
   - name: "--priority"
     type: "enum"
     required: false
     default: "P1"
-    description: "优先级"
+    description: "变更优先级"
     enum: ["P0", "P1", "P2", "P3"]
     smart_hint: "P0紧急/P1高/P2中/P3低，默认P1"
 
@@ -704,9 +734,9 @@ missing_arg_prompt:
 command: "/fix"
 category: "核心生命周期"
 pm_controlled: true
-workflow: "change-request.yml v2.0.0"
+workflow: "change-request.yml v3.0.0"
 
-usage: "/fix --project=X --desc=Bug描述 [--priority=P0|P1|P2|P3]"
+usage: "/fix --project=X --desc=Bug概述 [--module=模块] [--file=Bug详细文档] [--platform=pc] [--bug-id=xxx] [--priority=P0|P1|P2|P3]"
 
 parameters:
   - name: "--project"
@@ -714,6 +744,49 @@ parameters:
     required: true
     description: "项目名称"
     smart_hint: "须与 projects/{project}/ 目录匹配"
+
+  - name: "--desc"
+    type: "string"
+    required: true
+    description: "Bug概述（一句话，详细描述用--file）"
+    smart_hint: "描述Bug现象和影响"
+
+  - name: "--module"
+    type: "string"
+    required: false
+    description: "Bug所在模块（逗号分隔多个模块）"
+    smart_hint: "如 --module=客户管理"
+
+  - name: "--file"
+    type: "string"
+    required: false
+    description: "Bug详细描述文档（含复现步骤、截图等）"
+    smart_hint: "支持 local-dir:./bug描述.md 格式"
+
+  - name: "--platform"
+    type: "string"
+    required: false
+    description: "Bug所在端（逗号分隔）"
+    smart_hint: "如 --platform=pc（不指定则全端分析）"
+
+  - name: "--bug-id"
+    type: "string"
+    required: false
+    description: "Bug编号（如已有Bug记录）"
+    smart_hint: "如 --bug-id=BUG-20260721-001"
+
+  - name: "--priority"
+    type: "enum"
+    required: false
+    default: "P1"
+    description: "Bug优先级"
+    enum: ["P0", "P1", "P2", "P3"]
+    smart_hint: "P0紧急/P1高/P2中/P3低，默认P1"
+
+missing_arg_prompt:
+  "--project": "请提供项目名称（例如：--project=AI-SCRM）。"
+  "--desc": "请提供Bug描述。"
+```
 
   - name: "--desc"
     type: "string"

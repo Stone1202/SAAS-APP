@@ -1,24 +1,31 @@
 # ============================================
 # Workflow: change-request（变更请求 / Bug修复）
-# 版本: v2.0.0
-# 最后更新: 2026-07-15
+# 版本: v3.0.0
+# 最后更新: 2026-07-21
 # ============================================
 #
-# 流程专家视角：
-#   change-request 处理需求变更（/change）和 Bug 修复（/fix）两种场景。
-#   变更走完整的影响分析→文档更新→代码更新→回归测试→验收闭环；
-#   修复走 Bug 分析→修复实施→回归验证→验收关闭。
-#   核心原则：影响分析先行，文档为真理源。
+# V3.0.0升级（2026-07-21）：
+#   1. 新增A0/B0知识库加载（与/init对齐，加载已学PRD+版本沉淀+经验库）
+#   2. 新增defect-reflow回流机制（测试/验收不通过时触发反馈回流）
+#   3. 新增验收后/handoff（交互卡更新+回传BA）
+#   4. 新增验收后/close（版本沉淀+部署+Git提交）
+#   5. 参数补齐（--file/--module/--platform与/init对齐）
+#   6. A1/B1影响分析基于知识库PRD（不再只依赖projects/目录文档）
 #
-# 关键差异：
+# V2.0.0核心原则（保留）：
 #   - /change：文档先行更新（需求→设计→测试用例→代码）
-#   - /fix：Bug 分析→修复→验证（可跳过需求文档更新，除非判定为需求缺陷）
+#   - /fix：Bug分析→修复→验证（可跳过需求文档更新，除非判定为需求缺陷）
+#
+# 关键差异（V3.0.0对齐后）：
+#   - /change：完整变更闭环（知识库加载→影响分析→文档更新→代码→回归→验收→handoff→close）
+#   - /fix：精简修复闭环（知识库加载→Bug分析→修复→回归→验收→handoff→close）
+#   - 两者与/init的差异：不执行脑暴/PO规划/完整需求分析/架构评审
 # ============================================
 
 workflow:
   id: "change-request"
   name: "变更请求 / Bug修复"
-  version: "2.0.0"
+  version: "3.0.0"
   trigger_commands: ["/change", "/fix"]
   owner: "pm-agent"
   supervisor: "pm-agent"
@@ -27,9 +34,20 @@ workflow:
   # 选项定义
   # ============================================
   options:
+    - flag: "--module"
+      desc: "指定变更/Bug所在模块（逗号分隔多个模块）。影响分析聚焦指定模块"
+      values: ["任意模块名"]
     - flag: "--platform"
       desc: "指定受影响的端（逗号分隔）。影响分析逐端展开；变更若仅影响部分端用「适用端」列标注；跨端一致性风险单列"
       values: ["pc", "app", "miniapp"]
+    - flag: "--file"
+      desc: "详细变更/Bug描述文档路径（当--desc一句话不够时，提供完整文档）"
+    - flag: "--api"
+      desc: "变更涉及的接口文档路径（/change专用，/fix不需要）"
+    - flag: "--source"
+      desc: "变更需求来源（scheme:value格式，与/init一致，/change专用）"
+    - flag: "--bug-id"
+      desc: "Bug编号（/fix专用，如已有Bug记录）"
 
   # ============================================
   # 分支 A：变更（/change）
@@ -37,32 +55,56 @@ workflow:
   branches:
     - type: "change"
       trigger: "/change"
-      description: "需求变更，文档先行更新"
+      description: "需求变更，文档先行更新，完整闭环（含知识库加载+回流+handoff+close）"
       platform_handling: "阶段A1读取模块多端差异矩阵逐端分析影响；影响报告新增「适用端」列与「跨端风险」条目"
       stages:
+        # ---- A0 知识库加载（V3.0.0新增，与/init对齐） ----
+        - id: "A0"
+          name: "知识库加载（V3.0.0新增）"
+          agent: "pm-agent"
+          input: "--project 参数"
+          output: "知识库上下文（已学PRD+版本沉淀+经验库+领域知识）"
+          methodology: |
+            PM 加载知识库上下文（与 /init stage-00 对齐）：
+            1. 检查 knowledge/projects/{project}/需求文档/ → 加载已学PRD
+            2. 检查 knowledge/projects/{project}/版本沉淀/ → 加载上版本经验
+            3. 检查 common/经验库/ → 加载跨项目经验
+            4. 检查 knowledge/projects/{project}/经验/ → 加载项目级经验
+            如知识库不存在PRD，提示用户：「该项目尚未在知识库中学习，
+            建议先执行 /learn-project 学习现有文档，否则影响分析可能不完整。」
+          note: "A0是V3.0.0核心新增——/change不再只依赖projects/目录文档，而是加载知识库完整PRD"
+
         - id: "A1"
-          name: "影响分析"
+          name: "影响分析（增强：基于知识库PRD）"
           agents: ["ba-agent", "ux-agent"]
           skills: ["change-impact-analyzer", "doc-processor"]
-          input: "变更描述 + 现有需求文档 + 设计文档 + 多端差异矩阵"
+          input: |
+            变更描述(--desc) + 详细变更文档(--file，如有) + 接口文档(--api，如有)
+            + 来源内容(--source，如有)
+            + A0加载的知识库PRD + 现有设计文档 + 多端差异矩阵
           output:
             - "影响分析报告（含适用端 / 跨端风险）"
             - "受影响模块清单 + 影响级别"
           methodology: |
             影响分析报告模板：
-            1. 变更概述（变更内容 + 变更原因）
-            2. 受影响模块（模块名 + 影响级别 + 适用端）
-            3. 受影响文档（需求文档 + 设计文档 + 测试用例 + 代码）
-            4. 跨端影响（逐端分析 + 跨端一致性风险）
+            1. 变更概述（变更内容 + 变更原因 + 变更来源--desc/--file/--api/--source）
+            2. 受影响模块（模块名 + 影响级别 + 适用端）— 基于--module过滤（如指定）
+            3. 受影响文档（需求文档章节 + 设计文档章节 + 测试用例 + 代码）
+            4. 跨端影响（逐端分析 + 跨端一致性风险）— 基于--platform过滤（如指定）
             5. 建议变更方案
+            
+            输入来源深度判断：
+            - 只有--desc → 轻量影响分析（基于描述关键词匹配模块）
+            - 有--file → 完整影响分析（读取文档全量分析8维）
+            - 有--api → 接口影响分析（重点分析契约/参数影响）
 
         - id: "A2"
           name: "需求文档更新"
           agent: "ba-agent"
           skills: ["doc-splitter", "doc-processor"]
-          input: "影响分析报告"
+          input: "影响分析报告 + A0加载的知识库PRD"
           output: "更新后的需求文档（版本升级）"
-          note: "全类型同步铁律：变更亦须同步 REQ 产物"
+          note: "增量更新受影响章节，非全量重写。同时更新知识库PRD。"
 
         - id: "A3"
           name: "设计文档更新"
@@ -87,12 +129,12 @@ workflow:
           output: "更新的各端仿真代码"
 
         - id: "A6"
-          name: "交互说明卡同步更新（已收敛到 /handoff 集中触发）"
+          name: "原型标注更新"
           agents: ["ux-agent", "fd-agent"]
           skills: ["prototype-annotator"]
           input: "更新的设计文档 + 代码"
           output: "更新后的原型标注"
-          note: "V3.0.0交互说明卡生成已收敛到 /handoff，此处仅更新原型标注不生成卡片"
+          note: "V3.0.0：交互说明卡在A9/handoff阶段集中处理，此处仅更新原型标注"
 
         - id: "A7"
           name: "回归测试"
@@ -100,6 +142,12 @@ workflow:
           skills: ["test-runner"]
           input: "更新后的代码 + 测试用例"
           output: "回归测试报告（含逐端与跨端一致性）"
+          on_fail: |
+            V3.0.0新增：测试不通过时触发defect-reflow回流：
+            → PM读取回归测试报告中的失败项
+            → 按defect-reflow.yml判断归属stage（需求/设计/代码/测试用例）
+            → 直达归属stage修复 → 修复后重新执行A7回归测试
+            → 循环直到回归测试全部通过
 
         - id: "A8"
           name: "验收确认"
@@ -107,36 +155,95 @@ workflow:
           skills: ["requirement-checker", "business-flow-tester"]
           input: "回归测试报告 + 更新后的需求文档"
           output: "变更验收确认"
+          on_fail: |
+            V3.0.0新增：验收不通过时触发defect-reflow回流：
+            → PM读取验收报告中的不通过项
+            → 按defect-reflow.yml判断归属stage
+            → 直达归属stage修复 → 修复后重新执行A8验收
+            → 循环直到验收通过
+
+        # ---- A9 handoff（V3.0.0新增） ----
+        - id: "A9"
+          name: "handoff交互卡更新（V3.0.0新增）"
+          agents: ["ux-agent", "fd-agent", "ba-agent"]
+          condition: "A8验收通过后执行"
+          input: "更新后的需求文档 + 设计文档 + 代码"
+          output: "更新后的交互说明卡 + handoff回传区"
+          methodology: |
+            执行handoff.yml流程（与/init的stage-7.5一致）：
+            1. 校验对应性（交互卡 vs PRD的FN/UC）
+            2. 编辑交互卡（新增/修改/补充用例）
+            3. 回传BA（写入PRD的handoff回传区）
+          note: "V3.0.0核心新增——/change完成后必须执行handoff，与/init对齐"
+
+        # ---- A10 close（V3.0.0新增） ----
+        - id: "A10"
+          name: "close版本沉淀+部署+Git（V3.0.0新增）"
+          agent: "pm-agent"
+          condition: "A9 handoff完成后执行"
+          input: "A8验收通过 + A9 handoff完成"
+          output: "版本沉淀 + 部署URL + Git提交"
+          methodology: |
+            执行/close流程（与/init的stage-8+stage-9一致）：
+            1. 版本沉淀（knowledge-sedimentation.yml V5.3.0 3步精简版）：
+               step1沉淀准备(目录+需求快照+Review合并+大脑记忆)
+               step2经验分层提炼+追溯链快照
+               step3索引更新+质量校验
+            2. 版本快照（Git Tag + 构建产物归档）
+            3. 自动部署（deploy-manager.yml → EdgeOne Pages）
+            4. 自动Git提交（git add+commit+push）
+            5. 流程改进收集（process-improvement-collector）
+          note: "V3.0.0核心新增——/change完成后必须执行/close，与/init对齐"
 
     # ============================================
     # 分支 B：修复（/fix）
     # ============================================
     - type: "fix"
       trigger: "/fix"
-      description: "Bug 修复，先分析再修复"
+      description: "Bug修复，先分析再修复，完整闭环（含知识库加载+回流+handoff+close）"
       stages:
+        # ---- B0 知识库加载（V3.0.0新增，与/init对齐） ----
+        - id: "B0"
+          name: "知识库加载（V3.0.0新增）"
+          agent: "pm-agent"
+          input: "--project 参数"
+          output: "知识库上下文（已学PRD+版本沉淀+经验库）"
+          methodology: |
+            PM 加载知识库上下文（与 /init stage-00 对齐）：
+            1. 检查 knowledge/projects/{project}/需求文档/ → 加载已学PRD
+            2. 检查 knowledge/projects/{project}/版本沉淀/ → 加载上版本经验
+            3. 检查 common/经验库/ → 加载跨项目经验
+            如知识库不存在PRD，提示用户先执行 /learn-project。
+          note: "B0是V3.0.0核心新增——/fix不再只依赖projects/目录文档"
+
         - id: "B1"
-          name: "Bug分析 + 需求核查"
+          name: "Bug分析 + 需求核查（增强：基于知识库PRD）"
           agents: ["qa-agent", "ba-agent"]
-          input: "Bug文档"
+          input: |
+            Bug描述(--desc) + 详细Bug文档(--file，如有) + Bug编号(--bug-id，如有)
+            + B0加载的知识库PRD
           output:
             - "Bug分析报告（含需求缺陷判断）"
             - "修复方案建议"
           methodology: |
             分析 Bug 根因：
-            1. 是代码实现 Bug？→ 直接修复
-            2. 是需求描述不清？→ 先补需求文档再修复
+            1. 是代码实现Bug？→ 直接修复（跳过B2）
+            2. 是需求描述不清？→ 先补需求文档再修复（执行B2）
             3. 是设计遗漏？→ 先补设计再修复
+            
+            基于知识库PRD核查：
+            - Bug涉及的FN/UC是否在PRD中有明确定义
+            - Bug涉及的BR（业务规则）是否在PRD中有描述
+            - Bug涉及的状态机是否在PRD中有完整定义
 
         - id: "B2"
           name: "需求文档补充（条件执行）"
           agent: "ba-agent"
           trigger_when: "B1判断为需求缺陷"
           skills: ["doc-processor"]
-          input: "Bug分析报告中的需求缺陷描述"
+          input: "Bug分析报告中的需求缺陷描述 + B0加载的知识库PRD"
           output: "补充后的需求文档"
           condition: "仅当 Bug 根因为需求缺陷时执行"
-          note: "V3.0.0交互说明卡生成已收敛到 /handoff，此处不再生成"
 
         - id: "B3"
           name: "修复实施"
@@ -152,15 +259,73 @@ workflow:
           skills: ["test-runner"]
           input: "修复代码 + 新增测试用例"
           output: "回归测试报告"
+          on_fail: |
+            V3.0.0新增：回归验证不通过时触发defect-reflow回流：
+            → PM读取回归测试报告中的失败项
+            → 按defect-reflow.yml判断归属stage
+            → 直达归属stage修复 → 修复后重新执行B4回归验证
+            → 循环直到回归验证全部通过
 
         - id: "B5"
           name: "验收关闭"
           agent: "ac-agent"
           input: "回归测试报告"
           output: "Bug状态更新为closed"
+          on_fail: |
+            V3.0.0新增：验收不通过时触发defect-reflow回流：
+            → PM读取验收报告中的不通过项
+            → 按defect-reflow.yml判断归属stage
+            → 直达归属stage修复 → 修复后重新执行B5验收
+            → 循环直到验收通过
+
+        # ---- B6 handoff（V3.0.0新增） ----
+        - id: "B6"
+          name: "handoff交互卡更新（V3.0.0新增）"
+          agents: ["ux-agent", "fd-agent", "ba-agent"]
+          condition: "B5验收通过后执行"
+          input: "修复后的需求文档 + 代码"
+          output: "更新后的交互说明卡 + handoff回传区"
+          methodology: |
+            执行handoff.yml流程（与/init的stage-7.5一致）：
+            1. 校验对应性（交互卡 vs PRD的FN/UC）
+            2. 编辑交互卡（如有交互变更）
+            3. 回传BA（写入PRD的handoff回传区）
+          note: |
+            如Bug修复不涉及交互变更，handoff校验后直接通过（不编辑卡片）。
+            V3.0.0核心新增——/fix完成后必须执行handoff，与/init对齐
+
+        # ---- B7 close（V3.0.0新增） ----
+        - id: "B7"
+          name: "close版本沉淀+部署+Git（V3.0.0新增）"
+          agent: "pm-agent"
+          condition: "B6 handoff完成后执行"
+          input: "B5验收通过 + B6 handoff完成"
+          output: "版本沉淀 + 部署URL + Git提交"
+          methodology: |
+            执行/close流程（与/init的stage-8+stage-9一致）：
+            1. 版本沉淀（knowledge-sedimentation.yml V5.3.0 3步精简版）
+            2. 版本快照（Git Tag + 构建产物归档）
+            3. 自动部署（deploy-manager.yml → EdgeOne Pages）
+            4. 自动Git提交（git add+commit+push）
+            5. 流程改进收集（process-improvement-collector）
+          note: "V3.0.0核心新增——/fix完成后必须执行/close，与/init对齐"
 
   # ============================================
-  # Bug 状态流转图
+  # defect-reflow 引用（V3.0.0新增）
+  # ============================================
+  defect_reflow:
+    reference: ".codebuddy/configs/workflows/defect-reflow.yml"
+    description: |
+      V3.0.0新增：/change和/fix的测试/验收不通过时，引用defect-reflow.yml执行反馈回流。
+      回流机制与/init流程完全一致：
+      - PM判断反馈归属stage（需求/设计/架构/代码/测试用例）
+      - 单stage反馈 → 直达归属stage
+      - 双stage反馈 → 直达第1个，完成后传递第2个
+      - 多stage反馈 → 逐阶段经停
+      - 增量回流：只回流变更部分，不重走整个流程
+
+  # ============================================
+  # Bug 状态流转图（V3.0.0增强：含回流+handoff+close）
   # ============================================
   bug_state_machine: |
     open → [B1 分析] → in_analysis
@@ -168,8 +333,26 @@ workflow:
     in_analysis → [判定为代码Bug] → ready_for_dev
     ready_for_dev → [B3 修复] → fixed
     fixed → [B4 回归验证] → verified
+    fixed → [B4 回归验证不通过] → defect-reflow回流 → ready_for_dev（V3.0.0新增）
     verified → [B5 验收] → closed
-    verified → [验收不通过] → ready_for_dev（重新修复）
+    verified → [B5 验收不通过] → defect-reflow回流 → ready_for_dev（V3.0.0新增）
+    closed → [B6 handoff] → handoff_done（V3.0.0新增）
+    handoff_done → [B7 close] → version_frozen + deployed + git_pushed（V3.0.0新增）
+
+  # ============================================
+  # 变更状态流转图（V3.0.0新增）
+  # ============================================
+  change_state_machine: |
+    initiated → [A0 知识库加载] → knowledge_loaded
+    knowledge_loaded → [A1 影响分析] → impact_analyzed
+    impact_analyzed → [A2 需求更新] → [A3 设计更新] → [A4 测试用例更新] → docs_updated
+    docs_updated → [A5 代码更新] → [A6 原型标注] → code_updated
+    code_updated → [A7 回归测试] → tested
+    code_updated → [A7 回归测试不通过] → defect-reflow回流 → code_updated（V3.0.0新增）
+    tested → [A8 验收] → accepted
+    tested → [A8 验收不通过] → defect-reflow回流 → code_updated（V3.0.0新增）
+    accepted → [A9 handoff] → handoff_done（V3.0.0新增）
+    handoff_done → [A10 close] → version_frozen + deployed + git_pushed（V3.0.0新增）
 
   # ============================================
   # 变更记录归档
@@ -185,3 +368,31 @@ workflow:
       - "变更日期"
       - "操作者"
       - "验收状态"
+      - "版本沉淀状态（V3.0.0新增）"
+      - "部署URL（V3.0.0新增）"
+      - "Git提交ID（V3.0.0新增）"
+
+  # ============================================
+  # 与/init的流程对齐说明（V3.0.0新增）
+  # ============================================
+  init_alignment:
+    description: |
+      V3.0.0核心改进：/change和/fix与/init的流程环节对齐，确保成员使用任何命令
+      都能获得一致的质量保障。
+    alignment_matrix:
+      知识库加载: "/change A0 = /fix B0 = /init stage-00"
+      影响分析: "/change A1 = /fix B1（/fix精简版） ≈ /init §0.5b"
+      文档更新: "/change A2-A4 = /fix B2（条件） ≈ /init stage-2 BA产出"
+      代码更新: "/change A5 = /fix B3 = /init stage-5 FD"
+      回归测试: "/change A7 = /fix B4 = /init stage-6 QA"
+      验收: "/change A8 = /fix B5 = /init stage-7 AC"
+      handoff: "/change A9 = /fix B6 = /init stage-7.5（V5.3.0待并入close）"
+      close: "/change A10 = /fix B7 = /init stage-8+stage-9"
+      defect_reflow: "/change A7/A8 on_fail = /fix B4/B5 on_fail = /init defect-reflow.yml"
+    
+    key_differences_from_init:
+      - "无脑暴（/change和/fix不需要重新脑暴）"
+      - "无PO规划（/change和/fix不需要重新产品规划）"
+      - "无架构评审（/change和/fix的影响分析含接口/契约评估）"
+      - "无checkpoint（/change和/fix不设人工卡点，验收为最终确认）"
+      - "增量更新（/change和/fix增量更新文档，非全量重写）"

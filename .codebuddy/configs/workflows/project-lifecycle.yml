@@ -175,15 +175,40 @@
   # ============================================
   stages:
     - id: "stage-00"
-      name: "项目性质自动检测 + 骨架完整性校验 + 上下文加载（V4.2.1升级：6项完整性校验）"
+      name: "项目性质三级检测 + 骨架完整性校验 + 上下文加载（V5.3.0升级：基于知识库三级判断）"
       owner: "pm-agent"
       pm_controlled: true
       description: |
+        V5.3.0升级：项目性质判断从"目录存在与否"升级为基于知识库的三级判断。
         V4.2.1升级：骨架检测从"目录存在与否"升级为6项完整性校验。
         V4.2.0 重构：PM 按 interactive_inquiry V4.2.0 流程执行（自动检测，非交互式问答）：
         1. 接收 /init 全部参数（--project/--type/--desc/--brainstorm-topic/--file/--api/--source/--priority）
-        2. 自动检测项目性质：扫描 projects/{--project}/ → 存在=存量，不存在=新项目
-        3. 存量项目：
+        2. **V5.3.0三级判断项目性质（基于知识库）**：
+           Level 1: 扫描 projects/{--project}/ 是否存在
+             ├─ 不存在 → 新项目
+             │   → ensure-project.sh 创建骨架
+             │   → 不加载历史知识库
+             │   → analysis_depth=full, run_impact_analysis=false
+             │
+             └─ 存在 → Level 2: 扫描 knowledge/projects/{--project}/需求文档/ 是否存在
+               ├─ 不存在 → 存量无PRD（刚创建骨架或未学习）
+               │   → 6项骨架完整性校验
+               │   → 不加载PRD（无PRD可加载）
+               │   → 加载版本沉淀/经验库（如有）
+               │   → analysis_depth=full, run_impact_analysis=false
+               │   → 提示用户：建议先执行 /learn-project 学习现有文档
+               │
+               └─ 存在 → Level 3: 扫描 knowledge/projects/{--project}/版本沉淀/ 是否存在
+                 ├─ 不存在 → 存量有PRD无沉淀（首次init后未close过）
+                 │   → 6项骨架完整性校验
+                 │   → 加载已学PRD
+                 │   → 不加载版本沉淀（无沉淀）
+                 │   → analysis_depth按--type, run_impact_analysis按--type
+                 │
+                 └─ 存在 → 真正的存量项目
+                     → 6项骨架完整性校验
+                     → 加载已学PRD + 版本沉淀 + 经验库 + PO Backlog + 跨版本反馈
+                     → analysis_depth按--type, run_impact_analysis按--type
            a. **V4.2.1骨架完整性6项校验（替代旧的目录存在检测）**：
               运行 ensure-project.sh {--project} --check，校验6项必选文件：
               - .codebuddy/state.json（项目状态机）
