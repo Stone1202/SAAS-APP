@@ -171,7 +171,7 @@ agents:
 
   pm-agent:
     yml_file: .codebuddy/configs/agents/pm-agent.yml
-    skills: [task-scheduler, knowledge-integrator, human-confirm-handler, version-manager, feedback-processor, deploy-manager]
+    skills: [task-scheduler, knowledge-integrator, human-confirm-handler, version-manager, feedback-processor, deploy-manager, member-manager]
     description: "项目管理 - 版本守护人（V5.0：专注版本级把关，Sprint级交给SM）"
 
   sm-agent:
@@ -436,6 +436,19 @@ commands:
     example: "/deploy --project=AI-SCRM"
     required_args: ["--project"]
     optional_args: ["--version", "--retry", "--status"]
+
+  # ---------- V1.1.0 新增：成员注册命令 ----------
+  register-member:
+    command: "/register-member"
+    description: "【成员注册V1.1.0】管理员一个命令完成成员注册+项目创建。自动更新.access-control.yml+PROJECT-INDEX.yml+端口分配+CODEOWNERS+项目骨架+部署配置。管理员无需手动编辑任何文件。"
+    lifecycle: "管理员操作"
+    pm_controlled: true
+    orchestrator: "pm-agent"
+    skill: "member-manager"
+    usage: "/register-member --name=姓名 --git=Gitee用户名 --project=项目名 [--role=admin|member]"
+    example: "/register-member --name=李四 --git=lisi --project=crm-portal"
+    required_args: ["--name", "--git", "--project"]
+    optional_args: ["--role"]
     required_args: ["--project", "--desc"]
     optional_args: ["--priority"]
 

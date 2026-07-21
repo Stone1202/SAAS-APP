@@ -81,6 +81,19 @@ def allocate_port():
         result = sock.connect_ex(("127.0.0.1", port))
         sock.close()
         if result != 0:  # 端口空闲
+            # V4.0.1: 自动更新 config.yml 的 port_pool.reserved
+            reserved_line = f'    - {{ owner: "{owner}", project: "{proj}", port: {port} }}'
+            cfg_path = os.path.join(root, ".codebuddy/config.yml")
+            with open(cfg_path, "r") as f:
+                cfg_content = f.read()
+            if reserved_line not in cfg_content:
+                # 在 port_pool.reserved 的最后一条后追加
+                cfg_content = cfg_content.replace(
+                    '    reserved:                    # 已分配端口（ensure-project.sh 自动维护）',
+                    '    reserved:                    # 已分配端口（ensure-project.sh 自动维护）\n' + reserved_line
+                )
+                with open(cfg_path, "w") as f:
+                    f.write(cfg_content)
             return port
     return port_min  # 兜底
 

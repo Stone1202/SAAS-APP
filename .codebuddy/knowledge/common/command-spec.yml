@@ -27,6 +27,7 @@
 | 15 | `/change` | 核心生命周期 | ✅ | 变更请求 |
 | 16 | `/fix` | 核心生命周期 | ✅ | Bug修复 |
 | 17 | `/deploy` | 特殊入口 | ❌ | 手动部署/重试/查看状态（V1.0.0新增） |
+| 18 | `/register-member` | 管理员专用 | ✅ | 注册新成员+新项目，一个命令搞定（V1.1.0新增） |
 
 ---
 
@@ -54,7 +55,8 @@ parameter_naming:
 | `--brainstorm-type` | `/brainstorm` | 脑暴类型 | strategic/planning/regular |
 | `--report-type` | `/report` | 报告类型 | test/accept/doc-index |
 | `--source` | `/learn-*`, `/brainstorm`, `/init` | 知识来源 | scheme:value 格式，可多次指定 |
-| `--owner` | 全部命令（可选） | 成员归属 | V1.0.0新增：指定项目归属成员，缺省时从.access-control.yml自动识别 |
+
+> **V1.1.0变更**：`--owner` 参数已删除。系统自动从 `git user.name` 识别成员归属，不需要手动指定。
 
 ### 2.3 source 参数格式标准
 
@@ -803,6 +805,58 @@ missing_arg_prompt:
 conflict_detection:
   - rule: "--status 与 --version/--retry 互斥"
     message: "查看状态时不能指定版本或重试参数"
+```
+
+---
+
+### 3.18 /register-member — 注册新成员（V1.1.0新增）
+
+```yaml
+command: "/register-member"
+category: "管理员专用"
+pm_controlled: true
+workflow: "member-manager.yml V1.0.0"
+
+usage: "/register-member --name=姓名 --git=Gitee用户名 --project=项目名 [--role=admin|member]"
+example: "/register-member --name=李四 --git=lisi --project=crm-portal"
+
+parameters:
+  - name: "--name"
+    type: "string"
+    required: true
+    description: "成员姓名（如'李四'）"
+
+  - name: "--git"
+    type: "string"
+    required: true
+    description: "Gitee用户名（如'lisi'），用于Git身份识别和CODEOWNERS"
+
+  - name: "--project"
+    type: "string"
+    required: true
+    description: "项目名（如'crm-portal'），自动创建项目骨架"
+
+  - name: "--role"
+    type: "enum"
+    required: false
+    default: "member"
+    description: "角色"
+    enum: ["admin", "member"]
+    smart_hint: "默认member，管理员可设为admin"
+
+auto_actions:
+  - "更新 .access-control.yml 添加成员"
+  - "更新 PROJECT-INDEX.yml 添加成员+项目"
+  - "自动分配端口（从端口池4000-4099选空闲）"
+  - "更新 config.yml port_pool.reserved"
+  - "更新 CODEOWNERS"
+  - "执行 ensure-project.sh 创建项目骨架"
+  - "更新 deploy/edgeone-pages.json 添加部署路由"
+
+missing_arg_prompt:
+  "--name": "请提供成员姓名（例如：--name=李四）。"
+  "--git": "请提供Gitee用户名（例如：--git=lisi）。"
+  "--project": "请提供项目名（例如：--project=crm-portal）。"
 ```
 
 ---

@@ -805,6 +805,13 @@
         - "  ⑦ 输出部署结果（URL + 状态 + 耗时 + IndexedDB数据库名）"
         - "  ⑧ 部署失败不阻断/close，提示 /deploy --retry 手动重试"
         # ↑↑↑ stage-9 自动部署运营结束 ↑↑↑
+        # ↓↓↓ V1.1.0 新增：自动Git提交 ↓↓↓
+        - "**V1.1.0新增：自动Git提交（/close后自动，成员无需手动操作）：**"
+        - "  ① git add projects/{owner}/{project}/"
+        - "  ② git commit -m 'close: {project} {version} 版本关闭'"
+        - "  ③ git push origin {owner}/{project}-v{version}"
+        - "  ④ 输出PR创建指引（成员在Gitee点合并即可）"
+        # ↑↑↑ 自动Git提交结束 ↑↑↑
         # V4.1.0 敏捷递归闭环
         - "**V4.1.0新增：PM询问PO Agent下一版本规划（敏捷递归闭环）：**"
         - "  版本沉淀完成后，PM 自动询问 PO Agent「v{version} 已交付，下一版本规划？」"
