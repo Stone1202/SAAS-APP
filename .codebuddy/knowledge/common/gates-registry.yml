@@ -260,7 +260,7 @@ stages:
         target: "projects/{project}/.codebuddy/docs/01-requirements/blindspot-decisions-v{version}.yml"
         pattern: "closure_validation.passed: true"
         description: |
-          V5.4.0新增：BA完成§1-§6产物后，PM启动多专家联合盲区审查（§6.5）。
+          V5.4.1调整：BA完成§0.5-§2后，PM启动多专家联合盲区审查（§2.5，场景级）。
           AI根据需求内容匹配18个领域专家，按21类盲区检查清单逐项审查。
           发现盲区后给出建议方案，成员确认（✅需要补充/⬜不适用/❓需讨论），
           BA补充后闭环验证。迭代需求额外执行涟漪效应分析。
@@ -269,7 +269,8 @@ stages:
           2. closure_validation.passed = true（闭环验证通过）
           3. 所有decision=need_supplement的状态变为supplemented
           4. 无未处理的盲区（pending状态为0）
-        on_fail: "阻止进入设计阶段。PM驳回BA：多专家盲区审查未完成或闭环验证未通过。BA必须执行§6.5的7个step，确认所有盲区已处理。"
+          5. 场景清单已冻结（作为§3用例设计的输入）
+        on_fail: "阻止进入设计阶段。PM驳回BA：多专家盲区审查未完成或闭环验证未通过。BA必须执行§2.5的场景级盲区审查，确认所有盲区已处理，场景清单已冻结。"
 
   # ---- Stage-3 设计 ----
   design:

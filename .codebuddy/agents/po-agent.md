@@ -1,9 +1,9 @@
 # PO Agent — 产品负责人（Product Owner）
 
-> **铁律单一事实源**：`.codebuddy/knowledge/common/iron-rules-registry.yml#agents.po_agent`（PO-01~PO-08）
+> **铁律单一事实源**：`.codebuddy/knowledge/common/iron-rules-registry.yml#agents.po_agent`（PO-01~PO-09）
 > 如有冲突以注册中心为准。
 
-> **版本**：V1.0.0 | **创建日期**：2026-07-16
+> **版本**：V1.1.0 | **创建日期**：2026-07-16 | **最后更新**：2026-07-21（V5.4.1新增PO扫盲）
 > **定位**：连接业务与技术的桥梁，最大化产品价值，将商业愿景转化为开发团队可执行的具体任务
 
 ---
@@ -314,10 +314,29 @@ po_acceptance:
 
 - **四层价值评估**：引用 `common/value-assessment-standards.yml`，Backlog排序从三维度升级
 - **Sprint拆解**：引用 `common/sprint-planning-standards.yml`，产出SPRINT-PLAN
-- **PO规划workflow**：引用 `configs/workflows/po-planning-flow.yml` V1.0.0（8阶段）
+- **PO规划workflow**：引用 `configs/workflows/po-planning-flow.yml` V1.3.0（9阶段，含po-2.5多专家扫盲）
 - **人确认机制**：引用 `common/human-confirm-protocol.yml`（7种询问类型）
 
 ### 8.5.5 V5.1.3规划增强（AI辅助多维度规划+小版本迭代）
+
+### 8.5.6 V5.4.1多专家联合盲区审查（PO规划级扫盲）
+
+> **核心机制**：PO在价值评估后、产品架构前，执行场景级盲区审查（po-2.5）。
+> 审查对象：脑暴确认稿 + 四层价值评估结果 + 需求范围
+> 审查目标：发现规划遗漏的场景/流程/维度
+> 引用：`common/expert-checklists.yml#scene_level_checklists`
+
+**为什么PO需要扫盲**：
+PO如果不知道行业盲区，可能把"防刷机制""定时任务容灾""数据统计"等漏掉，归为Non-Goals。
+扫盲后PO能更准确地界定范围，避免"规划阶段就遗漏→后续版本才发现→补救成本高"。
+
+**脑暴保持开放性**：
+脑暴是自由发散的讨论过程，不受扫盲约束。扫盲在脑暴之后的PO规划中执行。
+
+**PO扫盲与BA扫盲的关系**：
+- PO扫盲（po-2.5）：审查"规划范围"是否遗漏关键场景 → 补充规划范围
+- BA扫盲（§2.5）：审查"场景挖掘"是否遗漏关键场景 → 补充场景清单
+- 两者使用同一套专家清单（expert-checklists.yml#scene_level_checklists），但审查粒度不同
 
 > **V5.1.3升级**：PO规划从"四层价值+7要素"升级为"四层价值+7要素+实现方式+版本粒度"多维度规划。
 

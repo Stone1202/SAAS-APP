@@ -511,3 +511,148 @@ closure_validation:
   max_iterations: 3  # 最多3次循环
   on_exceed: "PM介入，人工决策剩余盲区"
   validation_criteria: "所有need_supplement状态变为supplemented，无新发现盲区"
+
+# ============================================
+# 场景级检查清单（V5.4.1新增：§2.5用，宏观场景完整性检查）
+# ============================================
+# 与用例级检查的区别：
+#   场景级（§2.5）：审查"有没有考虑XXX场景？"→ 补充场景清单 → 用例设计时自然包含
+#   用例级（§7门禁）：审查"XXX边界值/异常路径是否完整？"→ 门禁校验，阻止不合格产物
+# 场景级在§2.5执行（场景挖掘后、用例设计前），用例级在§7门禁校验时执行。
+
+scene_level_checklists:
+  description: |
+    V5.4.1新增：§2.5多专家盲区审查使用的场景级检查清单。
+    审查对象：需求描述+旅行地图+初步场景清单（宏观）
+    审查目标：发现遗漏的场景/流程/维度
+    补充方式：补充场景清单（不是补充用例），用例设计时自然包含
+
+  ecommerce_scene:
+    expert: "电商交易专家"
+    checks:
+      - { id: "EC-S01", check: "有没有考虑取消订单场景？（支付前/支付后/发货前/发货后）", severity: "P0" }
+      - { id: "EC-S02", check: "有没有考虑退款场景？（全额/部分/多次）", severity: "P0" }
+      - { id: "EC-S03", check: "有没有考虑超时处理场景？（支付超时/确认收货超时）", severity: "P1" }
+      - { id: "EC-S04", check: "有没有考虑并发下单场景？（同一商品多人/同一用户多端）", severity: "P0" }
+
+  live_scene:
+    expert: "直播/录播/点播专家"
+    checks:
+      - { id: "LV-S01", check: "有没有考虑断流重连场景？", severity: "P0" }
+      - { id: "LV-S02", check: "有没有考虑主播异常退出场景？", severity: "P0" }
+      - { id: "LV-S03", check: "有没有考虑封禁与解禁场景？", severity: "P0" }
+      - { id: "LV-S04", check: "有没有考虑录播转点播场景？", severity: "P1" }
+
+  marketing_scene:
+    expert: "营销活动专家"
+    checks:
+      - { id: "MK-S01", check: "有没有考虑防刷场景？（限频/限人/设备指纹）", severity: "P0" }
+      - { id: "MK-S02", check: "有没有考虑预算超限场景？（总预算/日预算/超限降级）", severity: "P0" }
+      - { id: "MK-S03", check: "有没有考虑活动叠加场景？（叠加规则/互斥规则）", severity: "P1" }
+      - { id: "MK-S04", check: "有没有考虑商品下架联动场景？（活动中商品下架如何处理）", severity: "P0" }
+      - { id: "MK-S05", check: "有没有考虑奖励异常场景？（发奖失败/重复发奖/奖品超发）", severity: "P1" }
+
+  data_scene:
+    expert: "数据/报表专家"
+    checks:
+      - { id: "DT-S01", check: "有没有考虑统计指标定义场景？（口径/时间维度/一致性）", severity: "P0" }
+      - { id: "DT-S02", check: "有没有考虑迭代影响旧报表场景？（改了状态机，历史统计是否需重算）", severity: "P0" }
+      - { id: "DT-S03", check: "有没有考虑历史数据迁移场景？（新增字段，历史数据如何补值）", severity: "P0" }
+      - { id: "DT-S04", check: "有没有考虑数据归档/过期场景？", severity: "P2" }
+
+  finance_scene:
+    expert: "财务专家"
+    checks:
+      - { id: "FN-S01", check: "有没有考虑对账场景？（平台vs渠道vs商家三方对账）", severity: "P0" }
+      - { id: "FN-S02", check: "有没有考虑结算周期场景？（T+1/T+7/月结/退款扣减）", severity: "P0" }
+      - { id: "FN-S03", check: "有没有考虑发票场景？（开票/红冲/作废）", severity: "P1" }
+
+  inventory_scene:
+    expert: "库存/进销存专家"
+    checks:
+      - { id: "IV-S01", check: "有没有考虑库存预占场景？（下单预占→支付确认→超时释放）", severity: "P0" }
+      - { id: "IV-S02", check: "有没有考虑多仓库存场景？（分仓/调拨/安全库存）", severity: "P1" }
+      - { id: "IV-S03", check: "有没有考虑并发防超卖场景？（分布式锁/乐观锁）", severity: "P0" }
+
+  procurement_scene:
+    expert: "采购专家"
+    checks:
+      - { id: "PC-S01", check: "有没有考虑审批超时场景？（审批人不在/自动通过/升级）", severity: "P1" }
+      - { id: "PC-S02", check: "有没有考虑供应商异常场景？（停产/涨价/资质过期）", severity: "P1" }
+      - { id: "PC-S03", check: "有没有考虑部分到货场景？（催货/自动拆单）", severity: "P1" }
+
+  architecture_scene:
+    expert: "架构专家"
+    checks:
+      - { id: "AR-S01", check: "有没有考虑服务宕机降级场景？", severity: "P0" }
+      - { id: "AR-S02", check: "有没有考虑定时任务宕机补偿场景？", severity: "P0" }
+      - { id: "AR-S03", check: "有没有考虑消息队列积压/幂等场景？", severity: "P0" }
+      - { id: "AR-S04", check: "有没有考虑接口超时降级场景？", severity: "P0" }
+      - { id: "AR-S05", check: "有没有考虑高并发限流场景？", severity: "P0" }
+      - { id: "AR-S06", check: "有没有考虑大数据量性能场景？（列表10万条/批量导入1万条）", severity: "P1" }
+
+  security_scene:
+    expert: "安全专家"
+    checks:
+      - { id: "SE-S01", check: "有没有考虑敏感数据脱敏场景？（手机号/身份证/银行卡）", severity: "P0" }
+      - { id: "SE-S02", check: "有没有考虑接口防重放/签名验证场景？", severity: "P1" }
+      - { id: "SE-S03", check: "有没有考虑水平/垂直越权场景？", severity: "P0" }
+      - { id: "SE-S04", check: "有没有考虑多租户数据隔离场景？", severity: "P0" }
+
+  qa_scene:
+    expert: "QA专家"
+    checks:
+      - { id: "QA-S01", check: "有没有考虑边界值场景？（0/1/最大/null/空）", severity: "P1" }
+      - { id: "QA-S02", check: "有没有考虑状态机死状态/不可达状态场景？", severity: "P0" }
+      - { id: "QA-S03", check: "有没有考虑并发竞态场景？", severity: "P1" }
+
+  customer_service_scene:
+    expert: "客服/售后专家"
+    checks:
+      - { id: "CS-S01", check: "有没有考虑工单SLA超时场景？", severity: "P1" }
+      - { id: "CS-S02", check: "有没有考虑售后退换货场景？", severity: "P1" }
+
+  member_scene:
+    expert: "会员/用户专家"
+    checks:
+      - { id: "MB-S01", check: "有没有考虑积分并发扣减场景？", severity: "P0" }
+      - { id: "MB-S02", check: "有没有考虑积分过期处理场景？", severity: "P1" }
+      - { id: "MB-S03", check: "有没有考虑异常登录检测场景？", severity: "P1" }
+
+  logistics_scene:
+    expert: "物流/配送专家"
+    checks:
+      - { id: "LG-S01", check: "有没有考虑丢件/破损/拒收场景？", severity: "P1" }
+      - { id: "LG-S02", check: "有没有考虑改地址场景？（发货前/发货中/发货后）", severity: "P1" }
+
+  content_scene:
+    expert: "内容/审核专家"
+    checks:
+      - { id: "CT-S01", check: "有没有考虑内容审核场景？（机审+人审/积压处理）", severity: "P0" }
+      - { id: "CT-S02", check: "有没有考虑违规处理场景？（警告/删除/封禁/申诉）", severity: "P1" }
+
+  social_scene:
+    expert: "社交/互动专家"
+    checks:
+      - { id: "SO-S01", check: "有没有考虑消息顺序/离线消息场景？", severity: "P1" }
+      - { id: "SO-S02", check: "有没有考虑互动防刷场景？（批量点赞/灌水评论）", severity: "P1" }
+
+  payment_scene:
+    expert: "支付/结算专家"
+    checks:
+      - { id: "PY-S01", check: "有没有考虑重复支付场景？", severity: "P0" }
+      - { id: "PY-S02", check: "有没有考虑退款失败场景？", severity: "P0" }
+      - { id: "PY-S03", check: "有没有考虑分账失败场景？", severity: "P1" }
+
+  operations_scene:
+    expert: "运营/DevOps专家"
+    checks:
+      - { id: "OP-S01", check: "有没有考虑运营配置防呆场景？", severity: "P1" }
+      - { id: "OP-S02", check: "有没有考虑埋点定义场景？", severity: "P2" }
+      - { id: "OP-S03", check: "有没有考虑监控告警场景？", severity: "P1" }
+
+  legal_scene:
+    expert: "法务/合规专家"
+    checks:
+      - { id: "LE-S01", check: "有没有考虑个人信息合规场景？", severity: "P1" }
+      - { id: "LE-S02", check: "有没有考虑操作审计日志场景？", severity: "P1" }
