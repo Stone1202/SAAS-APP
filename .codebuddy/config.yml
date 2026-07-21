@@ -408,9 +408,9 @@ commands:
     orchestrator: "pm-agent"
     workflow: "change-request"
     workflow_file: ".codebuddy/configs/workflows/change-request.yml"
-    usage: "/change --project=X --desc=变更描述 [--priority=P0|P1|P2|P3]"
+    usage: "/change --project=X --desc=变更概述 [--module=模块] [--file=变更文档] [--api=接口文档] [--source=来源] [--platform=pc,app] [--priority=P0|P1|P2|P3]"
     required_args: ["--project", "--desc"]
-    optional_args: ["--priority"]
+    optional_args: ["--module", "--file", "--api", "--source", "--platform", "--priority"]
 
   fix:
     command: "/fix"
@@ -420,7 +420,9 @@ commands:
     orchestrator: "pm-agent"
     workflow: "change-request"
     workflow_file: ".codebuddy/configs/workflows/change-request.yml"
-    usage: "/fix --project=X --desc=Bug描述 [--priority=P0|P1|P2|P3]"
+    usage: "/fix --project=X --desc=Bug概述 [--module=模块] [--file=Bug详细文档] [--platform=pc] [--bug-id=xxx] [--priority=P0|P1|P2|P3]"
+    required_args: ["--project", "--desc"]
+    optional_args: ["--module", "--file", "--platform", "--bug-id", "--priority"]
 
   # ---------- V1.0.0 新增：部署运营指令 ----------
   deploy:

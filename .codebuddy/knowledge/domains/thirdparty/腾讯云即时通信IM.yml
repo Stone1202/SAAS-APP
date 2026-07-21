@@ -1,0 +1,722 @@
+# ============================================
+# 领域知识：腾讯云即时通信IM
+# 分类：thirdparty（第三方API文档）
+# 版本：v1.0.0
+# 创建日期：2026-07-21
+# 学习方法：场景驱动学习法（SDL V1.0.0）
+# 来源：https://cloud.tencent.com/document/product/269/105570 (开发指引)
+#       https://cloud.tencent.com/document/product/269/1520 (REST API接口列表)
+#       https://cloud.tencent.com/document/product/269/83795 (云端审核功能)
+# ============================================
+
+meta:
+  domain_name: "腾讯云即时通信IM"
+  category: "thirdparty"
+  version: "1.0.0"
+  sdl_version: "1.0.0"
+  created: "2026-07-21"
+  last_updated: "2026-07-21"
+  source_urls:
+    - "https://cloud.tencent.com/document/product/269/105570"
+    - "https://cloud.tencent.com/document/product/269/1520"
+    - "https://cloud.tencent.com/document/product/269/83795"
+  crawling_log:
+    - url: "https://cloud.tencent.com/document/product/269/105570"
+      status: "success"
+      strategy: "direct"
+      content_fidelity: "full"
+    - url: "https://cloud.tencent.com/document/product/269/1520"
+      status: "success"
+      strategy: "direct"
+      content_fidelity: "full"
+    - url: "https://cloud.tencent.com/document/product/269/83795"
+      status: "success"
+      strategy: "direct"
+      content_fidelity: "full"
+    - url: "https://cloud.tencent.com/document/product/269/43525"
+      status: "failed"
+      strategy: "S1-HTTP降级web_search"
+      note: "URL路由到容器镜像服务页面，通过web_search找到正确URL /269/1520"
+    - url: "https://cloud.tencent.com/document/product/269/78633"
+      status: "partial"
+      strategy: "S6-MULTI多源互补"
+      note: "返回产品概述页非审核详情页，通过web_search找到正确URL /269/83795"
+
+# ============================================
+# Part A: 商业问题（SDL Layer 0）
+# ============================================
+business_problems:
+  - id: "BP-IM-001"
+    role: "App开发者/集成方"
+    problem: "如何快速集成即时通信功能？"
+    pain_point: "从零开发IM功能成本高、周期长、稳定性难以保证"
+    value: "使用TUIKit UI组件库快速集成，开发周期从月级降至天级"
+    evidence: "腾讯云提供TUIKit（含会话/聊天/搜索/关系链/群组/音视频6大组件）+ 9平台SDK"
+    scrm_relevance: 4
+    priority: "P0"
+    related_scenes: ["S-IM-001"]
+
+  - id: "BP-IM-002"
+    role: "App开发者/集成方"
+    problem: "如何跨多平台统一集成？"
+    pain_point: "多端各自开发维护成本高，体验不一致"
+    value: "一套SDK覆盖Android/iOS/Web/小程序/Flutter/Unity/React Native/HarmonyOS 9平台"
+    evidence: "TUIKit支持经典版(微信风格)+简约版(WhatsApp风格)+RTL语言"
+    scrm_relevance: 3
+    priority: "P1"
+
+  - id: "BP-IM-003"
+    role: "内容审核员"
+    problem: "如何审核聊天内容确保合规？"
+    pain_point: "UGC内容可能包含违规文本/图片/音频/视频，人工审核成本高效率低"
+    value: "云端审核支持文本(同步)/图片(同步)/音频(异步)/视频(异步)4种类型，6+N审核场景"
+    evidence: "消息发送时延从200ms降至50ms（IM内部审核无需外网传输）"
+    scrm_relevance: 5
+    priority: "P0"
+    related_scenes: ["S-IM-004"]
+
+  - id: "BP-IM-004"
+    role: "内容审核员"
+    problem: "如何处理审核结果和违规内容？"
+    pain_point: "审核结果如何回调？违规内容如何拦截？统计数据如何查看？"
+    value: "审核结果回调+消息拦截+TUIKit专属拦截样式+6维统计可视化"
+    evidence: "支持审核用量抵扣/审核结果明细/审核条数/审核类型/审核用户/违规用户排行6维统计"
+    scrm_relevance: 5
+    priority: "P0"
+    related_scenes: ["S-IM-004"]
+
+  - id: "BP-IM-005"
+    role: "系统管理员"
+    problem: "如何配置审核策略适应不同业务场景？"
+    pain_point: "不同场景（单聊/群聊/资料）需要不同审核策略，自定义场景需要灵活配置"
+    value: "6大内置场景(单聊/群聊/用户资料/群资料/群成员资料/关系链) + N个自定义审核场景"
+    evidence: "不同场景可配置不同审核策略，支持特定用户免审，支持自定义消息拆分送审"
+    scrm_relevance: 5
+    priority: "P0"
+
+  - id: "BP-IM-006"
+    role: "App运营人员"
+    problem: "如何管理海量用户消息和群组？"
+    pain_point: "海量用户的消息存储、群组管理、关系链管理需要强大的管理API"
+    value: "84个REST API覆盖账号/消息/群组/关系链/会话/运营全链路管理"
+    evidence: "群组管理38个API（最多），支持5种群组类型（工作群/社交群/会议群/直播群/社群）"
+    scrm_relevance: 4
+    priority: "P1"
+    related_scenes: ["S-IM-002", "S-IM-003"]
+
+  - id: "BP-IM-007"
+    role: "App运营人员"
+    problem: "如何实现离线消息推送确保触达？"
+    pain_point: "用户离线时消息无法触达，影响用户体验和消息送达率"
+    value: "支持10+厂商推送（小米/华为/荣耀/OPPO/vivo/魅族/APNs/FCM），全链路排查工具"
+    evidence: "普通消息推送+全员/标签推送+自定义样式+推送记录统计"
+    scrm_relevance: 3
+    priority: "P1"
+    related_scenes: ["S-IM-006"]
+
+  - id: "BP-IM-008"
+    role: "客服人员"
+    problem: "如何使用AI智能客服处理用户咨询？"
+    pain_point: "人工客服成本高，非工作时间无响应"
+    value: "生成式AI一站式智能客服（智能机器人+人工客服），三端四角色两种接入方式"
+    evidence: "免开发接入+含UI组件接入，支持Web/小程序/Flutter/iOS/Android"
+    scrm_relevance: 4
+    priority: "P2"
+    related_scenes: ["S-IM-007"]
+
+  - id: "BP-IM-009"
+    role: "App开发者/集成方"
+    problem: "如何实现音视频通话和多人会议？"
+    pain_point: "音视频通话和会议系统开发复杂，需要信令+媒体+UI"
+    value: "TUICallKit(1v1通话)+TUIRoomKit(多人会议)，基于IM SDK信令+聊天+用户状态"
+    evidence: "支持企业会议/网络研讨会/在线教育场景"
+    scrm_relevance: 3
+    priority: "P2"
+
+  - id: "BP-IM-010"
+    role: "App运营人员"
+    problem: "如何对直播群进行管理？"
+    pain_point: "直播场景下海量并发用户管理、广播消息、在线人数统计"
+    value: "直播群（AVChatRoom）支持无上限成员、广播消息、在线人数/成员列表查询、成员标记"
+    evidence: "5个直播群专属API：get_online_member_num/get_members/modify_user_info/send_broadcast_msg"
+    scrm_relevance: 5
+    priority: "P1"
+    related_scenes: ["S-IM-005"]
+
+# ============================================
+# Part B: 跨域衔接（SDL Layer 2）
+# ============================================
+cross_domain_bridges:
+  - id: "CDB-IM-001"
+    from_domain: "腾讯云即时通信IM"
+    to_domain: "腾讯云MPS"
+    bridge_type: "数据流衔接"
+    description: "IM直播群语音消息→MPS音频识别→审核结果→IM消息拦截/标记"
+    integration_point: "IM云端审核回调 + MPS擦音任务回调 → 统一审核处置中心"
+    scrm_fusion_value: "直播弹幕+语音双重审核闭环，文本审核(IM同步)+音频审核(MPS异步)互补"
+    confidence: 0.9
+
+  - id: "CDB-IM-002"
+    from_domain: "腾讯云即时通信IM"
+    to_domain: "腾讯云直播"
+    bridge_type: "场景衔接"
+    description: "直播间创建→IM直播群创建→直播进行中弹幕互动→直播结束→IM群消息存档"
+    integration_point: "直播SDK房间ID ↔ IM群组GroupID 映射关系"
+    scrm_fusion_value: "直播+IM一体化运营，直播结束后的录播审核+IM消息审计形成完整合规闭环"
+    confidence: 0.85
+
+  - id: "CDB-IM-003"
+    from_domain: "腾讯云即时通信IM"
+    to_domain: "内容安全审核(ai)"
+    bridge_type: "能力衔接"
+    description: "IM云端审核→审核策略配置→审核结果回调→SCRM审核处置流程"
+    integration_point: "IM审核结果回调URL → SCRM审核处置API（统一审核事件入口）"
+    scrm_fusion_value: "IM审核与SCRM审核统一管理，IM审核事件接入SCRM审核处置矩阵，实现跨渠道统一审核策略"
+    confidence: 0.95
+
+# ============================================
+# Part C: 角色视角（SDL Layer 3）
+# ============================================
+role_perspectives:
+  - scene_id: "S-IM-004"
+    scene_name: "内容审核闭环"
+    role: "内容审核员"
+    operations: ["查看审核统计", "处理违规消息", "配置审核策略"]
+    kpi: ["审核覆盖率", "违规拦截率", "误判率", "审核延迟"]
+    pain_points: ["审核策略配置复杂", "多类型内容审核规则不一致", "审核结果处理流程长"]
+    scrm_expectation: "IM审核事件接入SCRM统一审核看板，实现跨渠道审核数据汇总"
+
+  - scene_id: "S-IM-004"
+    scene_name: "内容审核闭环"
+    role: "系统管理员"
+    operations: ["配置审核场景", "设置审核策略", "管理免审用户", "查看审核统计"]
+    kpi: ["策略生效时间", "审核场景覆盖率", "免审配置准确率"]
+    pain_points: ["6+N场景配置复杂", "自定义审核规则需要理解IM消息结构"]
+    scrm_expectation: "SCRM后台统一管理IM审核策略，与直播审核策略联动配置"
+
+  - scene_id: "S-IM-005"
+    scene_name: "直播群管理"
+    role: "App运营人员"
+    operations: ["创建直播群", "查看在线人数", "发送广播消息", "标记成员", "禁言管理"]
+    kpi: ["直播群创建成功率", "消息广播延迟", "在线人数准确率"]
+    pain_points: ["海量并发下消息延迟", "成员管理效率低"]
+    scrm_expectation: "直播群管理与SCRM直播间管理打通，直播间状态联动IM群状态"
+
+  - scene_id: "S-IM-005"
+    scene_name: "直播群管理"
+    role: "App最终用户"
+    operations: ["加入直播群", "发送弹幕消息", "接收广播消息", "退出直播群"]
+    kpi: ["消息收发延迟", "弹幕显示流畅度", "广播消息到达率"]
+    pain_points: ["弹幕审核导致消息延迟", "被禁言无感知"]
+    scrm_expectation: "弹幕审核结果对用户友好提示（非粗暴拦截）"
+
+# ============================================
+# Part D: 场景地图增强（SDL Layer 1增强）
+# ============================================
+scenario_maps:
+  - id: "S-IM-001"
+    name: "IM快速集成"
+    related_topics: ["T-IM-001"]
+    related_business_problems: ["BP-IM-001", "BP-IM-002"]
+    flow: "选择UI组件(TUIKit/TUICallKit/TUIRoomKit) → 集成SDK → 初始化 → 登录IM账号 → 收发消息"
+    participants: ["开发者", "IM SDK", "IM服务端"]
+    closure: "开发者集成SDK→初始化成功→登录成功→收发消息验证通过"
+    api_chain: ["account_import(导入账号)", "sendmsg(发送消息)"]
+
+  - id: "S-IM-002"
+    name: "单聊消息收发"
+    related_topics: ["T-IM-007"]
+    related_business_problems: ["BP-IM-006"]
+    flow: "发送消息 → 云端审核(同步) → 投递 → 已读标记 → 撤回(可选)"
+    participants: ["发送方", "IM服务端", "接收方", "审核服务"]
+    closure: "消息发送→审核通过→投递成功→已读→可撤回"
+    api_chain: ["sendmsg(单发单聊)", "admin_set_msg_read(设置已读)", "admin_msgwithdraw(撤回)"]
+
+  - id: "S-IM-003"
+    name: "群组管理"
+    related_topics: ["T-IM-008"]
+    related_business_problems: ["BP-IM-006"]
+    flow: "创建群 → 邀请成员 → 发送群消息 → 禁言管理 → 解散群"
+    participants: ["群主", "群成员", "IM服务端"]
+    closure: "创建群→成员加入→消息收发→禁言/解禁→解散群"
+    api_chain: ["create_group(创建)", "add_group_member(加成员)", "send_group_msg(群消息)", "forbid_send_msg(禁言)", "destroy_group(解散)"]
+
+  - id: "S-IM-004"
+    name: "内容审核闭环"
+    related_topics: ["T-IM-011"]
+    related_business_problems: ["BP-IM-003", "BP-IM-004", "BP-IM-005"]
+    flow: "消息发送 → 云端审核(文本/图片同步, 音频/视频异步) → 审核结果(通过/拦截/可疑) → 消息处理(放行/拦截/标记) → 回调通知App后台 → 统计数据更新"
+    participants: ["发送方", "IM服务端", "云端审核服务", "App后台(回调)", "审核员"]
+    closure: "消息发送→审核→结果处理→回调通知→统计更新→审核员可查看处理"
+    api_chain: ["send_group_msg/sendmsg(触发审核)", "审核结果回调(回调URL)", "forbid_illegal_object(封禁违规文件)"]
+    scrm_relevance: "HIGH — 与AI-SCRM审核系统核心相关，审核回调可接入SCRM审核处置流程"
+
+  - id: "S-IM-005"
+    name: "直播群管理"
+    related_topics: ["T-IM-008", "T-IM-014"]
+    related_business_problems: ["BP-IM-010"]
+    flow: "创建直播群(AVChatRoom) → 用户加入(无上限) → 发送弹幕消息 → 广播消息 → 查询在线人数 → 成员标记 → 禁言管理"
+    participants: ["运营", "直播群成员", "IM服务端"]
+    closure: "创建直播群→成员加入→弹幕互动→广播消息→在线人数统计→成员管理"
+    api_chain: ["create_group(AVChatRoom)", "send_group_msg(弹幕)", "send_broadcast_msg(广播)", "get_online_member_num(在线人数)", "modify_user_info(成员标记)"]
+    scrm_relevance: "HIGH — 与AI-SCRM直播审核场景核心相关，直播群弹幕审核+直播语音审核形成双重审核闭环"
+
+  - id: "S-IM-006"
+    name: "离线推送"
+    related_topics: ["T-IM-004"]
+    related_business_problems: ["BP-IM-007"]
+    flow: "消息发送 → 接收方离线检测 → 厂商推送(小米/华为/.../FCM) → 用户点击通知 → 打开App → 消息投递"
+    participants: ["发送方", "IM服务端", "厂商推送服务", "接收方"]
+    closure: "消息发送→离线检测→厂商推送→用户点击→App打开→消息投递"
+    api_chain: ["sendmsg(触发推送)", "推送配置(控制台)"]
+
+  - id: "S-IM-007"
+    name: "智能客服"
+    related_topics: ["T-IM-005"]
+    related_business_problems: ["BP-IM-008"]
+    flow: "用户发起咨询 → AI机器人接待 → 复杂问题转人工 → 工单管理 → 服务评价"
+    participants: ["用户", "AI机器人", "客服人员", "管理员"]
+    closure: "用户咨询→AI接待→转人工(如需)→工单处理→服务评价"
+    api_chain: ["Desk SDK接入"]
+
+# ============================================
+# Part 1: 业务泳道图
+# ============================================
+business_swimlane: |
+  ```mermaid
+  flowchart LR
+      subgraph 发送方
+          A1[发送消息] --> A2[等待审核结果]
+      end
+      subgraph IM服务端
+          B1[接收消息] --> B2{审核类型?}
+          B2 -->|文本/图片| B3[同步审核]
+          B2 -->|音频/视频| B4[异步审核]
+          B3 --> B5{审核结果}
+          B4 --> B6[先投递后审核]
+          B5 -->|通过| B7[投递消息]
+          B5 -->|拦截| B8[拦截消息]
+          B5 -->|可疑| B9[标记+投递]
+          B6 --> B10[审核完成回调]
+          B10 -->|违规| B11[撤回消息]
+          B10 -->|正常| B12[保持投递]
+      end
+      subgraph 接收方
+          C1[接收消息] --> C2[展示消息/拦截提示]
+      end
+      subgraph App后台
+          D1[接收审核回调] --> D2[记录审核日志]
+          D2 --> D3[更新统计]
+      end
+      A2 --> B5
+      B7 --> C1
+      B8 --> C2
+      B9 --> C1
+      B10 --> D1
+      B11 --> C1
+  ```
+
+# ============================================
+# Part 2: 业务流程
+# ============================================
+business_process:
+  normal_flow: |
+    消息发送→云端审核→审核通过→消息投递→接收方展示→已读标记
+  exception_flow: |
+    消息发送→云端审核→审核拦截→发送方收到拦截通知→接收方收到拦截样式消息
+  branch_flow: |
+    消息发送→云端审核→审核可疑→消息标记投递→人工复审→保持/撤回
+  mermaid: |
+    ```mermaid
+    flowchart TD
+        A[用户发送消息] --> B[IM服务端接收]
+        B --> C{内容类型?}
+        C -->|文本/图片| D[同步审核]
+        C -->|音频/视频| E[异步审核+先投递]
+        D --> F{审核结果}
+        F -->|通过| G[投递消息]
+        F -->|拦截| H[拦截+通知发送方]
+        F -->|可疑| I[标记+投递+人工复审]
+        E --> J[投递消息]
+        J --> K[异步审核完成]
+        K -->|违规| L[撤回消息+回调]
+        K -->|正常| M[保持投递]
+        G --> N[接收方展示]
+        H --> O[发送方收到拦截提示]
+        L --> N
+    ```
+
+# ============================================
+# Part 3: 信息流图
+# ============================================
+information_flow: |
+  ```mermaid
+  flowchart TD
+      subgraph 消息发送
+          M1[发送方客户端] -->|消息内容| M2[IM SDK]
+          M2 -->|HTTPS| M3[IM服务端]
+      end
+      subgraph 云端审核
+          A1[IM服务端] -->|消息内容| A2[审核引擎]
+          A2 -->|文本/图片 同步| A3[审核结果]
+          A2 -->|音频/视频 异步| A4[审核回调]
+      end
+      subgraph 消息投递
+          D1[IM服务端] -->|消息| D2[接收方SDK]
+          D2 -->|展示| D3[接收方客户端]
+      end
+      subgraph 审核回调
+          C1[审核服务] -->|回调| C2[App后台]
+          C2 -->|记录| C3[审核日志]
+          C2 -->|统计| C4[审核统计]
+      end
+      M3 --> A1
+      A3 --> D1
+      A4 --> C1
+  ```
+
+# ============================================
+# Part 4: 状态机
+# ============================================
+state_machine:
+  entity: "消息审核状态"
+  states: ["待审核", "审核中", "审核通过", "审核拦截", "审核可疑", "异步审核中", "已撤回"]
+  transitions:
+    - from: "—"
+      to: "待审核"
+      trigger: "消息发送"
+      operator: "发送方"
+    - from: "待审核"
+      to: "审核中"
+      trigger: "同步审核开始"
+      operator: "审核服务"
+    - from: "审核中"
+      to: "审核通过"
+      trigger: "审核结果=通过"
+      operator: "审核服务"
+    - from: "审核中"
+      to: "审核拦截"
+      trigger: "审核结果=违规"
+      operator: "审核服务"
+    - from: "审核中"
+      to: "审核可疑"
+      trigger: "审核结果=可疑"
+      operator: "审核服务"
+    - from: "待审核"
+      to: "异步审核中"
+      trigger: "音频/视频先投递后审核"
+      operator: "审核服务"
+    - from: "异步审核中"
+      to: "已撤回"
+      trigger: "异步审核结果=违规"
+      operator: "审核服务"
+    - from: "异步审核中"
+      to: "审核通过"
+      trigger: "异步审核结果=正常"
+      operator: "审核服务"
+  mermaid: |
+    ```mermaid
+    stateDiagram-v2
+        [*] --> 待审核: 消息发送
+        待审核 --> 审核中: 同步审核(文本/图片)
+        待审核 --> 异步审核中: 异步审核(音频/视频)先投递
+        审核中 --> 审核通过: 审核结果=通过
+        审核中 --> 审核拦截: 审核结果=违规
+        审核中 --> 审核可疑: 审核结果=可疑
+        异步审核中 --> 审核通过: 异步结果=正常
+        异步审核中 --> 已撤回: 异步结果=违规(撤回消息)
+        审核通过 --> [*]: 消息正常展示
+        审核拦截 --> [*]: 消息拦截
+        已撤回 --> [*]: 消息撤回
+    ```
+
+# ============================================
+# Part 5: 业务操作矩阵
+# ============================================
+business_operation_matrix:
+  roles: ["发送方", "接收方", "审核员", "管理员"]
+  states: ["待审核", "审核通过", "审核拦截", "审核可疑", "异步审核中", "已撤回"]
+  matrix:
+    - role: "发送方"
+      state: "待审核"
+      operations: ["等待审核结果"]
+    - role: "发送方"
+      state: "审核通过"
+      operations: ["消息已投递", "撤回消息"]
+    - role: "发送方"
+      state: "审核拦截"
+      operations: ["收到拦截通知"]
+    - role: "接收方"
+      state: "审核通过"
+      operations: ["查看消息", "标记已读"]
+    - role: "接收方"
+      state: "审核拦截"
+      operations: ["查看拦截样式消息"]
+    - role: "接收方"
+      state: "已撤回"
+      operations: ["查看撤回提示"]
+    - role: "审核员"
+      state: "审核可疑"
+      operations: ["人工复审", "保持/撤回"]
+    - role: "管理员"
+      state: "—"
+      operations: ["配置审核策略", "查看审核统计", "管理免审用户"]
+
+# ============================================
+# Part 6: 业务时序图
+# ============================================
+business_sequence: |
+  ```mermaid
+  sequenceDiagram
+      participant S as 发送方
+      participant IM as IM服务端
+      participant A as 云端审核
+      participant R as 接收方
+      participant B as App后台
+      S->>IM: 发送消息
+      IM->>A: 送审(文本/图片同步)
+      alt 同步审核
+          A-->>IM: 审核结果(通过/拦截/可疑)
+          alt 通过
+              IM->>R: 投递消息
+          else 拦截
+              IM->>S: 拦截通知
+              IM->>R: 拦截样式消息
+          else 可疑
+              IM->>R: 标记+投递
+              IM->>B: 回调(可疑)
+          end
+      end
+      opt 音频/视频异步审核
+          IM->>R: 先投递消息
+          IM->>A: 异步送审
+          A-->>IM: 异步结果
+          alt 违规
+              IM->>R: 撤回消息
+              IM->>B: 回调(违规)
+          end
+      end
+      IM->>B: 审核统计更新
+  ```
+
+# ============================================
+# Part 7: 数据实体(ER)
+# ============================================
+data_entities:
+  - name: "IM账号"
+    fields:
+      - { name: "UserID", type: "string", required: true, desc: "用户ID（App唯一标识）" }
+      - { name: "NickName", type: "string", required: false, desc: "昵称" }
+      - { name: "AvatarURL", type: "string", required: false, desc: "头像URL" }
+      - { name: "OnlineStatus", type: "enum", required: true, desc: "在线状态(online/offline)" }
+
+  - name: "IM消息"
+    fields:
+      - { name: "MsgKey", type: "string", required: true, desc: "消息唯一标识" }
+      - { name: "From_Account", type: "string", required: true, desc: "发送方UserID" }
+      - { name: "To_Account/GroupId", type: "string", required: true, desc: "接收方/群ID" }
+      - { name: "MsgType", type: "enum", required: true, desc: "消息类型(text/image/audio/video/file/custom)" }
+      - { name: "MsgBody", type: "json", required: true, desc: "消息内容" }
+      - { name: "AuditStatus", type: "enum", required: true, desc: "审核状态(待审核/通过/拦截/可疑)" }
+      - { name: "SendTime", type: "datetime", required: true, desc: "发送时间" }
+
+  - name: "IM群组"
+    fields:
+      - { name: "GroupId", type: "string", required: true, desc: "群ID" }
+      - { name: "Type", type: "enum", required: true, desc: "群类型(Work/Public/Meeting/AVChatRoom/Community)" }
+      - { name: "Name", type: "string", required: true, desc: "群名称" }
+      - { name: "Owner_Account", type: "string", required: true, desc: "群主UserID" }
+      - { name: "MemberNum", type: "number", required: false, desc: "成员数" }
+      - { name: "MaxMemberNum", type: "number", required: false, desc: "最大成员数" }
+
+  - name: "审核记录"
+    fields:
+      - { name: "AuditID", type: "string", required: true, desc: "审核记录ID" }
+      - { name: "MsgKey", type: "string", required: true, desc: "关联消息ID" }
+      - { name: "ContentType", type: "enum", required: true, desc: "内容类型(text/image/audio/video)" }
+      - { name: "AuditMode", type: "enum", required: true, desc: "审核模式(sync/async)" }
+      - { name: "Result", type: "enum", required: true, desc: "审核结果(pass/block/suspect)" }
+      - { name: "Scene", type: "enum", required: true, desc: "审核场景(c2c/group/profile/group_profile/member_profile/relation/custom)" }
+      - { name: "AuditTime", type: "datetime", required: true, desc: "审核时间" }
+
+# ============================================
+# Part 8: 解决方案概括
+# ============================================
+solution_summary:
+  product_name: "腾讯云即时通信IM"
+  product_url: "https://cloud.tencent.com/product/269"
+  api_categories:
+    - { category: "账号管理", count: 6, base_path: "v4/im_open_login_svc/" }
+    - { category: "单聊消息", count: 7, base_path: "v4/openim/" }
+    - { category: "资料管理", count: 2, base_path: "v4/profile/" }
+    - { category: "关系链管理", count: 15, base_path: "v4/sns/" }
+    - { category: "会话管理", count: 8, base_path: "v4/recentcontact/" }
+    - { category: "群组管理", count: 38, base_path: "v4/group_open_http_svc/" }
+    - { category: "全局禁言", count: 2, base_path: "v4/openconfigsvr/" }
+    - { category: "运营管理", count: 6, base_path: "v4/open_msg_svc/ + v4/im_cos_msg/" }
+  total_api_count: 84
+  security_requirements:
+    - "REST API仅提供HTTPS接口"
+    - "请求需签名认证（Sig TLV格式）"
+    - "用户签名（UserSig）由App服务端生成"
+    - "云端审核需专业版/旗舰版/企业版"
+  integration_steps:
+    - "1. 创建IM应用（控制台）"
+    - "2. 获取SDKAppID和密钥"
+    - "3. 集成客户端SDK或UI组件"
+    - "4. App服务端实现REST API调用"
+    - "5. 配置回调URL（审核/消息/状态变更）"
+    - "6. 配置云端审核策略（6+N场景）"
+  common_issues:
+    - "Q: 消息审核延迟？A: 文本/图片同步审核(50ms)，音频/视频异步审核"
+    - "Q: 如何免审？A: 控制台配置特定用户不送审"
+    - "Q: 直播群成员上限？A: AVChatRoom无上限"
+    - "Q: 审核结果如何获取？A: 回调URL通知App后台"
+
+# ============================================
+# Part 9: 主题清单
+# ============================================
+topics:
+  - { id: "T-IM-001", name: "TUIKit UI组件集成", content_ratio: "15%", related_apis: [], related_bp: ["BP-IM-001", "BP-IM-002"] }
+  - { id: "T-IM-002", name: "音视频通话(TUICallKit)", content_ratio: "8%", related_apis: [], related_bp: ["BP-IM-009"] }
+  - { id: "T-IM-003", name: "多人会议(TUIRoomKit)", content_ratio: "5%", related_apis: [], related_bp: ["BP-IM-009"] }
+  - { id: "T-IM-004", name: "消息推送服务", content_ratio: "10%", related_apis: [], related_bp: ["BP-IM-007"] }
+  - { id: "T-IM-005", name: "智能客服", content_ratio: "5%", related_apis: [], related_bp: ["BP-IM-008"] }
+  - { id: "T-IM-006", name: "账号管理API", content_ratio: "8%", related_apis: 6, related_bp: ["BP-IM-006"] }
+  - { id: "T-IM-007", name: "单聊消息API", content_ratio: "8%", related_apis: 7, related_bp: ["BP-IM-006"] }
+  - { id: "T-IM-008", name: "群组管理API", content_ratio: "15%", related_apis: 38, related_bp: ["BP-IM-006", "BP-IM-010"] }
+  - { id: "T-IM-009", name: "关系链管理API", content_ratio: "8%", related_apis: 15, related_bp: ["BP-IM-006"] }
+  - { id: "T-IM-010", name: "会话管理API", content_ratio: "5%", related_apis: 8, related_bp: ["BP-IM-006"] }
+  - { id: "T-IM-011", name: "云端审核", content_ratio: "12%", related_apis: 0, related_bp: ["BP-IM-003", "BP-IM-004", "BP-IM-005"], scrm_relevance: "HIGH" }
+  - { id: "T-IM-012", name: "运营管理API", content_ratio: "5%", related_apis: 6, related_bp: ["BP-IM-006"] }
+  - { id: "T-IM-013", name: "全局禁言管理", content_ratio: "3%", related_apis: 2, related_bp: ["BP-IM-006"] }
+  - { id: "T-IM-014", name: "直播群管理", content_ratio: "8%", related_apis: 5, related_bp: ["BP-IM-010"], scrm_relevance: "HIGH" }
+
+# ============================================
+# Part 10: 场景清单
+# ============================================
+scenes:
+  - { id: "S-IM-001", name: "IM快速集成", related_topics: ["T-IM-001"], related_bp: ["BP-IM-001"] }
+  - { id: "S-IM-002", name: "单聊消息收发", related_topics: ["T-IM-007"], related_bp: ["BP-IM-006"] }
+  - { id: "S-IM-003", name: "群组管理", related_topics: ["T-IM-008"], related_bp: ["BP-IM-006"] }
+  - { id: "S-IM-004", name: "内容审核闭环", related_topics: ["T-IM-011"], related_bp: ["BP-IM-003", "BP-IM-004", "BP-IM-005"], scrm_relevance: "HIGH" }
+  - { id: "S-IM-005", name: "直播群管理", related_topics: ["T-IM-008", "T-IM-014"], related_bp: ["BP-IM-010"], scrm_relevance: "HIGH" }
+  - { id: "S-IM-006", name: "离线推送", related_topics: ["T-IM-004"], related_bp: ["BP-IM-007"] }
+  - { id: "S-IM-007", name: "智能客服", related_topics: ["T-IM-005"], related_bp: ["BP-IM-008"] }
+
+# ============================================
+# Part 11: 接口串联
+# ============================================
+api_list:
+  # 账号管理 (6)
+  - { name: "导入单个账号", path: "v4/im_open_login_svc/account_import", category: "账号管理", scene: "S-IM-001" }
+  - { name: "导入多个账号", path: "v4/im_open_login_svc/multiaccount_import", category: "账号管理", scene: "S-IM-001" }
+  - { name: "删除账号", path: "v4/im_open_login_svc/account_delete", category: "账号管理" }
+  - { name: "查询账号", path: "v4/im_open_login_svc/account_check", category: "账号管理" }
+  - { name: "失效账号登录状态", path: "v4/im_open_login_svc/kick", category: "账号管理" }
+  - { name: "查询账号在线状态", path: "v4/openim/query_online_status", category: "账号管理" }
+  # 单聊消息 (7)
+  - { name: "单发单聊消息", path: "v4/openim/sendmsg", category: "单聊消息", scene: "S-IM-002" }
+  - { name: "批量发单聊消息", path: "v4/openim/batchsendmsg", category: "单聊消息", scene: "S-IM-002" }
+  - { name: "导入单聊消息", path: "v4/openim/importmsg", category: "单聊消息" }
+  - { name: "查询单聊消息", path: "v4/openim/admin_getroammsg", category: "单聊消息" }
+  - { name: "撤回单聊消息", path: "v4/openim/admin_msgwithdraw", category: "单聊消息", scene: "S-IM-002" }
+  - { name: "设置单聊消息已读", path: "v4/openim/admin_set_msg_read", category: "单聊消息", scene: "S-IM-002" }
+  - { name: "修改单聊历史消息", path: "v4/openim/modify_c2c_msg", category: "单聊消息" }
+  # 群组管理-核心 (38中选关键)
+  - { name: "创建群组", path: "v4/group_open_http_svc/create_group", category: "群组管理", scene: "S-IM-003,S-IM-005" }
+  - { name: "获取群详细资料", path: "v4/group_open_http_svc/get_group_info", category: "群组管理", scene: "S-IM-003" }
+  - { name: "增加群成员", path: "v4/group_open_http_svc/add_group_member", category: "群组管理", scene: "S-IM-003" }
+  - { name: "删除群成员", path: "v4/group_open_http_svc/delete_group_member", category: "群组管理", scene: "S-IM-003" }
+  - { name: "在群组中发送普通消息", path: "v4/group_open_http_svc/send_group_msg", category: "群组管理", scene: "S-IM-003,S-IM-005" }
+  - { name: "撤回群消息", path: "v4/group_open_http_svc/group_msg_recall", category: "群组管理", scene: "S-IM-003" }
+  - { name: "批量禁言和取消禁言", path: "v4/group_open_http_svc/forbid_send_msg", category: "群组管理", scene: "S-IM-003,S-IM-005" }
+  - { name: "解散群组", path: "v4/group_open_http_svc/destroy_group", category: "群组管理", scene: "S-IM-003" }
+  # 直播群专属 (5)
+  - { name: "获取直播群在线人数", path: "v4/group_open_http_svc/get_online_member_num", category: "群组管理", scene: "S-IM-005", note: "直播群专属" }
+  - { name: "获取直播群在线成员列表", path: "v4/group_open_avchatroom_http_svc/get_members", category: "群组管理", scene: "S-IM-005", note: "直播群专属" }
+  - { name: "设置直播群成员标记", path: "v4/group_open_avchatroom_http_svc/modify_user_info", category: "群组管理", scene: "S-IM-005", note: "直播群专属" }
+  - { name: "直播群广播消息", path: "v4/group_open_http_svc/send_broadcast_msg", category: "群组管理", scene: "S-IM-005", note: "直播群专属" }
+  - { name: "群成员封禁", path: "v4/group_open_http_svc/ban_group_member", category: "群组管理", scene: "S-IM-005" }
+  # 关系链 (15中选关键)
+  - { name: "添加好友", path: "v4/sns/friend_add", category: "关系链管理" }
+  - { name: "删除好友", path: "v4/sns/friend_delete", category: "关系链管理" }
+  - { name: "拉取好友", path: "v4/sns/friend_get", category: "关系链管理" }
+  - { name: "添加黑名单", path: "v4/sns/black_list_add", category: "关系链管理" }
+  # 会话管理 (8中选关键)
+  - { name: "拉取会话列表", path: "v4/recentcontact/get_list", category: "会话管理" }
+  - { name: "删除单个会话", path: "v4/recentcontact/delete", category: "会话管理" }
+  # 运营管理 (6中选关键)
+  - { name: "拉取运营数据", path: "v4/openconfigsvr/getappinfo", category: "运营管理" }
+  - { name: "下载消息记录", path: "v4/open_msg_svc/get_history", category: "运营管理" }
+  - { name: "聊天文件封禁", path: "v4/im_cos_msg/forbid_illegal_object", category: "运营管理", scene: "S-IM-004", note: "审核相关" }
+  - { name: "聊天文件解封", path: "v4/im_cos_msg/allow_banned_object", category: "运营管理", scene: "S-IM-004", note: "审核相关" }
+  # 全局禁言 (2)
+  - { name: "设置全局禁言", path: "v4/openconfigsvr/setnospeaking", category: "全局禁言" }
+  - { name: "查询全局禁言", path: "v4/openconfigsvr/getnospeaking", category: "全局禁言" }
+
+api_chaining:
+  scene_s_im_004_content_audit:
+    name: "内容审核闭环接口串联"
+    chain:
+      - step: 1
+        api: "send_group_msg / sendmsg"
+        desc: "用户发送消息（触发云端审核）"
+      - step: 2
+        api: "云端审核（IM内部，无独立API）"
+        desc: "文本/图片同步审核，音频/视频异步审核"
+      - step: 3
+        api: "审核结果回调→App后台回调URL"
+        desc: "审核结果通过HTTP回调通知App后台"
+      - step: 4
+        api: "forbid_illegal_object（如需）"
+        desc: "封禁违规聊天文件（图片/视频等COS存储内容）"
+      - step: 5
+        api: "group_msg_recall / admin_msgwithdraw"
+        desc: "异步审核违规后撤回消息"
+      - step: 6
+        api: "getappinfo"
+        desc: "拉取运营数据含审核统计"
+
+  scene_s_im_005_live_group:
+    name: "直播群管理接口串联"
+    chain:
+      - step: 1
+        api: "create_group (Type=AVChatRoom)"
+        desc: "创建直播群"
+      - step: 2
+        api: "send_group_msg"
+        desc: "发送弹幕消息"
+      - step: 3
+        api: "send_broadcast_msg"
+        desc: "发送广播消息（全员推送）"
+      - step: 4
+        api: "get_online_member_num"
+        desc: "查询在线人数"
+      - step: 5
+        api: "modify_user_info"
+        desc: "设置成员标记（如VIP/管理员标记）"
+      - step: 6
+        api: "forbid_send_msg / ban_group_member"
+        desc: "禁言/封禁违规成员"
+
+  cross_scene_audit_to_live:
+    name: "跨场景：审核→直播群"
+    chain:
+      - step: 1
+        api: "直播群弹幕消息 send_group_msg"
+        desc: "弹幕消息触发云端审核"
+      - step: 2
+        api: "审核回调"
+        desc: "审核结果回调App后台"
+      - step: 3
+        api: "forbid_send_msg"
+        desc: "违规用户禁言"
+      - step: 4
+        api: "ban_group_member"
+        desc: "严重违规封禁成员"
+      - step: 5
+        api: "group_msg_recall"
+        desc: "撤回违规消息"
+
+orphan_apis: []

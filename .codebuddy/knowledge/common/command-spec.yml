@@ -215,7 +215,7 @@ parameters:
   - name: "--desc"
     type: "string"
     required: true
-    default: null
+    description: "需求描述（自然语言）"
     description: "需求描述（自然语言）"
     smart_hint: "简要描述需求目标，影响范围由BA自动识别"
 
