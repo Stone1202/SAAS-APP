@@ -38,6 +38,8 @@ version_snapshot_structure:
 snapshot_schema:
   version: "v1.1.0"
   project: "{project}"
+  owner: "{owner}"               # V1.1.0新增：归属成员
+  project_prefix: "{PREFIX}"     # V1.1.0新增：项目编号前缀
   snapshot_date: "2026-07-18"
   snapshot_by: "pm-agent"
   
@@ -76,6 +78,8 @@ snapshot_schema:
 # ============================================
 timeline_schema:
   project: "{project}"
+  owner: "{owner}"               # V1.1.0新增：归属成员
+  project_prefix: "{PREFIX}"     # V1.1.0新增：项目编号前缀
   last_updated: "2026-07-18"
   
   versions:

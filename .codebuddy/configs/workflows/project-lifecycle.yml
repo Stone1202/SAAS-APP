@@ -273,7 +273,7 @@
         - "**V4.2.1新增 state_guard**：PM 校验 state.json 存在且可解析，缺失则补建（兜底机制）"
         - "若 stage-00 已加载知识库上下文（已学 PRD），将其作为 BA 需求分析的背景输入"
         - "版本自动链：取 streams 同 type 已 closed 最大版本 → 按 version_bump 生成"
-        - "创建需求流 STR-{nnn} 写入 state.json.streams[]，stage=requirement"
+        - "创建需求流 STR-{PREFIX}-{nnn} 写入 state.json.streams[]，stage=requirement（V1.1.0：STR含项目前缀，避免跨项目冲突）"
         - "**V4.2.1新增：更新 PROJECT-INDEX.yml**——设置 active_project={project} + 更新对应项目 current_stream + last_activity"
         - "PM 启动需求分析流程（→ requirement-flow），传递已学 PRD 上下文"
 
@@ -747,7 +747,7 @@
         - "  ④ 加载 Review模式库.md → 作为各阶段Review参考"
         - "  ⑤ **V5.1.0新增：加载跨项目大脑模式库（如有）→ 初始化各Agent大脑的基础模式**"
         # ↑↑↑ 沉淀+经验库加载结束 ↑↑↑
-        - "创建需求流 STR-{nnn} 写入 state.json.streams[]，stage=requirement"
+        - "创建需求流 STR-{PREFIX}-{nnn} 写入 state.json.streams[]，stage=requirement（V1.1.0：STR含项目前缀）"
         - "**V4.2.1新增：更新 PROJECT-INDEX.yml**——设置 active_project={project} + 更新对应项目 current_stream + last_activity"
         - "PM 启动需求分析流程，传递：已学PRD上下文 + 跨版本反馈 + 上一版本沉淀 + 经验库 + **PO Backlog优先级（V4.1.0，如有）**"
       usage: "/init --project=X --type=Y --desc=需求描述 [--file=外部需求文件.md] [--api=外部接口文档.md] [--source=local-dir:./docs] [--source=http-url:https://...] [--priority=P0|P1|P2|P3]"

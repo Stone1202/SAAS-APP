@@ -342,7 +342,8 @@ state_file = os.path.join(state_dir, "state.json")
 if not os.path.exists(state_file):
     os.makedirs(state_dir, exist_ok=True)
     state = {
-        "project": proj, "industry": "", "platforms": [],
+        "project": proj, "owner": owner,
+        "industry": "", "platforms": [],
         "status": "pending_init", "released_baseline": "",
         "auto_mode": False, "streams": []
     }

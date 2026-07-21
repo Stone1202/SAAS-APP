@@ -33,6 +33,7 @@ projects:
     name: "AI-SCRM 智能SCRM平台"
     owner: "jojo"                          # V2.0.0新增：归属成员
     path: "projects/jojo/AI-SCRM"          # V2.0.0新增：完整路径
+    project_prefix: "ACRM"                 # V1.1.0新增：项目编号前缀（所有FN/UC/PG/MD/SC/ENT/BR/CONFIG/METRIC/BG/BO使用）
     status: "active"
     stage: "acceptance"
     domain: "SAAS/SCRM"

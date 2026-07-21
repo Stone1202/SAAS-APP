@@ -20,7 +20,7 @@ doc_standard:
 
   # 功能编号体系（贯穿所有产物，用于跨文档追溯）
   function_numbering:
-    pattern: "FN-{系统缩写}-{终端缩码}-{nnn}"
+    pattern: "FN-{PREFIX}-{系统缩写}-{终端缩码}-{nnn}"
     rule: "V3.0.0方案B：每个业务系统×终端组合有独立FN编号；用例说明、状态机触发操作、业务操作矩阵、交互卡、handoff标注全部引用同一FN"
     system_abbreviations:
       OPS: "运营平台"
@@ -250,19 +250,19 @@ doc_standard:
   numbering:
     version: "3.2.0"
     scheme: |
-      FN-{系统缩写}-{终端缩码}-{NNN}     功能编号（如 FN-OPS-PC-001）
-      UC-{系统缩写}-{终端缩码}-{NNN}-{SS}  用例编号（如 UC-OPS-PC-001-01）
-      PG-{系统缩写}-{终端缩码}-{NNN}     页面编号（如 PG-OPS-PC-001）
-      MD-{系统缩写}-{NNN}               模块编号（如 MD-OPS-001，跨终端）
-      SC-{系统缩写}-{NNN}               场景编号（如 SC-OPS-001，跨终端）
-      ENT-{系统缩写}-{NNN}              数据实体编号（如 ENT-OPS-001）
-      BR-{系统缩写}-{NNN}               业务规则编号（如 BR-OPS-001）
+      FN-{PREFIX}-{系统缩写}-{终端缩码}-{NNN}     功能编号（如 FN-ACRM-OPS-PC-001）
+      UC-{PREFIX}-{系统缩写}-{终端缩码}-{NNN}-{SS}  用例编号（如 UC-ACRM-OPS-PC-001-01）
+      PG-{PREFIX}-{系统缩写}-{终端缩码}-{NNN}     页面编号（如 PG-ACRM-OPS-PC-001）
+      MD-{PREFIX}-{系统缩写}-{NNN}               模块编号（如 MD-ACRM-OPS-001，跨终端）
+      SC-{PREFIX}-{系统缩写}-{NNN}               场景编号（如 SC-ACRM-OPS-001，跨终端）
+      ENT-{PREFIX}-{系统缩写}-{NNN}              数据实体编号（如 ENT-ACRM-OPS-001）
+      BR-{PREFIX}-{系统缩写}-{NNN}               业务规则编号（如 BR-ACRM-OPS-001）
       BG-{PREFIX}-{NNN}                 业务目标编号（如 BG-ACRM-001，跨系统）
       BO-{PREFIX}-{NNN}                 商业目标编号（如 BO-ACRM-001，跨系统）
-      CONFIG-{系统缩写}-{NNN}            集中配置编号（如 CONFIG-PAY-001，V3.2.0新增）
-      METRIC-{系统缩写}-{NNN}            统计指标编号（如 METRIC-PAY-001，V3.2.0新增）
-    prefix_rule: "PREFIX 为项目专属前缀（如 AI-SCRM=ACRM），仅用于 BG/BO；FN/UC/PG/MD/SC/ENT/BR 使用系统缩写"
-    page_prefix: "PG-{系统缩写}-{终端缩码}"
+      CONFIG-{PREFIX}-{系统缩写}-{NNN}            集中配置编号（如 CONFIG-ACRM-PAY-001，V3.2.0新增）
+      METRIC-{PREFIX}-{系统缩写}-{NNN}            统计指标编号（如 METRIC-ACRM-PAY-001，V3.2.0新增）
+    prefix_rule: "PREFIX 为项目专属前缀（如 AI-SCRM=ACRM），所有编号均使用；PREFIX 在 PROJECT-INDEX.yml 中注册项目时指定"
+    page_prefix: "PG-{PREFIX}-{系统缩写}-{终端缩码}"
 
     # 系统缩写定义（与 function_numbering 段一致）
     system_abbreviations:
@@ -297,7 +297,7 @@ doc_standard:
       levels:
         - id: UC
           name: 用例 (Use Case)
-          format: "UC-{系统缩写}-{终端缩码}-{NNN}-{SS}"
+          format: "UC-{PREFIX}-{系统缩写}-{终端缩码}-{NNN}-{SS}"
           owner: BA
           source: "功能需求 FN 的细化操作流程"
           points_to: "FN"
@@ -305,7 +305,7 @@ doc_standard:
           handoff_role: "handoff交互卡的核心定位编号——每个交互卡关联唯一UC"
         - id: FN
           name: 功能 (Function)
-          format: "FN-{系统缩写}-{终端缩码}-{NNN}"
+          format: "FN-{PREFIX}-{系统缩写}-{终端缩码}-{NNN}"
           owner: BA
           source: "业务流程中的原子操作"
           points_to: "PG / 状态机 / 业务操作矩阵"
@@ -313,7 +313,7 @@ doc_standard:
           handoff_role: "handoff标注的按钮级定位——每个按钮关联唯一FN"
         - id: PG
           name: 页面 (Page)
-          format: "PG-{系统缩写}-{终端缩码}-{NNN}"
+          format: "PG-{PREFIX}-{系统缩写}-{终端缩码}-{NNN}"
           owner: UX + BA
           source: "高保真原型页面"
           points_to: "MD / 业务流程节点"
@@ -321,14 +321,14 @@ doc_standard:
           handoff_role: "handoff标注的页面级定位——每个页面关联唯一PG"
         - id: MD
           name: 模块 (Module)
-          format: "MD-{系统缩写}-{NNN}"
+          format: "MD-{PREFIX}-{系统缩写}-{NNN}"
           owner: BA / Arch
           source: "业务子系统或功能模块（跨终端）"
           points_to: "SC / 业务流程"
           example: "MD-OPS-001 商品管理模块"
         - id: SC
           name: 场景 (Scenario)
-          format: "SC-{系统缩写}-{NNN}"
+          format: "SC-{PREFIX}-{系统缩写}-{NNN}"
           owner: BA
           source: "E2E 验收场景（跨终端）"
           points_to: "BG / 用户旅程节点"
@@ -402,7 +402,7 @@ doc_standard:
   # 用例标准模板强化（铁律④ + ④a + ④b，v2）
   use_case_template_v2:
     # ④a：fields 必须含「所属页面」
-    mandatory_fields_add: [所属页面(PG-{系统缩写}-{终端缩码})]
+    mandatory_fields_add: [所属页面(PG-{PREFIX}-{系统缩写}-{终端缩码})]
     # ④b：逐原子操作拆分，禁止吞并
     subfunction_split:
       enabled: true
@@ -418,7 +418,7 @@ doc_standard:
   page_level_usecase:
     mandatory: true
     structure:
-      - 页面编号(PG-{系统缩写}-{终端缩码})
+      - 页面编号(PG-{PREFIX}-{系统缩写}-{终端缩码})
       - 页面名称（与高保真原型页面名同源，供 handoff 检索）
       - 所属模块 / 业务系统
       - 业务流程定位（引用流程节点/上下游页面）
