@@ -36,7 +36,7 @@
 # 核心原则：
 #   1. PM 不介入脑暴阶段
 #   2. 脑暴开始前必须确认项目性质（新项目 / 存量项目）+ 脑暴类型（v3.3.0）+ 议题名（v3.4.0）
-#   3. 存量项目自动加载 .codebuddy/knowledge/{project}/需求文档/ 下已学 PRD 作为上下文
+#   3. 存量项目自动加载 .codebuddy/knowledge/projects/{project}/需求文档/ 下已学 PRD 作为上下文
 #   4. 存量项目优先检查项目骨架（projects/{project}/）是否存在：
 #      - 已存在 → 跳过构建，脑暴产物直接输出到该项目目录
 #      - 不存在 → 运行 ensure-project.sh 创建骨架
@@ -190,7 +190,7 @@ workflow:
                 message: "🔨 项目骨架「{project}」有{N}项缺失，已自动补建（幂等），脑暴产物输出到 projects/{project}/"
           - order: 2
             name: "检查知识库"
-            check: ".codebuddy/knowledge/{project}/需求文档/ 目录是否存在"
+            check: ".codebuddy/knowledge/projects/{project}/需求文档/ 目录是否存在"
             outcomes:
               found:
                 action: |
@@ -202,7 +202,7 @@ workflow:
                 context_injection: "已加载知识库项目「{project}」的已学 PRD（{卷数} 卷），将作为本次脑暴的上下文基础。"
               not_found:
                 action: |
-                  提示用户：「该项目尚未在知识库中学习（.codebuddy/knowledge/{project}/需求文档/ 不存在）。
+                  提示用户：「该项目尚未在知识库中学习（.codebuddy/knowledge/projects/{project}/需求文档/ 不存在）。
                   建议先执行 /learn-project --project={project} --source=... 将原型文档学习入库，
                   再回来脑暴。是否继续脑暴（无知识库上下文）？」
                 fallback: "用户确认后，继续正常脑暴流程（无知识库上下文）"
@@ -229,7 +229,7 @@ workflow:
            b. 先检查项目骨架（projects/{project}/）是否存在
               - 存在 → 跳过构建，直接复用，产物输出到 projects/{project}/
               - 不存在 → 运行 ensure-project.sh {project} 创建骨架
-           c. 再检查知识库 .codebuddy/knowledge/{project}/需求文档/
+           c. 再检查知识库 .codebuddy/knowledge/projects/{project}/需求文档/
               - 存在 → 加载卷索引 + 全部 PRD 卷 + 学习报告 → 注入脑暴上下文
               - 不存在 → 提示先 /learn，用户确认后继续（无知识库上下文）
         3. 若新项目：
@@ -270,10 +270,10 @@ workflow:
         4. 同时加载业务规则知识库（.codebuddy/knowledge/rules/）中对应领域的可复用业务规则
 
         领域知识来源（按优先级）：
-        1. 项目知识库（.codebuddy/knowledge/{project}/需求文档/ 已学PRD，stage-0a已加载）
+        1. 项目知识库（.codebuddy/knowledge/projects/{project}/需求文档/ 已学PRD，stage-0a已加载）
         2. 领域知识库（.codebuddy/knowledge/domains/，关键词匹配）
         3. 领域知识库（.codebuddy/knowledge/domains/，AI语义匹配）
-        4. 跨版本沉淀（.codebuddy/knowledge/{project}/版本沉淀/，上一版本经验）
+        4. 跨版本沉淀（.codebuddy/knowledge/projects/{project}/版本沉淀/，上一版本经验）
 
         领域知识缺失处理：
         - 若诉求涉及某领域但领域知识库中没有相关知识，BS Agent 提示：

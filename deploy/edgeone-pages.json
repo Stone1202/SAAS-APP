@@ -16,8 +16,7 @@
     }
   },
   "projects": {
-    "jojo-ai-scrm": {
-      "owner": "jojo",
+    "ai-scrm": {
       "project": "AI-SCRM",
       "root": "projects/AI-SCRM",
       "build_command": "npm run build:sim",
@@ -27,9 +26,9 @@
         "VITE_MODE": "sim"
       },
       "routes": [
-        { "src": "/jojo/AI-SCRM/(.*)", "dest": "/$1" }
+        { "src": "/ai-scrm/(.*)", "dest": "/$1" }
       ],
-      "access_url_pattern": "/jojo/AI-SCRM/{version}/"
+      "access_url_pattern": "/ai-scrm/{version}/"
     }
   },
   "deploy_hooks": {

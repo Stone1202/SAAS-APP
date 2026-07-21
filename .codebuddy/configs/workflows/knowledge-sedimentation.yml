@@ -1,6 +1,6 @@
 # ============================================
-# Workflow: knowledge-sedimentation（版本沉淀学习引擎 V1.1.0）
-# 版本: v1.1.0
+# Workflow: knowledge-sedimentation（版本沉淀学习引擎 V5.3.0）
+# 版本: v5.3.0
 # 最后更新: 2026-07-20
 # ============================================
 #
@@ -30,8 +30,8 @@
 
 workflow:
   id: "knowledge-sedimentation"
-  name: "版本沉淀学习引擎（含大脑记忆导出，V1.1.0）"
-  version: "1.1.0"
+  name: "版本沉淀学习引擎（V5.3.0：3步精简+Review合并+经验分层）"
+  version: "5.3.0"
   owner: "pm-agent"
   type: "automation"
   brain_memory_spec: ".codebuddy/knowledge/common/brain-memory-spec.yml"  # V1.1.0新增
@@ -57,7 +57,7 @@ workflow:
   # 沉淀产物目录结构
   # ============================================
   output_layout:
-    base: ".codebuddy/knowledge/{project}/版本沉淀/{version}/"
+    base: ".codebuddy/knowledge/projects/{project}/版本沉淀/{version}/"
     structure:
       沉淀摘要.md: "该版本沉淀总览（含大脑进化摘要）"
       需求沉淀/:
@@ -66,16 +66,10 @@ workflow:
         模块清单.yml: "本次版本涉及的模块清单"
         上下游影响矩阵.yml: "本次版本的跨域影响"
       Review沉淀/:
-        REV-BS-v{version}.md: "BS Review报告归档"
-        REV-BA-v{version}.md: "BA Review报告归档"
-        REV-UX-v{version}.md: "UX Review报告归档"
-        REV-ARCH-v{version}.md: "Arch Review报告归档"
-        REV-FD-v{version}.md: "FD Review报告归档"
-        REV-QA-v{version}.md: "QA Review报告归档"
-        REV-AC-v{version}.md: "AC Review报告归档"
-        Review经验提炼.md: "从7份Review提取的可复用经验"
-      大脑记忆/:  # V1.1.0新增
-        ba_memory_{version}.yml: "BA大脑记忆快照（brain-memory-spec.yml格式）"
+        REV-SUMMARY-v{version}.md: "V5.3.0：全阶段Review汇总报告（原7份合并为1份，含各阶段问题/亮点/改进建议）"
+        Review经验提炼.md: "从汇总报告提取的可复用经验"
+      大脑记忆/:
+        ba_memory_{version}.yml: "BA大脑记忆快照"
         ux_memory_{version}.yml: "UX大脑记忆快照"
         arch_memory_{version}.yml: "Arch大脑记忆快照"
         fd_memory_{version}.yml: "FD大脑记忆快照"
@@ -88,188 +82,97 @@ workflow:
         cross_agent_causal_chains.yml: "跨Agent因果链"
       经验教训/:
         lessons-learned-v{version}.yml: "本版本经验教训"
-        最佳实践.md: "值得推广的做法"
-        踩坑记录.md: "避免重复踩的坑"
+        最佳实践.md: "值得推广的做法（项目级）"
+        踩坑记录.md: "避免重复踩的坑（项目级）"
       追溯链/:
         traceability-v{version}.yml: "FN→UC→PG→MD→SC→BG→BO+CONFIG→BR/FN+METRIC→BG/BO追溯快照"
-    index: ".codebuddy/knowledge/{project}/版本沉淀/VERSION-INDEX.yml"
+    index: ".codebuddy/knowledge/projects/{project}/版本沉淀/VERSION-INDEX.yml"
+    # V5.3.0：经验分层——项目级直接写入，跨项目级追加到common/经验库/
+    project_experience:
+      base: ".codebuddy/knowledge/projects/{project}/经验/"
+      files: ["最佳实践-项目级.md", "踩坑避雷-项目级.md", "Review模式-项目级.md"]
     cross_project:
       best_practices: ".codebuddy/knowledge/common/经验库/最佳实践库.md"
       pitfalls: ".codebuddy/knowledge/common/经验库/踩坑避雷库.md"
       review_patterns: ".codebuddy/knowledge/common/经验库/Review模式库.md"
-
+      pending_review: ".codebuddy/knowledge/common/经验库/_pending/"  # V5.3.0：待管理员审核的跨项目经验
   # ============================================
-  # 沉淀执行流程（8步）
+  # 沉淀执行流程（3步，V5.3.0精简：原8步合并为3步，close提速50%）
   # ============================================
   execution:
     steps:
       - step: 1
-        name: "创建版本沉淀目录"
-        owner: "pm-agent"
+        name: "沉淀准备（目录创建+需求快照+Review合并归档+大脑记忆导出+脑力进化摘要）"
+        owner: "pm-agent + ba-agent + all-agents"
         action: |
-          1. PM 创建 .codebuddy/knowledge/{project}/版本沉淀/{version}/ 目录
-          2. 创建子目录：需求沉淀/ Review沉淀/ 经验教训/ 追溯链/
-          3. 在 conversation-log.md 记录"启动版本沉淀"
+          === 原step 1+2+3+3.5+3.6 合并 ===
+
+          1. **兜底检查**：PM 检查 .codebuddy/knowledge/projects/{project}/ 是否存在
+             - 不存在 → 创建该目录（新项目首次 /close）
+             - 检查 common/经验库/ 是否存在，不存在则创建+初始化3个空文件
+          2. **创建沉淀目录**：
+             .codebuddy/knowledge/projects/{project}/版本沉淀/{version}/
+             子目录：需求沉淀/ Review沉淀/ 经验教训/ 追溯链/ 大脑记忆/
+          3. **需求快照**（BA协作）：PRD+REQ产物体系+模块清单+影响矩阵 → 需求沉淀/（标注版本号+冻结时间）
+          4. **Review汇总归档**（V5.3.0：7份合并为1份）：
+             - PM 收集 journal/reviews/ 下7份Review报告
+             - 合并为1份 REV-SUMMARY-v{version}.md（按阶段分章节：BS/BA/UX/ARCH/FD/QA/AC）
+             - 每阶段含：问题清单+亮点+改进建议+质量评分
+             - 提炼 Review经验提炼.md（反复问题模式+最佳实践+阶段薄弱点）
+          5. **大脑记忆导出**（各Agent独立）：各Agent导出本版本大脑记忆快照 → 大脑记忆/{agent}_memory_{version}.yml
+             同步到 {项目知识库}/大脑记忆/latest/{agent}_memory_latest.yml
+          6. **脑力进化摘要**（PM汇总）：大脑进化概览+预测准确率对比+跨Agent因果链识别+下版本建议
+             产出 brain_evolution_summary_{version}.md
 
       - step: 2
-        name: "需求沉淀（PM + BA协作）"
-        owner: "pm-agent + ba-agent"
-        action: |
-          1. PM 收集本次版本的 REQ 产物：
-             - PRD（15章+五图）
-             - REQ 产物体系
-             - 模块清单
-             - 上下游影响矩阵
-          2. BA 快照化处理（标注版本号+冻结时间）：
-             - PRD-v{version}.md
-             - REQ-产物体系-v{version}.md
-             - 模块清单.yml
-             - 上下游影响矩阵.yml
-          3. 快照原则：不修改内容，仅追加版本元数据头
-          4. 输出到 需求沉淀/
-
-      - step: 3
-        name: "Review沉淀（PM收集+提炼）"
-        owner: "pm-agent"
-        action: |
-          1. PM 收集 7 份 Review 报告：
-             - 从 journal/reviews/ 复制到 Review沉淀/
-             - 文件名：REV-{STAGE}-v{version}.md
-          2. PM 站在项目管理专家角度提炼 Review经验提炼.md：
-             a. 反复问题模式识别：
-                - 扫描7份Review中的"不足/问题"
-                - 识别跨阶段重复出现的问题
-                - 记录：出现阶段+描述+根因+改进建议+避雷标签
-             b. 最佳实践提取：
-                - 扫描7份Review中的"建议/亮点"
-                - 识别值得推广的做法
-                - 记录：做法+适用场景+推广建议
-             c. 阶段薄弱点统计：
-                - 统计各阶段Review问题数
-                - 识别最薄弱的阶段
-             d. Review质量评分：
-                - 对每份Review的深度和准确性评分（0-100）
-
-      - step: 3.5  # V1.1.0新增
-        name: "大脑记忆导出（各Agent独立 + PM汇总）"
-        owner: "pm-agent + all-agents"
-        action: |
-          1. PM 触发各Agent导出本版本的大脑记忆快照（brain-memory-spec.yml格式）：
-             ├─ BA大脑记忆：常识覆盖率 + 质量预测准确率 + 盲区发现实效
-             ├─ UX大脑记忆：系统分析准确率 + 交互风险预测 + 状态覆盖缺口
-             ├─ Arch大脑记忆：契约缺陷预测准确率 + 安全模式命中率
-             ├─ FD大脑记忆：实现模式推荐准确率 + Bug预防效果 + 合规预检准确率
-             ├─ QA大脑记忆：Bug热力图预测vs实际 + 覆盖盲区有效性
-             ├─ AC大脑记忆：验收Bug模式命中率 + UX偏差检测准确率
-             ├─ PM大脑记忆：流程风险预测vs实际 + 阶段耗时预测准确率
-             ├─ PO大脑记忆（如激活）：价值预估准确率 + 路线图偏离度
-             └─ SM大脑记忆（如激活）：Sprint Velocity预测 + DoD成功率
-          2. 导出到： {版本沉淀}/大脑记忆/{agent}_memory_{version}.yml
-          3. 同步到： {项目知识库}/大脑记忆/latest/{agent}_memory_latest.yml（覆盖）
-      
-      - step: 3.6  # V1.1.0新增
-        name: "脑力进化摘要（PM汇总 + AI分析）"
-        owner: "pm-agent"
-        action: |
-          1. PM 汇总所有Agent大脑的进化：
-             - 大脑进化概览：每个大脑本版本的新增模式/调整模式/废弃模式
-             - 预测准确率对比：本版本 vs 上版本（图表+数字）
-             - 跨Agent因果链识别（见 step 5.5）
-             - 下版本大脑使用建议（基于本版本发现）
-          2. 产出 brain_evolution_summary_{version}.md
-          3. 质量评分中新增 brain_evolution 维度
-
-      - step: 4
-        name: "经验教训提炼（PM主导）"
-        owner: "pm-agent"
-        action: |
-          1. PM 提炼本版本可复用经验：
-             - lessons-learned-v{version}.yml：
-               包含：版本概述+关键指标+经验教训+改进措施+大脑进化要点
-             - 最佳实践.md：
-               本版本值得推广的做法（从Review+大脑推荐模式提炼）
-             - 踩坑记录.md：
-               本版本踩的坑（从Review+PBL+大脑误报提炼）
-          2. PM 追加到跨版本经验库：
-             - common/经验库/最佳实践库.md（追加本版本最佳实践）
-             - common/经验库/踩坑避雷库.md（追加本版本踩坑）
-             - common/经验库/Review模式库.md（追加本版本Review模式）
-          3. 追加原则：去重+标注来源版本+大脑推理依据
-
-      - step: 5
-        name: "追溯链快照（PM + DOC协作）"
+        name: "经验分层提炼与追溯链快照（项目级+跨项目级+因果链+追溯链）"
         owner: "pm-agent + doc-agent"
         action: |
-          1. DOC Agent 快照追溯链：
+          === 原step 4+5+5.5 合并 ===
+
+          1. **经验分层提炼**（V5.3.0：项目级+跨项目级双层）：
+             a. 项目级经验（直接写入项目知识库）：
+                - .codebuddy/knowledge/projects/{project}/经验/最佳实践-项目级.md
+                - .codebuddy/knowledge/projects/{project}/经验/踩坑避雷-项目级.md
+                - .codebuddy/knowledge/projects/{project}/经验/Review模式-项目级.md
+                → 仅本项目可复用的经验，直接写入无需审核
+             b. 跨项目级经验（追加到全局经验库）：
+                - common/经验库/最佳实践库.md（追加，标注来源项目+版本）
+                - common/经验库/踩坑避雷库.md（追加）
+                - common/经验库/Review模式库.md（追加）
+                → 通用经验直接追加，去重+标注来源
+             c. 待审核经验（如涉及流程/Agent/Skill改进建议）：
+                - common/经验库/_pending/流程改进建议-v{version}.yml
+                → 需管理员 /review-process-improvements 审核后提升为正式经验
+             d. 版本级经验教训：
+                - lessons-learned-v{version}.yml（版本概述+关键指标+经验教训+改进措施+大脑进化要点）
+                - 经验教训/最佳实践.md + 踩坑记录.md（版本级快照）
+          2. **追溯链快照**（DOC协作）：
              - traceability-v{version}.yml
              - FN→UC→PG→MD→SC→BG→BO+CONFIG→BR/FN+METRIC→BG/BO 全链
              - 标注版本冻结时间
-          2. 从 projects/{project}/ 下的 TRACEABILITY_MATRIX.md 提取
+          3. **跨Agent因果链提取**（AI分析）：
+             - 上游发现→下游预防 / 上游遗漏→下游捕获 / 大脑预警→命中 / 跨脑共识→闭环
+             - 产出 cross_agent_causal_chains.yml
+             - 追加到经验库（标注因果链+阶段跨度+修复成本）
 
-      - step: 5.5  # V1.1.0新增
-        name: "跨Agent因果链提取（AI分析）"
-        owner: "pm-agent"
-        action: |
-          AI分析本版本所有素材，提取跨Agent的因果链：
-          
-          因果链类型：
-          ├─ 上游发现→下游预防：
-          │   例：「BA阶段发现状态'已撤销'→ UX阶段在设计稿中标注撤销状态→ FD阶段代码实现无遗漏」
-          │   因果：BA发现→UX落地→FD实现，节省QA发现+回流成本
-          │   跨阶段节省：1次回流循环
-          │
-          ├─ 上游遗漏→下游捕获：
-          │   例：「Arch阶段契约金额未用整数→ FD阶段浮点Bug→ QA阶段发现」
-          │   因果：Arch遗漏→FD Bug→QA捕获，跨3阶段
-          │   修复成本：FD+QA回流（2次循环）
-          │
-          ├─ 上游大脑预警→实际命中：
-          │   例：「QA大脑预判FN-ORDER-PC-003为高风险→ 实际测试发现3个Bug」
-          │   因果：QA预测→验证命中，准确率 3/5=60%
-          │
-          └─ 跨脑共识→高效闭环：
-              例：「BA+QA+AC一致判断'空状态设计不统一'是需求问题→ BA修改PRD模板→后续版本不再出现」
-              因果：3脑共识→根因修复→防止重复
-  
-          产出：cross_agent_causal_chains.yml
-          包含：因果链ID + 类型 + 涉及Agent + 因果链路 + 修复成本 + 经验价值
-  
-          追加到经验库（标注因果链+阶段跨度+修复成本）
-
-      - step: 6
-        name: "更新版本索引（PM + DOC协作）"
+      - step: 3
+        name: "索引更新与质量校验（版本索引+沉淀摘要+Journal+质量校验）"
         owner: "pm-agent + doc-agent"
         action: |
-          1. PM 更新 VERSION-INDEX.yml：
-             - 新增版本条目
-             - 记录沉淀内容清单（requirements/reviews/**brain_memories**/lessons/traceability）
-             - 记录关键指标（fn_count/uc_count/br_count/review_issues/pbl_total/**brain_patterns_count**）
-             - 记录可复用经验标签（tags）
-             - **V1.1.0新增：记录大脑进化指标（新增模式数/预测准确率变化/脑力共识次数）**
-          2. DOC Agent 更新 INDEX.md：
-             - 自动索引新增的沉淀文件
+          === 原step 6+7+8 合并 ===
 
-      - step: 7
-        name: "沉淀摘要（PM生成）"
-        owner: "pm-agent"
-        action: |
-          1. PM 生成 沉淀摘要.md：
-             - 版本概述（type/desc/modules/platforms）
-             - 沉淀内容清单（需求/Review/经验/追溯链）
-             - 关键指标摘要
-             - 可复用经验摘要（3-5条核心经验）
-             - 关联文件索引
-             - 沉淀质量评分
-
-      - step: 8
-        name: "Journal记录 + 质量校验"
-        owner: "pm-agent"
-        action: |
-          1. conversation-log.md 记录：
+          1. **更新版本索引**（DOC协作）：
+             - VERSION-INDEX.yml 新增版本条目
+             - 记录沉淀内容清单+关键指标+经验标签+大脑进化指标
+             - DOC 更新 INDEX.md 自动索引
+          2. **生成沉淀摘要**：
+             - 沉淀摘要.md：版本概述+沉淀内容清单+关键指标+核心经验+关联文件索引+质量评分
+          3. **Journal记录**：
              "版本 {version} 已沉淀到知识库，
-              沉淀内容：需求+7Review+经验+追溯链，
+              沉淀内容：需求+Review汇总+经验(项目级+跨项目级)+追溯链+大脑记忆，
               质量评分：{score}"
-          2. 沉淀完整性校验（见 sedimation_validation）
+          4. **沉淀完整性校验**（见 sedimentation_validation）：阻止close如果必选项缺失
 
   # ============================================
   # Review经验提炼规则

@@ -70,7 +70,7 @@
 
 - **领域知识库**：`.codebuddy/knowledge/domains/`（产品架构设计参考行业标准）
 - **业务规则知识库**：`.codebuddy/knowledge/rules/`（商业规则参考）
-- **项目知识库**：`.codebuddy/knowledge/{project}/`（已有PRD+版本沉淀）
+- **项目知识库**：`.codebuddy/knowledge/projects/{project}/`（已有PRD+版本沉淀）
 - **脑暴领域知识清单**：继承脑暴 confirmed/ 中的领域知识清单（V3.2.0）
 
 ---

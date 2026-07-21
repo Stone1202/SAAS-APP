@@ -28,6 +28,7 @@
 | 16 | `/fix` | 核心生命周期 | ✅ | Bug修复 |
 | 17 | `/deploy` | 特殊入口 | ❌ | 手动部署/重试/查看状态（V1.0.0新增） |
 | 18 | `/register-member` | 管理员专用 | ✅ | 注册新项目+授权成员（V1.2.0升级：按项目隔离） |
+| 19 | `/review-process-improvements` | 管理员专用 | ✅ | 审核流程改进待办+生成升级方案（V5.3.0新增） |
 
 ---
 
@@ -175,7 +176,7 @@ interactive_flow:
 command: "/init"
 category: "核心生命周期"
 pm_controlled: true
-workflow: "project-lifecycle.yml v5.1.0"
+workflow: "project-lifecycle.yml v5.3.0"
 
 usage: "/init --project=X --type=新增|迭代|变更|修复 --desc=需求描述 [--brainstorm-topic=脑暴议题名] [--file=...] [--api=...] [--source=...] [--priority=...]"
 
@@ -275,7 +276,7 @@ missing_arg_prompt:
 command: "/feedback"
 category: "核心生命周期"
 pm_controlled: true
-workflow: "project-lifecycle.yml v5.1.0" --project=X [--type=Y] [--msg=反馈内容]   （--type 可省略，自动选当前进行中需求流）"
+workflow: "project-lifecycle.yml v5.3.0" --project=X [--type=Y] [--msg=反馈内容]   （--type 可省略，自动选当前进行中需求流）"
 
 parameters:
   - name: "--project"
@@ -308,7 +309,7 @@ missing_arg_prompt:
 command: "/close"
 category: "核心生命周期"
 pm_controlled: true
-workflow: "project-lifecycle.yml v5.1.0"
+workflow: "project-lifecycle.yml v5.3.0"
 
 usage: "/close --project=X [--type=Y]"
 
@@ -850,6 +851,33 @@ missing_arg_prompt:
   "--project": "请提供项目名（例如：--project=crm-portal）。"
   "--prefix": "请提供项目编号前缀（例如：--prefix=CRM）。"
   "--member": "请提供被授权成员的Gitee用户名（例如：--member=zhangsan）。"
+```
+
+---
+
+### 3.19 /review-process-improvements — 审核流程改进待办（V5.3.0新增）
+
+```yaml
+command: "/review-process-improvements"
+category: "管理员专用"
+pm_controlled: true
+workflow: "process-improvement-collector.yml V1.0.0"
+
+usage: "/review-process-improvements [--mode=list|review|approve|reject|apply] [--project=项目名]"
+example: "/review-process-improvements --mode=list"
+
+parameters:
+  - name: "--mode"
+    type: "enum"
+    required: false
+    default: "list"
+    enum: ["list", "review", "approve", "reject", "apply"]
+    description: "执行模式：list列出待办/review逐项审核/approve直接批准/reject直接拒绝/apply生成升级方案"
+
+  - name: "--project"
+    type: "string"
+    required: false
+    description: "筛选特定项目的待办（不指定则显示所有项目）"
 ```
 
 ---

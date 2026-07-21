@@ -54,10 +54,10 @@ BS Agent **不绑定独立 skill**（与 `configs/agents/bs-agent.yml` 一致）
 
 ### 领域知识加载优先级
 
-1. 项目知识库（`.codebuddy/knowledge/{project}/需求文档/` 已学PRD）
+1. 项目知识库（`.codebuddy/knowledge/projects/{project}/需求文档/` 已学PRD）
 2. 领域知识库（`.codebuddy/knowledge/domains/`，关键词匹配）
 3. 领域知识库（`.codebuddy/knowledge/domains/`，AI语义匹配）
-4. 跨版本沉淀（`.codebuddy/knowledge/{project}/版本沉淀/`，上一版本经验）
+4. 跨版本沉淀（`.codebuddy/knowledge/projects/{project}/版本沉淀/`，上一版本经验）
 
 ### 领域知识缺失处理
 

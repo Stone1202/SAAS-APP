@@ -335,8 +335,8 @@ learn_project:
 ```
 /init 上下文加载优先级（9项）：
   1. 项目骨架 projects/{project}/
-  2. 已学PRD .codebuddy/knowledge/{project}/需求文档/  ← learn-project产出
-  3. 版本沉淀 .codebuddy/knowledge/{project}/版本沉淀/
+  2. 已学PRD .codebuddy/knowledge/projects/{project}/需求文档/  ← learn-project产出
+  3. 版本沉淀 .codebuddy/knowledge/projects/{project}/版本沉淀/
   4. 经验库 .codebuddy/knowledge/common/经验库/
   5. PO Backlog（如有）
   6. 脑暴确认稿

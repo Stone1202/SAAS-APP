@@ -664,7 +664,7 @@ stage-8    结束需求流 + 版本沉淀 + 大脑进化            PM
 | 版本归档 | `projects/{project}/docs/09-versions/v{version}/` |
 | HTML 需求文档 | `projects/{project}/docs/09-versions/v{version}/prd-html/{项目}-{版本}-{Sprint}.html` |
 | Journal | `projects/{project}/.codebuddy/journal/` |
-| 版本沉淀 | `.codebuddy/knowledge/{project}/版本沉淀/{version}/` |
+| 版本沉淀 | `.codebuddy/knowledge/projects/{project}/版本沉淀/{version}/` |
 | 领域知识 | `.codebuddy/knowledge/domains/{category}/` |
 | 经验库 | `.codebuddy/knowledge/common/经验库/` |
 

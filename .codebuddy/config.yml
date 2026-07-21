@@ -171,7 +171,7 @@ agents:
 
   pm-agent:
     yml_file: .codebuddy/configs/agents/pm-agent.yml
-    skills: [task-scheduler, knowledge-integrator, human-confirm-handler, version-manager, feedback-processor, deploy-manager, member-manager]
+    skills: [task-scheduler, knowledge-integrator, human-confirm-handler, version-manager, feedback-processor, deploy-manager, member-manager, process-improvement-collector]
     description: "项目管理 - 版本守护人（V5.0：专注版本级把关，Sprint级交给SM）"
 
   sm-agent:
@@ -450,6 +450,17 @@ commands:
     required_args: ["--name", "--git", "--project"]
     optional_args: ["--role"]
 
+  - command: "/review-process-improvements"
+    description: "【流程改进审核V1.0.0】管理员定期审查各项目/close后积累的流程改进建议，审核_pending经验，生成流程升级方案。闭环：成员/close→_pending建议→管理员审核→流程升级。"
+    lifecycle: "管理员操作"
+    pm_controlled: true
+    orchestrator: "pm-agent"
+    skill: "process-improvement-collector"
+    usage: "/review-process-improvements [--mode=list|review|approve|reject|apply] [--project=项目名]"
+    example: "/review-process-improvements --mode=list"
+    required_args: []
+    optional_args: ["--mode", "--project"]
+
 # ============================================
 # 生命周期与阶段模型（PM 总控编排依据）
 # ============================================
@@ -558,7 +569,7 @@ lifecycle:
   knowledge_hotload:
     enabled: true
     trigger_on: ["requirement", "design", "arch"]
-    sources: [".codebuddy/knowledge/common/", ".codebuddy/knowledge/{project}/"]
+    sources: [".codebuddy/knowledge/common/", ".codebuddy/knowledge/projects/{project}/"]
     strategy: "relevance_match"  # 按当前需求描述语义匹配加载相关知识条目
     auto_load: ["system-blueprints.yml"]  # V3.5.0新增：需求分析阶段自动加载系统常识推理框架
   # 终端类型（高保真系统运行终端，立项时冻结，直接影响设计规范类技能）
@@ -1004,7 +1015,7 @@ brain_orchestration:
     gate: "G-CLOSE-05"
   
   # 大脑记忆持久化目录
-  brain_memory_dir: ".codebuddy/knowledge/{project}/大脑记忆/{version}/"
+  brain_memory_dir: ".codebuddy/knowledge/projects/{project}/大脑记忆/{version}/"
   brain_memory_agents:
     - "ba_brain_memory.yml"
     - "ux_brain_memory.yml"

@@ -1,7 +1,7 @@
 # ============================================
-# Workflow: project-lifecycle（需求流生命周期总控 V5.1.0）
-# 版本: v5.1.0
-# 最后更新: 2026-07-20
+# Workflow: project-lifecycle（需求流生命周期总控 V5.3.0）
+# 版本: v5.3.0
+# 最后更新: 2026-07-21
 # ============================================
 #
 # 版本变更历史详见：.codebuddy/knowledge/common/governance-docs/流程版本变更总账.md
@@ -30,8 +30,8 @@
 
   workflow:
   id: "project-lifecycle"
-  name: "需求流生命周期总控（PM 大脑编排层 V5.1.0）"
-  version: "5.1.0"
+  name: "需求流生命周期总控（PM 大脑编排层 V5.3.0）"
+  version: "5.3.0"
   trigger_command: "/init"
   owner: "pm-agent"
   type: "orchestrator"  # V5.1.0：编排器 → 大脑编排器（orchestrate brains, not just tasks）
@@ -331,7 +331,8 @@
       workflow: "design-flow"
       workflow_version: "V3.3.0"
       pm_controlled: true
-      checkpoint: true  # 人工卡点②
+      checkpoint: false  # V5.3.0：设计自动流转到架构（原卡点②取消，用户交互减40%）
+      auto_advance: true  # 设计完成后自动进入架构阶段
       platform_aware: true  # O-07
       design_token_enforcement: true  # O-07
       # V5.1.0新增：UX大脑激活
@@ -395,7 +396,7 @@
       workflow: "arch-flow"
       workflow_version: "V3.1.0"
       pm_controlled: true
-      checkpoint: true  # 人工卡点③（架构守门员）
+      checkpoint: true  # 人工卡点②（架构守门员，V5.3.0重新编号）
       gatekeeper: true
       interface_contract: true  # O-05
       # V5.1.0新增：Arch大脑激活
@@ -494,7 +495,8 @@
       workflow_version: "V3.1.0"
       pm_controlled: true
       auto_mode: true  # 用户仅看结果
-      checkpoint: true  # 人工卡点④
+      checkpoint: false  # V5.3.0：测试自动流转到验收（原卡点④取消，auto_mode已为true）
+      auto_advance: true  # 测试完成后自动进入验收阶段
       visual_regression: true  # O-07（五层测试含视觉回归）
       # V5.1.0新增：QA大脑激活
       ai_brain:
@@ -525,7 +527,7 @@
       workflow_version: "V2.2.0"
       pm_controlled: true
       auto_mode: true  # 用户仅看结果
-      checkpoint: true  # 人工卡点⑤
+      checkpoint: true  # 人工卡点③（V5.3.0重新编号）
       po_acceptance: true  # V4.1.0新增：PO Agent作为第4验收角色
       # V5.1.0新增：AC大脑+PO大脑激活
       ai_brain:
@@ -577,7 +579,7 @@
       name: "结束需求流 + 版本快照 + 差异报告 + 三级把关 + 大脑进化（V5.1.0）"
       owner: "pm-agent"
       workflow: "knowledge-sedimentation"
-      workflow_version: "V1.1.0"  # V5.1.0：升级为含大脑记忆导出的版本沉淀
+      workflow_version: "V5.3.0"  # V5.3.0：3步精简+Review合并+经验分层
       pm_controlled: true
       traceability_check: true  # O-10
       rollback_metadata: true  # O-12
@@ -621,12 +623,15 @@
         - "追溯链完整性校验（O-10）：逐 FN 校验需求→设计→架构→代码四层追溯"
         - "回退元数据记录（O-12）：记录回退ID/原因/受影响模块/恢复计划"
         - "提炼 projects/{project}/.codebuddy/lessons-learned.yml"
-        # V4.0.1 版本沉淀学习（V5.1.0升级为含大脑记忆导出）
-        - "**V4.0.1：启动版本沉淀学习（knowledge-sedimentation.yml V1.1.0）：**"
-        - "  需求沉淀→Review沉淀→**大脑记忆导出（V5.1.0新增）**→经验提炼→追溯链快照→版本索引→沉淀摘要→质量校验"
-        - "  沉淀产物输出到 .codebuddy/knowledge/{project}/版本沉淀/{version}/"
-        - "  大脑记忆输出到 .codebuddy/knowledge/{project}/版本沉淀/{version}/大脑记忆/"
-        - "  经验库追加到 .codebuddy/knowledge/common/经验库/"
+        # V4.0.1 版本沉淀学习（V5.3.0升级为3步精简+经验分层+Review合并）
+        - "**V4.0.1：启动版本沉淀学习（knowledge-sedimentation.yml V5.3.0：3步精简版）：**"
+        - "  step1沉淀准备(目录+需求快照+Review合并归档+大脑记忆导出+脑力进化) → step2经验分层提炼+追溯链快照 → step3索引更新+质量校验"
+        - "  沉淀产物输出到 .codebuddy/knowledge/projects/{project}/版本沉淀/{version}/"
+        - "  大脑记忆输出到 .codebuddy/knowledge/projects/{project}/版本沉淀/{version}/大脑记忆/"
+        - "  **V5.3.0经验分层**：项目级经验→projects/{project}/经验/，跨项目级经验→common/经验库/，流程改进建议→common/经验库/_pending/"
+        - "**V5.3.0：触发流程改进建议收集（process-improvement-collector）：**"
+        - "  扫描 common/经验库/_pending/ 下的流程改进建议 → 追加到 common/流程改进待办.yml"
+        - "  通知管理员：当前待审核流程改进建议 {n} 条，可通过 /review-process-improvements --mode=list 查看"
         # === V5.0新增：版本快照 + 差异报告（议题七） ===
         - "**V5.0新增：版本快照（version-manager.yml mode=snapshot）：**"
         - "  Git Tag冻结：git tag -a v{version} -m '版本{version}冻结'"
@@ -733,8 +738,8 @@
         - "版本自动链：取 streams 同 type 已 closed 最大版本 → 按 version_bump 生成"
         - "**V4.0.0新增：扫描上一版本 problem-ledger.md 中标记'跨版本传递'的PBL → 加载为BA需求分析输入**"
         # ↓↓↓ V4.0.1 新增：加载上一版本沉淀 + 经验库 ↓↓↓
-        - "**V4.0.1新增：加载上一版本沉淀（knowledge-sedimentation.yml V1.1.0产物）：**"
-        - "  ① 扫描 .codebuddy/knowledge/{project}/版本沉淀/VERSION-INDEX.yml"
+        - "**V4.0.1新增：加载上一版本沉淀（knowledge-sedimentation.yml V5.3.0产物）：**"
+        - "  ① 扫描 .codebuddy/knowledge/projects/{project}/版本沉淀/VERSION-INDEX.yml"
         - "  ② 取最近版本的沉淀摘要 → 作为BA需求分析的基线参考"
         - "  ③ 加载上一版本 Review经验提炼 → 避免重复踩坑"
         - "  ④ 加载上一版本 lessons-learned → 复用最佳实践"
@@ -752,8 +757,8 @@
         - "PM 启动需求分析流程，传递：已学PRD上下文 + 跨版本反馈 + 上一版本沉淀 + 经验库 + **PO Backlog优先级（V4.1.0，如有）**"
       usage: "/init --project=X --type=Y --desc=需求描述 [--file=外部需求文件.md] [--api=外部接口文档.md] [--source=local-dir:./docs] [--source=http-url:https://...] [--priority=P0|P1|P2|P3]"
       brain_storm_link: "**V4.2.1新增--brainstorm-topic参数**：若 /init 提供 --brainstorm-topic=议题名，PM 按议题查找 projects/{project}/docs/00-brainstorm/{topic}/confirmed/BR-脑暴文档-确认稿.md 作为 BA 背景输入。同时加载脑暴 confirmed 中的领域知识清单（BA继承）+ API分析清单（BA+Arch继承，V3.4.0）。若未提供 --brainstorm-topic 但 00-brainstorm/ 下只有一个议题子目录，自动加载该议题；多个议题时提示用户选择。脑暴阶段与 /init 阶段均会智能检测项目骨架：存在则复用，不存在则新建。V3.5.0：confirmed/ 为单文件覆盖式更新（BR-脑暴文档-确认稿.md），含版本概要表格。**场景**：脑暴多轮确认后隔一段时间才 /init，通过 --brainstorm-topic 精确关联对应脑暴产物。"
-      knowledge_base_link: "存量项目在 /init 前自动匹配 .codebuddy/knowledge/{project}/需求文档/ 下的已学 PRD（全部卷 + 学习报告），作为需求分析上下文。"
-      sedimentation_base_link: "**V4.0.1新增**：存量项目在 /init 时自动加载 .codebuddy/knowledge/{project}/版本沉淀/ 下最近版本的沉淀产物（需求快照+Review经验+lessons-learned+追溯链），以及 common/经验库/ 的跨项目经验，作为需求分析和全阶段背景知识。"
+      knowledge_base_link: "存量项目在 /init 前自动匹配 .codebuddy/knowledge/projects/{project}/需求文档/ 下的已学 PRD（全部卷 + 学习报告），作为需求分析上下文。"
+      sedimentation_base_link: "**V4.0.1新增**：存量项目在 /init 时自动加载 .codebuddy/knowledge/projects/{project}/版本沉淀/ 下最近版本的沉淀产物（需求快照+Review经验+lessons-learned+追溯链），以及 common/经验库/ 的跨项目经验，作为需求分析和全阶段背景知识。"
       domain_knowledge_link: "**V3.0.1新增，V3.0.3增强**：脑暴阶段（brainstorm.yml v3.2.0 stage-0c）已加载领域知识并产出领域知识清单写入 confirmed/，/init 时 BA 优先继承该清单（避免重复匹配）。若脑暴阶段未执行或清单缺失，BA 自行扫描 .codebuddy/knowledge/domains/ 领域知识库，通过关键词+AI语义匹配加载与需求相关的领域知识（如退款流/分账/进销存等），作为需求分析的行业标准方案参考。缺失时提示用户先执行 /learn-domain 学习。"
       metrics_standards_link: "**V4.2.0新增**：/init 时自动加载 .codebuddy/knowledge/common/metrics-standards.yml 行业统计指标通用规则库（11个行业：电商/财务/物流/仓库/直播/AARRR/广告/CRM/SaaS/教育/医疗）。BA 在 §0.5a 需求深度分析时如涉及'看板/报表/统计/指标/大屏'等关键词，从该库匹配标准指标定义，在 METRIC 产物中引用 industry_standard 字段对齐。"
 
@@ -784,7 +789,7 @@
         - "提炼 projects/{project}/.codebuddy/lessons-learned.yml"
         # ↓↓↓ V4.0.1 新增：版本沉淀学习（knowledge-sedimentation.yml V1.0.0）↓↓↓
         - "**V4.0.1新增：启动版本沉淀学习（PM自动执行，详见 knowledge-sedimentation.yml）：**"
-        - "  Step1 创建 .codebuddy/knowledge/{project}/版本沉淀/{version}/ 目录"
+        - "  Step1 创建 .codebuddy/knowledge/projects/{project}/版本沉淀/{version}/ 目录"
         - "  Step2 需求沉淀（PM+BA协作）：PRD+REQ产物体系+模块清单+上下游影响矩阵 → 需求沉淀/"
         - "  Step3 Review沉淀（PM收集+提炼）：7份Review归档 + 提炼Review经验提炼.md（反复问题/最佳实践/阶段薄弱点/Review质量）"
         - "  Step4 经验教训提炼（PM主导）：lessons-learned + 最佳实践 + 踩坑 → 追加到 common/经验库/"

@@ -127,7 +127,7 @@ agent:
   knowledge_sources:
     domain: ".codebuddy/knowledge/domains/"
     rules: ".codebuddy/knowledge/rules/"
-    project: ".codebuddy/knowledge/{project}/"
+    project: ".codebuddy/knowledge/projects/{project}/"
     brainstorm_checklist: "继承脑暴confirmed/领域知识清单（V3.2.0）"
   
   rules:

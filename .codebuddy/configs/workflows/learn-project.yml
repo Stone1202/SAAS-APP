@@ -23,7 +23,7 @@ workflow:
   # ============================================
   options:
     - flag: "--project"
-      desc: "项目名（必填）；缺省时 Agent 必须主动询问，禁止回退 default_project。项目名将用于在 .codebuddy/knowledge/{project}/ 下创建知识库目录。当输入同名项目且未指定 --module 时，视为全量学习，覆盖已有知识库内容。"
+      desc: "项目名（必填）；缺省时 Agent 必须主动询问，禁止回退 default_project。项目名将用于在 .codebuddy/knowledge/projects/{project}/ 下创建知识库目录。当输入同名项目且未指定 --module 时，视为全量学习，覆盖已有知识库内容。"
       required: true
       missing_action: "若用户未提供 --project，Agent 必须追问：「请提供项目名称（例如：--project=AI-SCRM）。该名称将用于在知识库中创建专属目录。」"
     - flag: "--source"
@@ -44,7 +44,7 @@ workflow:
       trigger: "未指定 --module 参数"
       behavior: |
         全量学习模式：
-        1. 扫描 .codebuddy/knowledge/{project}/ 是否已有知识库
+        1. 扫描 .codebuddy/knowledge/projects/{project}/ 是否已有知识库
         2. 若已有知识库 → 提示用户「检测到已有知识库，全量学习将覆盖已有PRD，是否继续？」
         3. 用户确认后 → 全量提取所有源文档内容 → 生成新的完整PRD覆盖旧PRD
         4. 旧PRD版本保留为 {项目}-超级需求文档-PRD-v{旧version}.md（不删除，作为历史版本）
@@ -53,7 +53,7 @@ workflow:
       trigger: "指定了 --module 参数"
       behavior: |
         增量学习模式：
-        1. 扫描 .codebuddy/knowledge/{project}/ 是否已有知识库
+        1. 扫描 .codebuddy/knowledge/projects/{project}/ 是否已有知识库
         2. 若已有知识库 → 仅提取与指定模块/流程相关的内容 → 追加/更新到已有PRD的对应章节
         3. 若无知识库 → 提示用户「未检测到已有知识库，增量学习需要已有PRD基础，建议先执行全量学习」
         4. 增量更新时保持已有FN/UC/BR/ENT编号不变，新增内容顺延编号
@@ -391,7 +391,7 @@ workflow:
         - 每卷注入元数据头部（YAML Front Matter）
       output_mode: "multi_volume"
       output:
-        - ".codebuddy/knowledge/{project}/需求文档/{项目}-PRD-v{version}-vol{N}-{模块名}.md（分卷 PRD）"
+        - ".codebuddy/knowledge/projects/{project}/需求文档/{项目}-PRD-v{version}-vol{N}-{模块名}.md（分卷 PRD）"
       note: |
         严禁行为：
         - 不得使用子 agent 做摘要提取（必须直接读取原始文件全文）
@@ -647,7 +647,7 @@ workflow:
         5. 交叉引用写入卷索引文件
         6. 验证跨卷编号不重复（FN/UC/BR/SC/PG/ENT 全局唯一）
       output:
-        - ".codebuddy/knowledge/{project}/需求文档/{项目}-PRD-v{version}-index.md"
+        - ".codebuddy/knowledge/projects/{project}/需求文档/{项目}-PRD-v{version}-index.md"
         - "各卷首尾上下文链接已注入"
       rule: "卷间链接必须双向可追溯；任意卷可独立阅读但能通过链接回到完整上下文"
 
@@ -707,7 +707,7 @@ workflow:
            - 标注原型源、版本、还原日期
            - 标注「原型未提供」的章节清单
       output:
-        - ".codebuddy/knowledge/{project}/需求文档/{项目}-超级需求文档-PRD-v{version}.md（★ 最终交付物）"
+        - ".codebuddy/knowledge/projects/{project}/需求文档/{项目}-超级需求文档-PRD-v{version}.md（★ 最终交付物）"
       note: |
         - 合并后的单一文档为最终交付物，分卷文档保留作为过程产物（不删除）
         - 合并过程中不得修改原文内容，仅调整组织结构
@@ -851,7 +851,7 @@ workflow:
               - 操作矩阵缺口清单（未覆盖的角色×状态×操作×数据）
       output:
         - "学习报告（对话展示）"
-        - ".codebuddy/knowledge/{project}/学习报告/{项目}-学习报告-v{version}.md"
+        - ".codebuddy/knowledge/projects/{project}/学习报告/{项目}-学习报告-v{version}.md"
       note: |
         问题清单仅供人工审查，严禁将问题标注写入 PRD 正文。
         V7.0.0新增：🟡隐式挖掘内容可写入PRD正文（标注依据链），但深度还原问题（不闭环/不一致/缺口）只进学习报告。
@@ -984,9 +984,9 @@ workflow:
   # 知识入库路径规范（v4.0.0 更新）
   # ============================================
   knowledge_paths:
-    requirement_doc: ".codebuddy/knowledge/{project}/需求文档/"
-    learning_report: ".codebuddy/knowledge/{project}/学习报告/"
-    external_assets: ".codebuddy/knowledge/{project}/外部连接资产/"
+    requirement_doc: ".codebuddy/knowledge/projects/{project}/需求文档/"
+    learning_report: ".codebuddy/knowledge/projects/{project}/学习报告/"
+    external_assets: ".codebuddy/knowledge/projects/{project}/外部连接资产/"
     prd_format: "{项目}-PRD-v{version}-vol{N}-{模块名}.md（过程产物）"
     merged_prd_format: "{项目}-超级需求文档-PRD-v{version}.md（★ 最终交付物）"
     index_format: "{项目}-PRD-v{version}-index.md"
@@ -998,7 +998,7 @@ workflow:
   # ============================================
   rebuild_link:
     command: "/rebuild"
-    description: "将 .codebuddy/knowledge/{project}/需求文档/ 下 PRD + 学习报告 重新提交给 brainstorm 流程，反复讨论得出最终确认的需求定稿"
+    description: "将 .codebuddy/knowledge/projects/{project}/需求文档/ 下 PRD + 学习报告 重新提交给 brainstorm 流程，反复讨论得出最终确认的需求定稿"
     action: "加载已学 PRD（合并后的单一文档 + 分卷文档）+ 学习报告（问题清单 + 合规检查结果）→ 回投 brainstorm → 基于问题清单逐项讨论 → 重新定稿"
 
   # ============================================
@@ -1045,11 +1045,11 @@ workflow:
     - 🟡挖掘依据链审计：{数量} 条标注（有依据{数量} / 违规{数量}）
 
     **最终交付物**：
-    - ⭐ .codebuddy/knowledge/{project}/需求文档/{项目}-超级需求文档-PRD-v{version}.md（单一 PRD）
-    - .codebuddy/knowledge/{project}/需求文档/{项目}-PRD-v{version}-index.md（卷索引）
-    - .codebuddy/knowledge/{project}/需求文档/{项目}-PRD-v{version}-vol{N}-*.md（{数量} 卷，过程产物）
-    - .codebuddy/knowledge/{project}/学习报告/{项目}-学习报告-v{version}.md（含问题清单 + 合规检查）
-    - .codebuddy/knowledge/{project}/学习报告/{项目}-学习报告-v{version}.md（含问题清单 + 合规检查）
+    - ⭐ .codebuddy/knowledge/projects/{project}/需求文档/{项目}-超级需求文档-PRD-v{version}.md（单一 PRD）
+    - .codebuddy/knowledge/projects/{project}/需求文档/{项目}-PRD-v{version}-index.md（卷索引）
+    - .codebuddy/knowledge/projects/{project}/需求文档/{项目}-PRD-v{version}-vol{N}-*.md（{数量} 卷，过程产物）
+    - .codebuddy/knowledge/projects/{project}/学习报告/{项目}-学习报告-v{version}.md（含问题清单 + 合规检查）
+    - .codebuddy/knowledge/projects/{project}/学习报告/{项目}-学习报告-v{version}.md（含问题清单 + 合规检查）
 
     **doc-standards 合规度**：{合规率}%（{合规项数}/{总检查项数}）
     **原型问题清单**：发现 {数量} 个问题（{缺失类数量}/{矛盾类数量}/{模糊类数量}/{不一致类数量}/{逻辑漏洞类数量}），详见学习报告。

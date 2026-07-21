@@ -217,8 +217,8 @@ brain_memory_spec:
 # 大脑记忆存储路径
 # ============================================
 storage:
-  version_memory: ".codebuddy/knowledge/{project}/版本沉淀/{version}/大脑记忆/{agent}_memory_{version}.yml"
-  latest_memory: ".codebuddy/knowledge/{project}/大脑记忆/latest/{agent}_memory_latest.yml"
+  version_memory: ".codebuddy/knowledge/projects/{project}/版本沉淀/{version}/大脑记忆/{agent}_memory_{version}.yml"
+  latest_memory: ".codebuddy/knowledge/projects/{project}/大脑记忆/latest/{agent}_memory_latest.yml"
   cross_project_library: ".codebuddy/knowledge/common/大脑模式库/"
   
 # ============================================

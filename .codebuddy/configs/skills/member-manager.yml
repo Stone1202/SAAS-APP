@@ -71,7 +71,23 @@ skill:
 
     - name: "7.更新部署配置"
       rule: |
-        在 deploy/edgeone-pages.json 的 projects 中追加项目路由配置
+        在 deploy/edgeone-pages.json 的 projects 中追加项目路由配置（V1.2.0项目隔离格式，无owner字段）：
+        ```json
+        "{project}": {
+          "project": "{project}",
+          "root": "projects/{project}",
+          "build_command": "npm run build:sim",
+          "output_directory": "dist",
+          "env": {
+            "VITE_PROJECT_ID": "{project}",
+            "VITE_MODE": "sim"
+          },
+          "routes": [
+            { "src": "/{project}/(.*)", "dest": "/$1" }
+          ],
+          "access_url_pattern": "/{project}/{version}/"
+        }
+        ```
 
   # ============================================
   # 输出
