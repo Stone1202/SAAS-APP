@@ -1,0 +1,104 @@
+# 盲区决策日志模板 V1.0.0
+#
+# 用法：requirement-flow.yml §6 多专家盲区审查完成后，
+#       PM将审查结果写入此文件，作为版本沉淀的一部分。
+# 路径：projects/{project}/.codebuddy/docs/01-requirements/blindspot-decisions-v{version}.yml
+# 后续：/init 时自动加载此文件，skip_in_future=true的盲区不再重复审查
+
+version: "1.0.0"
+project: "{project}"
+requirement_version: "v{version}"
+audit_date: "{date}"
+total_blindspots: 0
+matched_experts: []
+
+# 盲区决策列表
+decisions:
+  # AI发现的盲区
+  - id: "BS-{seq}"
+    source: "ai"                    # ai=AI发现 / member=成员补充
+    expert: "{expert_type}"         # 专家类型（如marketing/architecture/qa）
+    expert_name: "{专家名称}"        # 如"营销活动专家"
+    blindspot_id: "{checklist_id}"  # 对应expert-checklists.yml中的检查项ID（如MK-01）
+    category: "{盲区类型}"           # 如"安全风控盲区"
+    description: "{盲区描述}"        # 如"防刷机制未定义"
+    severity: "P0|P1|P2"
+    
+    # 成员确认状态
+    decision: "need_supplement|not_applicable|need_discuss"
+    # need_supplement: 需要补充
+    # not_applicable: 不适用
+    # need_discuss: 需讨论
+    
+    # 成员选择的方案（need_supplement时填写）
+    chosen_solution: "{方案名称}"
+    member_note: "{成员补充说明}"
+    
+    # 讨论结果（need_discuss时填写）
+    discussion_result:
+      ai_suggestions: []            # AI给出的方案列表
+      member_choice: "{最终选择的方案}"
+      discussion_note: "{讨论记录}"
+    
+    # BA补充结果（need_supplement/discuss确认后填写）
+    ba_action: "{BA补充动作描述}"    # 如"新增BR-MKT-001防刷规则"
+    ba_artifacts:                   # 补充到哪些产物
+      - type: "BR"                  # BR/UC备选流程/状态机/CONFIG/METRIC
+        id: "BR-{系统}-{NNN}"
+    supplement_status: "supplemented"  # supplemented/pending
+    
+    # 不适用记录（not_applicable时填写）
+    skip_reason: "{不适用原因}"
+    skip_in_future: false           # true=后续版本不再重复审查
+    
+    # 元数据
+    decided_by: "{成员Gitee用户名}"
+    decided_at: "{时间戳}"
+    verified: false                 # 闭环验证是否通过
+  
+  # 成员补充的盲区（AI未发现）
+  - id: "BS-{seq}"
+    source: "member"
+    expert: "{成员选择的领域}"
+    description: "{成员描述的盲区}"
+    severity: "P0|P1|P2"
+    decision: "need_supplement"
+    member_note: "{为什么认为这是盲区}"
+    ba_action: "{BA补充动作}"
+    supplement_status: "supplemented"
+    decided_by: "{成员}"
+    decided_at: "{时间戳}"
+    verified: false
+
+# 闭环验证结果
+closure_validation:
+  iterations: 1                     # 循环次数（最多3次）
+  original_blindspots: 0            # 原始盲区数
+  supplemented: 0                   # 已补充数
+  not_applicable: 0                 # 不适用数
+  new_blindspots_found: 0           # 闭环验证新发现数
+  passed: false                     # 是否通过（所有need_supplement变为supplemented且无新盲区）
+  
+# 涟漪效应分析结果（迭代需求专用）
+ripple_effect:
+  trigger: false                    # 是否触发了涟漪效应分析
+  changed_areas: []                 # 变更内容（如"订单状态机"/"商品字段"）
+  affected_domains: []              # 受影响领域（如["电商","财务","库存","数据"]）
+  affected_legacy: []               # 受影响的旧需求（如["UC-ORDER-001","METRIC-ORDER-001"]）
+  
+# 需求隐性冲突检查
+requirement_conflicts:
+  found: false
+  conflicts: []
+    # - conflict_id: "RC-01"
+    #   description: "效率vs安全冲突"
+    #   requirement_a: "支持批量操作"
+    #   requirement_b: "每步操作需审批"
+    #   resolution: "{解决方案}"
+
+# 统计
+statistics:
+  by_expert: {}                     # 按专家分组统计
+  by_severity: { P0: 0, P1: 0, P2: 0 }
+  by_decision: { need_supplement: 0, not_applicable: 0, need_discuss: 0 }
+  by_source: { ai: 0, member: 0 }

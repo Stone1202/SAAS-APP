@@ -1,0 +1,513 @@
+# ============================================
+# 专家盲区检查清单库 V1.0.0
+# ============================================
+# 定位：需求分析阶段的行业经验驱动盲区发现
+# 用法：requirement-flow.yml §6 多专家联合盲区审查时加载
+# 原则：AI按清单逐项审查 → 发现盲区 → 给出建议方案 → 成员确认
+# ============================================
+
+version: "1.0.0"
+created: "2026-07-21"
+description: |
+  18个领域专家 × 21类盲区的检查清单库。
+  AI根据需求内容自动匹配专家类型，按清单逐项审查，
+  发现盲区后给出建议方案，成员确认后BA补充。
+
+# ============================================
+# 专家匹配规则（AI根据需求关键词自动匹配专家）
+# ============================================
+expert_matching:
+  rules:
+    - keywords: ["营销", "活动", "优惠券", "促销", "秒杀", "拼团", "红包"]
+      experts: ["marketing", "security", "architecture", "data", "operations"]
+    - keywords: ["订单", "交易", "购物车", "支付"]
+      experts: ["ecommerce", "inventory", "finance", "logistics", "data"]
+    - keywords: ["直播", "录播", "点播", "推流", "转码"]
+      experts: ["live", "content", "social", "architecture"]
+    - keywords: ["定时任务", "调度", "cron", "批次"]
+      experts: ["architecture", "qa"]
+    - keywords: ["退款", "退货", "售后", "客诉"]
+      experts: ["ecommerce", "customer_service", "finance", "logistics"]
+    - keywords: ["会员", "积分", "等级", "用户体系"]
+      experts: ["member", "security", "data"]
+    - keywords: ["库存", "入库", "出库", "盘点", "调拨"]
+      experts: ["inventory", "procurement"]
+    - keywords: ["采购", "供应商", "进货"]
+      experts: ["procurement", "inventory", "finance"]
+    - keywords: ["报表", "统计", "指标", "看板", "BI"]
+      experts: ["data", "operations"]
+    - keywords: ["消息", "通知", "推送", "私信"]
+      experts: ["social", "architecture"]
+    - keywords: ["审核", "内容", "UGC", "评论"]
+      experts: ["content", "security", "legal"]
+    - keywords: ["权限", "角色", "租户", "隔离"]
+      experts: ["security", "legal"]
+    - keywords: ["导出", "导入", "批量"]
+      experts: ["architecture", "qa", "data"]
+    - keywords: ["登录", "注册", "认证", "密码"]
+      experts: ["member", "security"]
+    - keywords: ["对账", "结算", "发票", "财务"]
+      experts: ["finance", "payment"]
+    - keywords: ["迭代", "变更", "升级", "迁移"]
+      experts: ["ALL"]  # 迭代需求触发全部相关专家+涟漪效应分析
+  default_experts: ["architecture", "security", "qa"]  # 默认匹配3个基础专家
+
+# ============================================
+# 21类盲区分类索引
+# ============================================
+blindspot_categories:
+  exception_branch: { id: "A", name: "异常分支盲区", examples: "定时任务宕机/消息积压/接口超时" }
+  security_risk: { id: "B", name: "安全风控盲区", examples: "防刷/防重放/脱敏" }
+  iteration_impact: { id: "C", name: "迭代影响盲区", examples: "旧用例/旧状态/旧指标影响" }
+  reverse_flow: { id: "D", name: "逆向流程盲区", examples: "取消/退款/超时" }
+  state_anomaly: { id: "E", name: "状态异常盲区", examples: "断流/封禁/不可达状态" }
+  disaster_recovery: { id: "F", name: "容灾降级盲区", examples: "宕机/熔断/兜底" }
+  boundary_value: { id: "G", name: "边界值盲区", examples: "0/1/最大/null/空" }
+  data_consistency: { id: "H", name: "数据一致性盲区", examples: "口径/延迟/不一致" }
+  user_experience: { id: "I", name: "用户体验盲区", examples: "空状态/加载/错误/反馈" }
+  rule_boundary: { id: "J", name: "业务规则边界盲区", examples: "规则冲突/变更生效/组合爆炸" }
+  permission_isolation: { id: "K", name: "权限与数据隔离盲区", examples: "多租户/数据权限/角色继承" }
+  performance_capacity: { id: "L", name: "性能与容量盲区", examples: "大数据量/高并发/批量/导出" }
+  i18n_compliance: { id: "M", name: "国际化与合规盲区", examples: "时区/货币/合规/资质" }
+  lifecycle_timeline: { id: "N", name: "生命周期与时间线盲区", examples: "归档/过期/版本兼容/灰度" }
+  third_party_dependency: { id: "O", name: "第三方依赖盲区", examples: "API变更/不稳定/一致性/限流" }
+  operations_growth: { id: "P", name: "运营与增长盲区", examples: "配置防呆/埋点/A-B测试/反馈" }
+  legal_audit: { id: "Q", name: "法律与审计盲区", examples: "操作日志/合同/数据保留/知识产权" }
+  business_continuity: { id: "R", name: "业务连续性盲区", examples: "灾难恢复/最小可用/应急预案" }
+  ripple_effect: { id: "S", name: "迭代涟漪效应盲区", examples: "一个变更触发多领域连锁影响" }
+  requirement_conflict: { id: "T", name: "需求隐性冲突盲区", examples: "不同需求组合后产生矛盾" }
+  data_lifecycle: { id: "U", name: "数据生命周期盲区", examples: "产生/使用/变更/归档/删除" }
+
+# ============================================
+# 18个专家盲区检查清单
+# ============================================
+experts:
+
+  # ========== 1. 电商交易专家 ==========
+  ecommerce:
+    name: "电商交易专家"
+    domains: ["订单", "交易", "购物车", "支付"]
+    check_dimensions:
+      - dimension: "逆向流程检查"
+        category: "D"
+        items:
+          - { id: "EC-01", check: "取消订单流程（支付前/支付后/发货前/发货后，每个节点取消逻辑不同）", severity: "P0" }
+          - { id: "EC-02", check: "退款流程（全额/部分/多次，每种影响库存和财务不同）", severity: "P0" }
+          - { id: "EC-03", check: "超时处理（支付超时/确认收货超时/评价超时）", severity: "P1" }
+          - { id: "EC-04", check: "并发控制（同一商品多人同时下单/同一用户多端同时下单）", severity: "P0" }
+      - dimension: "订单状态检查"
+        category: "E"
+        items:
+          - { id: "EC-05", check: "状态机全状态覆盖（是否有死状态/不可达状态）", severity: "P0" }
+          - { id: "EC-06", check: "状态转换完整性（每个状态的所有触发条件是否定义）", severity: "P1" }
+      - dimension: "支付流程检查"
+        category: "A"
+        items:
+          - { id: "EC-07", check: "支付回调处理（成功/失败/超时，重复回调幂等）", severity: "P0" }
+          - { id: "EC-08", check: "支付对账（平台vs渠道vs商家，差异处理）", severity: "P1" }
+
+  # ========== 2. 直播/录播/点播专家 ==========
+  live:
+    name: "直播/录播/点播专家"
+    domains: ["直播", "录播", "点播", "推流", "转码"]
+    check_dimensions:
+      - dimension: "状态异常检查"
+        category: "E"
+        items:
+          - { id: "LV-01", check: "断流重连（网络波动→自动重连→重连失败→降级为录播？）", severity: "P0" }
+          - { id: "LV-02", check: "主播异常退出（崩溃/断网/主动退出，观众端如何感知？）", severity: "P0" }
+          - { id: "LV-03", check: "封禁与解禁（直播中封禁→立即停止？已产生内容如何处理？）", severity: "P0" }
+      - dimension: "录播点播检查"
+        category: "A"
+        items:
+          - { id: "LV-04", check: "录播转点播（自动转码→审核→上架，失败如何处理？）", severity: "P1" }
+          - { id: "LV-05", check: "CDN回源（首帧延迟/卡顿/切流，降级方案？）", severity: "P1" }
+
+  # ========== 3. 营销活动专家 ==========
+  marketing:
+    name: "营销活动专家"
+    domains: ["营销", "活动", "优惠券", "促销", "秒杀", "拼团", "红包"]
+    check_dimensions:
+      - dimension: "风控检查"
+        category: "B"
+        items:
+          - { id: "MK-01", check: "防刷机制（限频/限量/限人/设备指纹/IP限制/黑名单）", severity: "P0" }
+          - { id: "MK-02", check: "异常参与（多账号/虚拟号/羊毛党/批量注册识别）", severity: "P0" }
+      - dimension: "预算控制检查"
+        category: "A"
+        items:
+          - { id: "MK-03", check: "预算超限处理（总预算/日预算/用户预算，超限降级或终止）", severity: "P0" }
+          - { id: "MK-04", check: "奖励异常（发奖失败/重复发奖/奖品超发/奖品下架）", severity: "P1" }
+      - dimension: "活动叠加检查"
+        category: "J"
+        items:
+          - { id: "MK-05", check: "活动叠加规则（与其他活动是否允许叠加？叠加后预算计算？）", severity: "P1" }
+          - { id: "MK-06", check: "互斥规则（哪些活动互斥？互斥时优先级？）", severity: "P1" }
+      - dimension: "商品联动检查"
+        category: "A"
+        items:
+          - { id: "MK-07", check: "商品下架处理（活动中商品下架，已参与用户如何处理？）", severity: "P0" }
+
+  # ========== 4. 数据/报表专家 ==========
+  data:
+    name: "数据/报表专家"
+    domains: ["报表", "统计", "指标", "看板", "BI"]
+    check_dimensions:
+      - dimension: "指标定义检查"
+        category: "H"
+        items:
+          - { id: "DT-01", check: "统计口径（下单数/支付数/发货数/完成数，每个口径不同）", severity: "P0" }
+          - { id: "DT-02", check: "时间维度（自然日/滚动24h/按结算日，时区？）", severity: "P1" }
+          - { id: "DT-03", check: "数据一致性（实时vs离线，延迟？不一致？）", severity: "P1" }
+      - dimension: "迭代影响检查"
+        category: "C"
+        items:
+          - { id: "DT-04", check: "迭代影响旧报表指标（改了状态机，历史统计是否需要重算？）", severity: "P0" }
+          - { id: "DT-05", check: "历史数据迁移（新增字段，历史数据如何补值？）", severity: "P0" }
+      - dimension: "数据生命周期检查"
+        category: "U"
+        items:
+          - { id: "DT-06", check: "数据归档（3年前数据，热查询还是冷存储？）", severity: "P2" }
+          - { id: "DT-07", check: "数据过期（优惠券/活动过期后，统计数据如何处理？）", severity: "P2" }
+
+  # ========== 5. 财务专家 ==========
+  finance:
+    name: "财务专家"
+    domains: ["对账", "结算", "发票", "财务", "退款"]
+    check_dimensions:
+      - dimension: "对账检查"
+        category: "H"
+        items:
+          - { id: "FN-01", check: "三方对账（平台vs渠道vs商家，差异如何处理？）", severity: "P0" }
+          - { id: "FN-02", check: "对账延迟（实时对账vsT+1，差异处理时效？）", severity: "P1" }
+      - dimension: "结算检查"
+        category: "A"
+        items:
+          - { id: "FN-03", check: "结算周期（T+1/T+7/月结，手续费？退款扣减？）", severity: "P0" }
+          - { id: "FN-04", check: "退款影响结算（退款后已结算金额如何调整？）", severity: "P0" }
+      - dimension: "发票检查"
+        category: "A"
+        items:
+          - { id: "FN-05", check: "开票时机（支付后/发货后/确认后？）", severity: "P1" }
+          - { id: "FN-06", check: "红冲/作废（退款后已开发票如何红冲？）", severity: "P1" }
+
+  # ========== 6. 库存/进销存专家 ==========
+  inventory:
+    name: "库存/进销存专家"
+    domains: ["库存", "入库", "出库", "盘点", "调拨"]
+    check_dimensions:
+      - dimension: "预占检查"
+        category: "A"
+        items:
+          - { id: "IV-01", check: "预占库存（下单预占→支付确认→超时释放，预占和可用分开？）", severity: "P0" }
+          - { id: "IV-02", check: "预占超时释放（超时未支付，库存何时释放？释放后并发抢占？）", severity: "P0" }
+      - dimension: "多仓检查"
+        category: "A"
+        items:
+          - { id: "IV-03", check: "分仓库存（总库存vs分仓，调拨流程？安全库存？）", severity: "P1" }
+      - dimension: "并发检查"
+        category: "L"
+        items:
+          - { id: "IV-04", check: "超卖防护（并发扣减如何防超卖？分布式锁？乐观锁？）", severity: "P0" }
+      - dimension: "盘点检查"
+        category: "A"
+        items:
+          - { id: "IV-05", check: "盘点时业务冻结（盘点时是否冻结出入库？）", severity: "P2" }
+
+  # ========== 7. 采购专家 ==========
+  procurement:
+    name: "采购专家"
+    domains: ["采购", "供应商", "进货"]
+    check_dimensions:
+      - dimension: "审批检查"
+        category: "A"
+        items:
+          - { id: "PC-01", check: "审批超时（审批人不在怎么办？自动通过？升级审批？）", severity: "P1" }
+      - dimension: "供应商检查"
+        category: "A"
+        items:
+          - { id: "PC-02", check: "供应商异常（停产/涨价/资质过期，已创建采购单如何处理？）", severity: "P1" }
+      - dimension: "到货检查"
+        category: "A"
+        items:
+          - { id: "PC-03", check: "部分到货（采购100到80，催货？自动拆单？）", severity: "P1" }
+          - { id: "PC-04", check: "退货（入库后发现质量问题，采购退货流程？）", severity: "P2" }
+
+  # ========== 8. 架构专家 ==========
+  architecture:
+    name: "架构专家"
+    domains: ["定时任务", "调度", "消息队列", "接口", "缓存", "默认匹配"]
+    check_dimensions:
+      - dimension: "容灾检查"
+        category: "F"
+        items:
+          - { id: "AR-01", check: "服务宕机（依赖服务挂了，降级方案？熔断？兜底数据？）", severity: "P0" }
+          - { id: "AR-02", check: "定时任务宕机（任务服务器挂了，补偿？告警？手动触发？）", severity: "P0" }
+      - dimension: "异步检查"
+        category: "A"
+        items:
+          - { id: "AR-03", check: "消息队列积压（积压处理？消费幂等？消息丢失补偿？）", severity: "P0" }
+          - { id: "AR-04", check: "接口超时降级（第三方接口超时，降级方案？重试策略？）", severity: "P0" }
+      - dimension: "一致性检查"
+        category: "H"
+        items:
+          - { id: "AR-05", check: "跨服务事务（最终一致性？Saga？TCC？）", severity: "P1" }
+          - { id: "AR-06", check: "缓存一致性（缓存与DB不一致，延迟双删？Canal？）", severity: "P1" }
+      - dimension: "性能检查"
+        category: "L"
+        items:
+          - { id: "AR-07", check: "大数据量（列表10万条，分页？虚拟滚动？搜索性能？）", severity: "P1" }
+          - { id: "AR-08", check: "高并发（秒杀1000QPS，限流？排队？降级？）", severity: "P0" }
+          - { id: "AR-09", check: "批量操作（批量导入1万条，超时？进度？部分成功？）", severity: "P1" }
+      - dimension: "幂等检查"
+        category: "B"
+        items:
+          - { id: "AR-10", check: "接口幂等（重复调用是否安全？幂等键？）", severity: "P0" }
+
+  # ========== 9. 安全专家 ==========
+  security:
+    name: "安全专家"
+    domains: ["权限", "角色", "租户", "隔离", "登录", "敏感数据", "默认匹配"]
+    check_dimensions:
+      - dimension: "数据安全检查"
+        category: "B"
+        items:
+          - { id: "SE-01", check: "敏感数据脱敏（手机号/身份证/银行卡，存储脱敏？展示脱敏？）", severity: "P0" }
+          - { id: "SE-02", check: "数据加密传输（HTTPS？字段级加密？）", severity: "P0" }
+      - dimension: "接口安全检查"
+        category: "B"
+        items:
+          - { id: "SE-03", check: "防重放（请求签名？时间戳？nonce？）", severity: "P1" }
+          - { id: "SE-04", check: "频率限制（接口限流？IP限流？用户限流？）", severity: "P1" }
+      - dimension: "权限检查"
+        category: "K"
+        items:
+          - { id: "SE-05", check: "水平越权（用户A能否访问用户B的数据？）", severity: "P0" }
+          - { id: "SE-06", check: "垂直越权（普通用户能否调用管理员接口？）", severity: "P0" }
+          - { id: "SE-07", check: "多租户隔离（租户A能否看到租户B的数据？）", severity: "P0" }
+      - dimension: "注入检查"
+        category: "B"
+        items:
+          - { id: "SE-08", check: "SQL注入/XSS/CSRF防护（输入校验？输出编码？）", severity: "P1" }
+
+  # ========== 10. QA专家 ==========
+  qa:
+    name: "QA专家"
+    domains: ["默认匹配", "测试", "边界", "状态"]
+    check_dimensions:
+      - dimension: "边界值检查"
+        category: "G"
+        items:
+          - { id: "QA-01", check: "数值边界（0/1/最大值/超出最大值/负数）", severity: "P1" }
+          - { id: "QA-02", check: "空值边界（null/空字符串/空数组/空对象）", severity: "P1" }
+      - dimension: "状态覆盖检查"
+        category: "E"
+        items:
+          - { id: "QA-03", check: "可达性（每个状态是否可达？）", severity: "P0" }
+          - { id: "QA-04", check: "死状态（是否有永远无法退出的状态？）", severity: "P0" }
+      - dimension: "并发检查"
+        category: "L"
+        items:
+          - { id: "QA-05", check: "竞态条件（同时操作/锁冲突/双重提交）", severity: "P1" }
+      - dimension: "数据依赖检查"
+        category: "G"
+        items:
+          - { id: "QA-06", check: "前置数据（存在/不存在/部分存在时的行为）", severity: "P1" }
+
+  # ========== 11-18 扩展专家（精简版） ==========
+  customer_service:
+    name: "客服/售后专家"
+    domains: ["退款", "退货", "售后", "客诉"]
+    check_dimensions:
+      - dimension: "工单流程检查"
+        category: "A"
+        items:
+          - { id: "CS-01", check: "工单SLA超时（分配/处理/升级，超时如何处理？）", severity: "P1" }
+          - { id: "CS-02", check: "工单升级（多级升级机制？升级条件？）", severity: "P2" }
+
+  member:
+    name: "会员/用户专家"
+    domains: ["会员", "积分", "等级", "用户体系", "登录", "注册"]
+    check_dimensions:
+      - dimension: "积分体系检查"
+        category: "A"
+        items:
+          - { id: "MB-01", check: "积分并发扣减（同时消耗积分，锁？乐观锁？）", severity: "P0" }
+          - { id: "MB-02", check: "积分过期处理（过期积分如何处理？通知？）", severity: "P1" }
+      - dimension: "账号安全检查"
+        category: "B"
+        items:
+          - { id: "MB-03", check: "异常登录检测（异地登录/新设备/暴力破解）", severity: "P1" }
+
+  logistics:
+    name: "物流/配送专家"
+    domains: ["物流", "配送", "发货"]
+    check_dimensions:
+      - dimension: "配送异常检查"
+        category: "A"
+        items:
+          - { id: "LG-01", check: "丢件/破损/拒收处理流程", severity: "P1" }
+          - { id: "LG-02", check: "改地址（发货前/发货中/发货后，每种处理不同）", severity: "P1" }
+
+  content:
+    name: "内容/审核专家"
+    domains: ["审核", "内容", "UGC", "评论"]
+    check_dimensions:
+      - dimension: "审核流程检查"
+        category: "A"
+        items:
+          - { id: "CT-01", check: "机审+人审流程（机审不通过→人审？人审积压？）", severity: "P0" }
+          - { id: "CT-02", check: "违规处理（警告/删除/封禁/申诉，流程完整？）", severity: "P1" }
+      - dimension: "敏感词检查"
+        category: "B"
+        items:
+          - { id: "CT-03", check: "变体识别（拼音/拆字/谐音，绕过检测？）", severity: "P1" }
+
+  social:
+    name: "社交/互动专家"
+    domains: ["消息", "通知", "推送", "私信"]
+    check_dimensions:
+      - dimension: "消息系统检查"
+        category: "A"
+        items:
+          - { id: "SO-01", check: "消息顺序（并发消息排序？时间戳？）", severity: "P1" }
+          - { id: "SO-02", check: "离线消息（用户离线时消息存储？上线后推送？）", severity: "P1" }
+      - dimension: "互动防刷检查"
+        category: "B"
+        items:
+          - { id: "SO-03", check: "点赞/评论防刷（批量点赞/灌水评论？）", severity: "P1" }
+
+  payment:
+    name: "支付/结算专家"
+    domains: ["支付", "结算", "对账"]
+    check_dimensions:
+      - dimension: "支付异常检查"
+        category: "A"
+        items:
+          - { id: "PY-01", check: "重复支付（多渠道同时支付，如何处理？）", severity: "P0" }
+          - { id: "PY-02", check: "退款失败（退款渠道异常，重试？人工？）", severity: "P0" }
+      - dimension: "分账检查"
+        category: "A"
+        items:
+          - { id: "PY-03", check: "分账规则（平台/商家/推广者，分账比例？分账失败？）", severity: "P1" }
+
+  operations:
+    name: "运营/DevOps专家"
+    domains: ["默认匹配", "部署", "监控", "配置"]
+    check_dimensions:
+      - dimension: "运营配置检查"
+        category: "P"
+        items:
+          - { id: "OP-01", check: "配置防呆（运营配置错误，影响范围？回滚？）", severity: "P1" }
+          - { id: "OP-02", check: "埋点定义（新功能埋点是否定义？数据采集？）", severity: "P2" }
+      - dimension: "监控检查"
+        category: "R"
+        items:
+          - { id: "OP-03", check: "业务监控告警（关键指标告警？告警阈值？升级？）", severity: "P1" }
+      - dimension: "日志检查"
+        category: "Q"
+        items:
+          - { id: "OP-04", check: "操作日志（谁/何时/做了什么？审计追溯？）", severity: "P1" }
+
+  legal:
+    name: "法务/合规专家"
+    domains: ["权限", "审核", "合规"]
+    check_dimensions:
+      - dimension: "数据合规检查"
+        category: "M"
+        items:
+          - { id: "LE-01", check: "个人信息合规（收集/使用/存储/传输/删除，合规要求？）", severity: "P1" }
+          - { id: "LE-02", check: "数据保留（用户注销后数据保留多久？删除权？）", severity: "P2" }
+      - dimension: "审计检查"
+        category: "Q"
+        items:
+          - { id: "LE-03", check: "操作审计日志（关键操作是否记录？可追溯？）", severity: "P1" }
+
+# ============================================
+# 迭代涟漪效应检查（迭代需求专用）
+# ============================================
+ripple_effect_check:
+  description: |
+    迭代需求专用：一个变更触发多领域连锁评估。
+    当--type=迭代或变更时，除常规专家审查外，额外执行涟漪效应分析。
+  trigger: "requirement_type in [迭代, 变更]"
+  flow:
+    - step: 1
+      action: "识别变更内容（改了什么？状态机/字段/规则/接口）"
+    - step: 2
+      action: "匹配受影响领域（改订单状态→电商/库存/财务/数据/客服/物流）"
+    - step: 3
+      action: "每个受影响领域由对应专家评估旧需求影响"
+      examples:
+        - "电商专家：旧用例的取消/退款流程是否受影响？"
+        - "财务专家：旧对账逻辑是否受影响？"
+        - "数据专家：旧统计指标口径是否受影响？"
+        - "库存专家：旧库存预占逻辑是否受影响？"
+    - step: 4
+      action: "输出涟漪影响清单（受影响的旧用例/旧状态/旧指标/旧规则）"
+
+# ============================================
+# 需求隐性冲突检查
+# ============================================
+requirement_conflict_check:
+  description: |
+    不同需求方的需求组合后可能产生矛盾。
+    AI检查当前需求与已有需求是否有隐性冲突。
+  trigger: "always"
+  check_items:
+    - { id: "RC-01", check: "效率vs安全冲突（批量操作+每步审批=体验极差）", severity: "P1" }
+    - { id: "RC-02", check: "灵活性vs一致性冲突（可配置+强制规则=矛盾）", severity: "P1" }
+    - { id: "RC-03", check: "实时性vs准确性冲突（实时统计+精确对账=不可能同时）", severity: "P2" }
+
+# ============================================
+# AI建议方案模板
+# ============================================
+suggestion_template:
+  format: |
+    每个发现的盲区，AI给出建议方案：
+    - 2-3个可选方案（含利弊分析+实现复杂度+适用场景）
+    - AI推荐方案（基于需求内容评估）
+    - 自定义选项（成员可自行描述方案）
+  structure:
+    blindspot_id: "MK-01"
+    expert: "marketing"
+    description: "防刷机制未定义"
+    severity: "P0"
+    suggestions:
+      - solution: "方案A：限频+限人"
+        pros: ["实现简单（3天）", "覆盖大部分场景"]
+        cons: ["无法防设备刷"]
+        complexity: "低"
+        suitable: "内部活动/低风险场景"
+        recommended: true
+      - solution: "方案B：设备指纹+IP限制"
+        pros: ["防刷效果好"]
+        cons: ["实现复杂（7天）", "可能误杀正常用户"]
+        complexity: "中"
+        suitable: "公开活动/高价值奖品"
+        recommended: false
+      - solution: "方案C：风控引擎（综合评分）"
+        pros: ["最精准"]
+        cons: ["实现最复杂（14天）", "需要积累风控数据"]
+        complexity: "高"
+        suitable: "长期运营的高风险活动"
+        recommended: false
+
+# ============================================
+# 盲区决策状态定义
+# ============================================
+decision_status:
+  pending: "⚪待确认"
+  need_supplement: "✅需要补充"
+  not_applicable: "⬜不适用"
+  need_discuss: "❓需讨论"
+  supplemented: "已补充"
+  skipped: "已跳过（不适用）"
+
+# ============================================
+# 闭环验证规则
+# ============================================
+closure_validation:
+  max_iterations: 3  # 最多3次循环
+  on_exceed: "PM介入，人工决策剩余盲区"
+  validation_criteria: "所有need_supplement状态变为supplemented，无新发现盲区"

@@ -253,6 +253,23 @@ stages:
           每个FN的闭环校验结果（含缺口清单+补充建议）必须体现在PRD中。
           PM检查：PRD中每个FN有闭环校验结果，缺口已补全。
         on_fail: "阻止进入设计阶段。PM驳回BA：端到端闭环校验未执行。BA必须执行e2e_closure_analyzer+planning_boundary_detector+comprehensive_uc_designer。"
+      - id: "G-REQ-21"
+        type: "hard_gate"
+        name: "多专家盲区审查完整性（V5.4.0新增：18专家×21类盲区联合审查）"
+        check: "file_exists_and_content_pattern"
+        target: "projects/{project}/.codebuddy/docs/01-requirements/blindspot-decisions-v{version}.yml"
+        pattern: "closure_validation.passed: true"
+        description: |
+          V5.4.0新增：BA完成§1-§6产物后，PM启动多专家联合盲区审查（§6.5）。
+          AI根据需求内容匹配18个领域专家，按21类盲区检查清单逐项审查。
+          发现盲区后给出建议方案，成员确认（✅需要补充/⬜不适用/❓需讨论），
+          BA补充后闭环验证。迭代需求额外执行涟漪效应分析。
+          PM检查：
+          1. blindspot-decisions-v{version}.yml 文件存在
+          2. closure_validation.passed = true（闭环验证通过）
+          3. 所有decision=need_supplement的状态变为supplemented
+          4. 无未处理的盲区（pending状态为0）
+        on_fail: "阻止进入设计阶段。PM驳回BA：多专家盲区审查未完成或闭环验证未通过。BA必须执行§6.5的7个step，确认所有盲区已处理。"
 
   # ---- Stage-3 设计 ----
   design:
