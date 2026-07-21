@@ -1,0 +1,216 @@
+# ============================================
+# Workflow: acceptance-flow（验收流程）
+# 版本: v2.2.0
+# 最后更新: 2026-07-20
+# ============================================
+#
+# V2.2.0 升级：AC+PO大脑注入（验收大脑）
+#   1. 新增 ai_brain 段——AC+PO验收大脑
+#   2. 验收缺陷模式识别：历史验收Bug模式→本次验收重点区域预警
+#   3. 角色覆盖推理：四人模拟视角互补分析+覆盖盲区检测
+#   4. 商业价值对齐推理（PO视角）：BO/BG达成度评估+价值缺口识别
+#   5. 回归验收推荐：变更影响分析→最小验收范围推荐
+#   6. 大脑记忆导入：QA/BA的brain_sync_export + 上版本AC大脑记忆
+#   7. 大脑同步输出→BA：需求覆盖缺口建议 + →PM：验收质量趋势
+#
+# V2.1.0 升级：新增 PO Agent 商业价值验收（第4验收角色）
+#
+# 流程专家视角：
+#   acceptance-flow 是 AC Agent 的核心工作流——在 QA Agent 测试通过后，
+#   以四人模拟（新用户/VIP/管理员/PO Agent）逐条对照 User Story 验收仿真系统。
+#   验收不通过项生成 Bug，进入缺陷回流闭环。
+#
+# 核心原则：
+#   1. 用户仅看结果，可 /feedback 追加验收场景
+#   2. 四人模拟覆盖不同角色视角（V2.1.0新增PO商业价值验收）
+#   3. 验收不通过 = Bug（非"建议"），自动进入回流
+#   4. 逐条对照 User Story，非抽样检查
+#   5. PO商业价值验收不通过 → 路由PO（产品方向调整），非功能Bug
+# ============================================
+
+workflow:
+  id: "acceptance-flow"
+  name: "验收流程（V2.2.0 AC+PO验收大脑）"
+  version: "2.2.0"
+  trigger_command: "/init（PM 调度 AC，测试通过后）"
+  owner: "ac-agent"
+  gates_reference: ".codebuddy/knowledge/common/gates-registry.yml#stages.accept"
+  iron_rules_reference: ".codebuddy/knowledge/common/iron-rules-registry.yml#agents.ac_agent"
+  supervisor: "pm-agent"
+
+  # ============================================
+  # V2.2.0新增：AC+PO验收大脑
+  # ============================================
+  ai_brain:
+    id: "ac_po_brain_v1"
+    name: "验收大脑（AC+PO双视角）"
+    description: |
+      验收不再是逐条勾选User Story——验收大脑基于历史验收Bug模式、
+      角色覆盖分析和商业价值评估，推理出验收盲区和价值缺口。
+      AC负责功能体验层面的智能推理，PO负责商业价值层面的智能评估。
+    reasoning_modules:
+      # --- AC视角推理模块 ---
+      - id: "acceptance_defect_prediction"
+        name: "验收缺陷模式识别（AC视角）"
+        description: |
+          基于历史验收Bug模式，AI预判当前版本验收的高风险区域。
+          输入：QA风险预测 + 历史验收Bug模式 + 当前版本FN变更范围
+          输出：验收风险清单（FN级×历史Bug映射+重点验收建议）
+          示例：「历史验收中'批量操作'类功能90%出现边界情况Bug → 加强批量操作验收深度」
+      
+      - id: "persona_coverage_reasoning"
+        name: "角色覆盖推理（AC视角）"
+        description: |
+          分析四人模拟（新用户/VIP/管理员/PO）的视角互补性，
+          检测是否存在角色视角覆盖盲区。
+          输入：四人模拟验收范围 + FN/UC清单 + 状态机
+          输出：覆盖盲区清单（某角色未覆盖的FN/UC/状态）+ 补充验收建议
+      
+      # --- PO视角推理模块 ---
+      - id: "business_value_alignment"
+        name: "商业价值对齐推理（PO视角）"
+        description: |
+          PO大脑评估交付物对BO/BG的达成度，识别商业价值缺口。
+          输入：BO/BG定义 + 七要素（运营/资源/财务/渠道/业务/组织/技术）+ 交付物清单
+          输出：商业价值达成度报告（每项BG的目标vs实际+缺口等级）
+      
+      - id: "regression_acceptance_recommender"
+        name: "回归验收智能推荐"
+        description: |
+          基于变更影响分析，AI推荐最小回归验收范围。
+          输入：变更影响分析 + 模块依赖 + 历史验收Bug关联
+          输出：三层回归验收集（最小集/推荐集/完整集）
+    
+    memory_import:
+      sources:
+        - "QA大脑brain_sync_export：验收高风险点清单+已知限制清单+被测功能覆盖度报告"
+        - "BA大脑brain_sync_export（QA转）：需求覆盖缺口建议+高风险BR验证建议"
+        - "上版本AC大脑记忆：验收缺陷预测准确率+角色覆盖盲区命中率+商业价值评估准确率"
+        - "跨版本验收Bug模式库：按模块/FN的验收Bug密度统计"
+    
+    brain_sync_export:
+      to_ba: ["需求覆盖缺口建议（验收中发现的遗漏用例）", "交互体验改进建议", "用户视角的PRD可落地性评估"]
+      to_pm: ["验收质量趋势（功能覆盖率×Bug密度×商业价值达成度三合一）", "版本交付信心指数", "遗留风险清单"]
+
+  # ============================================
+  # 步骤定义
+  # ============================================
+  steps:
+    - id: "1"
+      name: "需求对照验收"
+      agent: "ac-agent"
+      skills: ["requirement-checker"]
+      input: "POM/需求文档（User Story 列表，含FN/UC编号）+ 仿真系统"
+      output:
+        - "逐条 User Story 验收记录（Happy Path + Ugly Path + Corner Case，含FN/UC编号关联）"
+        - "验收不通过 Bug 列表（含related_fn字段）"
+      methodology: |
+        requirement-checker 逐条对照：
+        1. 加载所有 User Story（含 Happy/Ugly/Corner Case）
+        2. 每条User Story关联 FN-{系统缩写}-{终端缩码}-{NNN} 和 UC-{系统缩写}-{终端缩码}-{NNN}-{SS}
+        3. 在仿真系统中逐条走查
+        4. Happy Path 全覆盖、Ugly Path ≥2 个、Corner Case ≥1 个
+        5. 检查错误提示可理解性（禁止技术术语）
+        6. 检查操作反馈完整性（加载/成功/失败）
+        7. 验收Bug标注 related_fn 字段，确保可追溯到功能需求
+
+    - id: "2"
+      name: "业务流程闭环验收"
+      agent: "ac-agent"
+      skills: ["business-flow-tester"]
+      input: "BA 业务流程产物 + 仿真系统"
+      output:
+        - "完整操作链路验收记录"
+        - "流程阻断 Bug 列表"
+      methodology: |
+        business-flow-tester 模拟完整操作链路：
+        1. 按 BA 业务泳道图走查完整流程
+        2. 验证跨角色协作流程
+        3. 验证跨系统数据流转
+        4. 验证异常流程的中断与恢复
+
+    - id: "3"
+      name: "用户体验验收"
+      agent: "ac-agent"
+      skills: ["ux-acceptance"]
+      input: "仿真系统"
+      output:
+        - "UX 验收记录（错误提示可理解性 + 操作反馈完整性）"
+      methodology: |
+        ux-acceptance 检查用户体验：
+        1. 所有错误提示是否用户可理解（非技术术语）
+        2. 所有操作是否有合理反馈（加载态/成功态/失败态）
+        3. 空状态是否有引导操作
+        4. 加载态是否有合理的骨架屏/进度指示
+
+    - id: "4"
+      name: "四人模拟验收（多角色）"
+      agent: "ac-agent"
+      input: "仿真系统 + 验收场景"
+      output:
+        - "ACR-验收报告：projects/{project}/docs/05-acceptance/accept-reports/ACR-{module}-{version}-{timestamp}.json"
+        - "BUG-验收Bug：projects/{project}/docs/05-acceptance/bugs/BUG-ACCEPT-{YYYYMMDD}-{NNN}.md"
+      personas:
+        - role: "新用户"
+          platforms: ["pc", "app", "miniapp"]
+          scenario: "empty"
+          focus: ["首次使用体验", "空状态引导", "新手引导", "注册/登录流程"]
+        - role: "VIP用户"
+          platforms: ["pc", "app"]
+          scenario: "dense"
+          focus: ["大数据量性能", "批量操作", "高级功能", "数据加载速度"]
+        - role: "管理员"
+          platforms: ["pc"]
+          scenario: "normal"
+          focus: ["管理功能完整性", "权限控制正确性", "审批流程合规性", "数据看板准确性"]
+        - role: "PO Agent"
+          platforms: ["all"]
+          scenario: "all"
+          focus: ["商业价值交付(BO/BG)", "ROI验证", "用户场景覆盖", "竞争力"]
+      checkpoint: true  # 人工卡点⑤
+      note: "你仅看结果，可 /feedback 追加场景；功能问题回流 BA（需求分析），PO商业价值问题回流 PO（产品方向调整）"
+
+  # ============================================
+  # 验收判定标准
+  # ============================================
+  pass_criteria:
+    - "所有 User Story 的 Happy Path 100% 通过"
+    - "所有 User Story 的 Ugly Path ≥80% 通过（剩余记录为已知限制）"
+    - "所有错误提示用户可理解（0 个技术术语）"
+    - "所有操作有完整反馈（加载+成功+失败）"
+    - "四人模拟无阻塞性 Bug（Critical/High）"
+
+  # ============================================
+  # Bug 管理
+  # ============================================
+  bug_management:
+    output_dir: "projects/{project}/docs/05-acceptance/bugs/"
+    naming: "BUG-ACCEPT-{YYYYMMDD}-{NNN}.md"
+    severity: ["high", "medium", "low"]
+    auto_reflow: true  # 自动进入 defect-reflow 闭环
+    fn_traceability: "每个Bug必须标注 related_fn 字段（FN-{系统缩写}-{终端缩码}-{NNN}），确保可追溯到功能需求"
+
+  # ============================================
+  # 交互反馈模板
+  # ============================================
+  feedback_template: |
+    📋 验收完成确认
+
+    **验收范围**：{模块列表}
+    **User Story 总数**：{总数}
+    **验收通过**：{通过数}（{通过率}%）
+    **验收不通过**：{失败数}
+
+    **四人模拟结果**：
+    - 新用户视角（pc/app/miniapp）：{通过/不通过}
+    - VIP用户视角（pc/app）：{通过/不通过}
+    - 管理员视角（pc）：{通过/不通过}
+    - PO Agent视角（商业价值验收）：{通过/不通过}
+
+    **Bug 统计**：
+    - High：{数量}
+    - Medium：{数量}
+    - Low：{数量}
+
+    **请确认**：通过 / 补充场景：xxx / 驳回
+    （不通过项已自动进入缺陷回流闭环）

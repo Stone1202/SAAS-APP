@@ -1,0 +1,1306 @@
+# ============================================
+# Workflow: learn-domain（领域知识学习流程 V4.0.0）
+# 版本: v4.0.0
+# 最后更新: 2026-07-20
+# ============================================
+#
+# 版本变更历史详见：.codebuddy/knowledge/common/governance-docs/流程版本变更总账.md
+# 当前版本V4.0.0核心：场景驱动学习法（SDL）——商业问题先行→场景主动构建→跨域衔接→角色视角
+# ============================================
+
+workflow:
+  id: "learn-domain"
+  name: "领域知识学习流程（场景驱动学习法 SDL V1.0.0）"
+  version: "4.0.0"
+  trigger_command: "/learn-domain"
+  owner: "pm-agent"
+  type: "special"
+
+  # ============================================
+  # 反爬与抓取容错策略（V3.4.0 新增）
+  # ============================================
+  anti_crawling_strategy:
+    description: |
+      V3.4.0 新增：针对web_fetch/web_search遇到的各类异常（404、JS渲染拦截、
+      飞书/语雀嵌入式内容、视频无法获取、速率限制等），建立7层容错机制。
+      核心原则：「单一来源不可靠 → 多源互补」「直接抓取失败 → 降级搜索」
+      「官方文档死链 → 第三方教程补位」「被动抓取失败 → 主动发现替代源」
+    
+    # ===== 策略1: HTTP错误自动容错与URL变体 =====
+    strategy_1_http_error_tolerance:
+      name: "HTTP错误自动容错与URL变体（S1-HTTP）"
+      priority: "P0（必须执行）"
+      trigger: "web_fetch 返回 404/403/500/502/503 或超时"
+      rules:
+        - condition: "返回 404 Not Found"
+          actions:
+            - "自动尝试URL路径变体：/guides/xxx → /docs/xxx → /zh/guides/xxx"
+            - "自动尝试去掉尾部斜杠或添加尾部斜杠"
+            - "自动尝试将下划线替换为连字符（agent_overview → agent-overview）"
+            - "如以上均失败 → 降级为 web_search 搜索'站内 site:原域名 + 关键词'获取替代URL"
+            - "如仍无法获取 → 标记为 source_unreachable，从第三方来源补充"
+          example: |
+            原URL https://docs.coze.cn/guides/agent_configuration → 404
+            → 尝试 https://docs.coze.cn/docs/agent_configuration
+            → 尝试 https://docs.coze.cn/guides/agent-configuration
+            → 降级 web_search "site:docs.coze.cn agent configuration 智能体配置"
+        
+        - condition: "返回 429 Too Many Requests"
+          actions:
+            - "等待 Retry-After 头指示的时间"
+            - "如无 Retry-After 头 → 等待 5+10*attempt数 秒后重试（指数退避）"
+            - "同域名其他请求降低并发（从并行4个降为2个）"
+            - "最多重试3次"
+        
+        - condition: "返回 403/401（反爬拦截）"
+          actions:
+            - "检查是否需要登录 → 提示用户提供 --cookie 或 --auth"
+            - "如用户无法提供 → 降级为 web_search 获取该页面缓存/镜像内容"
+            - "标记该域名需要认证，后续自动跳过"
+        
+        - condition: "返回 5xx / 超时"
+          actions:
+            - "等待 3秒后重试1次"
+            - "仍失败 → 降级为 web_search 获取替代内容"
+    
+    # ===== 策略2: JS渲染页面降级 =====
+    strategy_2_js_rendering_fallback:
+      name: "JavaScript渲染页面降级（S2-JS）"
+      priority: "P0（必须执行）"
+      trigger: "web_fetch 返回内容为 <100字 且包含 '请启用JavaScript'/'Please enable JavaScript'/'您需要允许该网站执行 JavaScript' 或以空/noscript为主"
+      rules:
+        - condition: "页面需要JS渲染（SPA、头条/百家号等动态网站）"
+          actions:
+            - "立即标记为 js_required: true"
+            - "降级为 web_search：搜索该页面标题+关键词，从搜索结果摘要和第三方站点获取内容"
+            - "如搜索结果中有该文章的镜像/转载 → 抓取镜像站内容"
+            - "如仍无有效内容 → 标记为 content_unavailable_js_block，记录于抓取结果中"
+            - "不自动使用 agent-browser（成本高），仅在用户明确要求或关键页面时由用户决定"
+          example: |
+            web_fetch https://www.toutiao.com/article/7646343433015083572
+            → 返回 "您需要允许该网站执行 JavaScript"
+            → web_search "扣子3.0 AI团队协作 新功能 2026"
+            → 从 CSDN/腾讯新闻等第三方文章获取同等信息
+    
+    # ===== 策略3: 嵌入式内容处理 =====
+    strategy_3_embedded_content:
+      name: "嵌入式内容处理（S3-EMBED）"
+      priority: "P1（有条件执行）"
+      trigger: |
+        web_fetch 返回内容中包含：
+        - 飞书/Lark文档（feishu.cn / larkoffice.com）
+        - 语雀文档（yuque.com）
+        - 嵌入视频占位（视频标题但无可播放URL）
+        - Notion页面
+        - Google Docs
+      rules:
+        - condition: "飞书/语雀文档（嵌入视频/表格/富文本但web_fetch无法获取完整内容）"
+          actions:
+            - "提取页面可见文本信息（标题/目录/邮箱/链接）"
+            - "提取页面中引用的所有外部URL"
+            - "web_search 搜索该文档标题 → 从其他来源获取同等信息"
+            - "标记 content_fidelity: partial（部分获取），标注缺失内容类型"
+          example: |
+            web_fetch https://bytedance.larkoffice.com/docx/MU2gdBhluo1aCJx9g5Sc1vwWnte
+            → 只获取到标题"扣子官方教程&宣传片" + 结构信息，无视频内容
+            → 提取页面中的链接（coze.cn/docs/guides/welcome）
+            → web_search "Coze 3.0 宣传片 新功能" 从第三方获取补充
+        
+        - condition: "含视频标题但无法获取视频内容"
+          actions:
+            - "提取视频标题和描述"
+            - "web_search 搜索视频标题 + 关键词"
+            - "优先搜索B站/YouTube等视频平台上的同类教程"
+            - "标记 video_unavailable，注明已用文本替代"
+    
+    # ===== 策略4: 速率控制与并发管理 =====
+    strategy_4_rate_limiting:
+      name: "速率控制与并发管理（S4-RATE）"
+      priority: "P1（建议执行）"
+      rules:
+        - "同域名并发请求数 ≤ 4（默认）/ ≤ 2（触发429后）"
+        - "同域名请求间隔 ≥ 500ms"
+        - "不同域名可并行（无速率冲突）"
+        - "单次 learn-domain 总请求数 ≤ 20（防止过度抓取）"
+        - "如触发限流，自动将同域名请求改为串行"
+    
+    # ===== 策略5: URL智能推断与站点发现 =====
+    strategy_5_url_inference:
+      name: "URL智能推断与替代站点发现（S5-URL）"
+      priority: "P1（有条件执行）"
+      trigger: "多个同域名URL返回404，或官方文档URL大面积失效"
+      rules:
+        - condition: "2个以上同域名URL返回404"
+          actions:
+            - "web_search 'site:{原域名} {领域关键词} {功能描述}' 搜索站内有效页面"
+            - "从搜索结果中发现正确的URL模式"
+            - "如官方文档大面积失效 → web_search 搜索 'GitHub awesome-{领域}' 或 '第三方中文教程'"
+            - "更新 source_urls 列表为有效URL"
+          example: |
+            5个 docs.coze.cn/guides/* 返回404
+            → web_search "site:docs.coze.cn agent overview guides"
+            → 发现有效URL为 /docs/guides/welcome 而非 /guides/agent_overview
+            → 此类站点触发URL模式迁移，更新所有待抓取URL
+    
+    # ===== 策略6: 多源互补与内容交叉验证 =====
+    strategy_6_multi_source_complement:
+      name: "多源互补与内容交叉验证（S6-MULTI）"
+      priority: "P0（必须执行）"
+      description: |
+        核心原则：不依赖单一来源，每个主题至少从2个不同来源获取并交叉验证。
+        官方文档适合技术细节，第三方教程适合实操经验和踩坑记录。
+      rules:
+        - "同一主题的内容至少来自 官方文档 + 第三方教程 两种类型"
+        - "官方文档缺失时，第三方教程权重提升，但标注 content_fidelity: third_party_only"
+        - "多个来源对同一功能描述不一致时 → 以官方文档为准 → 标注 conflict_resolution"
+        - "每个主题至少2个来源，API相关主题至少3个来源"
+        - "来源质量评估：官方文档 > 知名技术博客 > CSDN/知乎 > 个人博客"
+      quality_check:
+        - "来源分布是否覆盖官方+第三方？"
+        - "关键功能描述是否有多源验证？"
+        - "是否有来源断层（某主题只有1个来源）？"
+    
+    # ===== 策略7: 内容质量自动评估 =====
+    strategy_7_content_quality:
+      name: "内容质量自动评估与补充决策（S7-QUALITY）"
+      priority: "P1（建议执行）"
+      description: |
+        每次抓取完成后，AI自动评估内容完整度，决定是否继续补充。
+      quality_dimensions:
+        - dimension: "完整度（completeness）"
+          check: "核心主题是否都有内容覆盖？是否有主题为空白？"
+          threshold: "≥80% 主题有实质内容"
+        - dimension: "深度（depth）"
+          check: "每个主题是否有足够的细节（≥200字/主题）？"
+          threshold: "≥70% 主题达到深度要求"
+        - dimension: "新鲜度（freshness）"
+          check: "内容是否包含最新版本信息？"
+          threshold: "核心主题需包含最新版本（如Coze 3.0）"
+        - dimension: "来源多样性（source_diversity）"
+          check: "是否覆盖官方文档+第三方+教程三种以上来源类型？"
+          threshold: "≥2种来源类型"
+      decision_tree: |
+        ├─ 完整度≥80% + 深度≥70% + 来源≥2种 → 进入Step2继续
+        ├─ 完整度50-80% → web_search补充缺失主题 → 重新评估
+        ├─ 深度<70% → 对浅层主题追加搜索 → 重新评估
+        └─ 来源仅为1种 → web_search补充其他来源 → 重新评估
+    
+    # ===== 反爬实时日志（V3.4.0新增） =====
+    crawling_log:
+      description: "每次抓取过程记录详细日志，供后续分析和策略优化"
+      fields:
+        - url: "请求的URL"
+        - status: "HTTP状态码 或 fetch结果"
+        - strategy_used: "使用的策略编号（S1-S7）"
+        - result: "success / fallback_web_search / fallback_skip / user_prompt"
+        - alternative_url: "降级后使用的替代URL（如有）"
+        - notes: "备注（如404→URL变体尝试记录）"
+
+  # ============================================
+  # SDL V1.0.0 全局配置（V4.0.0 新增）
+  # ============================================
+  sdl_config:
+    description: |
+      场景驱动学习法（Scenario-Driven Learning）V1.0.0 全局配置。
+      当 --sdl 参数启用或 --category=thirdparty 时，自动启用SDL五层学习。
+    enabled_by_default: false  # 默认关闭，需显式 --sdl 或第三方分类自动启用
+    auto_enable_for: ["thirdparty"]  # 这些分类自动启用SDL
+    five_layers:
+      - { layer: 0, name: "商业问题", output: "business_problems", description: "这个领域帮企业解决什么痛点和商业目标？", step: "Step0" }
+      - { layer: 1, name: "场景地图", output: "scenario_maps", description: "要实现商业价值需要经过哪些业务场景？", step: "Step3（增强）" }
+      - { layer: 2, name: "跨域衔接", output: "cross_domain_bridges", description: "这个领域的场景和哪些其他领域联动？", step: "Step2.5a" }
+      - { layer: 3, name: "角色视角", output: "role_perspectives", description: "同一场景不同角色看到什么、操作什么、关心什么？", step: "Step2.5b" }
+      - { layer: 4, name: "能力映射", output: "传统Part1-13+related_scenes索引", description: "支撑场景需要哪些API/规则/状态机？", step: "Step4-4.6（增强）" }
+    re_learn_mode:
+      description: |
+        对已学领域启用SDL重学时，不推倒重来，增量增强：
+        1. 保留全部现有 Part1-13 产物
+        2. 新增 business_problems（Step0 AI推理）
+        3. 新增 cross_domain_bridges（Step2.5a 扫描全领域）
+        4. 新增 role_perspectives（Step2.5b 角色展开）
+        5. 增强 scenario_maps（现有场景清单→场景地图）
+        6. 版本 major+1（如 v1.0.0 → v2.0.0）
+
+  command:
+    name: "/learn-domain"
+    description: |
+      领域知识学习V4.0.0：场景驱动学习法（SDL）V1.0.0。
+      从行业标准网页/视频/文档/第三方API学习业务领域知识。
+      商业问题先行→场景主动构建→跨域衔接建模→角色视角展开→能力映射。
+      与learn-project方法论统一，来源从3种扩展到10种。
+      --sdl 参数启用场景驱动学习法（thirdparty分类自动启用）。
+    usage: "/learn-domain [--domain=领域名] [--category=分类] --source=scheme:value [--source=...] [--focus=学习重点] [--allow-split] [--incremental] [--transcript=文字稿] [--deep-params] [--cookie=xxx] [--auth=xxx] [--sdl]"
+    required_args: ["--source"]
+    optional_args: ["--domain", "--category", "--focus", "--allow-split", "--incremental", "--transcript", "--deep-params", "--cookie", "--auth", "--sdl"]
+    notes:
+      - "--sdl：V4.0.0新增，强制启用场景驱动学习法（SDL）V1.0.0。thirdparty分类自动启用，无需显式指定"
+      - "--focus：用户补充需求说明，指定学习特定内容"
+      - "--domain 为可选：不指定时自动识别内容涉及的领域并提示用户拆分"
+      - "--allow-split：指定 --domain 但允许拆分混入的其他领域内容"
+      - "--incremental：增量学习，追加到已有领域知识（版本 minor+1）"
+      - "--source 支持10种类型（V3.0.0从3种扩展）：https/video/file/local-dir/api-endpoint/paste/audio/image/pdf/website"
+      - "--transcript：视频无字幕且ASR不可用时，用户提供文字稿文件"
+      - "--deep-params：强制深度提取每个API的输入/输出参数（默认自动识别API文档时启用）"
+      - "--cookie/--auth：需登录网站时提供认证信息（V3.0.0新增）"
+      - "--category=thirdparty：第三方API文档学习，必然触发API学习技能，领域匹配预检跳过（V3.0.0新增）"
+      - "SDL重学已学领域：使用 --sdl --incremental 对已有领域增量增强SDL四层，保留全部现有产物"
+
+  # ============================================
+  # 领域分类体系（17大类，V3.0.0新增thirdparty，V3.1.0新增design）
+  # ============================================
+  categories:
+    - { id: "account", name: "账号", description: "微信账号体系、微信服务商、OAuth、SSO、RBAC" }
+    - { id: "product", name: "商品", description: "商品管理、SKU/SPU、类目、属性、价格" }
+    - { id: "ad", name: "广告", description: "广告投放、广告位、DSP/SSP、程序化购买" }
+    - { id: "payment", name: "支付", description: "聚合支付、收银台、微信支付、支付宝、银行卡" }
+    - { id: "trade", name: "交易", description: "订单流、购物车、下单、履约" }
+    - { id: "aftersale", name: "售后", description: "退款流、退货流、换货、维修" }
+    - { id: "settlement", name: "结算", description: "分账、结算、对账、资金归集" }
+    - { id: "supplychain", name: "供应链", description: "采购、仓储、物流、供应商管理" }
+    - { id: "marketing", name: "营销", description: "优惠券、满减、秒杀、拼团、积分" }
+    - { id: "member", name: "会员", description: "会员体系、等级、权益、成长值" }
+    - { id: "ai", name: "AI", description: "推荐、搜索、客服、画像、风控" }
+    - { id: "report", name: "报表", description: "数据看板、报表、BI、数据大屏" }
+    - { id: "finance", name: "财务", description: "会计、凭证、科目、账期" }
+    - { id: "tax", name: "税务", description: "发票、税率、税务申报、合规" }
+    - { id: "compliance", name: "合规", description: "数据安全、隐私保护、PCI-DSS、等保" }
+    - { id: "thirdparty", name: "第三方", description: "V3.0.0新增。第三方API文档学习（易宝/微信支付/支付宝/微信小程序等），按第三方拆子领域。必然触发API学习技能，领域匹配预检跳过" }
+    - { id: "design", name: "设计", description: "V3.1.0新增。设计资源与风格体系（设计系统/设计风格/终端规格/组件库），非业务领域，供UX Agent参考。领域匹配预检特殊处理，跳过API学习技能" }
+
+  # ============================================
+  # 学习流程（14步，V4.0.0 新增 Step0 + Step2.5）
+  # ============================================
+  steps:
+
+    # ========== Step0: 商业问题发散（V4.0.0 新增，SDL Layer 0） ==========
+    - id: "0"
+      name: "💡 商业问题发散（SDL Layer 0，V4.0.0 新增）"
+      agent: "ba-agent"
+      input: "--domain + --category + --focus（可选）+ 已有领域知识（如增量重学）"
+      output: "商业问题清单（business_problems）+ 角色清单 + 问题依赖图"
+      sdl_layer: 0
+      conditional: "仅当 --sdl 启用 或 --category=thirdparty 时执行"
+      methodology: |
+        ═══ SDL核心第一步：先问"解决什么商业问题"，再抓取文档 ═══
+        不先看文档有什么，而是先推理这个领域应该解决什么商业问题。
+
+        子步骤0a：领域角色推断
+        ─────────────────
+        AI根据领域名称和分类，推理涉及的核心角色：
+        1. 识别所有参与方（付费方/使用方/受益方/监管方/集成方）
+        2. 每个角色的核心诉求是什么？
+        3. 角色之间的利益关系是什么？（谁服务谁？谁依赖谁？）
+        
+        产出格式：
+        domain_roles:
+          - role_id: "ROLE-001"
+            name: "服务商/SaaS平台"
+            type: "integrator"  # payer/user/beneficiary/regulator/integrator
+            core_need: "通过集成XXX能力，提升产品竞争力"
+            serves: ["ROLE-002"]  # 服务的角色
+
+        子步骤0b：商业问题推导（五问法）
+        ─────────────────
+        对每个角色+每个核心诉求，AI推导商业问题：
+
+        Q1: 这个角色面临什么核心痛点？
+        Q2: 不做这件事的后果是什么？（pain_point）
+        Q3: 引入这个能力后能带来什么价值？（value）  
+        Q4: 价值可量化吗？（evidence: 行业数据/案例/AI逻辑推理）
+        Q5: 这个问题在SCRM场景下如何体现？（scrm_relevance）
+
+        问题识别维度：
+        - 效率问题：人工操作 → 自动化
+        - 规模问题：单点处理 → 批量处理
+        - 质量问题：经验驱动 → 数据驱动  
+        - 体验问题：被动响应 → 主动触达
+        - 数据问题：数据孤岛 → 全域打通
+
+        产出格式：
+        business_problems:
+          - id: "BP-{领域缩写}-{NNN}"
+            problem: "一句话描述商业问题"
+            pain_point: "不做这件事的后果（量化描述）"
+            value: "引入能力后的价值（量化描述）"
+            evidence: "证据来源（行业数据/客户案例/AI推理）"
+            priority: "high/medium/low"
+            priority_rationale: "为什么是这个优先级"
+            scrm_relevance: "在SCRM场景下的相关性说明"
+            related_roles: ["ROLE-001", "ROLE-002"]
+            related_problems: ["BP-XXX-002"]  # 依赖/关联的其他问题
+
+        子步骤0c：问题优先级排序 + 依赖图
+        ─────────────────
+        1. 三维度评分（每项1-5分）：
+           - 通用性：这个问题在行业中多普遍？
+           - 紧迫性：不解决这个问题损失多大？
+           - SCRM相关性：与SCRM产品定位多密切？
+        2. 综合得分 = 通用性×0.3 + 紧迫性×0.3 + SCRM相关性×0.4
+        3. 按得分排序，priority标注：
+           - ≥4.0分 → high（核心问题，必覆盖）
+           - 2.5-3.9分 → medium（重要问题，尽量覆盖）
+           - <2.5分 → low（边缘问题，可简化）
+        4. 生成问题依赖图（Mermaid graph）：标注哪个问题是哪个的前置
+
+        数量约束：
+        - 最少3个商业问题（领域太简单 → 考虑是否该独立成领域）
+        - 最多8个商业问题（超出 → 考虑领域拆分）
+        - 建议4-6个（覆盖核心角色+核心诉求）
+
+    # ========== Step0.5: SDL 模式判断与路由（V4.0.0 新增） ==========
+    - id: "0.5"
+      name: "🔀 SDL 模式判断与路由（V4.0.0 新增）"
+      agent: "pm-agent"
+      input: "--sdl 参数 + --category + 是否已学领域"
+      output: "学习模式：sdl_new（全新SDL）/ sdl_relearn（SDL重学）/ traditional（传统模式）"
+      methodology: |
+        判断本次学习模式：
+
+        ┌─ --sdl 显式指定 → sdl_new（全新SDL学习）
+        ├─ --category=thirdparty → sdl_new（自动启用SDL）
+        ├─ 已学领域 + --sdl → sdl_relearn（SDL重学，增量增强）
+        └─ 其他 → traditional（传统V3.4.0模式）
+
+        SDL重学模式特殊处理：
+        - 保留全部现有 Part1-13 产物
+        - 执行 Step0（商业问题推理，基于现有知识而非源文档）
+        - 执行 Step2.5（跨域衔接+角色视角）
+        - 增强 Step3 场景清单→场景地图
+        - 版本 major+1
+
+    # ========== Step1: 获取信息（深度抓取 + V3.4.0 反爬策略） ==========
+    - id: "1"
+      name: "获取信息（深度抓取+V3.4.0反爬策略+视频处理+需求说明解析）"
+      agent: "doc-agent"
+      input: "--source 链接列表 + --focus 用户需求说明（可选）"
+      output: "完整内容 Markdown + 图片识别结果 + 视频文字稿 + focus_directive（学习指令）+ crawling_log（抓取日志）"
+      anti_crawling_note: |
+        ⚠️ V3.4.0 新增：Step1 执行前必须先阅读 anti_crawling_strategy 章节。
+        所有 web_fetch 调用必须遵循7层容错策略:
+        S1-HTTP（错误容错）→ S2-JS（JS降级）→ S3-EMBED（嵌入处理）
+        → S4-RATE（速率控制）→ S5-URL（URL推断）→ S6-MULTI（多源互补）
+        → S7-QUALITY（质量评估）
+        每次 web_fetch 结果记录到 crawling_log。
+      methodology: |
+        ═══ V3.4.0 爬取前置检查 ═══
+        0. 执行 S7-QUALITY 预检：评估 --source 来源多样性
+           - 仅有单一类型（如全部为官方文档）→ 自动 web_search 补充第三方教程
+           - 仅有第三方来源 → 自动 web_search 搜索官方文档
+        
+        ═══ V3.4.0 爬取执行 ═══
+        每个 URL 执行以下流程：
+        1. web_fetch(url) → 记录 crawling_log
+        2. 如触发 S1-HTTP（404/403/5xx）→ 按S1策略处理 → 记录 crawling_log
+        3. 如触发 S2-JS（JS渲染拦截）→ 按S2策略降级 → 记录 crawling_log
+        4. 如触发 S3-EMBED（嵌入式内容）→ 按S3策略提取+搜索补充 → 记录 crawling_log
+        5. 遵守 S4-RATE 速率控制
+        6. 同域名多个404 → 触发 S5-URL URL智能推断
+        7. 所有URL抓取完成 → 执行 S7-QUALITY 质量评估 → 决定是否补充
+        
+        ═══ 爬取日志格式 ═══
+        crawling_log:
+          - { url: "https://docs.coze.cn/guides/agent_overview", status: 404, strategy: "S1-HTTP", result: "fallback_web_search", alternative_url: "web_search:site:docs.coze.cn agent overview", notes: "404→尝试3种路径变体→全部404→降级搜索" }
+          - { url: "https://bytedance.larkoffice.com/docx/...", status: 200_partial, strategy: "S3-EMBED", result: "fallback_web_search", alternative_url: "web_search:Coze 宣传片", notes: "飞书文档仅获取结构→搜索标题补充" }
+          - { url: "https://www.toutiao.com/article/...", status: "JS_REQUIRED", strategy: "S2-JS", result: "fallback_web_search", alternative_url: "CSDN/csdn.net", notes: "头条JS渲染→搜索找到CSDN转载" }
+
+        ═══ --focus 需求说明解析（V2.0.0 新增）═══
+        如果用户提供了 --focus 参数：
+        1. 解析用户需求说明，提取学习重点关键词
+        2. 生成 focus_directive（学习指令），指导后续Step2-5的提取方向
+        3. 示例：--focus="重点学习商户入网流程和资金收付API"
+           → focus_directive: {重点主题: ["商户入网", "资金收付"], 重点API: ["入网类", "充值", "转账", "提现", "付款"]}
+        4. 如果未提供 --focus，focus_directive = null，后续步骤按全量学习
+
+        ═══ 网页类型处理（V1.1.0 + V1.4.0）═══
+        1. web_fetch 获取首屏内容
+        2. 分页/折叠 → agent-browser 点击展开/翻页
+        3. SPA → agent-browser 等待渲染后提取
+        4. 需要登录 → 提示用户提供 Cookie/Token
+        5. **左侧导航栏深度抓取（V2.0.0 增强）**：
+           - 检测页面是否有左侧导航栏/目录树
+           - 如有，展开所有折叠的分类节点
+           - 逐个获取导航项的链接和标题
+           - 递归抓取每个导航项对应的页面内容（深度2-3层）
+           - 合并所有页面内容为一个完整文档
+        6. 过滤无关内容（导航/广告/页脚）
+        7. 图片识别：下载图片 → AI视觉提取文字 → 不清晰标记 image_unclear
+
+        ═══ 视频类型处理（V1.5.0）═══
+        Step1a：视频信息获取（标题/描述/时长/章节+字幕优先提取）
+        Step1b：语音转文字（ASR按章节分段+时间戳）
+        Step1c：关键帧识别（章节切换/场景变化截取+AI视觉识别）
+        Step1d：内容合并（文字稿+关键帧→完整Markdown，标注来源类型）
+
+        ═══ 降级策略 ═══
+        - 无字幕+ASR不可用 → 提示用户提供 --transcript 文字稿
+        - 视频无法下载（DRM/权限）→ 提示用户提供文字稿
+        - web_fetch 无法获取SPA内容 → 自动降级为 agent-browser
+
+        ═══ 多来源合并 ═══
+        - 多个 --source（网页+视频混合）→ 各自处理后合并
+        - 合并时标注每段内容的来源类型和 URL
+
+    # ========== Step1.5: 领域匹配预检（V3.0.0：thirdparty分类跳过） ==========
+    - id: "1.5"
+      name: "🔍 领域匹配预检"
+      agent: "pm-agent"
+      input: "抓取内容 + --domain + --focus + --category"
+      output: "匹配结论 + 处理方式"
+      methodology: |
+        V3.0.0新增：--category=thirdparty 时跳过领域匹配预检，直接进入Step2学习。
+        第三方API文档学习时，领域已由--domain明确指定（如易宝/微信支付），无需匹配预检。
+
+        PM 分析抓取内容的主题分布，与 --domain 指定领域进行匹配判断。
+        如果有 --focus，优先按 focus_directive 的重点主题进行匹配。
+
+        匹配判断标准：
+        - 扫描内容关键词，与 DOMAIN-INDEX.yml 的 keywords 匹配
+        - 计算各领域的内容占比
+        - AI 语义分析补充识别（关键词未覆盖的领域）
+        - 如有 focus_directive，优先匹配重点主题
+
+        四种匹配场景及处理（同V1.2.0）：
+        ① 完全匹配（相关占比≥80%）→ 继续 Step2
+        ② 部分匹配（60-80%，混入其他领域）→ 用户选择过滤/拆分/全部学习
+        ③ 不匹配（<60%）→ 用户选择重新提供链接/修改领域/跳过
+        ④ 多领域内容 → 用户选择全部拆分/部分学习/合并综合/仅指定领域
+
+    # ========== Step2: AI智能整理主题（V2.0.0 新增） ==========
+    - id: "2"
+      name: "🧠 AI智能整理主题（V2.0.0 新增）"
+      agent: "ba-agent"
+      input: "抓取内容 Markdown + focus_directive（如有）"
+      output: "主题清单（主题ID+名称+描述+内容占比+关联API数量+source_url）"
+      methodology: |
+        AI 从抓取内容中智能识别和整理业务主题。
+
+        主题提取逻辑：
+        1. 扫描全部内容，识别业务主题关键词和上下文
+        2. 按业务域聚类，形成主题分组
+        3. 每个主题评估内容占比（该主题内容占全部内容的百分比）
+        4. 每个主题关联其涉及的API接口数量
+        5. 如有 focus_directive，标记重点主题（priority: high）
+
+        主题识别维度：
+        - 产品功能维度：如"商户入网""资金收付""聚合支付""投诉处理"
+        - 业务角色维度：如"服务商操作""商户操作""消费者操作"
+        - 技术集成维度：如"密钥配置""SDK集成""异步通知""签名加密"
+
+        主题清单格式：
+        themes:
+          - id: "T001"
+            name: "商户入网"
+            description: "特约商户通过服务商提交入网申请，完成开户和绑卡"
+            content_ratio: "25%"
+            related_apis: 10
+            source_urls: ["https://open.yeepay.com/docs/.../development-tips"]
+            priority: "high"  # 如有focus_directive标记
+            sub_themes: ["企业/个体入网", "小微入网", "H5自助入网"]
+
+        主题校验：
+        - 所有抓取的内容是否都已归入某个主题？（未归入的标记 uncategorized）
+        - 主题间是否有重叠？（有重叠的标注并合并或拆分）
+        - 如有 focus_directive，重点主题是否已识别？
+        - V4.0.0 SDL增强：每个主题标注解决的商业问题ID（related_business_problems）
+
+    # ========== Step2.5: 跨域衔接 + 角色视角（V4.0.0 新增，SDL Layer 2+3） ==========
+    - id: "2.5"
+      name: "🔗 跨域衔接 + 👥 角色视角（SDL Layer 2+3，V4.0.0 新增）"
+      agent: "ba-agent + arch-agent"
+      input: "场景地图（初步） + 商业问题清单 + DOMAIN-INDEX.yml（全量领域）+ 主题清单"
+      output: "跨域衔接清单（cross_domain_bridges）+ 角色视角展开（role_perspectives）"
+      sdl_layer: "2+3"
+      conditional: "仅当 --sdl 启用 或 --category=thirdparty 时执行"
+      methodology: |
+        ═══ 2.5a: 跨域衔接建模（SDL Layer 2）═══
+
+        AI扫描所有已学领域（DOMAIN-INDEX.yml），主动发现跨域联动关系。
+
+        跨域衔接5种类型：
+
+        ① 数据衔接（data）：A域输出数据 → B域输入数据
+           例：微信账号体系的 openid → 微信支付的用户标识
+           例：易宝商户入网的 merchantNo → 后续所有资金收付API
+
+        ② 流程衔接（flow）：A域场景是B域场景的前置/后置
+           例：商户入网(易宝) → 资金收付(易宝) → 提现(易宝)
+           例：企微授权安装 → 客户联系初始化 → 外呼任务创建
+
+        ③ 状态衔接（state）：A域状态变化触发B域场景
+           例：企微 客户添加成功 → 触发外呼欢迎(火山外呼)
+           例：支付成功(微信支付) → 触发订单状态更新(交易域)
+
+        ④ 渠道衔接（channel）：A域作为B域的消息/触达渠道
+           例：企微消息触达 + 火山外呼语音触达 → 双通道互补
+           例：火山外呼未接通 → 降级企微消息
+
+        ⑤ 降级衔接（fallback）：A域不可用时降级到B域
+           例：外呼未接通 → 降级企微文本消息
+           例：微信支付失败 → 降级支付宝
+
+        对每种类型，AI扫描已学领域寻找衔接：
+        1. 从当前领域的关键数据实体出发（如user_id/merchantNo/orderNo）
+        2. 搜索其他领域是否有同样的实体引用
+        3. 搜索其他领域的场景是否有当前领域场景的前置/后置关系
+        4. 搜索其他领域是否有可作为渠道/降级方案的能力
+
+        产出格式：
+        cross_domain_bridges:
+          - bridge_id: "CDB-{from_domain}-{to_domain}-{NNN}"
+            from:
+              domain: "微信账号体系"
+              scene_id: "SC-WX-002"
+              scene_name: "小程序静默登录"
+              output_data: "openid, unionid, session_key"
+            to:
+              domain: "微信支付V2"
+              scene_id: "SC-PAY-001"
+              scene_name: "JSAPI支付"
+              input_data: "openid"
+            bridge_type: "data"  # data/flow/state/channel/fallback
+            content: "小程序登录获取的用户openid作为JSAPI支付的用户标识"
+            trigger: "用户在小程序内发起支付"
+            direction: "单向"  # 单向/双向
+            scrm_value: "打通用户身份→支付行为链路，实现用户消费行为追踪"
+            mapping: "openid(账号域) → openid(支付域入参，统一下单接口)"
+            status: "verified"  # verified(文档明确)/inferred(AI推理)/pending(待验证)
+
+        ═══ 2.5b: 角色视角建模（SDL Layer 3）═══
+
+        对场景地图中每个场景，展开为角色视角。
+        不同角色在同一场景中看到的信息、操作的内容、关心的指标完全不同。
+
+        每个场景×每个角色回答5个问题：
+
+        Q1: 在这个场景中，这个角色需要做什么操作？
+        Q2: 每个操作的输入/输出是什么？谁来提供输入/谁来消费输出？
+        Q3: 操作成功/失败后的下一步是什么？（写清楚流程分支）
+        Q4: 这个角色关心什么KPI/指标？（OKR思维：Objective + Key Results）
+        Q5: 这个角色最大的痛点是什么？（信息不全？操作繁琐？等待太久？）
+
+        角色视角展开时的特殊考虑：
+        - 「客户/用户」角色：关注体验（等待时间/操作步骤/信息透明度）
+        - 「运营人员」角色：关注效率（批量操作/自动化/数据看板）
+        - 「管理员」角色：关注管控（权限/安全/审计/配置灵活性）
+        - 「开发者/集成方」角色：关注技术（API稳定性/文档清晰度/错误处理）
+
+        产出格式：
+        role_perspectives:
+          - scene_id: "SC-SO-001"
+            scene_name: "线索清洗与意向筛选"
+            perspectives:
+              - role: "市场运营人员"
+                role_type: "operator"
+                operations:
+                  - op_id: "OP-001"
+                    name: "导入线索名单"
+                    input: "Excel/CSV名单文件"
+                    output: "上传成功，文件URL"
+                    success_next: "创建外呼任务"
+                    failure_next: "检查文件格式，重新上传"
+                kpis:
+                  - objective: "提升线索转化率"
+                    key_results: ["线索清洗覆盖率≥90%", "高意向线索转销售及时率≥95%"]
+                pains:
+                  - "不同渠道来的线索格式不统一，每次导入前需要手动清洗"
+                  - "不知道哪些线索已经被其他渠道联系过，可能重复骚扰客户"
+                expectations_from_scrm:
+                  - "希望SCRM自动汇集多渠道线索，统一格式后一键导入外呼"
+
+              - role: "客户（被外呼方）"
+                role_type: "end_user"
+                operations:
+                  - op_id: "OP-002"
+                    name: "接听外呼电话"
+                    input: "来电显示号码"
+                    output: "通话记录+意向标签"
+                    success_next: "如高意向，等待销售联系"
+                    failure_next: "如未接通，等待重试或降级渠道"
+                kpis:
+                  - objective: "体验满意的触达"
+                    key_results: ["首次接通率≥70%", "通话时长合理(30s-2min)", "不重复骚扰"]
+                pains:
+                  - "不知道来电是谁、什么目的，容易挂断"
+                  - "同一家公司不同部门轮番来电，体验差"
+                expectations_from_scrm:
+                  - "希望SCRM统一管理客户触达渠道偏好（我更喜欢消息而不是电话）"
+
+        角色×场景覆盖检查：
+        - 每个场景至少覆盖2个角色视角
+        - 每个核心角色至少出现在1个场景中
+        - 角色视角的KPI是否可量化？
+        - 角色痛点是否有对应的解决路径？
+
+    # ========== Step3: AI智能整理场景（V2.0.0 新增） ==========
+    - id: "3"
+      name: "🧠 AI智能整理场景（V2.0.0 新增）"
+      agent: "ba-agent"
+      input: "主题清单 + 抓取内容 + focus_directive"
+      output: "场景清单（场景ID+名称+描述+关联主题+关联API+场景流程草图）"
+      methodology: |
+        AI 从主题中智能识别和整理业务场景。
+
+        场景提取逻辑：
+        1. 每个主题下识别具体的业务场景（一个主题可能含多个场景）
+        2. 每个场景关联其涉及的API接口列表
+        3. 每个场景生成流程草图（Mermaid flowchart，happy path + 异常分支）
+        4. 识别场景间的依赖关系（如"商户入网"场景是"资金收付"场景的前置条件）
+        5. 如有 focus_directive，标记重点场景（priority: high）
+
+        场景识别维度：
+        - 按操作类型：如"入网""变更""查询""支付""退款""投诉"
+        - 按角色视角：如"服务商发起""商户自助""系统异步通知"
+        - 按业务流程节点：如"开户""绑卡""签约""下单""回调"
+
+        场景清单格式：
+        scenes:
+          - id: "SC-001"
+            name: "特约商户入网（企业/个体）"
+            theme_id: "T001"
+            description: "SaaS服务商为特约商户提交入网申请"
+            related_apis: ["API-MER-001", "API-MER-003", "API-MER-006"]
+            async: true
+            async_notification: "openAccountResult"
+            flow_sketch: |
+              flowchart TD
+                A[调用入网API] --> B[易宝审核]
+                B --> C{开户结果}
+                C -->|成功| D[绑卡]
+                C -->|失败| E[返回原因]
+            depends_on: []  # 无前置场景依赖
+            depended_by: ["SC-005", "SC-006"]  # 后续场景依赖本场景
+
+        场景依赖图：
+        - 生成场景间依赖关系图（Mermaid graph）
+        - 标注哪些场景是入口场景（无前置依赖）
+        - 标注哪些场景是终态场景（无后续依赖）
+
+    # ========== Step4: 业务产物提取（7部分，V2.0.0 增强） ==========
+    - id: "4"
+      name: "业务产物提取（7部分，V2.0.0 从5部分升级）"
+      agent: "ba-agent"
+      input: "主题清单 + 场景清单 + 抓取内容"
+      output: "7部分结构化产物"
+      methodology: |
+        V2.0.0 从5部分升级为7部分（新增业务规则+业务状态机独立提取）。
+
+        ═══ Part 1: 业务泳道图 ═══
+        从场景中提取：
+        - 角色：涉及哪些参与方
+        - 阶段：业务流程的主要阶段
+        - 动作：每个角色在每个阶段的关键动作
+        - 按场景组织（每个场景独立泳道）
+
+        ═══ Part 2: 业务流程（正常流+异常流） ═══
+        从场景中提取：
+        - happy_path：主干流程（Mermaid flowchart）
+        - exceptions：异常分支（超时/失败/拒绝/处理中等）
+        - branches：业务分支（如企业/个体 vs 小微 vs H5自助）
+        - 每个场景独立流程图
+
+        ═══ Part 3: 业务信息流 ═══
+        从场景中提取：
+        - entities：信息主体（请求/响应/通知等）
+        - producer/consumer：谁生产、谁消费
+        - key_fields：核心字段列表
+        - cross_system：跨系统流转
+
+        ═══ Part 4: 业务操作矩阵（角色×状态×操作） ═══
+        从场景中提取：
+        - roles：角色列表
+        - states：状态列表
+        - matrix：角色×状态→可执行操作+目标状态+关联场景
+
+        ═══ Part 5: 业务规则（V2.0.0 新增独立部分） ═══
+        从内容中提取业务规则：
+        - 规则ID：BR-{领域}-{NNN}
+        - 规则名称
+        - 规则描述（触发条件→行为）
+        - 触发条件
+        - 行为/约束
+        - 来源场景
+        - 示例：
+          BR-PAY-001: 商户入网须先完成开户和绑卡才能进行资金收付
+          BR-PAY-002: 所有交易请求须带唯一requestNo实现幂等控制
+          BR-PAY-003: 敏感数据（身份证号/银行卡号）须加密传输
+
+        ═══ Part 6: 业务动作（V2.0.0 新增独立部分） ═══
+        从场景中提取每个业务动作：
+        - 动作ID：ACT-{领域}-{NNN}
+        - 动作名称
+        - 所属场景
+        - 触发角色
+        - 输入参数
+        - 输出结果
+        - 前置条件
+        - 后置状态变化
+        - 关联API
+        - 同步/异步
+
+        ═══ Part 7: 业务状态机 ═══
+        从场景中提取状态机：
+        - 实体名称（如"商户""订单""退款单"）
+        - 状态列表
+        - 状态转换规则（当前状态→触发操作→目标状态→操作者→前置约束→后置动作）
+        - Mermaid stateDiagram-v2
+        - 状态过渡操作表
+
+        ═══ 解决方案概括 ═══
+        - 产品名称+描述
+        - API分类统计（按主题/场景分类）
+        - 安全要求
+        - 集成步骤
+        - 常见问题
+
+    # ========== Step4.5: API学习技能（V3.0.0 公共化，引用 common/api-learner.yml） ==========
+    - id: "4.5"
+      name: "🔬 API学习技能（V3.0.0 公共化，引用 common/api-learner.yml）"
+      agent: "ba-agent + arch-agent"
+      input: "场景清单 + 7部分产物 + 接口清单（api_chain）+ 抓取内容中API参数文档 + --deep-params（如有）"
+      output: "Part12 API参数字典 + Part13 参数流转图 + 参数融合报告"
+      methodology: |
+        V2.1.0 核心新增步骤：解决外部API文档学习时"只有接口元数据（name/path/method），
+        缺少输入参数和输出参数"的问题。
+
+        触发条件（满足任一即执行）：
+        a) 抓取内容中包含API参数文档（请求参数表/响应参数表/字段说明）
+        b) 用户指定 --deep-params
+        c) 已有 api_chain 中API数量≥5（值得深度提取参数）
+        d) --focus 中提及"参数""入参""出参""字段"等关键词
+
+        ═══ 阶段A：API参数深度提取（Part12 API参数字典）═══
+
+        对 api_chain 中每个API，从抓取内容中提取其完整参数定义：
+
+        1. 输入参数（request_params）提取：
+           每个参数包含：
+           - field: 字段名
+           - type: 类型（string/number/boolean/object/array/enum/file）
+           - required: 是否必填（true/false）
+           - max_length: 最大长度（如有）
+           - description: 字段含义说明
+           - enum_values: 枚举值列表（如type=enum时）
+           - default: 默认值（如有）
+           - source_type: 参数来源类型
+             · user_input（用户手动输入）
+             · upstream_api（上游API输出传入）
+             · system_generated（系统自动生成，如requestNo/timestamp）
+             · config（配置项，如merchantNo）
+             · computed（计算得出，如signature）
+           - source_api: 来源API编号（source_type=upstream_api时填写，如API-MER-001）
+           - source_field: 来源API的出参字段名（如merchantNo）
+           - encryption: 加密要求（none/rsa/aes/mask——如身份证号mask）
+           - validation: 校验规则（如"金额>0""手机号11位""邮箱格式"）
+           - semantic_role: 参数语义角色（见下方语义角色定义）
+
+        2. 输出参数（response_params）提取：
+           每个参数包含：
+           - field: 字段名
+           - type: 类型
+           - description: 字段含义
+           - enum_values: 枚举值列表（如有）
+           - nullable: 是否可空
+           - downstream_usage: 下游消费方（哪些API或场景会使用此出参）
+           - semantic_role: 参数语义角色
+
+        3. 异步通知参数（notification_params）提取（如async=true）：
+           - notification_event: 通知事件名（如openAccountResult）
+           - notification_params: 通知参数列表（同response_params结构）
+           - correlation_field: 关联字段（如requestNo，用于关联同步请求）
+
+        4. 错误码（error_codes）提取：
+           - code: 错误码
+           - message: 错误描述
+           - handling: 处理建议（如"检查商户状态""重新发起绑卡"）
+
+        ═══ 参数语义角色定义 ═══
+        AI 为每个参数标注语义角色，用于后续业务流程融合分析：
+        - PRIMARY_KEY: 主键标识（如merchantNo/orderNo/requestNo）
+        - IDEMPOTENT_KEY: 幂等键（如requestNo，用于防重）
+        - AMOUNT: 金额字段（需校验>0、精度、币种）
+        - STATUS: 状态字段（关联状态机）
+        - SENSITIVE: 敏感数据（身份证号/银行卡号/手机号，需加密）
+        - TIMESTAMP: 时间戳字段
+        - SIGNATURE: 签名字段
+        - REFERENCE: 引用字段（指向其他实体的外键，如parentMerchantNo）
+        - BUSINESS_PARAM: 业务参数（如费率、限额、产品类型）
+        - PAGINATION: 分页参数（pageNo/pageSize）
+        - QUERY_FILTER: 查询过滤条件
+        - RESPONSE_META: 响应元数据（code/message/totalCount）
+
+        ═══ 阶段B：参数场景流程融合（Part13 参数流转图）═══
+
+        AI 将所有API的参数进行跨API融合分析，生成参数流转图：
+
+        1. 场景内参数流转（intra_scene_param_flow）：
+           对每个场景，分析其API链路中参数如何流转：
+           - 场景SC-MER-001（商户入网）：
+             · API-MER-001出参 merchantNo → API-MER-003入参 merchantNo（查询入网进度）
+             · API-MER-001出参 requestNo → 异步通知 openAccountResult 的 correlation_field
+             · API-MER-006出参 fileInfo → API-MER-001入参 fileInfo（资质文件引用）
+           - 生成场景内参数流转Mermaid图（flowchart，标注参数名）
+
+        2. 跨场景参数流转（cross_scene_param_flow）：
+           分析场景间参数传递：
+           - SC-MER-001终态出参 merchantNo（商户编号）→ SC-PAY-001入参 merchantNo（充值需商户号）
+           - SC-ACC-001出参 bankAccountNo → SC-PAY-003入参 bankAccountNo（提现到绑卡账户）
+           - SC-PAY-001出参 orderNo → SC-PAY-004入参 orderNo（查询充值结果）
+           - 生成跨场景参数流转Mermaid图
+
+        3. 参数来源溯源图（param_source_trace）：
+           对关键参数（PRIMARY_KEY/IDEMPOTENT_KEY/AMOUNT/SENSITIVE）追溯其完整来源链：
+           - merchantNo: 系统生成(API-MER-001) → 存储 → 流入API-MER-003/API-PAY-001/API-PAY-010/...
+           - requestNo: 服务商生成 → 流入API-MER-001 → 异步通知回传 → 幂等校验
+           - amount: 用户输入(API-PAY-001) → 流入API-PAY-004(查询) → 异步通知回传
+
+        4. 参数依赖矩阵（param_dependency_matrix）：
+           - 行=消费者API，列=生产者API
+           - 单元格=依赖的参数列表
+           - 标注依赖类型：required（必须依赖）/optional（可选依赖）
+
+        ═══ 阶段C：参数业务流程融合分析 ═══
+
+        AI 将参数与业务流程/状态机/业务规则进行融合分析：
+
+        1. 参数×状态机融合：
+           - 哪些参数影响状态转换？（如 merchantStatus=ACTIVE 是资金收付API的前置条件）
+           - 状态转换时哪些参数会变化？（如入网成功后 merchantStatus: PENDING→ACTIVE）
+           - 生成参数-状态关联表
+
+        2. 参数×业务规则融合：
+           - 业务规则涉及的参数是否在API参数字典中定义？
+           - 如 BR-PAY-001（商户入网须先完成开户和绑卡）涉及参数：merchantStatus, bankCardStatus
+           - 标注规则-参数关联
+
+        3. 参数×信息流融合：
+           - 信息流中的key_fields是否都有对应API参数？
+           - 信息生产者→API出参，信息消费者→API入参
+           - 校验信息流与参数流转是否一致
+
+        4. 参数安全分析（Arch重点关注）：
+           - 敏感字段（SENSITIVE）是否标注了encryption？
+           - 签名字段（SIGNATURE）的签名算法和参与签名的字段列表
+           - 幂等键（IDEMPOTENT_KEY）的唯一性保证机制
+           - 金额字段（AMOUNT）的精度和防篡改机制
+
+        ═══ 产出 ═══
+        1. Part12: API参数字典（api_param_dictionary）
+           - 每个API的完整入参/出参/通知参数/错误码定义
+           - 参数语义角色标注
+           - 加密/校验/枚举值标注
+
+        2. Part13: 参数流转图（param_flow）
+           - 场景内参数流转图（Mermaid）
+           - 跨场景参数流转图（Mermaid）
+           - 参数来源溯源图（关键参数）
+           - 参数依赖矩阵
+
+        3. 参数融合报告（param_fusion_report）
+           - 参数提取覆盖率（有参数定义的API数/总API数）
+           - 参数流转完整度（已建立流转关系的参数数/应流转的参数数）
+           - 参数-状态机关联数
+           - 参数-业务规则关联数
+           - 安全风险点列表
+
+    # ========== Step4.6: 业务分析建模（V3.0.0 新增，从learn-project引入） ==========
+    - id: "4.6"
+      name: "📊 业务分析建模（V3.0.0 新增，7项分析，API映射融入）"
+      agent: "ba-agent"
+      input: "7部分业务产物 + Step4.5 API学习技能产出（如有）"
+      output: "7项业务分析建模结果 + API映射表"
+      methodology: |
+        V3.0.0 从 learn-project 引入业务分析建模7项，与 learn-project 方法论统一。
+        如Step4.5 API学习技能已触发，API映射融入此步。
+
+        7项业务分析建模（与learn-project Stage2.5统一）：
+        1. 场景识别与分类：API按业务场景分组（场景×API映射表）
+        2. 场景流程泳道图：API调用顺序融入泳道图节点
+        3. 业务流程图：API调用作为流程节点（标注接口路径）
+        4. 信息流分析：API入参/出参映射到信息主体key_fields
+        5. 业务状态机：API参数中STATUS语义角色映射到状态转换
+        6. 业务操作矩阵：API操作映射到角色×状态×操作
+        7. 时序流：API调用顺序作为时序图消息
+
+        API映射（如有API学习技能产出）：
+        - 接口名称×业务场景映射表
+        - 调用顺序图（Mermaid sequenceDiagram）
+        - 参数流转链（A出参→B入参完整链路）
+
+    # ========== Step5: 接口顺序与参数流转校验（V2.1.0 升级：参数级校验） ==========
+    - id: "5"
+      name: "🔍 接口顺序与参数流转校验（V2.1.0 升级：参数级校验）"
+      agent: "ba-agent + arch-agent"
+      input: "场景清单 + 7部分产物 + 接口清单 + Part12 API参数字典 + Part13 参数流转图"
+      output: "接口顺序校验报告（场景内+跨场景+孤立接口）+ 参数流转校验报告（V2.1.0新增）"
+      methodology: |
+        AI 检查整个场景-业务相关的接口顺序上下文的正确性。
+        V2.1.0 升级：从接口级顺序校验升级为参数级流转校验。
+
+        ═══ 场景内接口顺序校验（V2.0.0 保留）═══
+        对每个场景，校验其关联的API接口调用顺序是否正确：
+        1. 参数依赖校验：
+           - A接口的入参是否依赖B接口的出参？
+           - 如有依赖，A是否在B之后调用？
+           - 如顺序错误，标记 error: "API-A 依赖 API-B 的出参，但A在B之前调用"
+        2. 状态依赖校验：
+           - 调用API前，商户/订单状态是否满足前置条件？
+           - 如"资金收付"场景的API要求商户状态=ACTIVE
+           - 如状态不满足，标记 error: "API-A 要求商户状态=ACTIVE，但当前状态=PENDING"
+        3. 异步通知顺序校验：
+           - 异步通知是否在同步请求之后？
+           - 通知的requestNo是否能对应到同步请求？
+        4. 文档引用校验：
+           - 文档中明确说明的调用顺序是否与场景流程一致？
+           - 如不一致，标记 warning
+
+        ═══ 跨场景接口串联校验（V2.0.0 保留）═══
+        校验场景间的接口调用顺序：
+        1. 场景依赖校验
+        2. 共享参数校验
+        3. 状态传递校验
+
+        ═══ 孤立接口识别（V2.0.0 保留）═══
+        - 无法串联到任何场景的接口 → orphan_apis
+
+        ═══ 参数级流转校验（V2.1.0 新增）═══
+        基于Part12 API参数字典和Part13参数流转图，进行参数级校验：
+
+        1. 参数来源一致性校验：
+           - source_type=upstream_api 的参数，其 source_api 是否在当前API之前调用？
+           - source_api 的出参字段是否确实存在？（与Part12交叉校验）
+           - 如不一致，标记 error: "API-PAY-001 入参 merchantNo 声明来源 API-MER-001，但API-MER-001出参无此字段"
+
+        2. 参数类型匹配校验：
+           - 上游API出参类型 vs 下游API入参类型是否匹配？
+           - 如出参 merchantNo: string，入参 merchantNo: number → 标记 error: 类型不匹配
+           - 枚举值范围是否兼容？（如出参 status=ACTIVE/PENDING，入参要求 status=ACTIVE）
+
+        3. 必填参数可达性校验：
+           - 每个API的 required=true 入参，其来源是否可达？
+           - 如 API-PAY-010（提现）入参 bankAccountNo required=true，
+             但在当前场景链路中无API输出 bankAccountNo → 标记 error: 必填参数无来源
+           - 建议：补充调用 API-ACC-002（多渠道绑卡）获取 bankAccountNo
+
+        4. 幂等键唯一性校验（Arch重点关注）：
+           - IDEMPOTENT_KEY 语义角色的参数，是否标注了唯一性生成规则？
+           - 如 requestNo 的 source_type 应为 system_generated 或 user_input（非upstream_api）
+           - 如幂等键来源为upstream_api → 标记 warning: 幂等键应独立生成
+
+        5. 敏感字段加密校验（Arch重点关注）：
+           - SENSITIVE 语义角色的参数是否标注了 encryption≠none？
+           - 身份证号/银行卡号/手机号等如 encryption=none → 标记 error: 敏感字段未加密
+           - 加密算法是否与文档要求一致？
+
+        6. 金额字段校验（Arch重点关注）：
+           - AMOUNT 语义角色的参数是否有 validation 校验规则？
+           - 如 amount 无 validation → 标记 warning: 金额字段缺少校验规则
+           - 金额精度是否定义？（如 amount: { type: number, precision: 2 }）
+
+        7. 参数-状态机一致性校验：
+           - 状态转换条件涉及的参数是否在相关API中存在？
+           - 如状态机定义 INIT→PENDING 触发操作=入网API，入网API是否含触发所需参数？
+
+        8. 参数-业务规则一致性校验：
+           - 业务规则涉及的参数是否在API参数字典中定义？
+           - 如 BR-PAY-001 涉及 merchantStatus，是否有API返回此参数？
+
+        ═══ 产出校验报告 ═══
+        接口顺序校验结果（V2.0.0保留）：
+        - ✅ 通过：N个场景内接口顺序正确
+        - ❌ 错误：M个接口顺序错误（列出详情）
+        - ⚠️ 警告：K个潜在问题（列出详情）
+        - 🔗 孤立：L个无法串联的接口（列出详情+建议）
+        - 📊 串联完整性：X%（已串联接口数/总接口数）
+
+        参数流转校验结果（V2.1.0新增）：
+        - ✅ 参数来源一致：N个参数来源校验通过
+        - ❌ 参数来源错误：M个参数来源不一致（列出详情）
+        - ❌ 必填参数不可达：K个必填参数无来源（列出详情+建议补充API）
+        - ⚠️ 类型不匹配：J个参数类型不兼容（列出详情）
+        - 🔒 安全风险：S个敏感字段/幂等键/金额字段问题（列出详情）
+        - 📊 参数流转完整度：Y%（已建立流转的参数数/应流转参数数）
+        - 📊 参数提取覆盖率：Z%（有参数定义的API数/总API数）
+
+    # ========== Step6: 专家Review ==========
+    - id: "6"
+      name: "🔍 领域专家 Review（V2.1.0 增强：11项检查）"
+      agent: "ba-agent + arch-agent"
+      input: "7部分产物 + Part12 API参数字典 + Part13 参数流转图 + 接口校验报告 + 参数流转校验报告"
+      output: "Review 报告（11项检查结论）"
+      methodology: |
+        PM 调度领域专家审查：
+        - 审查主导：BA 业务分析师（业务正确性，8项）
+        - 审查参与：Arch 架构师（技术可行性+安全+参数，3项）
+
+        V2.1.0 从10项升级为11项检查（新增参数完整性+融合正确性）：
+
+        1. 内容准确性：提取的业务流程是否与源文档一致？
+        2. 主题完整性：主题清单是否覆盖全部抓取内容？主题分类是否合理？
+        3. 场景完整性：场景清单是否覆盖全部业务场景？场景依赖关系是否正确？
+        4. 泳道完整性：角色/阶段/动作是否覆盖完整？
+        5. 流程完整性：happy path + 异常 + 分支是否覆盖？
+        6. 信息流准确性：信息主体/生产者/消费者/依赖是否正确？
+        7. 矩阵完整性：角色×状态×操作是否覆盖所有组合？
+        8. 业务规则准确性：规则触发条件→行为是否正确？是否有遗漏？
+        9. 接口顺序正确性：Step5的校验报告中的error项是否已解决？（Arch重点关注）
+        10. 方案可行性：解决方案模式是否技术可行？（Arch重点关注）
+        11. 参数完整性+融合正确性（V2.1.0新增，Arch主导+BA参与）：
+            a) 参数提取覆盖率：有参数定义的API数占比是否≥80%？（低于80%标记不通过）
+            b) 参数语义角色标注是否合理？（PRIMARY_KEY/IDEMPOTENT_KEY/SENSITIVE/AMOUNT等）
+            c) 参数流转完整度：应流转的参数是否都建立了流转关系？
+            d) 参数来源溯源是否完整？关键参数的来源链是否清晰？
+            e) 参数×状态机×业务规则×信息流的融合是否一致？
+            f) 安全分析：敏感字段加密/幂等键/金额校验是否完备？
+            g) BA补充：参数在业务流程中的语义是否正确？参数命名是否与业务概念一致？
+
+        BA 审查重点：1-8、10、11g（业务正确性+参数业务语义）
+        Arch 审查重点：9（接口顺序）+ 10（技术可行性）+ 11a-f（参数完整性+安全）+ 资金安全/数据安全
+
+        产出 Review 报告：REV-DOMAIN-{domain}-{version}.md
+
+    # ========== Step7: Review汇总 + 用户确认 + 强化深入学习 ==========
+    - id: "7"
+      name: "Review 汇总 + 用户确认 + 强化深入学习（V2.1.0 新增强化API参数学习）"
+      agent: "pm-agent"
+      input: "Review 报告 + 接口校验报告 + 参数流转校验报告 + 主题/场景清单 + 参数融合报告"
+      output: "用户确认结果（通过/补充/强化深入学习/驳回）"
+      methodology: |
+        PM 展示 Review 汇总 + 主题/场景概览 + 接口校验结果 + 参数融合结果，请用户确认。
+
+        展示内容：
+        📋 领域知识学习完成 — Review 汇总
+
+        **主题概览**（V2.0.0 新增）：
+        - T001 商户入网（25%，10个API）⭐重点
+        - T002 资金收付（30%，31个API）⭐重点
+        - T003 聚合支付（15%，9个API）
+        - ...
+
+        **场景概览**（V2.0.0 新增）：
+        - SC-001 特约商户入网（企业/个体）→ 3个API，异步通知
+        - SC-005 充值 → 5个API
+        - ...
+
+        **接口顺序校验**（V2.0.0 新增）：
+        - ✅ 12个场景内接口顺序正确
+        - ❌ 2个接口顺序错误（详情）
+        - 🔗 3个孤立接口（建议归属）
+        - 📊 串联完整性：85%
+
+        **API参数融合**（V2.1.0 新增）：
+        - 📊 参数提取覆盖率：75%（112/150个API有参数定义）
+        - 📊 参数流转完整度：82%（已建立流转/应流转参数数）
+        - ❌ 5个必填参数不可达（列出详情+建议补充API）
+        - 🔒 2个安全风险（敏感字段未加密/幂等键来源不当）
+        - ⚠️ 3个参数类型不匹配
+        - 🔗 关键参数溯源：merchantNo（来源链3层）/ requestNo（幂等键）/ amount（金额校验）
+
+        **专家 Review 汇总**：
+        - ✅ 主题完整性（5个主题，覆盖100%内容）
+        - ✅ 场景完整性（14个场景，依赖关系正确）
+        - ⚠️ 异常分支缺少'退款被风控拦截'场景
+        - ❌ 接口顺序：API-X 依赖 API-Y 但顺序错误
+        - ❌ 参数完整性：API-PAY-015 入参 bankAccountNo 无来源（V2.1.0新增）
+        - 💡 建议补充'退款风控规则'
+
+        **请确认**：
+        1. ✅ 通过 → 进入 Step8 写入知识库
+        2. 📝 补充 → 人工修正草稿 → 重新 Review（Step6）
+        3. 🔄 强化深入学习（V2.1.0 新增选项f）→ 选择强化方向
+        4. ❌ 驳回 → 重新学习
+
+        ═══ 强化深入学习（V2.1.0 新增选项f）═══
+        用户可选择对某些主题/场景/业务/参数进行强化深入学习：
+
+        强化学习选项：
+        a) 强化主题：选择某个主题，提供更多URL，深入该主题
+           → 回到 Step1 抓取新URL → Step2-5 仅处理该主题 → 合并到已有产物
+        b) 强化场景：选择某个场景，补充更多API文档URL
+           → 回到 Step1 抓取新URL → Step3 补充场景API → Step4-5 更新产物
+        c) 强化业务规则：用户手动补充业务规则
+           → 直接在 Step4 Part5 中追加规则 → 重新 Review
+        d) 强化状态机：补充状态转换规则
+           → 直接在 Step4 Part7 中追加状态转换 → 重新 Review
+        e) 修正接口顺序：用户手动修正错误的接口顺序
+           → 在 Step5 中修正 → 重新校验
+        f) 强化API参数学习（V2.1.0新增）：选择某些API，补充其参数文档URL
+           → 回到 Step1 抓取参数文档URL → Step4.5 重新提取该批API的入参/出参 → 重新生成 Part12/13 → Step5 重新校验参数流转 → 合并到已有产物
+           适用场景：
+           - 某些API的参数提取覆盖率低（文档未抓取到参数表）
+           - 必填参数不可达（需补充上游API的参数定义）
+           - 安全风险（需确认加密/签名参数细节）
+           - 用户关注某批API的参数细节（如资金收付类API的金额参数）
+
+        强化学习执行规则：
+        - 强化学习不递增版本号（同版本内完善）
+        - 强化学习完成后重新执行 Step6 Review + Step7 确认
+        - 循环直到用户确认"通过"
+
+    # ========== Step8: 写入三库 + 更新索引 ==========
+    - id: "8"
+      name: "写入三库 + 更新索引"
+      agent: "ba-agent + arch-agent"
+      input: "已批准的 .yml 文件"
+      output: "三库写入 + 索引更新"
+      methodology: |
+        用户确认通过后，写入三个知识库：
+
+        1. 业务领域知识库：
+           → domains/{category}/{domain-name}.yml（status=approved）
+           → 更新 DOMAIN-INDEX.yml（version + keywords扩展）
+
+        2. 业务规则知识库：
+           BA 从 Part5 业务规则中提炼可复用规则
+           → rules/{domain-name}-rules.yml
+
+        3. 编码规范知识库：
+           Arch 从解决方案中提炼可复用技术规范
+           → coding/{domain-name}-coding.yml
+
+  # ============================================
+  # .yml 产物结构（V4.0.0 从13部分扩展为17部分）
+  # ============================================
+  output_structure:
+    description: "V4.0.0 产物结构从13部分扩展为17部分（新增SDL四层：商业问题+跨域衔接+角色视角+场景地图增强）"
+    parts:
+      # === SDL 专属区块（V4.0.0 新增） ===
+      - "Part A: 商业问题（business_problems，SDL Layer 0。BP-{领域}-{NNN}，五问法推导，含痛点/价值/证据/SCRM相关性/优先级）"
+      - "Part B: 跨域衔接（cross_domain_bridges，SDL Layer 2。CDB-{from}-{to}-{NNN}，5种衔接类型+SCRM融合价值）"
+      - "Part C: 角色视角（role_perspectives，SDL Layer 3。每个场景×每个角色展开，含操作/KPI/痛点/SCRM期望）"
+      - "Part D: 场景地图增强（scenario_maps，SDL Layer 1增强。场景含完整API链+触发条件+参与者+闭环+关联商业问题）"
+      # === 传统13部分（V4.0.0 增强：每项标注关联场景ID） ===
+      - "Part 1: 业务泳道图（角色×阶段×动作，按场景组织，标注related_scenes）"
+      - "Part 2: 业务流程（正常流+异常流+分支，Mermaid flowchart，标注related_scenes）"
+      - "Part 3: 业务信息流（信息主体×生产者×消费者×字段，标注related_scenes）"
+      - "Part 4: 业务操作矩阵（角色×状态×操作+目标状态+关联场景，标注related_scenes）"
+      - "Part 5: 业务规则（BR-{领域}-{NNN}，触发条件→行为，标注related_scenes）"
+      - "Part 6: 业务动作（ACT-{领域}-{NNN}，触发角色+输入输出+前后置，标注related_scenes）"
+      - "Part 7: 业务状态机（状态列表+转换规则+Mermaid stateDiagram+状态过渡操作表，标注related_scenes）"
+      - "Part 8: 解决方案概括（产品名称+API分类统计+安全要求+集成步骤+常见问题）"
+      - "Part 9: 主题清单（主题ID+名称+描述+内容占比+关联API+子主题+关联商业问题）"
+      - "Part 10: 场景清单（场景ID+名称+关联主题+关联API+流程草图+依赖关系+关联商业问题）"
+      - "Part 11: 接口串联（API完整清单+场景内串联+跨场景串联+校验结果+孤立接口）"
+      - "Part 12: API参数字典（每个API的入参/出参/通知参数/错误码+语义角色+加密+枚举+校验）"
+      - "Part 13: 参数流转图（场景内参数流转+跨场景参数流转+参数来源溯源+参数依赖矩阵）"
+
+  # ============================================
+  # 增量学习
+  # ============================================
+  incremental_learning:
+    description: |
+      支持对已有领域知识追加学习（新的网页链接）。
+      --incremental 参数触发增量模式。
+      V2.1.0 增强：增量学习时对13部分分别执行智能整合。
+      V3.4.0 增强：增量学习同样遵循 anti_crawling_strategy 反爬策略。
+      V4.0.0 增强：--sdl --incremental 对已学领域SDL重学，保留全部现有产物，增量叠加SDL四层。
+    flow:
+      - "读取已有 .yml 文件"
+      - "V4.0.0 SDL重学模式：执行 Step0（商业问题推理）+ Step2.5（跨域衔接+角色视角）+ 增强Step3（场景清单→场景地图）"
+      - "传统增量模式：应用 anti_crawling_strategy 抓取新内容（S1-S7）"
+      - "Step2 主题提取：新主题追加，已有主题内容补充"
+      - "Step3 场景提取：新场景追加，已有场景API补充"
+      - "Step4 产物提取：7部分分别整合（去重+追加+冲突标注）"
+      - "Step4.5 API参数提取（V2.1.0）：新API参数追加，已有API参数补充/覆盖（冲突标注）"
+      - "Step5 接口+参数校验：重新校验全部接口顺序+参数流转"
+      - "Step6-7 Review + 用户确认（SDL模式含跨域衔接校验+角色视角完整性校验）"
+      - "版本号：传统增量 minor+1；SDL重学 major+1"
+
+  # ============================================
+  # 版本管理
+  # ============================================
+  versioning:
+    scheme: "v{主}.{次}.{修订}"
+    init: "v1.0.0"
+    rules:
+      - "首次学习：v1.0.0"
+      - "增量学习（追加新链接）：minor+1"
+      - "强化深入学习（同版本内完善）：修订+1（如v1.0.0→v1.0.1）"
+      - "SDL首次应用到已有领域：major+1（如v1.0.0→v2.0.0，V4.0.0新增）"
+      - "SDL同版本内增强：minor+1（如v2.0.0→v2.1.0，V4.0.0新增）"
+      - "重大变更（行业标准变了）：major+1"
+      - "历史版本保留：{domain-name}.v{旧版本}.yml"
+
+  # ============================================
+  # 产出路径
+  # ============================================
+  output:
+    base: ".codebuddy/knowledge/domains/"
+    path: ".codebuddy/knowledge/domains/{category}/{domain-name}.yml"
+    history: ".codebuddy/knowledge/domains/{category}/{domain-name}.v{old-version}.yml"
+    index: ".codebuddy/knowledge/domains/DOMAIN-INDEX.yml"
+    rules: ".codebuddy/knowledge/rules/{domain-name}-rules.yml"
+    coding: ".codebuddy/knowledge/coding/{domain-name}-coding.yml"
+
+  # ============================================
+  # BA 需求分析时的加载机制（V4.0.0 SDL增强）
+  # ============================================
+  ba_integration:
+    matching:
+      keyword: "需求描述中包含领域关键词 → 加载对应领域知识"
+      semantic: "AI 分析需求描述的语义，识别涉及的领域"
+    sdl_loading_priority:
+      description: "V4.0.0 SDL五层加载优先级：BA先看问题再看场景最后看API"
+      layers:
+        - priority: 1
+          layer: "商业问题（business_problems）"
+          action: "需求描述→AI匹配商业问题→'这个需求对应哪个商业问题？'"
+          usage: "快速定位需求的价值定位和优先级"
+        - priority: 2
+          layer: "场景地图（scenario_maps）"
+          action: "商业问题→AI匹配场景→'这个问题的解决方案是什么场景？'"
+          usage: "确定需求的场景范围，识别前置/后置场景依赖"
+        - priority: 3
+          layer: "跨域衔接（cross_domain_bridges）"
+          action: "场景→AI加载衔接→'需要联动哪些其他领域？'"
+          usage: "识别跨领域的数据/流程依赖，提示BA加载其他领域知识"
+        - priority: 4
+          layer: "角色视角（role_perspectives）"
+          action: "场景→AI加载角色→'这个需求的用户角色下具体操作和KPI是什么？'"
+          usage: "需求中的用户故事可直接复用角色视角的操作定义"
+        - priority: 5
+          layer: "能力映射（Part1-13，按场景索引）"
+          action: "场景→AI加载该场景的API/规则/状态机→'需要哪些具体能力？'"
+          usage: "PRD中的FN/UC/BR可直接引用领域知识的API链和业务规则"
+    loading_priority:
+      - "1. 项目知识库（已有 PRD）"
+      - "2. 领域知识库·SDL（商业问题→场景地图→跨域衔接→角色视角→能力映射）"
+      - "3. 领域知识库·关键词匹配"
+      - "4. 领域知识库·AI语义匹配"
+      - "5. 跨版本沉淀（上一版本经验）"
+    v2_0_0_enhancement: |
+      V2.0.0 增强：BA 加载领域知识时，可按主题/场景精确加载：
+      - 需求涉及"商户入网"→ 仅加载 T001 主题相关的场景和API
+      - 需求涉及"资金收付"→ 仅加载 T002 主题相关的场景和API
+      - 提高加载效率和上下文相关性
+    v2_1_0_enhancement: |
+      V2.1.0 增强：BA/Arch 加载领域知识时，可利用API参数字典和参数流转图：
+      - BA 需求分析时：参考 Part12 API参数字典，确保PRD中的数据实体(ENT)字段与API参数对齐
+      - BA 用例编写时：参考 Part13 参数流转图，确保用例的前置条件/后置条件涉及的参数有API支撑
+      - Arch 架构设计时：参考 Part12 的参数语义角色(SENSITIVE/AMOUNT/IDEMPOTENT_KEY)，设计加密/校验/幂等机制
+      - Arch 契约定义时：参考 Part12 的入参/出参定义，生成Zod Schema契约
+      - FD 开发时：参考 Part13 参数来源溯源，确保数据流实现正确
+      - QA 测试时：参考 Part12 参数校验规则+枚举值，设计边界值测试用例
+    v4_0_0_sdl_enhancement: |
+      V4.0.0 SDL 增强：BA/Arch 按SDL五层逐级加载，避免信息过载：
+      - BA 需求探索时：先看 Layer 0 商业问题 → "这个需求对应用户的什么痛点？价值多大？"
+      - BA 范围定义时：再看 Layer 1 场景地图 → "涉及哪些场景？前置条件是什么？场景依赖是什么？"
+      - BA 模块关系时：看 Layer 2 跨域衔接 → "需要联动企业微信/支付/外呼哪些能力？"
+      - BA 用户故事时：看 Layer 3 角色视角 → "这个角色在这个场景下具体做什么？关心什么KPI？"
+      - BA 功能细化时：看 Layer 4 能力映射 → "这个场景需要哪些API？有哪些业务规则？状态机怎么转？"
+      - Arch 架构设计时：跨域衔接 → "需要建立哪些领域间的数据同步机制？参数怎么溯源？"
+      - Arch 安全设计时：能力映射 → "哪些参数是SENSITIVE？幂等键怎么设计？"
+
+  # ============================================
+  # 自动化巡检（V1.4.0）
+  # ============================================
+  auto_check:
+    command:
+      name: "/learn-domain-check"
+      usage: "/learn-domain-check [--domain=退款流] [--auto-update]"
+    flow:
+      - "读取 DOMAIN-INDEX.yml 中所有已学习领域"
+      - "逐个领域的 source_urls 重新抓取"
+      - "与已有 .yml 内容比对"
+      - "有变更 → 触发 --incremental 增量学习"
+    schedule:
+      recommended: "monthly"

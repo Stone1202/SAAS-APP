@@ -1,0 +1,472 @@
+# =============================================================================
+# AI-SCRM 项目深度学习知识产物 v1.0.0
+# 学习来源：/Users/jojo/WorkBuddy/2026-07-04-13-50-48 (杂乱原始工作区)
+# 学习日期：2026-07-18
+# 学习方法：全量文档扫描 + 原型代码分析 + PRD/脑暴/测试报告交叉验证 + 技术架构对标
+# =============================================================================
+
+meta:
+  project_name: "AI-SCRM"
+  project_alias: "智能SCRM SAAS平台"
+  learn_version: "v1.0.0"
+  learn_date: "2026-07-18"
+  source_directory: "/Users/jojo/WorkBuddy/2026-07-04-13-50-48"
+  source_description: "产品从零散脑暴到POM治理到高保真原型全流程工作区，含PRD/测试/代码/过程文档共1000+文件"
+  learn_mode: "full_learn"
+  system_type: "SAAS_SCRM"
+  terminals: ["PC_WEB"]
+
+  source_knowledge_graph:
+    prd_documents:
+      - { file: "ai-scrm-呼叫中心正式需求文档-PRD-v3.0.0.md", size: "89KB", coverage: "呼叫中心14FN+4层通路+五图齐全" }
+      - { file: "ai-scrm-SAAS订阅业务闭环需求文档-PRD-v2.0.0.md", size: "15KB", coverage: "SAAS全生命周期+订阅市场+体验版" }
+      - { file: "ai-scrm-docs/requirements/ai-scrm-AI大脑-PRD-v1.0.0.md", size: "~50KB", coverage: "AI大脑中枢+6子脑+14FN+20BR" }
+      - { file: "ai-scrm-docs/requirements/STR-003/tech-design-v1.5.0.md", size: "~60KB", coverage: "AI大脑v1.5技术方案：Store/Service/组件层" }
+    brainstorm_documents:
+      - { file: "ai-scrm-docs/brainstorm/ai-scrm-AI场景深度脑暴报告-v4.0.0-大脑架构终极融合.md", size: "~80KB", coverage: "大脑架构终极融合：中枢+子脑+行动层+三级火箭" }
+    test_reports:
+      - { file: "ai-scrm-全量E2E深度验收报告-v1.0.0.md", coverage: "124测试/14Store/129路由/120+页面" }
+      - { file: "ai-scrm-运营闭环模拟测试报告-v1.0.0.md", coverage: "8链路×117触发点" }
+      - { file: "ai-scrm-SAAS商业闭环全链路综合测试报告-v1.0.0.md", coverage: "SAAS商业模式4部门联测" }
+    architecture_docs:
+      - { file: "ai-scrm-高保真架构迁移-M1-进度.md", coverage: "M1~M3迁移完成" }
+      - { file: "ai-scrm-跨部门高保真原型全局标准规范-v1.0.0.md", coverage: "全局一致性标准" }
+
+# =============================================================================
+# Part 1: 项目全景概述
+# =============================================================================
+project_overview:
+  elevator_pitch: >
+    AI-SCRM是一个SAAS商业模式的智能SCRM平台，由运营后台(SY-OPS)和租户后台(SY-TENANT)
+    双系统组成。租户按版本订阅，可拓展AI能力/坐席/企微/呼叫等资源。系统以"AI大脑"
+    为核心中枢，通过企微和呼叫中心两大客户触点，实现从客户触达→智能服务→交易转化→
+    CRM跟进的全链路闭环。
+
+  business_model:
+    type: "SAAS多租户"
+    revenue_model: "版本订阅费 + 资源增购费 + AI能力按量计费"
+    tenant_lifecycle: "PENDING→TRIAL(7天)→ACTIVE→GRACE(7天宽限)→SUSPENDED→RETAINED→CLOSED"
+    version_tiers: ["体验版(Free/7天)", "基础版(¥99/月)", "专业版(¥199/月)", "企业版(¥399/月)"]
+    resource_types: ["坐席", "员工", "企微主体", "AI Agent", "AI会话", "存储", "知识库", "电话线路"]
+
+  dual_system:
+    SY-OPS:
+      name: "运营后台"
+      users: ["平台管理员", "CSM客户成功经理", "平台财务"]
+      capabilities: ["租户注册管理", "版本套餐发布", "资源包管理", "SAAS营收看板", "退款审批", "系统配置"]
+      routes: 23
+    SY-TENANT:
+      name: "租户后台"
+      users: ["租户管理员", "客服主管", "销售经理", "销售坐席", "运营专员"]
+      capabilities: ["工作台", "订阅市场", "CDP", "企微社群", "呼叫中心", "CRM", "AI大脑", "订单", "数据分析", "组织权限"]
+      routes: 105
+      pages: 120
+
+# =============================================================================
+# Part 2: 业务场景全景图（15大主场景 × 60+子场景）
+# =============================================================================
+business_scenes:
+
+  - scene_id: SC-SAAS-001
+    scene_name: "租户全生命周期管理"
+    scene_type: "商业闭环"
+    actor: "OPS管理员/租户管理员/系统"
+    enterprise_value: "SAAS商业模式的根基，管控租户从注册到退出的全流程"
+    sub_scenes:
+      - { sub_id: "S01", name: "租户注册与审批", flow: "OPS创建→PENDING→审核→REGISTER→TRIAL", status: "✅" }
+      - { sub_id: "S02", name: "体验版自动激活", flow: "绑trial plan→trial_end_at=now+7天→可用基础功能", status: "✅" }
+      - { sub_id: "S03", name: "订阅市场选版支付", flow: "marketplace→版本对比→配置→订单→支付→TRIAL→ACTIVE", status: "✅" }
+      - { sub_id: "S04", name: "到期提醒与自动流转", flow: "到期前N天提醒→TRIAL→GRACE→SUSPENDED→停服", status: "✅" }
+      - { sub_id: "S05", name: "续费恢复服务", flow: "SUSPENDED→续费→RENEW→ACTIVE→功能恢复", status: "✅" }
+      - { sub_id: "S06", name: "资源增购", flow: "购买资源包→配额增加→用量监控联动", status: "✅" }
+      - { sub_id: "S07", name: "版本升级/降级", flow: "更换版本→差价计算→支付→配额更新", status: "✅" }
+      - { sub_id: "S08", name: "退款与三阶梯", flow: "72h全额→阶梯退款(83.3%/55.4%/15%)→审批→终止", status: "✅" }
+
+  - scene_id: SC-CALL-001
+    scene_name: "呼叫中心四层通路全链路"
+    scene_type: "业务运营"
+    actor: "管理员/主管/坐席/运营"
+    enterprise_value: "电话沟通引擎，支撑客户触达/服务跟进/营销外呼三场景"
+    architecture: "资源配置层→外呼运营层→服务执行层→数据复盘层（四层闭环）"
+    sub_scenes:
+      - { sub_id: "S01", name: "首次资源配置", flow: "呼叫地图→线路购买→坐席分配→分机绑定→黑名单导入", status: "⚠️ 分机/黑名单占位" }
+      - { sub_id: "S02", name: "创建外呼任务", flow: "名单来源→黑名单过滤→指定坐席→创建任务", status: "✅" }
+      - { sub_id: "S03", name: "执行外呼FIFO", flow: "系统拨号→线路占用→通话→标记结果→释放→下一通", status: "⚠️ 存在断链" }
+      - { sub_id: "S04", name: "线路排队与冲突", flow: "多坐席并发→占满→排队→FIFO出队→自动接通", status: "⚠️ UI排队进度缺失" }
+      - { sub_id: "S05", name: "通话记录查询", flow: "多维筛选→列表→详情→关联客户", status: "✅" }
+      - { sub_id: "S06", name: "通话详情与跟进", flow: "详情页→录音→客户信息→跟进记录→创建订单→短信", status: "⚠️ 录音/跟进NOP" }
+      - { sub_id: "S07", name: "坐席实时监控", flow: "实时状态→刷新→强制下线", status: "✅" }
+      - { sub_id: "S08", name: "数据复盘", flow: "用量→坐席统计→通话分析→优化反馈", status: "✅" }
+
+  - scene_id: SC-AI-001
+    scene_name: "AI大脑中枢运转全流程"
+    scene_type: "智能能力（核心差异化）"
+    actor: "系统/坐席/主管"
+    enterprise_value: "产品差异化核心——从被动工具到主动智能助手"
+    architecture: "中枢(IntentRouter+Orchestrator)+6子脑+三级行动层(自动/半自动/手动)"
+    sub_scenes:
+      - { sub_id: "S01", name: "意图识别与路由", flow: "客户消息→IntentRouter识别6类意图→置信度→路由子脑", status: "✅ 关键词规则引擎" }
+      - { sub_id: "S02", name: "AI客服RAG应答", flow: "咨询→意图→知识库RAG→引用→生成应答→转人工", status: "✅" }
+      - { sub_id: "S03", name: "对话摘要自动生成", flow: "聊天/通话结束→总结脑→摘要+决策点+情绪+待办", status: "⚠️ Service设计完成" }
+      - { sub_id: "S04", name: "客户画像智能聚合", flow: "画像脑读CDP→标签→意向评分→全景视图", status: "✅" }
+      - { sub_id: "S05", name: "SOP→待办自动生成", flow: "Orchestrator匹配SOP→待办→优先级→待办中心", status: "⚠️ Service设计完成" }
+      - { sub_id: "S06", name: "情绪识别与预警", flow: "实时情绪分析→曲线→负面告警→主管介入", status: "✅" }
+      - { sub_id: "S07", name: "质检中心", flow: "会话存档→自动质检→评分→报告", status: "✅" }
+      - { sub_id: "S08", name: "话术推荐", flow: "实时转写→匹配话术库→推荐弹窗→采纳/忽略", status: "✅" }
+      - { sub_id: "S09", name: "流失预警", flow: "行为分析→流失信号→预警→挽回SOP", status: "✅" }
+      - { sub_id: "S10", name: "NBA智能推荐", flow: "画像+行为→策略引擎→商品推荐→触达编排", status: "✅" }
+      - { sub_id: "S11", name: "Agent工作台", flow: "任务队列+实时日志+手动触发+重试/取消", status: "✅" }
+      - { sub_id: "S12", name: "AI大脑仪表盘", flow: "运行概览+意图分布+命中率+子脑状态", status: "✅ 28KB核心页" }
+
+  - scene_id: SC-WECOM-001
+    scene_name: "企微私域运营全链路"
+    scene_type: "客户触达"
+    actor: "运营人员/客服"
+    enterprise_value: "企微作为SCRM核心触点，承载客户沟通、社群运营、自动化营销"
+    sub_scenes:
+      - { sub_id: "S01", name: "活码管理", flow: "创建活码→分流规则→扫码→分配员工→统计", status: "✅" }
+      - { sub_id: "S02", name: "单聊/群聊会话", flow: "客户列表→单聊/群聊窗口→消息→画像→话术", status: "✅" }
+      - { sub_id: "S03", name: "SOP自动化引擎", flow: "创建规则(触发+条件+动作)→启用→执行→日志→统计", status: "✅" }
+      - { sub_id: "S04", name: "群发任务", flow: "选择目标→编辑内容→定时/立即→结果追踪", status: "✅" }
+      - { sub_id: "S05", name: "防骚扰与欢迎语", flow: "防骚扰规则→自动拦截+欢迎语配置", status: "✅" }
+      - { sub_id: "S06", name: "社群运营地图", flow: "总览→数据看板→活跃度→增长→转化漏斗", status: "✅" }
+
+  - scene_id: SC-CRM-001
+    scene_name: "客户跟进与转化管理"
+    scene_type: "业务运营"
+    actor: "销售坐席/经理"
+    sub_scenes:
+      - { sub_id: "S01", name: "线索管理", flow: "线索录入→分配→跟进→转化→客户创建", status: "✅" }
+      - { sub_id: "S02", name: "客户跟进", flow: "客户列表→360视图→跟进记录→下次跟进→待办", status: "✅" }
+      - { sub_id: "S03", name: "销售漏斗", flow: "商机→阶段推进→预估→概率→分析", status: "✅" }
+      - { sub_id: "S04", name: "待办提醒", flow: "今日/本周/已逾期/已完成→优先级→处理→完成", status: "✅ 18KB页面" }
+
+  - scene_id: SC-CDP-001
+    scene_name: "客户数据整合与洞察"
+    scene_type: "数据能力"
+    sub_scenes:
+      - { sub_id: "S01", name: "客户360视图", flow: "详情→标签→历史→订单→通话→企微→AI画像", status: "✅" }
+      - { sub_id: "S02", name: "标签管理", flow: "创建→分组→打标→分析→分群", status: "✅" }
+      - { sub_id: "S03", name: "公海管理", flow: "规则→落入→认领/分配", status: "✅" }
+      - { sub_id: "S04", name: "疑似重复", flow: "检测→列表→合并→去重", status: "✅" }
+
+  - scene_id: SC-ORDER-001
+    scene_name: "订单履约与客户交易"
+    scene_type: "业务运营"
+    sub_scenes:
+      - { sub_id: "S01", name: "订单创建管理", flow: "创建→审核→收款→发货→完成", status: "✅" }
+      - { sub_id: "S02", name: "交易转化看板", flow: "档案→订单→收款→漏斗→流水", status: "✅" }
+
+  - scene_id: SC-AUTH-001
+    scene_name: "组织架构与权限管理"
+    scene_type: "基础能力"
+    sub_scenes:
+      - { sub_id: "S01", name: "部门/用户/角色", flow: "部门→用户→角色→权限→操作日志", status: "✅" }
+
+  # === 未来核心场景（用户需求中的目标状态） ===
+  - scene_id: SC-AI-TARGET-001
+    scene_name: "AI总入口 — 聊天/通话过程中智能辅助"
+    scene_type: "目标架构（待实现）"
+    actor: "系统(Coze Agent)/坐席"
+    enterprise_value: "实时情绪识别+话术推荐+商品推荐+待办生成"
+    sub_scenes:
+      - { sub_id: "T01", name: "聊天中情绪识别", flow: "企微消息流→Coze Agent→情绪识别→情绪标注→负面告警", status: "🔴 需集成Coze" }
+      - { sub_id: "T02", name: "聊天中话术推荐", flow: "上下文理解→Coze知识库匹配→推荐话术→坐席采纳", status: "🟡 话术库已有，缺少实时匹配" }
+      - { sub_id: "T03", name: "聊天中商品推荐", flow: "客户意图→商品匹配→推荐→一键发送", status: "🔴 未实现" }
+      - { sub_id: "T04", name: "通话中实时辅助", flow: "火山ASR转写→Coze分析→情绪+话术+商品→实时弹屏", status: "🔴 需集成火山+Coze" }
+      - { sub_id: "T05", name: "聊天中自动待办", flow: "对话识别出待办意图→自动生成待办→加入队列", status: "🟡 todoEngine已有基础" }
+
+  - scene_id: SC-AI-TARGET-002
+    scene_name: "AI总入口 — 聊天/通话结束后自动处理"
+    scene_type: "目标架构（待实现）"
+    actor: "系统(Coze Agent)"
+    enterprise_value: "自动质检→自动摘要→自动待办→客户阶段推进"
+    sub_scenes:
+      - { sub_id: "T01", name: "聊天结束自动质检", flow: "聊天结束→Coze质检Agent→评分→报告→不合格→人工复审", status: "🟡 质检中心已有，缺少自动触发" }
+      - { sub_id: "T02", name: "通话结束自动质检", flow: "通话结束→火山ASR全文→Coze质检→评分→合规检查", status: "🔴 需集成火山+Coze" }
+      - { sub_id: "T03", name: "自动生成摘要+待办", flow: "结束→总结Agent→摘要+决策点+待办→推送到待办中心", status: "🟡 总结Service已完成" }
+      - { sub_id: "T04", name: "SOP编排→生成任务", flow: "待办→规划Agent→匹配SOP→生成行动链→任务→跟进日历", status: "🔴 需完整实现规划脑+日历" }
+
+  - scene_id: SC-AI-TARGET-003
+    scene_name: "待办→SOP编排→跟进日历全流程"
+    scene_type: "目标架构（待实现）"
+    actor: "系统/坐席/主管"
+    enterprise_value: "三级火箭：待办自动生成→日历智能排程→执行方式自适应"
+    sub_scenes:
+      - { sub_id: "T01", name: "统一待办中心", flow: "聊天/通话/订单/预警→多入口→统一待办→去重→合并→排序", status: "🔴 三处待办分散" }
+      - { sub_id: "T02", name: "SOP自动编排", flow: "待办→SOP模板匹配→行动链→子任务→依赖关系", status: "🟡 SOP模板已有" }
+      - { sub_id: "T03", name: "日历智能排程", flow: "待办→时间槽分配→冲突检测→日历视图→拖拽调整", status: "🔴 日历组件未实现" }
+      - { sub_id: "T04", name: "跟进日历呈现", flow: "日历视图→任务→SOP进度→协作→完成→归因", status: "🔴 未实现" }
+
+# =============================================================================
+# Part 3: 业务模块全景地图（13大模块）
+# =============================================================================
+business_modules:
+
+  - module_id: MD-SAAS
+    module_name: "SAAS订阅与商业化"
+    system: "SY-OPS + SY-TENANT"
+    store: "useSubscriptionSimStore"
+    fn_count: 10
+    key_pages:
+      - { path: "/ops/version-mgmt", name: "版本管理" }
+      - { path: "/ops/register", name: "租户注册" }
+      - { path: "/tenant/marketplace", name: "订阅市场" }
+      - { path: "/tenant/self/subscription", name: "我的订阅" }
+      - { path: "/tenant/self/billing", name: "账单管理" }
+    state_machine:
+      states: ["PENDING", "TRIAL", "ACTIVE", "GRACE", "SUSPENDED", "RETAINED", "CLOSED", "CANCELED"]
+
+  - module_id: MD-CALL
+    module_name: "呼叫中心"
+    system: "SY-TENANT"
+    fn_count: 14
+    architecture: "四层通路：资源配置→外呼运营→服务执行→数据复盘"
+    key_pages:
+      - { path: "/tenant/call/call-map", name: "呼叫地图(总导航)" }
+      - { path: "/tenant/call/line-management", name: "线路资源" }
+      - { path: "/tenant/call/seats", name: "坐席分配" }
+      - { path: "/tenant/call/outbound", name: "外呼任务" }
+      - { path: "/tenant/call/outbound/execute/:id", name: "执行外呼" }
+      - { path: "/tenant/call/records", name: "通话记录" }
+      - { path: "/tenant/call/records/:id", name: "通话详情" }
+      - { path: "/tenant/call/agents", name: "坐席状态" }
+      - { path: "/tenant/call/call-review", name: "数据复盘" }
+    gaps:
+      - "FIFO自动拨号衔接断链"
+      - "分机管理/黑名单UI占位"
+      - "无真实PSTN/SIP对接(Non-Goal)"
+
+  - module_id: MD-AI
+    module_name: "AI大脑"
+    system: "SY-TENANT"
+    fn_count: 14
+    architecture: "中枢+6子脑+三级行动层"
+    key_pages:
+      - { path: "/tenant/ai/brain", name: "AI大脑仪表盘(28KB)" }
+      - { path: "/tenant/ai/chatbot", name: "AI客服V1" }
+      - { path: "/tenant/ai/chatbot-v2", name: "AI客服V2" }
+      - { path: "/tenant/ai/knowledge-base", name: "知识库" }
+      - { path: "/tenant/ai/profile", name: "客户画像" }
+      - { path: "/tenant/ai/workbench", name: "Agent工作台" }
+      - { path: "/tenant/ai/trigger", name: "触发管理" }
+      - { path: "/tenant/ai/script-library", name: "话术库" }
+      - { path: "/tenant/ai/quality-center", name: "质检中心" }
+      - { path: "/tenant/ai/emotion-brain", name: "情绪脑" }
+      - { path: "/tenant/ai/churn-warning", name: "流失预警" }
+      - { path: "/tenant/ai/nba-strategy", name: "NBA推荐" }
+    sub_brains:
+      - { name: "总结脑", role: "对话摘要+关键信息+情绪标注", status: "Service设计完成" }
+      - { name: "洞察脑", role: "意图标签+客户标签+质检", status: "原型已实现" }
+      - { name: "画像脑", role: "标签聚合+全景视图+意向评分", status: "原型已实现" }
+      - { name: "规划脑", role: "SOP→待办→排程", status: "Service设计完成" }
+      - { name: "知识脑", role: "知识库+话术+FAQ", status: "原型已实现" }
+      - { name: "报表脑", role: "日报/周报自动生成", status: "V1.5规划" }
+    action_layer:
+      levels:
+        - { level: "🟢 自动执行", scope: "质检/标签/预警/摘要" }
+        - { level: "🟡 半自动执行", scope: "SOP触达/消息推送(人确认)" }
+        - { level: "🔵 手动提醒", scope: "拜访/电话/客情(AI排程+人执行)" }
+
+  - module_id: MD-WECOM
+    module_name: "企微社群管理"
+    system: "SY-TENANT"
+    fn_count: 29
+    key_pages:
+      - "/tenant/wecom/chat-single (单聊)"
+      - "/tenant/wecom/chat-group (群聊)"
+      - "/tenant/wecom/group-chat (群控)"
+      - "/tenant/wecom/sop/list (SOP规则)"
+      - "/tenant/wecom/sop/create (创建SOP)"
+      - "/tenant/wecom/sop/logs (执行日志)"
+      - "/tenant/wecom/automation-engine (自动化引擎)"
+      - "/tenant/wecom/broadcast (群发)"
+      - "/tenant/wecom/qrcode/list (活码)"
+
+  - module_id: MD-CRM
+    module_name: "CRM客户关系"
+    system: "SY-TENANT"
+    key_pages: ["/tenant/crm/customers", "/tenant/crm/follow-records", "/tenant/crm/todos", "/tenant/crm/leads", "/tenant/crm/funnel"]
+
+  - module_id: MD-CDP
+    module_name: "CDP客户数据平台"
+    system: "SY-TENANT"
+    key_pages: ["/tenant/cdp/customers", "/tenant/cdp/customers/:id(360)", "/tenant/cdp/tags", "/tenant/cdp/public-sea"]
+
+  - module_id: MD-ORDER
+    module_name: "订单履约"
+    key_pages: ["/tenant/order/list", "/tenant/order/detail/:id", "/tenant/order/create"]
+
+  - module_id: MD-TRADE
+    module_name: "客户交易转化"
+    key_pages: ["/tenant/trade/profile", "/tenant/trade/orders", "/tenant/trade/funnel"]
+
+  - module_id: MD-AUTH
+    module_name: "组织权限"
+    key_pages: ["/tenant/auth/departments", "/tenant/auth/users", "/tenant/auth/roles", "/tenant/auth/permissions"]
+
+  - module_id: MD-MARKETING
+    module_name: "营销管理"
+    key_pages: ["/tenant/marketing/campaigns", "/tenant/marketing/sop(SOP模板)"]
+
+  - module_id: MD-DATA
+    module_name: "数据分析"
+    key_pages: ["/tenant/data/dashboard", "/tenant/data/performance", "/ops/saas-revenue"]
+
+  - module_id: MD-PAAS
+    module_name: "PAAS内容创作"
+    key_pages: ["/tenant/paas/h5-editor"]
+
+# =============================================================================
+# Part 4: 技术架构深度分析
+# =============================================================================
+tech_architecture:
+  frontend:
+    framework: "Vue 3.5 + Vite 5.4 + TypeScript 5.5"
+    ui: "Element Plus 2.14 + TailwindCSS 3.4"
+    state: "Pinia 3.0 (15 Stores: 8 legacy + 7 sim)"
+    data: "Axios + Dexie 4.0(IndexedDB) + Zod 3.23"
+    charts: "ECharts 6.1"
+    test: "Vitest 2.1 (124 pass) + Playwright(E2E)"
+
+  architecture_pattern:
+    name: "Sim/Real可插拔适配器"
+    migration:
+      M1_subscription: { status: "✅", pages: 24 }
+      M2_auth: { status: "✅", detail: "auth.js+router统一sim store" }
+      M3_call: { status: "✅", pages: 12 }
+      M4_remaining: { status: "⏳", detail: "api/subscription.js待迁移" }
+
+# =============================================================================
+# Part 5: 待办与SOP体系深度分析
+# =============================================================================
+todo_sop_system:
+
+  current_state:
+    todos:
+      - { source: "CRM待办", page: "/tenant/crm/todos", desc: "手动创建+跟进到期，四Tab(今日/本周/已逾期/已完成)" }
+      - { source: "AI待办引擎", page: "Service: todoEngine.ts", desc: "Jaccard去重+合并+优先级排序" }
+      - { source: "规划脑", page: "Service: planner.ts", desc: "SOP匹配→待办生成→排程(设计完成)" }
+    sop:
+      - { source: "企微SOP规则", page: "/tenant/wecom/sop/*", desc: "触发(添加/入群/标签/定时)→动作(消息/标签/分配)" }
+      - { source: "营销SOP模板", page: "/tenant/marketing/sop", desc: "新客/老客/流失/活动模板库" }
+    calendar: { status: "🔴 规划阶段", desc: "脑暴中有日历排程设计，原型无独立日历组件" }
+
+  target_vision:
+    unified_todo: "聊天/通话/订单/预警→多入口触发生成→统一待办中心→去重合并→优先级排序→日历排程→执行跟踪"
+    sop_orchestration: "AI自动匹配SOP→生成行动链→编排执行顺序→子脑调度→人工确认/自动执行"
+    follow_calendar: "待办→时间槽→冲突检测→日历视图→拖拽→执行→完成→效果归因"
+
+# =============================================================================
+# Part 6: Coze + 火山 集成架构对标
+# =============================================================================
+target_architecture:
+
+  ai_main_entrance:
+    description: >
+      「AI总入口」在聊天/通话四个关键节点(过程中/结束时)自动触发AI大脑。
+      当前无独立入口页面，能力分散在多个页面/Service中。
+    target_flow:
+      chat_process: "企微聊天中→实时流→Coze Agent→意图→情绪→话术→商品→待办生成"
+      chat_end: "聊天结束→触发总结脑→摘要→质检→待办→客户阶段→待办中心"
+      call_process: "通话中→火山ASR→Coze Agent→情绪→话术→实时弹屏"
+      call_end: "通话结束→火山ASR全文→Coze→摘要→质检→待办→跟进日历"
+
+  coze_integration:
+    role: "AI Agent组织大脑+子Agent编排"
+    replacement_map:
+      - { current: "IntentRouter(关键词规则)", target: "Coze主Agent(LLM意图理解+路由)" }
+      - { current: "summarizer.ts", target: "Coze总结子Agent" }
+      - { current: "洞察脑", target: "Coze洞察子Agent(意图+标签+质检)" }
+      - { current: "profiler.ts", target: "Coze画像子Agent" }
+      - { current: "planner.ts", target: "Coze规划子Agent(SOP→待办→排程)" }
+      - { current: "知识脑(前端CRUD)", target: "Coze知识库+火山知识库(双知识库)" }
+      - { current: "报表脑", target: "Coze报表子Agent" }
+      - { current: "todoEngine.ts", target: "Coze待办管理Agent" }
+
+  volcano_integration:
+    role: "智能呼叫引擎+知识库向量检索"
+    capabilities:
+      - { name: "ASR实时转写", current: "模拟通话(硬编码)", target: "火山流式ASR" }
+      - { name: "TTS语音合成", current: "无", target: "火山TTS" }
+      - { name: "智能呼叫", current: "FIFO模拟线路占用", target: "火山预测式外呼+自动外呼" }
+      - { name: "知识库向量检索", current: "前端FAQ匹配", target: "火山知识库语义检索" }
+
+# =============================================================================
+# Part 7: 实现完整度评估与差距分析
+# =============================================================================
+readiness:
+  overall: "65/100 (原型阶段)"
+  breakdown:
+    saas: { score: 90, note: "全生命周期闭环通过，沙盒14/14" }
+    call_center: { score: 65, note: "四层架构清晰，存在断链" }
+    ai_brain: { score: 40, note: "架构设计完善，Service未完整接入，Coze/火山未集成" }
+    wecom: { score: 60, note: "29页面完整，SOP可用，模拟数据" }
+    crm_cdp: { score: 70, note: "基础CRUD+360视图可用" }
+    org_auth: { score: 80, note: "部门/用户/角色/权限完整" }
+
+  blockers:
+    - "无真实PSTN/SIP对接 → 需火山智能呼叫"
+    - "无真实企微API对接 → 需企微开放平台"
+    - "Coze/火山未集成 → AI能力为前端模拟"
+    - "日历排程未实现 → 待办缺时间维度"
+    - "缺少AI总入口 → 能力分散无统一触发"
+
+# =============================================================================
+# Part 8: 关键洞察
+# =============================================================================
+insights:
+  strengths:
+    - "双Layout架构(Ops+Tenant)正确分离运营与使用"
+    - "Sim/Real可插拔架构为对接真实API提供平滑过渡"
+    - "AI大脑中枢+子脑概念设计成熟，PRD+技术方案完整"
+    - "企微SOP引擎(触发→动作)与AI规划脑有融合潜力"
+    - "SAAS订阅闭环经过四部门联测，商业模型验证充分"
+
+  gaps:
+    - "AI能力20+页面但缺统一入口心智模型"
+    - "待办分散在CRM/AI/企微三处，缺统一待办中心"
+    - "聊天/通话结束缺自动触发AI的完整链路"
+    - "缺跟进日历组件，待办只有列表视图"
+    - "话术/商品推荐有独立页面但未与聊天/通话实时打通"
+
+  quick_wins:
+    - "补全分机管理+黑名单UI(Store已有)"
+    - "修复外呼执行断链(自动拨号+结果回写)"
+    - "统一待办中心(合并CRM+AI+企微)"
+    - "补token体系设计(对接微信账号知识库)"
+
+# =============================================================================
+# Part 9: 推荐演进路径
+# =============================================================================
+evolution:
+  phase1_now:
+    name: "补齐断链，原型闭环"
+    items:
+      - "修复呼叫中心断链(自动拨号/结果回写)"
+      - "补充分机/黑名单UI"
+      - "统一待办中心(聚合CRM+AI+企微)"
+      - "完成Store迁移(api/subscription.js→sim)"
+
+  phase2_short:
+    name: "Coze Agent集成，AI能力升级"
+    items:
+      - "Coze Agent替代自研IntentRouter+Orchestrator"
+      - "Coze知识库替代前端知识库CRUD"
+      - "AI总入口页面设计(聊天/通话后自动触发)"
+      - "对话/通话自动触发→摘要→待办→质检全链路"
+
+  phase3_mid:
+    name: "火山引擎集成，真实通信"
+    items:
+      - "火山智能呼叫(ASR+TTS+预测外呼)"
+      - "火山知识库+Coze知识库双库融合"
+      - "真实企微API对接"
+      - "跟进日历组件开发"
+
+  phase4_future:
+    name: "数据飞轮，智能进化"
+    items:
+      - "模型自进化(反馈闭环→效果归因→知识沉淀)"
+      - "AI接管率提升(自动执行比例扩大)"
+      - "多租户AI差异化(版本×AI能力计费)"

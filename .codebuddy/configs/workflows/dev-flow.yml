@@ -1,0 +1,229 @@
+# ============================================
+# Workflow: dev-flow（开发流程）
+# 版本: v2.1.0
+# 最后更新: 2026-07-20
+# ============================================
+#
+# V2.1.0 升级：FD大脑注入（实现模式大脑）
+#   1. 新增 ai_brain 段——FD实现模式大脑
+#   2. 实现陷阱预测：历史编码Bug模式→当前组件实现风险预警
+#   3. 组件复用推理：存量组件分析→可复用组件推荐+复用适配建议
+#   4. 合规模式识别：11条编码铁律智能预检→违规热点提前标注
+#   5. 视觉回归风险预测：Design Token→组件×视觉差异概率预估
+#   6. 大脑记忆导入：Arch/UX的brain_sync_export + 上版本FD大脑记忆
+#   7. 大脑同步输出→QA：已知高风险区域+自测通过场景
+#
+# 流程专家视角：
+#   dev-flow 是 FD Agent 的核心工作流——接收 Arch Agent 的架构契约和 UX Agent
+#   的设计产物，生成仿真代码（sim.ts + adapter.ts + real.ts + store.ts + types.ts +
+#   components），遵循 11 条编码铁律，通过 compliance-checker 后方可流转 QA。
+#   v2.0.0 新增：C-F1~C-F5 PM 红线（含视觉回归 C-F5）、Design Token 消费校验、
+#   可运行骨架强制（npm run dev 起服务）。
+#
+# 核心原则：
+#   1. 用户不介入开发过程，仅看结果
+#   2. 仿真代码必须通过 compliance-checker（11 条铁律全覆盖）
+#   3. 产出必须是用户能打开访问的可视化原型，禁止只交源文件
+#   4. 逐页 1:1 还原 UX 设计稿，套真实组件库
+# ============================================
+
+workflow:
+  id: "dev-flow"
+  name: "开发流程（V2.1.0 FD实现模式大脑）"
+  version: "2.1.0"
+  trigger_command: "/init（PM 调度 FD，架构通过后）"
+  owner: "fd-agent"
+  gates_reference: ".codebuddy/knowledge/common/gates-registry.yml#stages.dev"
+  iron_rules_reference: ".codebuddy/knowledge/common/iron-rules-registry.yml#agents.fd_agent"
+  supervisor: "pm-agent"
+
+  # ============================================
+  # V2.1.0新增：FD实现模式大脑
+  # ============================================
+  ai_brain:
+    id: "fd_brain_v1"
+    name: "实现模式大脑"
+    description: |
+      FD不再是机械地将设计稿翻译为代码——FD大脑基于历史编码Bug模式、
+      合规检查经验和组件复用分析，推理出实现过程中的高风险点和最佳路径。
+      在编码前预判陷阱，而非编码后修复Bug。
+    reasoning_modules:
+      - id: "implementation_trap_prediction"
+        name: "实现陷阱预测"
+        description: |
+          基于历史编码Bug和合规失败模式，AI预判当前组件实现中的潜在风险。
+          输入：UX交互陷阱预警 + Arch实现陷阱预警 + 历史编码Bug模式库
+               + 当前组件复杂度评估（状态数×交互数×数据流深度）
+          输出：组件级实现风险清单（HIGH/MEDIUM/LOW + 风险类型 + 规避建议）
+          示例：「表格组件(12列+排序+筛选+批量操作)→历史3个状态同步Bug→预警：注意分页/排序/筛选三状态联动」
+      
+      - id: "component_reuse_reasoning"
+        name: "组件复用推理"
+        description: |
+          AI分析存量组件库与当前设计需求的匹配度，推荐复用策略。
+          输入：UX组件变体定义 + 存量组件库 + 当前页面组件需求
+          输出：复用建议（直接复用/适配复用/新建）+ 适配工作量预估
+      
+      - id: "compliance_pattern_recognition"
+        name: "合规模式识别"
+        description: |
+          AI基于11条编码铁律的历史违规模式，预检高违规风险区域。
+          输入：11条编码铁律 + 历史合规失败模式 + 当前代码结构
+          输出：违规热点标注（按铁律编号+组件+风险级别+历史违频率）
+          示例：「IRON-04(文件结构)→新模块历史遗漏率40%→标注：创建module目录时即检查6文件」
+      
+      - id: "visual_regression_risk"
+        name: "视觉回归风险预测"
+        description: |
+          AI基于Design Token消费情况和历史视觉回归失败模式，
+          预测组件级视觉回归概率。
+          输入：UX Design Token消费清单 + 历史视觉回归失败模式 + 组件类型
+          输出：视觉回归风险清单（按组件+Token类+失败概率）
+    
+    memory_import:
+      sources:
+        - "Arch大脑brain_sync_export：实现陷阱预警+安全注意事项清单"
+        - "UX大脑brain_sync_export：Design Token消费清单+交互陷阱预警+无障碍实施清单"
+        - "上版本FD大脑记忆：实现陷阱预测准确率+合规模式命中率+视觉回归预测准确率"
+        - "跨版本编码Bug模式库：按组件类型×Bug类型的失败模式统计"
+    
+    brain_sync_export:
+      to_qa: ["已知高风险区域清单（模块/组件+风险类型+风险级别）", "自测通过场景+边界条件", "已知限制清单（不在本期范围的实现）"]
+
+  # ============================================
+  # 步骤定义
+  # ============================================
+  steps:
+    - id: "1"
+      name: "仿真代码生成（六步标准流程）"
+      agent: "fd-agent"
+      skills:
+        - "sim-code-generator"
+        - "component-builder"
+        - "multi-platform-code-generator"
+      input: "需求文档 + 设计文档（含各端设计稿）+ 架构契约（路由/接口/仿真开关）"
+      output:
+        - "仿真服务代码：src/modules/{module}/services/sim.ts"
+        - "真实服务模板：src/modules/{module}/services/real.ts"
+        - "适配器：src/modules/{module}/services/adapter.ts"
+        - "状态管理：src/modules/{module}/store.ts"
+        - "类型定义：src/modules/{module}/types.ts"
+        - "UI 组件：src/modules/{module}/components/"
+        - "预制场景：src/simulation/scenarios/"
+      auto_check: "compliance-checker"
+      methodology: |
+        1. sim-code-generator：根据 BR + 接口契约生成 sim.ts（六步标准流程）
+        2. component-builder：根据 UX 交互说明卡生成四态组件
+        3. multi-platform-code-generator：根据冻结终端映射逐端生成适配代码
+        4. compliance-checker：自动检查 11 条铁律
+
+    - id: "2"
+      name: "合规检查 + 可运行骨架验证"
+      agent: "fd-agent"
+      skills: ["compliance-checker"]
+      input: "全部生成代码"
+      output:
+        - "合规检查报告（PASS/BLOCK/PASS_WITH_WARNINGS）"
+        - "可运行骨架验证（npm run dev 启动成功 + 主链路可走通）"
+      auto: true
+      methodology: |
+        1. compliance-checker 逐条检查 11 条铁律
+        2. CRITICAL 违规 → BLOCK，FD 修复后重跑
+        3. 验证 npm run dev 可启动
+        4. 验证本地访问地址可走通主链路
+
+  # ============================================
+  # PM 红线（C-F1~C-F5，缺则 FD 不得声明完成）
+  # ============================================
+  pm_redlines:
+    - id: "C-F1"
+      name: "可运行骨架"
+      description: "npm run dev 起服务，用户可浏览器访问"
+      check: "实际执行 npm run dev，确认 HTTP 服务正常启动"
+      fail_action: "FD 修复启动问题，不得声明完成"
+    - id: "C-F2"
+      name: "逐页 1:1 还原 UX 且套真实组件库"
+      description: "使用 Ant Design / antd-mobile / @tarojs/components 等真实组件库，禁止占位 div"
+      check: "逐页对比 UX 设计稿，确认组件使用真实库组件"
+      fail_action: "FD 替换占位元素为真实组件"
+    - id: "C-F3"
+      name: "本地访问地址已验证可走通主链路"
+      description: "登录→核心页面→核心操作 全链路可走通"
+      check: "实际浏览器访问，走通完整主链路"
+      fail_action: "FD 修复链路阻断点"
+    - id: "C-F4"
+      name: "不偏离上游"
+      description: "代码实现与架构契约/设计稿一致，无自行发挥"
+      check: "对比代码实现与架构契约（路由/接口/数据模型）"
+      fail_action: "FD 对齐上游契约"
+    - id: "C-F5"
+      name: "视觉回归"
+      description: "设计稿→代码的视觉一致性校验（threshold ≥ 0.95）—— O-07"
+      check: "自动截图对比设计稿基线"
+      fail_action: "FD 修复视觉差异"
+
+  # ============================================
+  # 11 条编码铁律（FD Agent 强制遵守）
+  # ============================================
+  coding_iron_rules:
+    - id: "IRON-01"
+      rule: "契约即 Schema：所有接口入参/出参必须用 Zod Schema 校验，禁止 any"
+    - id: "IRON-02"
+      rule: "适配器隔离：组件/Store 禁止直接导入 adapter/sim/simulated-db"
+    - id: "IRON-03"
+      rule: "仿真即真实：sim.ts 全量复刻 real.ts 的业务逻辑+错误码+延迟+随机错误"
+    - id: "IRON-04"
+      rule: "模块文件结构：每个模块必须包含 adapter.ts/real.ts/sim.ts/store.ts/types.ts"
+    - id: "IRON-05"
+      rule: "IndexedDB 持久化：仿真数据必须持久化到 IndexedDB"
+    - id: "IRON-06"
+      rule: "场景覆盖：每个模块场景文件至少 5 个 manager.register() 调用"
+    - id: "IRON-07"
+      rule: "Store 消费隔离：Store 只能从 adapter 获取数据"
+    - id: "IRON-08"
+      rule: "组件只从 Store 消费：禁止直接调用 adapter/service"
+    - id: "IRON-09"
+      rule: "四态覆盖：所有组件覆盖 loading/error/empty/success"
+    - id: "IRON-10"
+      rule: "生产隔离：生产构建禁止出现仿真关键字"
+    - id: "IRON-11"
+      rule: "越界引用：模块组件/Store 禁止引用 simulation 目录"
+
+  # ============================================
+  # Design Token 消费校验（O-07）
+  # ============================================
+  design_token_enforcement:
+    description: "FD Agent 生成的组件必须消费 Design Token，禁止硬编码样式值"
+    check_patterns:
+      forbid:
+        - "color:\\s*#[0-9a-fA-F]{3,8}"  # 禁止硬编码颜色
+        - "font-size:\\s*\\d+px"          # 禁止硬编码字号
+        - "margin:\\s*\\d+px"             # 禁止硬编码间距
+      require:
+        - "var\\(--"                       # 必须使用 CSS 变量
+    source: ".codebuddy/knowledge/common/ux/design-system.yml"
+
+  # ============================================
+  # 交互反馈模板
+  # ============================================
+  feedback_template: |
+    📋 开发完成确认
+
+    **开发范围**：{模块列表}
+    **产出文件**：
+    - 仿真服务：{数量} 个 sim.ts 函数
+    - UI 组件：{数量} 个组件
+    - 适配器：{数量} 个 adapter
+    - 场景注册：{数量} 个 scenario
+
+    **合规检查**：[PASS / BLOCK / PASS_WITH_WARNINGS]
+    **可运行骨架**：[npm run dev 启动成功 / 失败]
+
+    **PM 红线校验**：
+    - [ ] C-F1 可运行骨架
+    - [ ] C-F2 逐页 1:1 还原 UX
+    - [ ] C-F3 本地访问地址已验证
+    - [ ] C-F4 不偏离上游
+    - [ ] C-F5 视觉回归（≥0.95）
+
+    **自动流转 QA 测试**（无需用户确认）

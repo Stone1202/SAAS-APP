@@ -1,0 +1,187 @@
+# ============================================
+# Workflow: change-request（变更请求 / Bug修复）
+# 版本: v2.0.0
+# 最后更新: 2026-07-15
+# ============================================
+#
+# 流程专家视角：
+#   change-request 处理需求变更（/change）和 Bug 修复（/fix）两种场景。
+#   变更走完整的影响分析→文档更新→代码更新→回归测试→验收闭环；
+#   修复走 Bug 分析→修复实施→回归验证→验收关闭。
+#   核心原则：影响分析先行，文档为真理源。
+#
+# 关键差异：
+#   - /change：文档先行更新（需求→设计→测试用例→代码）
+#   - /fix：Bug 分析→修复→验证（可跳过需求文档更新，除非判定为需求缺陷）
+# ============================================
+
+workflow:
+  id: "change-request"
+  name: "变更请求 / Bug修复"
+  version: "2.0.0"
+  trigger_commands: ["/change", "/fix"]
+  owner: "pm-agent"
+  supervisor: "pm-agent"
+
+  # ============================================
+  # 选项定义
+  # ============================================
+  options:
+    - flag: "--platform"
+      desc: "指定受影响的端（逗号分隔）。影响分析逐端展开；变更若仅影响部分端用「适用端」列标注；跨端一致性风险单列"
+      values: ["pc", "app", "miniapp"]
+
+  # ============================================
+  # 分支 A：变更（/change）
+  # ============================================
+  branches:
+    - type: "change"
+      trigger: "/change"
+      description: "需求变更，文档先行更新"
+      platform_handling: "阶段A1读取模块多端差异矩阵逐端分析影响；影响报告新增「适用端」列与「跨端风险」条目"
+      stages:
+        - id: "A1"
+          name: "影响分析"
+          agents: ["ba-agent", "ux-agent"]
+          skills: ["change-impact-analyzer", "doc-processor"]
+          input: "变更描述 + 现有需求文档 + 设计文档 + 多端差异矩阵"
+          output:
+            - "影响分析报告（含适用端 / 跨端风险）"
+            - "受影响模块清单 + 影响级别"
+          methodology: |
+            影响分析报告模板：
+            1. 变更概述（变更内容 + 变更原因）
+            2. 受影响模块（模块名 + 影响级别 + 适用端）
+            3. 受影响文档（需求文档 + 设计文档 + 测试用例 + 代码）
+            4. 跨端影响（逐端分析 + 跨端一致性风险）
+            5. 建议变更方案
+
+        - id: "A2"
+          name: "需求文档更新"
+          agent: "ba-agent"
+          skills: ["doc-splitter", "doc-processor"]
+          input: "影响分析报告"
+          output: "更新后的需求文档（版本升级）"
+          note: "全类型同步铁律：变更亦须同步 REQ 产物"
+
+        - id: "A3"
+          name: "设计文档更新"
+          agent: "ux-agent"
+          skills: ["design-contract-aligner"]
+          input: "更新后的需求文档"
+          output: "更新的各端设计文档"
+          note: "保持设计与需求的一致性"
+
+        - id: "A4"
+          name: "测试用例同步更新"
+          agent: "qa-agent"
+          input: "更新后的需求文档"
+          output: "更新的测试用例文档"
+
+        - id: "A5"
+          name: "代码更新"
+          agent: "fd-agent"
+          skills: ["sim-code-generator", "component-builder", "multi-platform-code-generator"]
+          input: "更新后的需求文档 + 设计文档"
+          auto_check: "compliance-checker"
+          output: "更新的各端仿真代码"
+
+        - id: "A6"
+          name: "交互说明卡同步更新（已收敛到 /handoff 集中触发）"
+          agents: ["ux-agent", "fd-agent"]
+          skills: ["prototype-annotator"]
+          input: "更新的设计文档 + 代码"
+          output: "更新后的原型标注"
+          note: "V3.0.0交互说明卡生成已收敛到 /handoff，此处仅更新原型标注不生成卡片"
+
+        - id: "A7"
+          name: "回归测试"
+          agent: "qa-agent"
+          skills: ["test-runner"]
+          input: "更新后的代码 + 测试用例"
+          output: "回归测试报告（含逐端与跨端一致性）"
+
+        - id: "A8"
+          name: "验收确认"
+          agent: "ac-agent"
+          skills: ["requirement-checker", "business-flow-tester"]
+          input: "回归测试报告 + 更新后的需求文档"
+          output: "变更验收确认"
+
+    # ============================================
+    # 分支 B：修复（/fix）
+    # ============================================
+    - type: "fix"
+      trigger: "/fix"
+      description: "Bug 修复，先分析再修复"
+      stages:
+        - id: "B1"
+          name: "Bug分析 + 需求核查"
+          agents: ["qa-agent", "ba-agent"]
+          input: "Bug文档"
+          output:
+            - "Bug分析报告（含需求缺陷判断）"
+            - "修复方案建议"
+          methodology: |
+            分析 Bug 根因：
+            1. 是代码实现 Bug？→ 直接修复
+            2. 是需求描述不清？→ 先补需求文档再修复
+            3. 是设计遗漏？→ 先补设计再修复
+
+        - id: "B2"
+          name: "需求文档补充（条件执行）"
+          agent: "ba-agent"
+          trigger_when: "B1判断为需求缺陷"
+          skills: ["doc-processor"]
+          input: "Bug分析报告中的需求缺陷描述"
+          output: "补充后的需求文档"
+          condition: "仅当 Bug 根因为需求缺陷时执行"
+          note: "V3.0.0交互说明卡生成已收敛到 /handoff，此处不再生成"
+
+        - id: "B3"
+          name: "修复实施"
+          agent: "fd-agent"
+          skills: ["sim-code-generator", "component-builder", "multi-platform-code-generator"]
+          input: "Bug分析报告 + 修复方案"
+          auto_check: "compliance-checker"
+          output: "修复代码 + 新增单元测试（防止回归）"
+
+        - id: "B4"
+          name: "回归验证"
+          agent: "qa-agent"
+          skills: ["test-runner"]
+          input: "修复代码 + 新增测试用例"
+          output: "回归测试报告"
+
+        - id: "B5"
+          name: "验收关闭"
+          agent: "ac-agent"
+          input: "回归测试报告"
+          output: "Bug状态更新为closed"
+
+  # ============================================
+  # Bug 状态流转图
+  # ============================================
+  bug_state_machine: |
+    open → [B1 分析] → in_analysis
+    in_analysis → [判定为需求缺陷] → requirement_fix → [B2 补充需求] → ready_for_dev
+    in_analysis → [判定为代码Bug] → ready_for_dev
+    ready_for_dev → [B3 修复] → fixed
+    fixed → [B4 回归验证] → verified
+    verified → [B5 验收] → closed
+    verified → [验收不通过] → ready_for_dev（重新修复）
+
+  # ============================================
+  # 变更记录归档
+  # ============================================
+  change_log:
+    path: "projects/{project}/docs/06-changes/CHG-{YYYYMMDD}-{NNN}.md"
+    fields:
+      - "变更ID"
+      - "变更类型（change/fix）"
+      - "变更描述"
+      - "受影响模块"
+      - "受影响文档（更新前后版本）"
+      - "变更日期"
+      - "操作者"
+      - "验收状态"

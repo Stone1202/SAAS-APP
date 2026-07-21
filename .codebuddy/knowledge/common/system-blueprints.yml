@@ -1,0 +1,397 @@
+# ============================================
+# System Blueprints — AI 系统常识推理框架
+# 版本：v1.0.0
+# 创建：2026-07-20
+# ============================================
+#
+# 核心理念：
+#   这不是一份硬编码的"检查清单"（告诉BA必须有X/Y/Z）。
+#   这是一个 AI 推理框架——当 BA 声明了系统类型后，
+#   AI 根据此框架推理「这个系统类型在常识层面应该具备哪些功能域」，
+#   然后与当前 PRD 的 FN 列表做语义比对，产出「盲区报告」。
+#
+#   框架的每一层都是"推理提示"而非"强制条目"：
+#   - 如果一个后台系统没有登录，AI 不会说"你必须加登录"，
+#     而是说"当前系统类型为'租户业务后台'，通常需考虑身份入口——
+#       当前PRD是否在其他入口（如SSO/企微OAuth）已覆盖？请确认。"
+#
+# 引用方：
+#   - system-common-sense-analyzer Skill（常识补全分析器）
+#   - ba-agent（§0.5c 融合分析阶段调用，增强需求全景图）
+#   - requirement-flow §2 5W2H 盲区探测
+#   - gates-registry.yml G-REQ-15（系统常识完整性门禁）
+# ============================================
+
+version: "1.0.0"
+name: "system-blueprints"
+description: "AI系统常识推理框架——按系统类型推理其内在功能域，辅助BA发现需求盲区"
+
+# ============================================
+# 一、系统分层模型（通用推理框架）
+# ============================================
+# 任何业务系统都可以从这7个维度去推理"应该有什么"。
+# 这不是规则，而是AI推理时的思考维度指导。
+# ============================================
+
+system_layers:
+  description: |
+    AI 在分析系统类型时，按以下7层推理框架逐层思考。
+    每层都有「推理提示词（reasoning_prompt）」指导AI如何思考该维度。
+    AI 不应机械套用，而应根据系统类型和业务上下文灵活推理。
+
+  # ── 第0层：身份入口层 ──
+  L0_entry:
+    name: "身份入口层"
+    order: 0
+    description: "谁来用这个系统？怎么进来？"
+    reasoning_prompt: |
+      对于系统类型 {system_type}，AI 应推理以下问题：
+      1. 这个系统的用户是谁？（管理员/租户/运营/普通用户/外部访客？）
+      2. 用户如何进入系统？（账号密码/手机验证码/扫码/SSO/OAuth/企微授权？）
+      3. 是否需要多角色/多租户隔离？
+      4. 已登录状态如何维持？（Token/Session/Cookie？）
+      5. 未登录/登录过期如何处理？
+    typical_functional_areas:
+      - { area: "身份认证", keywords: ["登录", "login", "signin", "登出", "logout", "token", "session"] }
+      - { area: "多因素认证", keywords: ["MFA", "验证码", "短信", "扫码"] }
+      - { area: "第三方登录集成", keywords: ["微信登录", "企微OAuth", "SSO", "LDAP"] }
+      - { area: "租户识别与隔离", keywords: ["tenant", "租户", "多租户", "数据隔离"] }
+    ai_check_question: "当前PRD的FN列表中是否覆盖了「用户如何进入系统」的完整链路？如果没有，是因为其他系统负责（如统一认证网关）还是遗漏？"
+
+  # ── 第1层：身份治理层 ──
+  L1_identity:
+    name: "身份治理层"
+    order: 1
+    description: "谁来管理谁？谁能做什么？"
+    reasoning_prompt: |
+      对于系统类型 {system_type}，AI 应推理以下问题：
+      1. 是否需要账号管理？（创建/禁用/删除/修改用户账号）
+      2. 是否需要角色管理？（定义角色/分配角色）
+      3. 是否需要权限控制？（RBAC/ABAC/页面级/按钮级/数据级）
+      4. 是否需要密码策略？（密码强度/过期/重置/找回密码）
+      5. 是否需要组织架构管理？（部门/岗位/汇报关系）
+    typical_functional_areas:
+      - { area: "账号管理", keywords: ["用户管理", "账号", "account", "新建用户", "禁用用户"] }
+      - { area: "角色管理", keywords: ["角色", "role", "角色分配", "权限组"] }
+      - { area: "权限控制", keywords: ["RBAC", "权限", "permission", "access control"] }
+      - { area: "密码管理", keywords: ["密码", "password", "重置密码", "修改密码", "忘记密码"] }
+      - { area: "组织架构", keywords: ["部门", "组织", "org", "department"] }
+    ai_check_question: "当前PRD是否定义了「谁可以管理谁」以及「谁可以做什么」？如果这是一个后台系统但没有账号/角色管理，那么账号和角色是从哪里来的？"
+
+  # ── 第2层：业务功能层 ──
+  L2_business:
+    name: "业务功能层"
+    order: 2
+    description: "系统解决什么业务问题？"
+    reasoning_prompt: |
+      对于系统类型 {system_type} + 行业 {industry}，AI 应推理以下问题：
+      1. 这个系统的核心业务流程是什么？
+      2. 每个业务流程的起点和终点是什么？
+      3. 有哪些辅助业务流程？（搜索/筛选/导出/导入/批量操作）
+      4. 业务数据如何流转？（CRUD/审批/状态变更）
+    typical_functional_areas: []
+    # ↑ 业务功能层的要求由领域知识库（domains/）提供，
+    #   本层不做预定义，而是交给AI结合领域知识实时推理。
+    ai_check_question: "当前PRD的业务FN是否覆盖了行业+系统类型的核心业务流程？对照领域知识库（domains/）是否有遗漏？"
+
+  # ── 第3层：信息触达层 ──
+  L3_communication:
+    name: "信息触达层"
+    order: 3
+    description: "用户如何知道发生了什么？"
+    reasoning_prompt: |
+      对于系统类型 {system_type}，AI 应推理以下问题：
+      1. 系统内是否有需要主动通知用户的事件？（如待办/审批/预警/状态变更）
+      2. 通知渠道有哪些？（站内消息/短信/邮件/企微/APP推送）
+      3. 是否需要消息中心/通知列表？（已读/未读/批量操作）
+      4. 是否需要消息模板管理？
+      5. 是否需要用户订阅/退订通知？
+    typical_functional_areas:
+      - { area: "站内消息", keywords: ["消息", "通知", "notification", "站内信", "inbox"] }
+      - { area: "消息中心", keywords: ["消息列表", "通知列表", "消息中心", "已读未读"] }
+      - { area: "外部触达", keywords: ["短信", "SMS", "邮件", "email", "企微消息", "微信模板消息"] }
+      - { area: "消息模板", keywords: ["通知模板", "消息模板", "template"] }
+      - { area: "订阅管理", keywords: ["订阅", "退订", "subscribe"] }
+    ai_check_question: "当前PRD是否定义了「用户如何获知系统内发生的事件」？如果UX画了铃铛图标，但PRD中没有对应的消息/通知FN，这就是一处需求-设计不一致。"
+
+  # ── 第4层：系统治理层 ──
+  L4_governance:
+    name: "系统治理层"
+    order: 4
+    description: "谁在管理这个系统本身？"
+    reasoning_prompt: |
+      对于系统类型 {system_type}，AI 应推理以下问题：
+      1. 是否需要系统配置管理？（基础参数/开关/规则引擎阈值）
+      2. 是否需要操作日志/审计日志？（谁在什么时候做了什么）
+      3. 是否需要数据字典管理？
+      4. 是否需要系统健康监控？（服务状态/错误率/性能）
+      5. 是否需要租户管理？（多租户场景下，平台管理员如何管理租户）
+    typical_functional_areas:
+      - { area: "系统配置", keywords: ["系统设置", "配置", "settings", "system config"] }
+      - { area: "操作日志", keywords: ["操作日志", "审计日志", "audit log", "操作记录"] }
+      - { area: "数据字典", keywords: ["字典", "枚举", "数据字典", "dictionary"] }
+      - { area: "租户管理", keywords: ["租户管理", "tenant management", "开通租户", "停用租户"] }
+      - { area: "系统监控", keywords: ["监控", "monitor", "告警", "alert", "健康检查"] }
+    ai_check_question: "当前PRD是否定义了「谁可以管理这个系统本身」？如果没有操作日志，如何追溯问题？如果没有租户管理（多租户后台），租户从哪里来？"
+
+  # ── 第5层：数据分析层 ──
+  L5_analytics:
+    name: "数据分析层"
+    order: 5
+    description: "系统如何帮助用户看清数据？"
+    reasoning_prompt: |
+      对于系统类型 {system_type}，AI 应推理以下问题：
+      1. 是否需要工作台/仪表盘？（核心指标一览）
+      2. 是否需要报表？（日/周/月报，对比分析）
+      3. 是否需要数据导出？（Excel/CSV）
+      4. 是否需要数据大屏？（实时监控大屏）
+    typical_functional_areas:
+      - { area: "工作台", keywords: ["工作台", "dashboard", "仪表盘", "概览"] }
+      - { area: "数据报表", keywords: ["报表", "report", "统计", "analytics", "BI"] }
+      - { area: "数据导出", keywords: ["导出", "export", "Excel", "CSV"] }
+      - { area: "数据大屏", keywords: ["大屏", "实时监控", "数据可视化"] }
+    ai_check_question: "当前PRD中METRIC清单的指标是否有对应的展示页面（工作台/报表）？如果定义了指标但没有展示入口，指标无法被用户消费。"
+
+  # ── 第6层：体验与辅助层 ──
+  L6_experience:
+    name: "体验与辅助层"
+    order: 6
+    description: "系统如何帮助用户更高效？"
+    reasoning_prompt: |
+      对于系统类型 {system_type}，AI 应推理以下问题：
+      1. 是否需要搜索/全局搜索？
+      2. 是否需要筛选/排序/分页？
+      3. 是否需要批量操作？
+      4. 是否需要导入/导出？
+      5. 是否需要操作指引/帮助中心？
+      6. 是否需要快捷键/常用操作？
+    typical_functional_areas:
+      - { area: "搜索", keywords: ["搜索", "search", "全局搜索", "高级搜索"] }
+      - { area: "筛选排序", keywords: ["筛选", "filter", "排序", "sort", "分页", "pagination"] }
+      - { area: "批量操作", keywords: ["批量", "batch", "全选"] }
+      - { area: "导入导出", keywords: ["导入", "import", "导出", "export"] }
+      - { area: "帮助中心", keywords: ["帮助", "help", "指引", "guide", "onboarding"] }
+    ai_check_question: "当前PRD的页面级用例中是否覆盖了列表页的基础交互能力（搜索/筛选/排序/分页/批量）？"
+
+# ============================================
+# 二、系统类型→层激活映射（AI推理权重）
+# ============================================
+# 对于每种系统类型，不同层的激活权重不同。
+# 这不是说某层不重要，而是AI推理时的注意力分配不同。
+# weight: 0.0~1.0，越高越应重点推理
+# ============================================
+
+system_type_layer_weights:
+  description: |
+    每种系统类型对各层的「AI推理权重」。
+    权重越高，AI在推理时越应深度思考该层。
+    注意：权重=0不代表该层无关，而是AI默认不需深度推理。
+
+  租户业务后台:
+    description: "面向租户（企业客户）的业务管理后台"
+    layer_weights:
+      L0_entry: 1.0          # 身份入口极重要——租户如何入驻？如何登录？
+      L1_identity: 1.0        # 身份治理极重要——租户内部谁来管理账号和权限？
+      L2_business: 0.9        # 业务功能重要——核心是业务
+      L3_communication: 0.8   # 信息触达重要——租户需知业务动态
+      L4_governance: 0.9      # 系统治理极重要——平台怎么管租户？谁看到什么？
+      L5_analytics: 0.7       # 数据分析常用——租户看自己的业务数据
+      L6_experience: 0.6      # 体验重要——B端效率是关键
+    ai_reasoning_prompt: |
+      对于「租户业务后台」类型，AI在推理时应特别关注：
+      - 租户入驻→登录→账号管理的完整闭环（L0+L1）
+      - 租户隔离机制（L1+L4）：数据隔离/功能隔离/配额隔离
+      - 租户管理（L4）：平台管理员如何开通/停用/配置租户
+      - 消息通知（L3）：租户内部/平台→租户的双向通知
+      - 操作审计（L4）：租户的操作日志+平台对租户的操作日志
+
+  运营业务后台:
+    description: "内部运营人员使用的管理后台"
+    layer_weights:
+      L0_entry: 0.9           # 运营人员如何登录？
+      L1_identity: 0.8        # 运营角色+权限
+      L2_business: 1.0        # 运营业务是核心
+      L3_communication: 0.5   # 通知运营（较少）
+      L4_governance: 0.7      # 操作日志重要
+      L5_analytics: 0.9       # 运营看数据极重要
+      L6_experience: 0.8      # 运营效率
+    ai_reasoning_prompt: |
+      对于「运营业务后台」类型，AI在推理时应特别关注：
+      - 运营人员通过什么账号体系登录？（内部账号/企业SSO）
+      - 运营角色分层（一线运营/运营主管/管理员）
+      - 数据看板/工作台/报表能力
+      - 批量操作/导入导出效率工具
+
+  商家业务后台:
+    description: "B2C平台的商家端管理后台"
+    layer_weights:
+      L0_entry: 1.0           # 商家入驻/登录
+      L1_identity: 0.9        # 商家内部角色
+      L2_business: 1.0        # 商品/订单/营销
+      L3_communication: 0.9   # 平台通知商家
+      L4_governance: 0.8      # 商家操作日志
+      L5_analytics: 0.9       # 商家经营数据
+      L6_experience: 0.7      # 商家效率工具
+
+  B2C电商平台:
+    description: "面向消费者的电商前端"
+    layer_weights:
+      L0_entry: 1.0           # 消费者登录/注册
+      L1_identity: 0.6        # 消费者个人信息
+      L2_business: 1.0        # 购物流程
+      L3_communication: 0.8   # 订单通知/营销推送
+      L4_governance: 0.2      # 消费者端治理较少
+      L5_analytics: 0.3       # 消费者个人数据
+      L6_experience: 1.0      # 体验极重要
+
+  业务中台:
+    description: "为多个前端提供统一业务服务的中台"
+    layer_weights:
+      L0_entry: 0.9           # 服务间认证
+      L1_identity: 0.4        # 中台通常不管理终端用户
+      L2_business: 1.0        # 业务核心
+      L4_governance: 0.9      # API治理/限流/监控
+      L5_analytics: 0.7       # 服务调用统计
+
+  内容运营后台:
+    description: "内容/活动/推送等运营工具后台"
+    layer_weights:
+      L0_entry: 0.8
+      L1_identity: 0.7        # 编辑/审核/发布角色
+      L2_business: 1.0        # 内容管理是核心
+      L4_governance: 0.6      # 内容审核日志
+      L5_analytics: 0.9       # 内容效果分析
+
+  数据大屏:
+    description: "实时数据可视化大屏"
+    layer_weights:
+      L0_entry: 0.5
+      L2_business: 0.5
+      L5_analytics: 1.0       # 数据分析是全部
+
+# ============================================
+# 三、行业额外推理提示（叠加在系统类型之上）
+# ============================================
+industry_augmentation:
+  description: |
+    不同行业对特定层有额外的常识期待。
+    AI在推理时，系统类型推理 + 行业推理叠加使用。
+
+  ecommerce:
+    name: "电商行业"
+    extra_focus: ["商品库存管理", "退款售后流程", "营销活动工具", "物流追踪"]
+
+  saas:
+    name: "SaaS多租户"
+    extra_focus: ["订阅管理", "用量计费", "版本升级", "试用→付费转化", "租户自助服务"]
+
+  private_domain:
+    name: "私域电商"
+    extra_focus: ["企微集成", "社群运营", "裂变工具", "内容种草", "会员等级体系"]
+
+  social:
+    name: "社交行业"
+    extra_focus: ["好友关系链", "动态Feed", "IM即时通讯", "内容审核", "举报机制"]
+
+  erp:
+    name: "ERP/企业级应用"
+    extra_focus: ["审批流引擎", "权限矩阵", "多角色协同", "财务报表", "审计合规"]
+
+  finance:
+    name: "金融行业"
+    extra_focus: ["资金安全", "风控引擎", "监管报送", "双录/存证", "实名认证"]
+
+  live:
+    name: "直播行业"
+    extra_focus: ["直播间管理", "弹幕/评论审核", "礼物系统", "推流管理", "内容审核"]
+
+  advertising:
+    name: "广告行业"
+    extra_focus: ["投放管理", "素材审核", "数据监测", "反作弊", "消耗对账"]
+
+  general:
+    name: "通用"
+    extra_focus: ["注册", "登录", "忘记密码", "个人信息修改", "帮助中心"]
+
+# ============================================
+# 四、盲区分类体系
+# ============================================
+# AI分析出的盲区，按以下分类标记严重性
+# ============================================
+blind_spot_classification:
+  description: "AI标记盲区严重性时使用的分类标准"
+
+  critical:
+    name: "严重盲区"
+    description: "没有此项，系统不可用或不完整。如：后台系统没有登录入口、租户后台没有租户管理。"
+    examples:
+      - "后台系统缺少登录/认证入口"
+      - "多租户系统缺少租户管理"
+      - "运营后台没有数据看板（工作台是B端标配）"
+    action: "强烈建议补充FN/UC，否则验收时可能被标记为阻断"
+
+  important:
+    name: "重要盲区"
+    description: "没有此项，用户体验或管理能力受损。如：缺少操作日志、缺少通知机制。"
+    examples:
+      - "缺少操作日志/审计日志"
+      - "UX画了铃铛但没有对应FN"
+      - "缺少批量操作能力"
+    action: "建议补充，标注为P1，用户确认后纳入"
+
+  nice_to_have:
+    name: "锦上添花"
+    description: "有更好，没有也能运行。如：导入导出、帮助中心。"
+    examples:
+      - "缺少导入导出功能"
+      - "缺少帮助中心"
+    action: "可标注为P3，排入后续迭代"
+
+# ============================================
+# 五、AI推理示例（供AI学习如何推理）
+# ============================================
+reasoning_examples:
+  description: |
+    以下是几个AI推理的正确/错误示例，帮助AI校准推理能力。
+    核心原则：AI推理产物是「建议」，BA做最终决策。
+
+  example_1_correct:
+    name: "正确推理：SCRM租户后台缺少登录/账号管理"
+    system_type: "租户业务后台"
+    industry: "saas"
+    context: "PRD包含了26个FN，全是客户管理/沟通/AI辅助，没有登录、账号管理、通知中心"
+    ai_reasoning: |
+      AI推理过程：
+      1. 系统类型=「租户业务后台」→ L0_entry权重1.0 → 重点检查身份入口
+      2. 扫描PRD FN列表：26个FN中无任何涉及「登录」「认证」「token」「session」的用例
+      3. L1_identity权重1.0 → 检查身份治理：无账号管理、无角色管理、无权限控制
+      4. L3_communication权重0.8 → 检查信息触达：无消息/通知相关FN
+      5. L4_governance权重0.9 → 检查系统治理：无操作日志、无租户管理
+      
+      盲区报告：
+      - [严重] L0_entry: 缺少登录/认证入口——用户无法进入系统
+      - [严重] L1_identity: 缺少账号管理——无法创建/管理用户账号
+      - [严重] L1_identity: 缺少角色权限——无法控制不同角色的操作权限
+      - [严重] L4_governance: 缺少租户管理——多租户SaaS平台无法管理租户
+      - [重要] L3_communication: 缺少消息通知——UX已画铃铛图标但无对应FN
+      - [重要] L4_governance: 缺少操作日志——无法追溯谁做了什么操作
+      
+      建议优先级：
+      P0（阻断）：登录认证 + 账号管理 + 租户管理
+      P1（重要）：角色权限 + 操作日志 + 消息通知
+      P3（锦上添花）：帮助中心
+
+  example_2_boundary:
+    name: "边界判断：用户明确说登录由统一认证网关负责"
+    system_type: "运营业务后台"
+    context: "用户说明：登录和账号管理由企业统一SSO负责，本系统不需要"
+    ai_reasoning: |
+      AI推理过程：
+      1. 系统类型=「运营业务后台」→ L0_entry权重0.9
+      2. 但用户明确声明了L0由外部系统负责
+      3. AI应记录此决策并在「盲区报告」中标注「已确认由外部系统负责」
+      4. 不应反复提示「缺少登录」
+      
+      AI的盲区报告中应为：
+      - L0_entry: [已确认] 登录/认证由企业统一SSO承载——BA已确认，跳过
+      - L1_identity: [需确认] 角色权限管理是否也由SSO承载？还是本系统自行管理？——请BA确认

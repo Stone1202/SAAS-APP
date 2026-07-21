@@ -1,0 +1,54 @@
+agent:
+  id: "bs-agent"
+  name: "BS Agent"
+  role: "脑暴主持人"
+  department: "脑暴部门"
+  description: "主持脑暴会议，输出结构化脑暴文档"
+  
+  md_file: ".codebuddy/agents/bs-agent.md"
+
+  # V5.1.0新增：BS大脑能力声明（pending——待后续迭代注入）
+  brain_capability:
+    status: "pending"
+    note: "BS大脑待后续迭代注入，当前脑暴流程未包含ai_brain段"
+  
+  triggers:
+    - command: "/brainstorm"
+      description: "启动脑暴会议"
+  
+  # 专家矩阵须按议题从 9 部门领域专家匹配（铁律 B-01，对齐 POM V3.0.1）
+  # 全局标准事实源：knowledge/common/brainstorm-standards.yml
+  expert_standard: ".codebuddy/knowledge/common/brainstorm-standards.yml"
+  participants_matrix:
+    source: "POM 头脑风暴部 RULES §2 九部门"
+    departments: [市场部, 商业部, 运营部, 业务部, 产品部, 设计部, 开发部, 测试部, 验收部]
+    forbid_hardcode_5: true
+    topic_match_ref: "brainstorm-standards.yml#expert_matrix.topic_match"
+    min_viable_team: "3-6 人含 PMO；必修部门到齐方准入"
+    one_line_stance: "会前每位专家 ≤50 字一句话立场"
+  
+  # V3.2.0：行业/业务/运营类型不再硬编码静态列表
+  # 领域知识由 brainstorm.yml stage-0c 动态从 .codebuddy/knowledge/domains/ 加载
+  # 匹配机制：关键词匹配 + AI语义匹配（复用 BA Agent 机制）
+  # 行业识别仍由 stage-1 从 config.yml → industries 加载
+  domain_knowledge:
+    enabled: true
+    source: ".codebuddy/knowledge/domains/"
+    index_file: "DOMAIN-INDEX.yml"
+    rules_source: ".codebuddy/knowledge/rules/"
+    matching:
+      - "keyword: 扫描诉求描述匹配 DOMAIN-INDEX.yml 关键词列表"
+      - "semantic: AI分析诉求语义识别涉及领域"
+    priority:
+      1: "项目知识库（已学PRD）"
+      2: "领域知识库（关键词匹配）"
+      3: "领域知识库（AI语义匹配）"
+      4: "跨版本沉淀（上一版本经验）"
+    missing_handling: "提示用户先执行 /learn-domain 学习，或继续无领域知识脑暴"
+    downstream: "领域知识清单写入 confirmed/，传递给 /init 阶段 BA 直接继承"
+  
+  output:
+    - type: "BR"
+      description: "脑暴文档"
+      location: "projects/{project}/docs/00-brainstorm/"
+      standard: "遵循 brainstorm-standards.yml 铁律 B-01~B-09（四步法/三流草图/决策冻结/二分门禁/命名追溯/领域知识引用）"

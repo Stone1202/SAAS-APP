@@ -1,0 +1,46 @@
+# DEPLOY-MANIFEST.yml — 部署清单（每次 /close 自动更新）
+# 维护者：PM Agent + deploy-manager Skill | 每次 /close 和 /deploy 时更新
+# ============================================
+version: "1.0.0"
+last_deploy: "2026-07-21T15:45+08:00"
+deploy_target: "edgeone-pages"
+workspace_url: "https://ai-scrm-dpzzl2eobkr6.edgeone.dev"
+edgeone_project_id: "makers-ia0gfprurxre"
+edgeone_project_name: "ai-scrm"
+edgeone_console_url: "https://console.cloud.tencent.com/edgeone/pages/project/makers-ia0gfprurxre/index"
+
+# 部署记录（按时间倒序，最新在上）
+deployments:
+  - owner: "jojo"
+    project: "AI-SCRM"
+    version: "v1.0.0"
+    deployed_at: "2026-07-21T15:30+08:00"
+    git_tag: null
+    build_mode: "sim"
+    url: "https://ai-scrm.edgeone.app/jojo/AI-SCRM/v1.0.0/"
+    status: "success"
+    db_name: "jojo-ai-scrm-sim"
+    build_duration_sec: 3
+    deploy_duration_sec: 15
+    artifacts:
+      - "projects/jojo/AI-SCRM/dist/"
+    url: "https://ai-scrm-dpzzl2eobkr6.edgeone.dev"
+    preview_url: "https://ai-scrm-dpzzl2eobkr6.edgeone.dev?eo_token=ba568ae2d29b475d81b10749169cb106&eo_time=1784615937"
+    error_msg: null
+
+# 示例条目（实际部署时自动追加）：
+# - owner: "jojo"
+#   project: "AI-SCRM"
+#   version: "v1.0.0"
+#   deployed_at: "2026-07-21T15:00+08:00"
+#   git_tag: "v1.0.0"
+#   build_mode: "sim"
+#   url: "https://ai-scrm.edgeone.app/jojo/AI-SCRM/v1.0.0/"
+#   status: "success"
+#   db_name: "jojo-ai-scrm-sim"
+#   build_duration_sec: 45
+#   deploy_duration_sec: 12
+#   artifacts:
+#     - "projects/jojo/AI-SCRM/dist/"
+#     - "projects/jojo/AI-SCRM/docs/09-versions/v1.0.0/"
+#   error_msg: null

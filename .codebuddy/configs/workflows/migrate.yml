@@ -1,0 +1,107 @@
+# ============================================
+# Workflow: migrate（知识库迁移）
+# 版本: v2.0.0
+# 最后更新: 2026-07-15
+# ============================================
+#
+# 流程专家视角：
+#   migrate 是跨项目复用经验的特殊流程——将旧项目的知识库
+#   （行业知识/术语表/设计规范/最佳实践）迁移到新项目。
+#   非生命周期指令，独立于主需求链路。
+#
+# 核心原则：
+#   1. 知识库迁移而非代码迁移（迁移的是经验，不是实现）
+#   2. 路径范式自动核对（旧路径 → 新路径映射）
+#   3. 迁移后验证（BA+FD+QA+Doc 四角色联合验证）
+# ============================================
+
+workflow:
+  id: "migrate"
+  name: "知识库迁移"
+  version: "2.0.0"
+  trigger_command: "/migrate"
+  owner: "doc-agent"
+  pm_controlled: false
+
+  # ============================================
+  # 选项定义
+  # ============================================
+  options:
+    - flag: "--from"
+      desc: "旧项目路径（必填）"
+      required: true
+    - flag: "--project"
+      desc: "目标项目名（可选，默认当前项目）"
+      required: false
+
+  # ============================================
+  # 阶段定义
+  # ============================================
+  stages:
+    - id: "1"
+      name: "知识库复制"
+      agent: "doc-agent"
+      action: |
+        1. 扫描旧项目的 .codebuddy/knowledge/ 目录
+        2. 识别可迁移的知识条目（行业知识/术语表/设计规范/最佳实践）
+        3. 排除不可迁移内容（项目特定实现/旧版本状态/过时配置）
+        4. 按路径范式映射到新项目
+      input: "--from 旧项目路径"
+      output: "知识迁移清单（源路径 → 目标路径 映射）"
+      methodology: |
+        路径范式核对：
+        - .codebuddy/knowledge/common/{domain}/ → .codebuddy/knowledge/common/{domain}/
+        - .codebuddy/knowledge/{old_project}/ → .codebuddy/knowledge/{new_project}/
+        - 自动替换项目名，保持目录结构
+
+    - id: "2"
+      name: "行业检测"
+      agent: "ba-agent"
+      action: |
+        1. 对比旧项目与新项目的行业特征
+        2. 识别行业差异导致的术语/流程/规范差异
+        3. 标注需要适配的知识条目
+      output: "行业差异报告"
+
+    - id: "3"
+      name: "术语表更新"
+      agent: "ba-agent"
+      action: |
+        1. 合并旧项目术语表
+        2. 去重 + 冲突检测
+        3. 更新新项目术语表
+      output: "更新后的术语表"
+
+    - id: "4"
+      name: "配置更新"
+      agent: "doc-agent"
+      action: |
+        1. 更新 config.yml 中的行业模板引用
+        2. 更新知识库索引
+        3. 更新文档交叉引用
+      output: "更新后的配置文件"
+
+    - id: "5"
+      name: "验证"
+      agents: ["ba-agent", "fd-agent", "qa-agent", "doc-agent"]
+      action: |
+        四角色联合验证：
+        - BA：验证术语表和业务规则的一致性
+        - FD：验证设计规范和组件库引用的正确性
+        - QA：验证测试用例模板的适用性
+        - Doc：验证文档索引和交叉引用的完整性
+      output: "projects/{project}/docs/00-migration/MIGRATE-{YYYYMMDD}-{from_project}-to-{to_project}.md"
+
+  # ============================================
+  # 迁移报告模板
+  # ============================================
+  report_template:
+    path: "projects/{project}/docs/00-migration/MIGRATE-{YYYYMMDD}-{from_project}-to-{to_project}.md"
+    sections:
+      - "迁移概述（源项目 → 目标项目）"
+      - "知识条目清单（源路径 → 目标路径）"
+      - "行业差异适配说明"
+      - "术语表变更"
+      - "配置变更"
+      - "验证结果（BA/FD/QA/Doc 四方确认）"
+      - "已知限制与待处理项"

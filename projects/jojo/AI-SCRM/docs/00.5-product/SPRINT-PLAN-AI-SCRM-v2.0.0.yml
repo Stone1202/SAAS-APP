@@ -1,0 +1,329 @@
+# =============================================================================
+# AI-SCRM Sprint 计划 v2.0.0
+# v2.0.0 变更：每个Sprint不再交付"抽象模块"而是交付"可感知的业务场景增量"
+# =============================================================================
+
+meta:
+  version: "v2.0.0"
+  date: "2026-07-18"
+  total_sprints: 6
+  total_weeks: 12
+  strategy: "流程闭环优先 — 每个Sprint打通一段真实的业务链路"
+
+# =============================================================================
+# Sprint 概览
+# =============================================================================
+sprints:
+
+  - number: 1
+    name: "系统骨架 + 工作台 + 客户管理"
+    weeks: "Week 1-2"
+    slogan: "我看到系统了"
+    theme: >
+      双系统跑起来、登录进去有工作台、能管理客户基本信息。
+      这一步看似基础，但奠定了整个系统的架构骨架和交互范式。
+
+    backlog_items: ["PBL-001", "PBL-002", "PBL-003"]
+
+    deliverables:
+      pages:
+        - "租户登录页"
+        - "租户工作台"
+        - "客户列表页"
+        - "客户详情页（基础版）"
+        - "运营登录页"
+        - "运营工作台（占位）"
+      components:
+        - "TenantLayout / OpsLayout（双布局）"
+        - "Sidebar导航组件"
+        - "概览卡片组件"
+        - "待办列表组件"
+        - "标签选择器组件"
+        - "客户新增/编辑弹窗"
+      stores:
+        - "useAuthStore（登录/Token/用户信息）"
+        - "useDashboardStore（工作台数据）"
+        - "useCustomerStore（客户CRUD+标签）"
+      infrastructure:
+        - "Vue Router 双路由树"
+        - "Axios封装 + Sim适配器"
+        - "Element Plus + TailwindCSS 基础样式"
+
+    demo_checkpoint:
+      scenario: "运营管理员创建租户 → 租户管理员登录 → 看到工作台 → 新增一个客户 → 给客户打标签 → 搜索筛选客户"
+      expected: "整个流程无阻断，页面渲染正常，客户数据正确保存和展示"
+      run: "Playwright E2E自动执行"
+
+  - number: 2
+    name: "统一沟通入口 + 沟通记录"
+    weeks: "Week 3-4"
+    slogan: "我能和客户沟通了"
+    theme: >
+      从客户详情一键发起沟通（企微聊天/电话/短信/邮件），
+      所有沟通记录自动归档，为接下来的AI辅助打下数据基础。
+      注意：此阶段企微/电话为Sim模拟，真实对接在后续Sprint。
+
+    backlog_items: ["PBL-004"]
+
+    dependencies:
+      - { from: "PBL-003", type: "data", note: "沟通需关联客户，依赖客户管理基础" }
+
+    deliverables:
+      pages:
+        - "沟通入口页（统一沟通面板）"
+        - "企微聊天窗口页"
+        - "通话记录列表页"
+        - "沟通记录详情页"
+      components:
+        - "聊天窗口组件（消息列表+输入框+发送）"
+        - "客户画像侧边栏（简洁版，沟通时快速查看）"
+        - "消息气泡组件（文本/图片/商品卡片）"
+        - "通话记录组件（拨打/接听/时长/录音占位）"
+      stores:
+        - "useCommunicationStore（消息收发+记录管理）"
+        - "useMessageStore（消息队列+已读未读）"
+      sim:
+        - "Sim企微消息收发（本地消息模拟）"
+        - "Sim通话状态机（拨号→接通→通话中→挂断）"
+
+    demo_checkpoint:
+      scenario: "从客户详情点击「发起沟通」→ 打开企微聊天窗口 → 发送消息 → 切换到电话拨打 → 通话记录自动生成 → 查看沟通记录"
+      expected: "消息收发正常，通话记录正确关联客户，沟通记录列表按时间排序"
+
+  - number: 3
+    name: "沟通中AI辅助 — 话术推荐 + 情绪监控 + 商品推荐 + 意图识别"
+    weeks: "Week 5-6"
+    slogan: "AI在帮我沟通了"
+    theme: >
+      这是产品的核心差异化。在企微聊天和电话沟通中，
+      AI实时分析对话内容，提供话术推荐、情绪监控、商品推荐、意图识别。
+      Coze Agent在这一阶段首次集成。
+
+    backlog_items: ["PBL-005", "PBL-006", "PBL-007"]
+
+    dependencies:
+      - { from: "PBL-004", type: "data+component", note: "AI辅助嵌入沟通窗口，依赖沟通能力就绪" }
+      - { from: "Coze平台", type: "external", note: "需Coze Agent已创建和调试" }
+
+    deliverables:
+      pages:
+        - "话术库管理页（预置+自定义话术维护）"
+        - "商品库管理页（商品信息维护）"
+        - "主管情绪看板页（团队负面情绪实时监控）"
+      components:
+        - "话术推荐面板（右侧滑出，1-3条话术+推荐理由）"
+        - "情绪指示器（正面/中性/负面 三色标识）"
+        - "情绪曲线图（本次沟通情绪波动趋势）"
+        - "负面告警弹窗（震动+红色+安抚话术推荐）"
+        - "意图识别面板（客户意向类型+置信度）"
+        - "商品推荐面板（1-5个商品卡片+一键发送）"
+        - "商品卡片组件（名称+价格+推荐理由+发送按钮）"
+      coze_agents:
+        - "ScriptRecommender（话术推荐子Agent）"
+        - "EmotionMonitor（情绪监控子Agent）"
+        - "IntentRecognizer（意图识别子Agent）"
+        - "ProductRecommender（商品推荐子Agent）"
+      stores:
+        - "useScriptStore（话术库+采纳统计）"
+        - "useEmotionStore（情绪状态+历史）"
+        - "useIntentStore（意图状态+历史）"
+        - "useProductStore（商品库）"
+
+    demo_checkpoint:
+      scenario: >
+        打开企微聊天窗口 → 开始对话 → 右侧面板实时显示：
+        情绪指示器变化 → 话术推荐刷新 → 客户表达购买意向→意图标注「高意向」→
+        商品推荐更新 → 客户表达不满→情绪变红色→告警弹窗 → 一键发送商品卡片
+      expected: "四个AI辅助能力实时响应，延迟<2秒，推荐内容与上下文相关"
+
+  - number: 4
+    name: "沟通后AI处理 + 客户360 + 跟进管理"
+    weeks: "Week 7-8"
+    slogan: "AI帮我处理后续了"
+    theme: >
+      沟通结束后AI自动完成四件事：总结、质检、画像更新、跟进生成。
+      同时补齐客户360视图和跟进日历，让Sprint 3的"沟通中AI辅助"
+      和Sprint 4的"沟通后AI处理"形成完整闭环。
+      这是「一条客户沟通」从开始到结束到再次跟进的完整链路。
+
+    backlog_items: ["PBL-008", "PBL-009", "PBL-011"]
+
+    dependencies:
+      - { from: "PBL-005~007", type: "data", note: "沟通后处理依赖沟通中的数据（对话记录、情绪、意图）" }
+      - { from: "PBL-003", type: "component", note: "客户360是客户详情的升级版" }
+      - { from: "Coze平台", type: "external", note: "需总结/质检/画像/规划四个Agent就绪" }
+
+    deliverables:
+      pages:
+        - "客户360视图页（7信息面板聚合）"
+        - "分群管理页（创建/编辑/查看分群）"
+        - "待办列表页（统一待办中心）"
+        - "跟进日历页（周/月视图+拖拽）"
+      components:
+        - "AI沟通总结卡片（摘要+决策点+情绪总结+建议）"
+        - "质检评分面板（5维评分+优/良/不合格）"
+        - "画像更新预览组件（建议标签+确认/修改）"
+        - "跟进任务卡片（类型+时间+话术+优先级）"
+        - "跟进记录表单组件"
+        - "日历拖拽组件"
+        - "AI画像摘要组件"
+      coze_agents:
+        - "Summarizer（总结子Agent）"
+        - "Inspector（质检子Agent）"
+        - "Profiler（画像更新子Agent）"
+        - "Planner（跟进生成子Agent）"
+      stores:
+        - "useSummaryStore（沟通总结）"
+        - "useQualityStore（质检评分）"
+        - "useCustomerProfileStore（360视图+画像）"
+        - "useSegmentStore（分群管理）"
+        - "useTodoStore（统一待办）"
+        - "useCalendarStore（跟进日历）"
+      algorithms:
+        - "todoEngine.ts（待办去重+合并+排序）"
+
+    demo_checkpoint:
+      scenario: >
+        完成一段模拟客户沟通（已有对话数据）→ 沟通结束 →
+        AI自动生成总结卡片（摘要+决策点+情绪总结）→
+        AI自动质检评分 → AI建议新增3个标签+调整1个标签权重 →
+        人工确认后画像更新 → AI生成2条跟进任务（电话3天后+企微明天）→
+        查看待办列表（2条新任务已排入）→ 打开跟进日历查看排期 →
+        打开客户360视图（7面板完整展示：基本信息/标签画像/沟通历史/订单/跟进/情绪/意向演变）
+      expected: "沟通后四步自动完成（<30秒），画像更新准确，跟进任务合理，360视图数据完整"
+
+  - number: 5
+    name: "SAAS商业引擎 + 数据看板"
+    weeks: "Week 9-10"
+    slogan: "能收钱了"
+    theme: >
+      运营后台完整上线：租户全生命周期管理、版本定价配置、
+      订阅订单处理、退款审批。同时交付租户侧的数据看板。
+      SAAS商业闭环和SCRM业务闭环在这一Sprint同时就绪。
+
+    backlog_items: ["PBL-010", "PBL-012"]
+
+    dependencies:
+      - { from: "PBL-001", type: "infrastructure", note: "运营后台骨架在Sprint 1已搭建" }
+      - { from: "PBL-008", type: "data", note: "数据看板依赖沟通+跟进数据" }
+
+    deliverables:
+      pages:
+        # 运营后台
+        - "运营工作台（KPI总览+租户健康度分布+预警列表）"
+        - "租户管理列表页 + 详情页（生命周期+健康度评分）"
+        - "版本定价配置页（功能矩阵+价格+促销）"
+        - "订阅订单列表页 + 退款审批页"
+        # 租户后台
+        - "数据看板页（沟通分析+转化漏斗+员工绩效）"
+      components:
+        - "租户状态流转器（7状态+操作按钮）"
+        - "健康度评分组件（多维度雷达图）"
+        - "版本对比表组件"
+        - "退款阶梯计算器组件"
+        - "转化漏斗图组件（ECharts）"
+        - "员工绩效排行表组件"
+      stores:
+        - "useTenantStore（租户管理+状态机）"
+        - "useSubscriptionStore（订阅订单+退款）"
+        - "usePricingStore（版本配置+定价）"
+        - "useAnalyticsStore（数据看板+图表数据）"
+
+    demo_checkpoint: >
+      【运营后台】创建租户→审核→开通试用→
+      租户订阅专业版→支付→状态变为ACTIVE→
+      查看订阅详情→申请退款→72h内全额退→退款审批通过→
+      查看营收看板（MRR+续费率）
+      【租户后台】查看数据看板：沟通分析（总量+AI辅助率+话术采纳率）→
+      转化漏斗（客户→沟通→意向→成交）→员工绩效排行
+      expected: "SAAS全生命周期闭环通过，数据看板图表数据正确"
+
+  - number: 6
+    name: "权限控制 + AI用量计费 + 移动H5"
+    weeks: "Week 11-12"
+    slogan: "精细化+移动化+可量化"
+    theme: >
+      最后补齐三个增强能力：精细化权限（RBAC+数据域+字段级）、
+      AI用量可视化计费、核心功能移动H5适配。
+      这一Sprint完成后，产品具备完整商业化交付能力。
+
+    backlog_items: ["PBL-013", "PBL-014"]
+
+    dependencies:
+      - { from: "PBL-010", type: "data", note: "AI用量管理依赖订阅体系" }
+      - { from: "PBL-005~008", type: "data", note: "AI用量统计依赖AI辅助产生的调用数据" }
+
+    deliverables:
+      pages:
+        # 运营后台
+        - "AI用量统计页（按租户/子Agent维度的调用+Token统计）"
+        - "AI计费明细页"
+        - "营收分析看板（MRR+LTV+CAC+四象限）"
+        # 租户后台
+        - "权限管理页（角色配置+数据域配置+字段权限）"
+        # 移动H5
+        - "移动端工作台"
+        - "移动端客户列表+详情"
+        - "移动端待办"
+      components:
+        - "RBAC角色编辑器（权限树选择器）"
+        - "数据域分配器（部门×客户范围选择器）"
+        - "AI用量图表组件（ECharts时序图）"
+        - "营收四象限图组件"
+      stores:
+        - "useAuthStore（增强：权限鉴权逻辑）"
+        - "usePermissionStore（角色+数据域+字段权限）"
+        - "useAIUsageStore（AI用量统计）"
+        - "useRevenueStore（营收分析）"
+      mobile:
+        - "移动端路由适配"
+        - "移动端组件库适配（Element Plus Mobile或Vant）"
+        - "移动端响应式布局"
+
+    demo_checkpoint: >
+      【权限】创建自定义角色（只能看自己的客户+不能导出）→
+      坐席登录→只能看到自己负责的客户→尝试导出→无权限提示
+      【AI用量】查看AI用量看板→按租户/按Agent维度统计→成本核算
+      【移动H5】手机打开→工作台→客户列表→客户详情→处理待办→回复消息
+      expected: "权限拦截正确，AI用量统计准确，移动端核心流程可用"
+
+# =============================================================================
+# DoD (Definition of Done) — 每个Sprint的统一完成标准
+# =============================================================================
+dod:
+  code:
+    - "TypeScript严格模式通过，无any滥用"
+    - "所有Store有Zod Schema校验"
+    - "Sim/Real适配器切换正常（npm run dev:sim / npm run dev:real）"
+    - "ESLint + Prettier检查通过"
+  test:
+    - "Store单元测试覆盖率>80%（Vitest）"
+    - "核心场景E2E测试通过（Playwright）"
+    - "Demo Checkpoint场景可运行"
+  review:
+    - "代码Review通过（Arch+FD）"
+    - "交互Review通过（UX）"
+    - "PO场景验收通过"
+  doc:
+    - "关键Store/Service有JSDoc注释"
+    - "新增页面在设计文档中有对应PG编号"
+
+# =============================================================================
+# 依赖关系图
+# =============================================================================
+dependency_graph: |
+  Sprint 1 (骨架+客户)
+    └─→ Sprint 2 (沟通) 
+          └─→ Sprint 3 (沟通中AI辅助) ← Coze Agent就绪
+                └─→ Sprint 4 (沟通后AI处理+CRM增强)
+                      ├─→ Sprint 5 (SAAS商业+看板)
+                      └─→ Sprint 6 (权限+AI用量+移动H5)
+
+# =============================================================================
+# 风险登记
+# =============================================================================
+risks:
+  - { id: "R-01", sprint: "Sprint 3", risk: "Coze Agent效果达不到预期（话术推荐不精准）", mitigation: "Sprint 2提前搭建话术库和兜底规则，Coze作为增强层", severity: "高" }
+  - { id: "R-02", sprint: "Sprint 3", risk: "Coze API延迟>2秒影响实时体验", mitigation: "前端乐观更新+加载态+超时降级到本地规则引擎", severity: "中" }
+  - { id: "R-03", sprint: "Sprint 4", risk: "AI自动总结质量差（摘要不准确/标签提取错误）", mitigation: "人工确认机制（预览→确认→应用），AI建议不强制采纳", severity: "中" }
+  - { id: "R-04", sprint: "Sprint 6", risk: "移动H5适配工作量超预期", mitigation: "只做核心3页（工作台/客户/待办），其余标记Non-Goal", severity: "低" }

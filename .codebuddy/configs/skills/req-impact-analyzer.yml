@@ -1,0 +1,19 @@
+skill:
+  id: "req-impact-analyzer"
+  name: "req-impact-analyzer"
+  version: "1.0.0"
+  agents: ["ba-agent"]
+  triggers: ["requirement 阶段第一步（全 type，0-1 首版除外）"]
+  description: >
+    【需求域】需求影响范围识别器（核心能力）。给定用户的需求描述（仅描述，无其他输入），
+    结合 business-topology.json 与 released_baseline 版本文档，自动识别受影响的业务流程 /
+    业务模块 / 功能 / 平台，并沿依赖边做反向扩散。
+    与 change-impact-analyzer（设计/组件域：组件×页面×字段）职责互补、不重叠。
+  inputs:
+    - "需求描述（自然语言）"
+    - "projects/{project}/.codebuddy/business-topology.json"
+    - "released_baseline"
+  outputs:
+    - type: "impact-report"
+      description: "projects/{project}/.codebuddy/impact-reports/IMP-{stream}-v{version}.json"
+  dependencies: ["business-topology"]

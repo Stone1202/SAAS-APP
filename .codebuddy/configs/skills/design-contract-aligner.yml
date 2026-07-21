@@ -1,0 +1,21 @@
+# Skill: 设计-契约对齐器（Design Contract Aligner）
+skill:
+  id: "design-contract-aligner"
+  name: "design-contract-aligner"
+  agent: "ux-agent"
+  description: "校验设计稿是否覆盖 POM/需求文档中定义的所有状态和交互，输出对齐报告"
+  triggers:
+    - event: "design_completed"
+      description: "UX Agent 完成设计后自动触发"
+  workflow:
+    - name: "状态覆盖校验"
+      rule: "检查 loading/empty/error/success 四态是否都有设计"
+    - name: "接口字段校验"
+      rule: "需求字段与异常码是否都有对应UI处理"
+    - name: "交互流程校验"
+      rule: "正向/逆向/中断流程是否全覆盖"
+    - name: "组件变体校验"
+      rule: "default/hover/active/disabled/loading/error 变体是否完整"
+  output:
+    - type: "设计-契约对齐报告"
+      description: "状态覆盖率、缺失项、需确认项"

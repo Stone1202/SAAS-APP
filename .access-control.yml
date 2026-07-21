@@ -1,0 +1,99 @@
+# .access-control.yml — 访问控制配置（管理员维护）
+# CodeBuddy 启动时读取此文件，确定当前用户的角色和权限边界
+# V1.0.0 | 2026-07-21 | 多人多项目部署运营方案
+# ============================================
+version: "1.0.0"
+
+# ============================================
+# 当前用户识别方式（优先级从高到低）
+# ============================================
+user_identification:
+  - env_var: "CODEBUDDY_USER"       # 环境变量指定用户ID
+  - git_config: "user.name"         # git user.name 匹配 members[].git_name
+  - fallback: "admin"               # 默认管理员（单开发场景兼容）
+
+# ============================================
+# 成员注册表
+# ============================================
+members:
+  - id: "jojo"
+    name: "Jojo"
+    git_name: "jojo"
+    role: "admin"
+    active_project: "AI-SCRM"
+    # admin 拥有全权访问，不受 permission_boundary 限制
+
+# 示例：新增成员时在此追加
+#  - id: "zhangsan"
+#    name: "张三"
+#    git_name: "zhangsan"
+#    role: "member"
+#    active_project: "erp-portal"
+
+# ============================================
+# 权限边界定义
+# ============================================
+permission_boundary:
+  admin:
+    can_read: ["**"]
+    can_write: ["**"]
+    can_execute: ["**"]
+    description: "管理员全权访问所有目录"
+
+  member:
+    can_read:
+      - ".codebuddy/knowledge/domains/**"              # 共享领域知识
+      - ".codebuddy/knowledge/common/经验库/**"         # 共享经验库
+      - ".codebuddy/knowledge/PROJECT-INDEX.yml"        # 项目注册表（只读）
+      - ".codebuddy/knowledge/projects/{self_owner}/**" # 自己的项目沉淀
+      - "projects/{self_owner}/**"                      # 自己的项目
+    can_write:
+      - "projects/{self_owner}/**"                      # 只能写自己的项目
+      # 知识库贡献通过流程命令间接写入，不直接编辑
+    can_execute:
+      - "/brainstorm"
+      - "/init"
+      - "/learn-project"
+      - "/learn-domain"
+      - "/test"
+      - "/accept"
+      - "/feedback"
+      - "/close"
+      - "/report"
+      - "/handoff"
+      - "/deploy"
+    forbidden:
+      - ".codebuddy/configs/**"           # 不可见流程引擎
+      - ".codebuddy/scripts/**"           # 不可见脚本
+      - ".codebuddy/knowledge/common/**"  # 不可见方法论（经验库除外）
+      - "deploy/**"                       # 不可见部署配置
+      - ".access-control.yml"             # 不可见访问控制本身
+    description: "成员只能访问共享知识库和自己的项目，不可见流程引擎"
+
+# ============================================
+# 权限执行机制
+# ============================================
+enforcement:
+  # 物理层面：Git CODEOWNERS 分支保护（见附录D）
+  # 逻辑层面：CodeBuddy AI 行为约束
+  logic_level:
+    - "CodeBuddy 启动时读取此文件，确定当前用户角色"
+    - "成员角色的 AI 不加载 configs/ 下的 YML 到上下文"
+    - "成员角色拒绝读写 forbidden 路径的请求"
+    - "执行命令时由流程引擎代为读写共享知识库（成员不直接编辑文件）"
+
+# ============================================
+# 知识库贡献审核（管理员审核后才可见）
+# ============================================
+knowledge_review:
+  enabled: true
+  pending_dirs:
+    - ".codebuddy/knowledge/domains/_pending/"
+    - ".codebuddy/knowledge/common/经验库/_pending/"
+  review_command: "/approve-knowledge"
+  flow:
+    - "成员执行 /learn-domain 或 /close → 产出写入 _pending/ 目录"
+    - "成员 git commit + push + PR"
+    - "管理员收到通知 → /approve-knowledge --list 查看待审核"
+    - "管理员 /approve-knowledge --id=xxx 审核通过 → 文件从 _pending/ 移到正式区"
+    - "管理员 /approve-knowledge --id=xxx --reject --reason=xxx 驳回 → 反馈成员修改"

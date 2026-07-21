@@ -1,0 +1,161 @@
+# ============================================
+# 技术栈基线（单一事实源）V3.0.0
+# 由 Arch Agent 维护，FD Agent 依据本文件落地
+version: "3.0.0"
+# ============================================
+# V3.0.0 核心升级：可插拔架构（sim/real 零修改切换）
+#   1. 契约驱动：Zod Schema 定义接口，sim 和 real 共用契约
+#   2. 五维可插拔：data/transport/stream/asset/auth 独立切换
+#   3. 环境变量驱动：VITE_MODE=sim|real，支持按模块覆盖
+#   4. 开箱即用：backend-examples/ + 对接指南
+#   5. 单元测试：契约一致性测试保证 sim/real 返回相同结构
+# ============================================
+
+pom_principles:
+  p1_multi_port: "多业务系统 × 多端 → 同源单 server + base path 隔离"
+  p2_ux_decides_stack: "UX 决定框架/组件体系/栅格，Arch 定五维可插拔架构"
+  p3_e2e_interop: "端到端互通：业务流程互通、状态互通、数据互通"
+  p4_single_origin: "同源铁律：同一 dev server / 同一 origin，仅靠 base path 区分"
+  p5_pluggable: "可插拔铁律：sim/real 零修改切换，前端代码不因切换而改"
+
+tech_stack:
+  decision_owner: "UX Agent 决定框架/组件/栅格；Arch Agent 定五维可插拔架构"
+  framework: "React 18 + TypeScript"
+  state: "Zustand（模块级 Store）"
+  ui_lib: "Ant Design（B端） / 移动端组件库（C端）"
+  routing: "React Router"
+  build: "Vite（单 dev server，多 base path 路由隔离）"
+  styling: "CSS Modules + Design Tokens（src/design/tokens.json）"
+  schema: "Zod（契约层，sim/real 共用）"
+  testing: "Vitest + @testing-library/react + fake-indexeddb"
+
+  # ============================================
+  # 可插拔架构（V3.0.0 核心）
+  # ============================================
+  pluggable_architecture:
+    principle: "仿真原型 = 生产级前端基座，sim/real 零修改切换"
+    switch_method: "环境变量 VITE_MODE=sim|real，支持按模块覆盖"
+    five_dimensions:
+      data:
+        description: "数据层（Repository）"
+        sim: "IndexedDB（IDB Repository，离线可运行）"
+        real: "HTTP API（HTTP Repository，对接后端）"
+        interface: "src/adapters/factory.ts → DataAdapter"
+        switch: "VITE_MODE + VITE_MODE_OVERRIDE_{MODULE}"
+      transport:
+        description: "实时通信"
+        sim: "BroadcastChannel（同源跨 Tab）"
+        real: "WebSocket（真实后端推送）"
+        interface: "src/adapters/factory.ts → TransportAdapter"
+        switch: "VITE_MODE"
+      stream:
+        description: "流媒体（直播推拉流）"
+        sim: "Canvas 截帧 + BroadcastChannel"
+        real: "WebRTC 推流 / HLS.js 拉流"
+        interface: "src/adapters/factory.ts → StreamAdapter"
+        switch: "VITE_MODE"
+      asset:
+        description: "资源解析"
+        sim: "本地文件（/public/）"
+        real: "OSS/CDN URL"
+        interface: "src/adapters/factory.ts → AssetAdapter"
+        switch: "VITE_CDN_BASE"
+      auth:
+        description: "认证"
+        sim: "Mock 用户（自动登录）"
+        real: "JWT/OAuth"
+        interface: "src/adapters/factory.ts → AuthAdapter"
+        switch: "VITE_AUTH_MODE"
+
+  # ============================================
+  # 分层规范（V3.0.0 五层架构）
+  # ============================================
+  layers:
+    rule: "UI → Store → Service → Adapter → (sim | real) 单向依赖"
+    ui: "仅从 Store 消费，组件纯净，零业务逻辑，零环境判断"
+    store: "状态管理四态（loading/error/empty/success），调用 Service，零环境判断"
+    service: "业务逻辑归位层，调用 Adapter，不知道 sim/real"
+    adapter: "可插拔切换层，sim/real 实现同一接口"
+    contract: "Zod Schema 定义，sim/real 共用，运行时校验"
+    forbidden:
+      - "UI 层禁止直连 Adapter/Service"
+      - "Store 层禁止含业务规则（如状态判断/价格计算）"
+      - "任何层禁止 if(isMock) 环境判断泄漏"
+      - "sim 和 real 禁止返回不同结构的响应"
+
+  # ============================================
+  # 契约驱动
+  # ============================================
+  contract_driven:
+    principle: "先 Zod Schema 后代码"
+    location: "src/contracts/schemas/"
+    registry: "src/contracts/registry.ts"
+    types_gen: "由 Zod Schema 推导 TypeScript 类型"
+    runtime_check: "运行时 Zod 校验，sim/real 响应不符契约立即报错"
+
+  # ============================================
+  # 环境变量
+  # ============================================
+  env_vars:
+    VITE_MODE: "sim|real（核心切换）"
+    VITE_API_BASE: "API 基础路径"
+    VITE_WS_URL: "WebSocket 地址"
+    VITE_STREAM_SERVER: "流媒体服务地址"
+    VITE_CDN_BASE: "CDN 基础路径"
+    VITE_AUTH_MODE: "mock|jwt|oauth"
+    VITE_MODE_OVERRIDE_{MODULE}: "按模块覆盖（如 VITE_MODE_OVERRIDE_LIVE=sim）"
+
+  # ============================================
+  # 数据层
+  # ============================================
+  data_layer:
+    local_db: "IndexedDB（sim 模式持久化主库）"
+    orm_style: "Repository 模式，禁止组件/Store 直写 IDB"
+    sync: "Adapter 隔离：sim（IDB）/ real（HTTP），单接口粒度开关"
+    interop: "跨系统经契约键互通；同源共享 IDB"
+
+  # ============================================
+  # 多端（同源单 server）
+  # ============================================
+  multi_platform:
+    handled_by: "FD Agent 逐端生成代码，Arch Agent 定 base path 路由"
+    build_targets: ["web-admin(ops)", "web-business(cust)", "app(移动端模拟)", "miniapp(小程序模拟)"]
+    simulator_rule: "多端模拟器在同一 origin 下运行，共享 IndexedDB"
+    single_dev_server:
+      origin: "http://localhost:3333"
+      rule: "所有业务系统+多端入口共享同一 origin，base path 隔离"
+      routes:
+        - { module: "ops", base: "/ops", url: "http://localhost:3333/ops" }
+        - { module: "cust", base: "/cust", url: "http://localhost:3333/cust" }
+        - { module: "app", base: "/app", url: "http://localhost:3333/app" }
+        - { module: "miniapp", base: "/miniapp", url: "http://localhost:3333/miniapp" }
+        - { module: "live-push", base: "/live-push", url: "http://localhost:3333/live-push" }
+        - { module: "live", base: "/live", url: "http://localhost:3333/live" }
+
+  # ============================================
+  # 构建隔离
+  # ============================================
+  build_isolation:
+    rule: "sim 代码可 tree-shaking，生产构建剔除 sim"
+    dev_scripts:
+      dev: "vite --mode development（sim 模式）"
+      dev_real: "vite --mode real（真实后端模式）"
+      build: "vite build --mode production"
+      build_sim: "vite build --mode sim"
+
+  # ============================================
+  # 单元测试
+  # ============================================
+  testing:
+    framework: "Vitest"
+    contract_tests: "tests/contract-consistency/（sim/real 契约一致性）"
+    unit_tests: "tests/unit/（Service/Adapter/Store 单元测试）"
+    setup: "tests/setup.ts（fake-indexeddb + Mock BroadcastChannel）"
+
+  # ============================================
+  # 后端示例（开箱即用）
+  # ============================================
+  backend_examples:
+    location: "backend-examples/"
+    fastapi: "backend-examples/fastapi/（FastAPI 示例）"
+    guide: "backend-examples/README.md（对接指南）"

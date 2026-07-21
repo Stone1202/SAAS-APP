@@ -1,0 +1,14 @@
+skill:
+  id: "arch-tech-stack-keeper"
+  name: "技术栈与分层规范维护器"
+  version: "1.0.0"
+  agents: ["arch-agent"]
+  triggers: ["/create 阶段2", "/learn-project 阶段3"]
+  description: "维护项目技术栈基线与分层规范，落库 .codebuddy/knowledge/common/arch/tech-stack.yml 与 projects/{project}/pom/techStack"
+  inputs:
+    - "行业模板（config.yml industries）"
+    - "既有 .codebuddy/knowledge/common/arch/tech-stack.yml"
+  outputs:
+    - type: "techstack_doc"
+      description: ".codebuddy/knowledge/common/arch/tech-stack.yml 技术栈与分层规范"
+  dependencies: []

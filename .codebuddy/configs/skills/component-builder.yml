@@ -1,0 +1,203 @@
+# ============================================
+# Skill: component-builder（组件构建器）
+# 所属 Agent: FD Agent（前端开发）
+# 版本: v2.0.0
+# 最后更新: 2026-07-15
+# ============================================
+#
+# FD Agent 专家视角：
+#   组件构建器是 FD Agent 的「造砖机」——根据 UX Agent 产出的页面/组件/交互说明卡，
+#   生成严格覆盖四态（loading/error/empty/success）的 React 组件代码。
+#   这是编码铁律第9条（四态覆盖）和第8条（Store 消费）的机械化落地工具。
+#
+# 触发时机：FD Agent 开发阶段，需要生成新组件或重建组件时
+# 前置依赖：UX Agent 产出的交互说明卡 + Arch Agent 的架构契约
+# 后置校验：compliance-checker（IRON-08 + IRON-09 必须通过）
+# ============================================
+
+skill:
+  name: component-builder
+  id: "SKL-FD-COMPONENT"
+  version: "2.0.0"
+  owner: "fd-agent"
+  category: "code-generation"
+  description: |
+    FD Agent 的组件代码生成器。
+    根据 UX Agent 的交互说明卡和 Arch Agent 的架构契约，生成严格覆盖
+    loading/error/empty/success 四态的 React 组件代码。
+    强制遵循铁律8（只从 Store 消费）和铁律9（四态覆盖）。
+  triggers:
+    - event: "component_requested"
+      auto: true
+      description: "FD Agent 收到组件生成需求时自动触发"
+    - event: "ux_handoff_received"
+      auto: true
+      description: "收到 UX Agent 的交互说明卡后触发组件生成"
+  inputs:
+    - name: "interaction_card"
+      source: "ux-agent"
+      path: "projects/{project}/docs/03-design/interaction-cards/{module}/"
+      format: "Markdown"
+      required: true
+      description: "UX Agent 产出的交互说明卡（含页面结构、组件树、交互流程）"
+    - name: "architecture_contract"
+      source: "arch-agent"
+      path: "projects/{project}/docs/04-arch/contracts/{module}/"
+      format: "YAML"
+      required: true
+      description: "Arch Agent 产出的架构契约（含路由映射、数据模型、Store 签名）"
+  workflow:
+    - step: "parse_interaction_card"
+      action: "解析交互说明卡，提取组件树、状态列表、数据依赖"
+    - step: "resolve_store_contract"
+      action: "从架构契约中查找对应的 useXxxStore 签名和数据类型"
+    - step: "generate_component"
+      action: "按四态模板生成组件代码（见下方 template）"
+    - step: "generate_skeleton_variant"
+      action: "生成对应的 Skeleton 变体组件，供其他组件引用"
+    - step: "self_check"
+      action: "生成后自检：四态是否全覆盖、是否只从 Store 消费"
+
+  # ============================================
+  # 四态组件强制模板（铁律9强制执行）
+  # ============================================
+  template: |
+    // ============================================
+    // 模块：{moduleName}
+    // 组件：{ComponentName}
+    // 铁律8：组件只从 Store 消费
+    // 铁律9：覆盖 loading/error/empty/success 四态
+    // 设计来源：projects/{project}/docs/03-design/interaction-cards/{module}/{ComponentName}.md
+    // 架构契约：projects/{project}/docs/04-arch/contracts/{module}/store-contract.yml
+    // ============================================
+
+    import React from 'react';
+    import { use{ModuleName}Store } from '../store';
+    import { Skeleton } from '@/components/Skeleton';
+    import { EmptyState } from '@/components/EmptyState';
+    import { ErrorState } from '@/components/ErrorState';
+
+    export const {ComponentName}: React.FC = () => {
+      // ============================================
+      // 铁律8：只从 Store 消费，不直接调用 adapter
+      // ============================================
+      const { data, status, error, fetch } = use{ModuleName}Store();
+
+      // ============================================
+      // 铁律9：四种状态必须全部处理
+      // ============================================
+
+      // 状态1：加载中 → Skeleton
+      if (status === 'loading') {
+        return <Skeleton rows={5} />;
+      }
+
+      // 状态2：错误 → 错误提示 + 重试按钮
+      if (status === 'error') {
+        return (
+          <ErrorState
+            message={error?.message || '加载失败，请稍后重试'}
+            onRetry={fetch}
+          />
+        );
+      }
+
+      // 状态3：空数据 → 空状态 + 引导操作
+      if (status === 'success' && (!data || data.length === 0)) {
+        return (
+          <EmptyState
+            description="暂无数据"
+            actionText="创建第一条"
+            onAction={() => {/* 导航到创建页 */}}
+          />
+        );
+      }
+
+      // 状态4：正常数据 → 正常渲染
+      if (status === 'success' && data && data.length > 0) {
+        return (
+          <div>
+            {/* 正常数据展示 */}
+          </div>
+        );
+      }
+
+      // 默认：空闲状态
+      return null;
+    };
+
+  # ============================================
+  # 生成检查清单（FD Agent 自检用）
+  # ============================================
+  checklist:
+    - id: "CMP-01"
+      item: "是否从 Store 获取数据？（铁律8）"
+      check: "禁止直接调用 adapter，必须 useXxxStore()"
+      fail_action: "重构为 Store 消费模式"
+    - id: "CMP-02"
+      item: "是否处理了 loading 状态？"
+      check: "必须有 status === 'loading' 分支 + <Skeleton /> 组件"
+      fail_action: "补充 loading 分支"
+    - id: "CMP-03"
+      item: "是否处理了 error 状态？"
+      check: "必须有 status === 'error' 分支 + <ErrorState onRetry={fetch} /> 组件"
+      fail_action: "补充 error 分支 + 重试按钮"
+    - id: "CMP-04"
+      item: "是否处理了 empty 状态？"
+      check: "必须有空数据判断 + <EmptyState /> 组件 + 引导操作"
+      fail_action: "补充 empty 分支 + 引导操作"
+    - id: "CMP-05"
+      item: "是否处理了 success 状态？"
+      check: "必须有 status === 'success' 且数据非空的分支"
+      fail_action: "补充 success 渲染分支"
+    - id: "CMP-06"
+      item: "是否处理了 idle 初始状态？"
+      check: "必须有默认返回（null 或初始引导）"
+      fail_action: "补充 idle 状态处理"
+
+  # ============================================
+  # 组件导出规范
+  # ============================================
+  exports:
+    required:
+      - name: "{ComponentName}"
+        type: "React.FC"
+        description: "组件本身"
+      - name: "{ComponentName}Skeleton"
+        type: "React.FC"
+        description: "对应的 Skeleton 变体，供父组件在加载时引用"
+
+  # ============================================
+  # 多端适配要求（O-07）
+  # 根据 stream.scope.platforms 中的终端冻结映射，生成对应端的适配代码
+  # ============================================
+  platform_adaptation:
+    pc:
+      skeleton_rows: 5
+      empty_action_visible: true
+      description: "PC 端骨架屏行数 5，空状态操作按钮可见"
+    app:
+      skeleton_rows: 3
+      empty_action_visible: true
+      description: "APP 端骨架屏行数 3，空状态操作按钮可见"
+    miniapp:
+      skeleton_rows: 2
+      empty_action_visible: true
+      description: "小程序端骨架屏行数 2，空状态操作按钮可见"
+
+  # ============================================
+  # 错误提示文案规范
+  # 必须用户可理解，禁止技术术语
+  # ============================================
+  error_message_standard:
+    default: "加载失败，请稍后重试"
+    network: "网络连接异常，请检查网络后重试"
+    timeout: "请求超时，请稍后重试"
+    server: "服务器繁忙，请稍后重试"
+    forbidden: "暂无访问权限"
+    not_found: "请求的资源不存在"
+    rules:
+      - "禁止使用技术术语（如 '500 Internal Server Error'、'TypeError'）"
+      - "必须包含重试操作引导"
+      - "网络类错误须提示用户检查网络"
+      - "权限类错误须提示联系管理员"

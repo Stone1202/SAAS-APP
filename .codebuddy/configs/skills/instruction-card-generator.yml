@@ -1,0 +1,119 @@
+# Skill: 交互说明卡生成器（Instruction Card Generator）V3.1.0
+# 版本: v3.1.0（强制代码注入——Step 4~5 是 handoff 不可跳过步骤）
+# ============================================
+# V3.1.0 缺陷修复（对齐 handoff V4.1.0）：
+#   - Step 4「生成卡片React组件」和 Step 5「联动原型页面」→ 标记为 MANDATORY
+#   - 禁止仅完成 Step 1~3（YAML生成）而跳过 Step 4~8（代码注入+验证）
+#   - 新增强制检查点：Step 4 完成后验证 useCaseCardData.ts 存在性
+#   - 新增强制检查点：Step 5 完成后验证每个页面有 HelpButton import
+#   - 引用 handoff.yml V4.1.0 G-HO-INJECT-01~03 注入门禁
+#
+# V3.0.0 重大变更：
+#   - 触发入口从3个收敛为1个：仅 /handoff（不再 /init /change 触发）
+#   - 交互说明是交付物，不是开发辅助——开发过程不生成
+#   - 引用 uc-taxonomy.yml V1.0.0 的完整页面类型+操作类型体系
+#   - AI按页面类型自动枚举所有标准操作UC
+#   - 输出增加 UC taxonomy 合规校验
+# ============================================
+skill:
+  id: "instruction-card-generator"
+  name: "instruction-card-generator"
+  version: "3.1.0"
+  agents: ["ux-agent", "ba-agent", "fd-agent"]
+  description: "根据需求文档产物体系+UC分类体系，在 /handoff 时集中生成可交互用例卡片并注入高保真原型。Step 4~5（代码注入）是强制步骤，不可跳过。"
+
+  triggers:
+    - command: "/handoff"
+      description: "交付核查时集中生成+挂载+校验所有交互说明卡（唯一入口）"
+      note: "V3.0.0：/init 和 /change 不再触发卡片生成。交互说明是交付物，开发过程不需要。"
+
+  workflow:
+    - name: "0.加载UC分类体系"
+      rule: "加载 uc-taxonomy.yml → 识别每个页面的 page_type → 确定标准操作UC清单"
+      ref: ".codebuddy/knowledge/common/flow-standards/uc-taxonomy.yml"
+
+    - name: "1.读取需求产物"
+      rule: "读取 REQ的FN/UC清单 + Design的PG/UI元素清单 + 状态机 + 业务操作矩阵"
+
+    - name: "2.枚举所有UC卡片（V3.0.0增强：按uc-taxonomy自动枚举）"
+      rule: |
+        对每个FN：
+        a. 生成1个页面UC卡片（page_type来自uc-taxonomy自动识别结果）
+        b. 按 page_type→standard_operations 枚举所有操作UC卡片
+        c. 每个操作UC标注 operation_type + trigger_element
+        d. 校验操作UC枚举数量是否覆盖页面所有可交互元素
+
+    - name: "3.生成用例卡片数据模型（YAML）"
+      rule: "每个UC生成一个卡片数据模型，格式遵循 use-case-card-standards.yml#card_data_schema，含 page_type/operation_type/trigger_element 字段"
+
+    # ⚠️ V3.1.0：以下 Step 4~5 为 MANDATORY 步骤，不可跳过
+    # 对应 handoff.yml V4.1.0 Stage 2（原型注入交互卡）
+    # 门禁：G-HO-INJECT-01~03
+    - name: "4.生成卡片React组件【MANDATORY·不可跳过】"
+      rule: |
+        基于卡片数据模型，执行以下强制步骤：
+        a. 更新 src/components/useCaseCardData.ts —— 新增本Sprint卡片数组 sprint{n}Cards
+        b. 更新 allCards() 函数使其包含所有Sprint的卡片数据
+        c. 确保所有查询函数（getCardsByFn/getPageCardByFn等）使用 allCards() 作为数据源
+        d. 如 HelpButton.tsx 需要新的 OperationType → 添加对应图标/颜色/标签
+        e. 验证 G-HO-INJECT-01：allCards() 返回所有卡片 ucId
+
+    - name: "5.联动原型页面【MANDATORY·不可跳过】"
+      rule: |
+        在每个原型页面文件中挂载【？】：
+        a. 导入 HelpButton + UseCaseDrawer 组件
+        b. 页面标题右侧添加 HelpButton（page级，fnId={对应FN}）
+        c. 搜索/筛选/排序/操作按钮旁添加 HelpButton（operation级，fnId+ucId）
+        d. 页面底部挂载 UseCaseDrawer（传入当前页面的fnId列表）
+        e. 验证 G-HO-INJECT-02：每个FN对应页面有 HelpButton import
+        f. 验证 G-HO-INJECT-03：npm run build 无新增类型错误
+
+    - name: "6.实现三模式交互"
+      rule: "实现guided/free/auto_play三模式"
+
+    - name: "7.运行时验证"
+      rule: "AI自动执行每张卡片的auto_play，产出card-verification-report"
+
+    - name: "8.一致性校验（V3.0.0增强：含UC taxonomy合规）"
+      rule: |
+        校验项：
+        - 卡片数据与最新REQ一致
+        - 卡片枚举覆盖所有PRD UC（无遗漏）
+        - 卡片枚举覆盖所有Design可交互元素（无遗漏）
+        - UC编号格式遵循 uc-taxonomy.yml#numbering
+        - 页面类型识别正确（用户修正记录已应用）
+
+  inputs:
+    - "PRD（FN/UC清单含page_type）"
+    - "Design文档（PG/UI元素/交互跳转矩阵含关联UC）"
+    - "uc-taxonomy.yml（页面类型+操作类型映射）"
+    - "状态机"
+    - "业务操作矩阵"
+
+  outputs:
+    - type: "use-case-card-data"
+      format: "YAML"
+      description: "用例卡片数据模型（遵循use-case-card-standards.yml#card_data_schema）"
+    - type: "use-case-card-data-ts"
+      format: "TypeScript"
+      description: "【V3.1.0强制】src/components/useCaseCardData.ts —— 卡片数据写入前端代码，allCards() 包含所有Sprint数据"
+    - type: "help-button-component"
+      format: "React组件"
+      description: "【V3.1.0强制】src/components/HelpButton.tsx —— 【？】按钮组件，支持所有 OperationType"
+    - type: "drawer-component"
+      format: "React组件"
+      description: "【V3.1.0强制】src/components/UseCaseDrawer.tsx —— 右侧滑出抽屉，展示交互用例说明卡"
+    - type: "page-annotations"
+      format: "React页面修改"
+      description: "【V3.1.0强制】每个原型页面挂载 HelpButton + UseCaseDrawer，页面标题+操作按钮旁渲染【？】"
+    - type: "card-verification-report"
+      format: "Markdown"
+      description: "AI运行时验证报告+UC taxonomy合规报告"
+    - type: "consistency-matrix"
+      format: "Markdown"
+      description: "V3.0.0新增：PRD UC ↔ Design UI元素 ↔ 交互卡 一致性矩阵"
+
+  dependencies:
+    - "common/flow-standards/uc-taxonomy.yml"
+    - "common/use-case-card-standards.yml"
+    - "common/sim-prototype-standards.yml"

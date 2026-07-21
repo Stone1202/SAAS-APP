@@ -1,0 +1,59 @@
+# ============================================
+# .gitignore — 多人多项目工作空间
+# ============================================
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build output
+dist/
+**/dist/
+build/
+**/build/
+
+# CodeBuddy runtime（不提交运行时状态和报告）
+.codebuddy/reports/
+.codebuddy/_backup/
+.codebuddy/_archive/
+**/.codebuddy/state.json
+**/.codebuddy/journal/
+
+# 知识库待审核区（成员本地，不提交）
+.codebuddy/knowledge/domains/_pending/
+.codebuddy/knowledge/common/经验库/_pending/
+
+# Environment
+*.local
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test coverage
+coverage/
+**/coverage/
+
+# Temporary
+*.tmp
+*.bak
+*.cache
+
+# Playwright
+test-results/
+playwright-report/

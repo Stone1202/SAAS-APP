@@ -1,0 +1,211 @@
+# ============================================
+# Workflow: test-flow（测试流程 V3.1.0）
+# 版本: v3.1.0
+# 最后更新: 2026-07-20
+# ============================================
+#
+# V3.1.0 升级：QA大脑注入（质量推理大脑）
+#   1. 新增 ai_brain 段——QA质量推理大脑
+#   2. Bug热力图预测：跨版本Bug分布→FN级热力图→指导测试资源分配
+#   3. 覆盖盲区检测：BA FN/BR vs QA TC→未覆盖测试盲区
+#   4. 回归测试智能推荐：变更影响分析→最小回归测试集
+#   5. 大脑记忆导入：BA/Arch/FD的brain_sync_export + 上版本QA大脑记忆
+#   6. 大脑同步输出→AC：验收高风险点清单
+#
+# V3.0.0 升级：
+#   1. 测试体系升级为五层（新增契约一致性测试+视觉回归）
+#   2. 契约一致性测试：验证 sim/real 返回相同结构（Zod Schema 校验）
+#   3. 对齐 C-A7 红线（单元测试架构）
+#
+# 核心原则：
+#   1. 测试用例源自 BA 产物，不是 QA 凭空编写
+#   2. 用户仅看结果，可 /feedback 追加用例
+#   3. 测试问题 → PM 路由 BA（需求分析）→ 缺陷回流闭环
+#   4. 五层测试：契约一致性 → 单元 → 浏览器 → 白盒 → 视觉回归
+#   5. V3.1.0：QA用大脑推理，不是机械执行——80%资源投在20%高风险区
+# ============================================
+
+workflow:
+  id: "test-flow"
+  name: "测试流程（V3.1.0 QA质量推理大脑）"
+  version: "3.1.0"
+  trigger_command: "/init（PM 调度 QA，开发完成后）"
+  owner: "qa-agent"
+  gates_reference: ".codebuddy/knowledge/common/gates-registry.yml#stages.test"
+  iron_rules_reference: ".codebuddy/knowledge/common/iron-rules-registry.yml#agents.qa_agent"
+  supervisor: "pm-agent"
+
+  # ============================================
+  # V3.1.0新增：QA质量推理大脑
+  # ============================================
+  ai_brain:
+    id: "qa_brain_v1"
+    name: "质量推理大脑"
+    description: |
+      QA不再是机械执行测试用例——QA大脑基于历史Bug模式、
+      需求覆盖分析和变更影响，推理出最高风险的测试区域，
+      指导80%测试资源投向20%高风险FN。
+    reasoning_modules:
+      - id: "bug_hotspot_prediction"
+        name: "Bug热力图预测"
+        description: |
+          基于跨版本Bug分布数据，AI生成FN级别的Bug热力图。
+          输入：跨版本Bug数据 + 当前版本FN清单 + 变更范围
+          输出：FN级Bug热力图（CRITICAL/HIGH/MEDIUM/LOW）
+          推理：历史Bug密度 × 本次变更 × 交互复杂度 → 综合风险评分
+        triggered_by: "test-flow step-1（用例生成前）"
+        priority: "CRITICAL（必须在用例生成前完成，指导测试策略）"
+      
+      - id: "coverage_blind_spot_detection"
+        name: "需求覆盖盲区检测"
+        description: |
+          AI对比BA的FN/BR清单与QA生成的TC清单，
+          检测未覆盖的测试盲区。
+          输入：BA FN清单（含BR引用） + QA TC清单 + 状态机
+          输出：盲区清单（未覆盖的FN/BR/状态转换/多端差异）
+        triggered_by: "test-flow step-1（用例生成后）"
+      
+      - id: "regression_set_recommendation"
+        name: "回归测试智能推荐"
+        description: |
+          基于变更影响分析，AI推荐最小回归测试集。
+          输入：变更影响分析 + 模块依赖拓扑 + 历史Bug关联
+          输出：三层回归集（最小集/推荐集/完整集）
+        triggered_by: "非新增类型需求时"
+      
+      - id: "risk_based_prioritization"
+        name: "风险驱动优先级排序"
+        description: |
+          综合多维风险评分，对测试用例优先级排序。
+          评分维度：历史Bug密度(40%) + 本次变更影响(30%) + 交互复杂度(15%) + 业务重要性(15%)
+        triggered_by: "test-flow step-2（测试执行前）"
+    
+    memory_import:
+      sources:
+        - "BA大脑brain_sync_export：关键BR数 + 高风险FN清单"
+        - "Arch大脑brain_sync_export：高风险接口清单 + 契约一致性检查点"
+        - "FD大脑brain_sync_export：已知高风险区域 + 自测通过场景"
+        - "上版本QA大脑记忆：Bug热力图预测vs实际分布 + 覆盖盲区检测准确率"
+        - "跨版本Bug模式库：按模块/FN/BR的Bug密度统计"
+    
+    brain_sync_export:
+      to_ac: ["验收高风险点清单（FN级+置信度）", "已知限制清单", "被测功能覆盖度报告"]
+      to_ba: ["需求覆盖缺口建议", "测试过程中发现的需求不明确项", "高风险BR验证建议"]
+
+  # ============================================
+  # 步骤定义
+  # ============================================
+  steps:
+    - id: "1"
+      name: "用例生成（源自 BA 产物）"
+      agent: "qa-agent"
+      input: "BA 产物体系（含业务操作矩阵、状态机、BR、User Story）"
+      output:
+        - "TC-测试用例（按端拆分）：projects/{project}/docs/04-testing/test-cases/{version}/{module}/"
+      methodology: |
+        测试用例的生成源：
+        1. User Story → Happy Path 用例 + Ugly Path 用例 + Corner Case 用例
+        2. 状态机 → 合法状态转换用例 + 非法状态转换用例
+        3. BR 业务规则 → 每条 BR 对应 ≥1 个测试用例
+        4. 业务操作矩阵 → 每种角色×操作组合的权限验证用例
+        5. 流程闭环 → 正向流程用例 + 逆向流程用例 + 中断恢复用例
+        6. 多端差异 → 逐端差异点的验证用例
+
+    - id: "2"
+      name: "五层测试执行"
+      agent: "qa-agent"
+      skills:
+        - "contract-consistency-tester"  # 第零层：契约一致性测试（V3.0.0新增）
+        - "test-runner"             # V5.1.0合并：第一~三层（unit/browser/whitebox）
+        - "visual-regression"      # 第四层：视觉回归
+      input: "仿真系统 + 测试用例"
+      output:
+        - "TR-测试报告：projects/{project}/docs/04-testing/test-reports/TR-{module}-{version}-{timestamp}.json"
+        - "BUG-Bug文档：projects/{project}/docs/04-testing/bugs/open/BUG-{YYYYMMDD}-{NNN}.md"
+        - "视觉回归报告：.codebuddy/reports/visual-regression/VR-{stream_id}-{version}.md"
+        - "跨端一致性报告（指定 --platform 时）"
+      checkpoint: true  # 人工卡点④
+      note: "你仅看结果，可 /feedback 追加用例；问题回流 BA（需求分析）"
+
+  # ============================================
+  # 五层测试详解
+  # ============================================
+  test_layers:
+    - layer: 0
+      name: "契约一致性测试（V3.0.0新增）"
+      skill: "contract-consistency-tester"
+      scope:
+        - "Zod Schema 一致性校验（sim/real 返回结构一致）"
+        - "契约定义与实现一致性校验"
+      pass_threshold: "100%"
+
+    - layer: 1
+      name: "单元测试"
+      skill: "test-runner"
+      layer: "unit"
+      scope:
+        - "sim.ts 函数级单元测试（Happy Path + 参数校验 + BR + 边界）"
+        - "adapter 集成测试（sim/real 切换验证）"
+        - "Zod Schema 校验测试（边界条件全覆盖）"
+      pass_threshold: "100%（Happy Path + 参数校验 + BR + adapter）"
+
+    - layer: 2
+      name: "浏览器测试"
+      skill: "test-runner"
+      layer: "browser"
+      scope:
+        - "Playwright 自动化浏览器操作"
+        - "页面截图对比（与设计稿基线对比）"
+        - "多端截图（pc/app/miniapp 逐端执行）"
+      pass_threshold: "95%"
+
+    - layer: 3
+      name: "白盒测试"
+      skill: "test-runner"
+      layer: "whitebox"
+      scope:
+        - "状态覆盖：遍历状态机所有合法/非法转换"
+        - "路径覆盖：遍历所有代码分支"
+        - "边界注入：注入 null/undefined/XSS/SQL注入/超长字符串"
+      pass_threshold: "90%"
+
+    - layer: 4
+      name: "视觉回归测试（v2.0.0 新增）"
+      skill: "visual-regression"
+      scope:
+        - "设计稿 vs 代码截图逐像素对比"
+        - "threshold ≥ 0.95"
+        - "多端逐端对比"
+      pass_threshold: "95% 相似度"
+      report_path: ".codebuddy/reports/visual-regression/"
+
+  # ============================================
+  # Bug 管理
+  # ============================================
+  bug_management:
+    output_dir: "projects/{project}/docs/04-testing/bugs/"
+    statuses: ["open", "in_progress", "fixed", "verified", "closed"]
+    severity_levels: ["critical", "high", "medium", "low"]
+    naming: "BUG-{YYYYMMDD}-{NNN}.md"
+
+  # ============================================
+  # 交互反馈模板
+  # ============================================
+  feedback_template: |
+    📋 测试完成确认
+
+    **测试范围**：{模块列表}
+    **测试层级**：
+    - 单元测试：{通过}/{总数}（{通过率}%）
+    - 浏览器测试：{通过}/{总数}（{通过率}%）
+    - 白盒测试：{通过}/{总数}（{通过率}%）
+    - 视觉回归：{通过}/{总数}（{通过率}%）
+
+    **Bug 统计**：
+    - Critical：{数量}
+    - High：{数量}
+    - Medium：{数量}
+    - Low：{数量}
+
+    **请确认**：通过 / 补充用例：xxx / 驳回
+    （可 /feedback 追加测试用例）

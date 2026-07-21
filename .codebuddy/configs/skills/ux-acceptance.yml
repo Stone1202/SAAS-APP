@@ -1,0 +1,22 @@
+# Skill: 用户体验验收器（UX Acceptance）
+skill:
+  id: "ux-acceptance"
+  name: "ux-acceptance"
+  agent: "ac-agent"
+  description: "验证错误提示可理解性、操作反馈时效、容错性，输出 UX 验收问题清单"
+  triggers:
+    - command: "/accept"
+      stage: "ux"
+      description: "AC Agent 验收阶段自动触发"
+    - command: "/new"
+      stage: "阶段5"
+  workflow:
+    - name: "错误提示可理解性"
+      rule: "错误提示须为用户可懂中文，禁止英文技术术语（如 AUTH_INVALID 改'用户名或密码错误'）"
+    - name: "操作反馈时效"
+      rule: "所有操作须有即时反馈（loading/确认弹窗/进度条）"
+    - name: "容错性检查"
+      rule: "误操作后能否恢复（表单保留/二次确认/订单保留/自动重试）"
+  output:
+    - type: "ACR"
+      description: "UX验收结果（terminologyIssues/feedbackIssues/faultToleranceIssues/bugs）"

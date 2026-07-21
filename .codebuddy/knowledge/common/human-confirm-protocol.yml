@@ -1,0 +1,241 @@
+# ============================================
+# AI人性化确认反馈机制规范（Human Confirm Protocol）
+# 版本: v1.0.0
+# 创建日期: 2026-07-18
+# 所属议题: POM V5.0 议题一
+# ============================================
+#
+# 设计原则：
+#   凡需人确认的决策，AI必须提供≥2个选项，每个选项附"利弊分析+适用场景"
+#   AI必须明确标记推荐选项 + 置信度 + 置信依据
+#   同一阶段的多个待确认点合并为"决策清单"一次性询问，不逐个打断
+#   人可对任一选项追问"详细解释"/"还有别的方案吗"/"风险是什么"
+#   人可选择"以上都不合适，我直接说" — 提供自由输入兜底
+#
+# 引用关系：
+#   - 被 pm-agent.md / po-agent.md / sm-agent.md / ba-agent.md / ux-agent.md 等全Agent引用
+#   - 被 human-confirm-handler.yml Skill 实现
+#   - 被 iron-rules-registry.yml 全局铁律引用（凡需人确认必须按本规范）
+#   - 被 redlines.yml RL-SUP-03 引用
+# ============================================
+
+version: "1.0.0"
+name: "human-confirm-protocol"
+description: "AI人性化确认反馈机制——7种询问类型+批量决策清单+追问通道+自由兜底"
+
+# ============================================
+# 一、7种询问类型
+# ============================================
+inquiry_types:
+
+  Q1:
+    name: "方案选择型"
+    trigger: "多方案分歧（如系统拆分方式A vs B vs C）"
+    interaction: "列出每个方案 + 利弊 + AI推荐 + 置信度"
+    example: "B2C商城拆为3系统还是2系统？方案A(3系统)耦合低但成本高；方案B(2系统)平衡；方案C(单体)快速但难扩展。AI推荐B(置信度high)"
+    min_options: 2
+    must_include: ["pros", "cons", "applicable_scenario"]
+
+  Q2:
+    name: "边界确认型"
+    trigger: "边界归属模糊（如支付是自营还是第三方）"
+    interaction: "列出候选归属 + 各自影响 + AI推荐"
+    example: "支付能力归属：① 交易系统自营 ② 对接第三方支付 ③ 混合模式。AI推荐②(置信度medium，依据：领域知识payment域)"
+    min_options: 2
+    must_include: ["impact", "applicable_scenario"]
+
+  Q3:
+    name: "优先级排序型"
+    trigger: "Backlog优先级需要人决策"
+    interaction: "列出候选排序 + 各排序的商业影响 + AI推荐"
+    example: "v1.0 Backlog排序：商品/订单/支付 三者先后？AI推荐 订单→商品→支付(置信度high)"
+    min_options: 2
+    must_include: ["business_impact"]
+
+  Q4:
+    name: "风险确认型"
+    trigger: "AI识别到风险但需人决定是否接受"
+    interaction: "列出风险 + 影响 + 缓解措施 + AI建议"
+    example: "检测到直播间禁言逻辑涉及审核合规风险。AI建议增加人工复审环节(置信度high)。是否接受？"
+    min_options: 2
+    must_include: ["risk_impact", "mitigation"]
+
+  Q5:
+    name: "范围确认型"
+    trigger: "Sprint范围需人决策（做多少）"
+    interaction: "列出候选范围 + 工作量评估 + 价值评估"
+    example: "v1.0 Sprint 1 范围：① 全部5页面 ② 核心3页面 ③ MVP 2页面。AI推荐②(置信度medium)"
+    min_options: 2
+    must_include: ["estimated_effort", "value_assessment"]
+
+  Q6:
+    name: "视觉调性型"
+    trigger: "视觉风格需人定调"
+    interaction: "列出候选风格 + 参考案例 + AI推荐"
+    example: "B端运营后台视觉调性：① 简洁专业(参考Linear) ② 数据密集(参考阿里云) ③ 友好亲和(参考飞书)。AI推荐①(置信度medium)"
+    min_options: 2
+    must_include: ["reference_case"]
+
+  Q7:
+    name: "自由兜底型"
+    trigger: "人拒绝所有AI选项"
+    interaction: "自由文本输入"
+    example: "以上选项都不合适，请直接描述你的决策"
+    min_options: 0
+    must_include: []
+
+# ============================================
+# 二、询问交互协议（YAML Schema）
+# ============================================
+confirm_request_schema:
+  description: "所有AI确认点必须遵循此结构"
+
+  fields:
+    request_id:
+      type: "string"
+      required: true
+      format: "CF-{阶段}-{NNN}"
+      example: "CF-REQ-001"
+
+    request_type:
+      type: "enum"
+      required: true
+      values: ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7"]
+
+    stage:
+      type: "enum"
+      required: true
+      values: ["brainstorm", "requirement", "design", "arch", "dev", "test", "accept", "po_planning", "sprint"]
+
+    title:
+      type: "string"
+      required: true
+      description: "一句话标题"
+
+    background:
+      type: "string"
+      required: true
+      description: "决策背景（为什么需要确认）"
+
+    constraints:
+      type: "array"
+      required: false
+      description: "影响决策的约束条件"
+      example: ["预算有限", "时间紧迫"]
+
+    impact_scope:
+      type: "string"
+      required: true
+      description: "影响范围（哪些产物/阶段受影响）"
+
+    knowledge_refs:
+      type: "array"
+      required: false
+      description: "知识库引用"
+      example: ["domains/payment/xxx.yml#L23", "common/tech-standards/xxx.yml#L45"]
+
+    options:
+      type: "array"
+      required: true
+      min_items: 2
+      description: "≥2个选项（Q7自由兜底除外）"
+      item_fields:
+        id: { type: "string", example: "A" }
+        label: { type: "string", example: "方案A" }
+        description: { type: "string" }
+        pros: { type: "array" }
+        cons: { type: "array" }
+        applicable_scenario: { type: "string" }
+        estimated_effort: { type: "enum", values: ["S", "M", "L", "XL"], optional: true }
+        business_impact: { type: "string", optional: true }
+        impact: { type: "string", optional: true }
+        risk_impact: { type: "string", optional: true }
+        mitigation: { type: "string", optional: true }
+        value_assessment: { type: "string", optional: true }
+        reference_case: { type: "string", optional: true }
+
+    ai_recommendation:
+      type: "object"
+      required: true
+      fields:
+        recommended_option: { type: "string", description: "A|B|C|..." }
+        confidence: { type: "enum", values: ["high", "medium", "low"] }
+        confidence_basis: { type: "string", description: "置信依据" }
+        reasoning: { type: "string", description: "推荐理由（引用知识库/历史经验/领域标准）" }
+
+    followup_channels:
+      type: "array"
+      required: true
+      description: "人可用的追问通道"
+      default:
+        - "详细解释：请AI展开某选项的细节"
+        - "替代方案：请AI提供更多选项"
+        - "风险评估：请AI评估某选项的风险"
+        - "自由输入：我直接说决策"
+
+    deadline:
+      type: "enum"
+      required: false
+      values: ["本次会话内", "本次阶段结束前"]
+      default: "本次阶段结束前"
+
+# ============================================
+# 三、批量决策清单机制
+# ============================================
+batch_decision_brief:
+  description: "为避免逐个打断，AI在每阶段结束前汇总本阶段所有待确认点为决策清单"
+
+  fields:
+    stage: { type: "string", description: "阶段名" }
+    total_items: { type: "integer", description: "待确认项总数" }
+    items:
+      type: "array"
+      item_fields:
+        request_id: { type: "string" }
+        request_type: { type: "enum" }
+        title: { type: "string" }
+        ai_recommendation: { type: "string", description: "推荐选项ID" }
+        confidence: { type: "enum", values: ["high", "medium", "low"] }
+
+  presentation_modes:
+    fast_mode:
+      name: "快速模式"
+      description: "全部采纳AI推荐"
+      when_to_use: "用户信任AI推荐，快速推进"
+
+    detailed_mode:
+      name: "详细模式"
+      description: "逐个决策"
+      when_to_use: "用户需要深入了解每个决策"
+
+    hybrid_mode:
+      name: "混合模式"
+      description: "批量采纳+个别调整"
+      when_to_use: "用户对大部分推荐认可，个别需调整"
+
+# ============================================
+# 四、决策记录与回写
+# ============================================
+decision_recording:
+  description: "AI确认后的决策必须记录并回写到产物"
+
+  record_fields:
+    request_id: { type: "string" }
+    decided_option: { type: "string", description: "人选的选项ID或自由输入内容" }
+    decision_basis: { type: "string", description: "人的决策理由（如有）" }
+    decided_at: { type: "string", description: "时间戳" }
+    decided_by: { type: "string", description: "human" }
+    writeback_target: { type: "string", description: "决策回写到哪个产物" }
+
+  storage: "projects/{project}/.codebuddy/journal/decisions/decision-log.md"
+
+# ============================================
+# 五、禁止事项
+# ============================================
+prohibitions:
+  - "禁止Y/N二选一的简单询问（必须提供≥2个选项+利弊+推荐）"
+  - "禁止不附AI推荐的询问（必须明确标记recommended_option+confidence）"
+  - "禁止不附knowledge_refs的询问（必须引用知识库依据）"
+  - "禁止逐个打断（同阶段多个确认点必须合并为决策清单）"
+  - "禁止无追问通道（必须提供4种followup_channels）"
+  - "禁止无自由兜底（必须提供Q7自由输入选项）"

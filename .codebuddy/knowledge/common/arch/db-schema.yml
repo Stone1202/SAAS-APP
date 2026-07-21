@@ -1,0 +1,38 @@
+# AI-SCRM IndexedDB 设计规范（Arch Agent 维护）
+version: 1
+databases:
+  - name: opsDB
+    stores:
+      - name: customer
+        key: id
+        indexes: [source, tag, lastSessionAt]
+        seed: true   # 首次加载播种示例客户
+      - name: session
+        key: id
+        indexes: [customerId, state]
+        note: 状态机载体（待接入/进行中(AI)/进行中(人工)/已关闭）
+      - name: ticket
+        key: id
+        indexes: [state, assignee]
+        states: [新建, 处理中, 待确认, 已关闭]
+      - name: qc_record
+        key: id
+        indexes: [sessionId]
+      - name: bot_kb
+        key: id
+        indexes: [intent]
+  - name: custDB
+    stores:
+      - name: profile
+        key: customerId
+        seed: true
+      - name: cust_session
+        key: id
+        indexes: [state]
+      - name: cust_ticket_view
+        key: ticketId
+        note: 只读订阅 M-ops 推送，本地不写
+
+migration:
+  strategy: version-bump + onupgradeneeded
+  note: 状态闭环依赖 store 状态字段，禁止删除状态枚举

@@ -1,0 +1,397 @@
+# ============================================
+# Workflow: knowledge-sedimentation（版本沉淀学习引擎 V1.1.0）
+# 版本: v1.1.0
+# 最后更新: 2026-07-20
+# ============================================
+#
+# V1.1.0 升级：大脑记忆导出 + 脑力进化摘要 + 跨Agent因果链
+#   1. Step 3.5（新增）：大脑记忆导出——每个Agent导出结构化的brain-memory
+#   2. Step 3.6（新增）：脑力进化摘要——PM汇总所有大脑的进化
+#   3. Step 5.5（新增）：跨Agent因果链提取——识别"BA发现→UX改进→QA优化"的因果
+#   4. 沉淀质量评分新增 brain_evolution 维度（15%）
+#   5. 产物目录新增 大脑记忆/ 子目录
+#
+# V1.0.0：需求沉淀 + Review沉淀 + 经验提炼 + 追溯链快照
+# ============================================
+#
+# 设计来源：版本沉淀学习机制设计方案-V1.0.0.md
+# 对齐：POM V4.0.0
+#
+# 核心原则：
+#   1. /close 校验通过后自动触发（无需用户触发）
+#   2. 需求沉淀：REQ 产物快照化归入知识库
+#   3. Review沉淀：7份Review归档+经验提炼
+#   4. 经验提炼：PM提炼可复用经验，追加到跨版本经验库
+#   5. 追溯链快照：完整追溯链冻结
+#   6. 版本索引：VERSION-INDEX.yml自动更新
+#   7. 跨项目复用：经验库追加到 common/经验库/
+#   8. 全程留痕：沉淀过程写入Journal
+# ============================================
+
+workflow:
+  id: "knowledge-sedimentation"
+  name: "版本沉淀学习引擎（含大脑记忆导出，V1.1.0）"
+  version: "1.1.0"
+  owner: "pm-agent"
+  type: "automation"
+  brain_memory_spec: ".codebuddy/knowledge/common/brain-memory-spec.yml"  # V1.1.0新增
+  brain_evolution_engine: ".codebuddy/knowledge/common/brain-evolution-engine.yml"  # V1.1.0新增
+
+  # ============================================
+  # 触发条件
+  # ============================================
+  trigger:
+    description: |
+      /close 校验全部通过后，PM自动执行版本沉淀。
+      无需用户触发，是/close的最后一个自动步骤。
+    events:
+      - "close_validation_passed"   # /close校验通过
+    precondition: |
+      ✅ 该流 stage = closed
+      ✅ PBL 全部闭环（含跨版本传递已标记）
+      ✅ 7 份 Review 报告全部产出且通过
+      ✅ 追溯链完整性校验通过
+    auto: true
+
+  # ============================================
+  # 沉淀产物目录结构
+  # ============================================
+  output_layout:
+    base: ".codebuddy/knowledge/{project}/版本沉淀/{version}/"
+    structure:
+      沉淀摘要.md: "该版本沉淀总览（含大脑进化摘要）"
+      需求沉淀/:
+        PRD-v{version}.md: "PRD快照（17章+五图）"
+        REQ-产物体系-v{version}.md: "泳道图/业务操作矩阵/信息流/FN/UC/BR/ENT/CONFIG/METRIC"
+        模块清单.yml: "本次版本涉及的模块清单"
+        上下游影响矩阵.yml: "本次版本的跨域影响"
+      Review沉淀/:
+        REV-BS-v{version}.md: "BS Review报告归档"
+        REV-BA-v{version}.md: "BA Review报告归档"
+        REV-UX-v{version}.md: "UX Review报告归档"
+        REV-ARCH-v{version}.md: "Arch Review报告归档"
+        REV-FD-v{version}.md: "FD Review报告归档"
+        REV-QA-v{version}.md: "QA Review报告归档"
+        REV-AC-v{version}.md: "AC Review报告归档"
+        Review经验提炼.md: "从7份Review提取的可复用经验"
+      大脑记忆/:  # V1.1.0新增
+        ba_memory_{version}.yml: "BA大脑记忆快照（brain-memory-spec.yml格式）"
+        ux_memory_{version}.yml: "UX大脑记忆快照"
+        arch_memory_{version}.yml: "Arch大脑记忆快照"
+        fd_memory_{version}.yml: "FD大脑记忆快照"
+        qa_memory_{version}.yml: "QA大脑记忆快照"
+        ac_memory_{version}.yml: "AC大脑记忆快照"
+        pm_memory_{version}.yml: "PM大脑记忆快照"
+        po_memory_{version}.yml: "PO大脑记忆快照（如激活）"
+        sm_memory_{version}.yml: "SM大脑记忆快照（如激活）"
+        brain_evolution_summary_{version}.md: "大脑进化摘要"
+        cross_agent_causal_chains.yml: "跨Agent因果链"
+      经验教训/:
+        lessons-learned-v{version}.yml: "本版本经验教训"
+        最佳实践.md: "值得推广的做法"
+        踩坑记录.md: "避免重复踩的坑"
+      追溯链/:
+        traceability-v{version}.yml: "FN→UC→PG→MD→SC→BG→BO+CONFIG→BR/FN+METRIC→BG/BO追溯快照"
+    index: ".codebuddy/knowledge/{project}/版本沉淀/VERSION-INDEX.yml"
+    cross_project:
+      best_practices: ".codebuddy/knowledge/common/经验库/最佳实践库.md"
+      pitfalls: ".codebuddy/knowledge/common/经验库/踩坑避雷库.md"
+      review_patterns: ".codebuddy/knowledge/common/经验库/Review模式库.md"
+
+  # ============================================
+  # 沉淀执行流程（8步）
+  # ============================================
+  execution:
+    steps:
+      - step: 1
+        name: "创建版本沉淀目录"
+        owner: "pm-agent"
+        action: |
+          1. PM 创建 .codebuddy/knowledge/{project}/版本沉淀/{version}/ 目录
+          2. 创建子目录：需求沉淀/ Review沉淀/ 经验教训/ 追溯链/
+          3. 在 conversation-log.md 记录"启动版本沉淀"
+
+      - step: 2
+        name: "需求沉淀（PM + BA协作）"
+        owner: "pm-agent + ba-agent"
+        action: |
+          1. PM 收集本次版本的 REQ 产物：
+             - PRD（15章+五图）
+             - REQ 产物体系
+             - 模块清单
+             - 上下游影响矩阵
+          2. BA 快照化处理（标注版本号+冻结时间）：
+             - PRD-v{version}.md
+             - REQ-产物体系-v{version}.md
+             - 模块清单.yml
+             - 上下游影响矩阵.yml
+          3. 快照原则：不修改内容，仅追加版本元数据头
+          4. 输出到 需求沉淀/
+
+      - step: 3
+        name: "Review沉淀（PM收集+提炼）"
+        owner: "pm-agent"
+        action: |
+          1. PM 收集 7 份 Review 报告：
+             - 从 journal/reviews/ 复制到 Review沉淀/
+             - 文件名：REV-{STAGE}-v{version}.md
+          2. PM 站在项目管理专家角度提炼 Review经验提炼.md：
+             a. 反复问题模式识别：
+                - 扫描7份Review中的"不足/问题"
+                - 识别跨阶段重复出现的问题
+                - 记录：出现阶段+描述+根因+改进建议+避雷标签
+             b. 最佳实践提取：
+                - 扫描7份Review中的"建议/亮点"
+                - 识别值得推广的做法
+                - 记录：做法+适用场景+推广建议
+             c. 阶段薄弱点统计：
+                - 统计各阶段Review问题数
+                - 识别最薄弱的阶段
+             d. Review质量评分：
+                - 对每份Review的深度和准确性评分（0-100）
+
+      - step: 3.5  # V1.1.0新增
+        name: "大脑记忆导出（各Agent独立 + PM汇总）"
+        owner: "pm-agent + all-agents"
+        action: |
+          1. PM 触发各Agent导出本版本的大脑记忆快照（brain-memory-spec.yml格式）：
+             ├─ BA大脑记忆：常识覆盖率 + 质量预测准确率 + 盲区发现实效
+             ├─ UX大脑记忆：系统分析准确率 + 交互风险预测 + 状态覆盖缺口
+             ├─ Arch大脑记忆：契约缺陷预测准确率 + 安全模式命中率
+             ├─ FD大脑记忆：实现模式推荐准确率 + Bug预防效果 + 合规预检准确率
+             ├─ QA大脑记忆：Bug热力图预测vs实际 + 覆盖盲区有效性
+             ├─ AC大脑记忆：验收Bug模式命中率 + UX偏差检测准确率
+             ├─ PM大脑记忆：流程风险预测vs实际 + 阶段耗时预测准确率
+             ├─ PO大脑记忆（如激活）：价值预估准确率 + 路线图偏离度
+             └─ SM大脑记忆（如激活）：Sprint Velocity预测 + DoD成功率
+          2. 导出到： {版本沉淀}/大脑记忆/{agent}_memory_{version}.yml
+          3. 同步到： {项目知识库}/大脑记忆/latest/{agent}_memory_latest.yml（覆盖）
+      
+      - step: 3.6  # V1.1.0新增
+        name: "脑力进化摘要（PM汇总 + AI分析）"
+        owner: "pm-agent"
+        action: |
+          1. PM 汇总所有Agent大脑的进化：
+             - 大脑进化概览：每个大脑本版本的新增模式/调整模式/废弃模式
+             - 预测准确率对比：本版本 vs 上版本（图表+数字）
+             - 跨Agent因果链识别（见 step 5.5）
+             - 下版本大脑使用建议（基于本版本发现）
+          2. 产出 brain_evolution_summary_{version}.md
+          3. 质量评分中新增 brain_evolution 维度
+
+      - step: 4
+        name: "经验教训提炼（PM主导）"
+        owner: "pm-agent"
+        action: |
+          1. PM 提炼本版本可复用经验：
+             - lessons-learned-v{version}.yml：
+               包含：版本概述+关键指标+经验教训+改进措施+大脑进化要点
+             - 最佳实践.md：
+               本版本值得推广的做法（从Review+大脑推荐模式提炼）
+             - 踩坑记录.md：
+               本版本踩的坑（从Review+PBL+大脑误报提炼）
+          2. PM 追加到跨版本经验库：
+             - common/经验库/最佳实践库.md（追加本版本最佳实践）
+             - common/经验库/踩坑避雷库.md（追加本版本踩坑）
+             - common/经验库/Review模式库.md（追加本版本Review模式）
+          3. 追加原则：去重+标注来源版本+大脑推理依据
+
+      - step: 5
+        name: "追溯链快照（PM + DOC协作）"
+        owner: "pm-agent + doc-agent"
+        action: |
+          1. DOC Agent 快照追溯链：
+             - traceability-v{version}.yml
+             - FN→UC→PG→MD→SC→BG→BO+CONFIG→BR/FN+METRIC→BG/BO 全链
+             - 标注版本冻结时间
+          2. 从 projects/{project}/ 下的 TRACEABILITY_MATRIX.md 提取
+
+      - step: 5.5  # V1.1.0新增
+        name: "跨Agent因果链提取（AI分析）"
+        owner: "pm-agent"
+        action: |
+          AI分析本版本所有素材，提取跨Agent的因果链：
+          
+          因果链类型：
+          ├─ 上游发现→下游预防：
+          │   例：「BA阶段发现状态'已撤销'→ UX阶段在设计稿中标注撤销状态→ FD阶段代码实现无遗漏」
+          │   因果：BA发现→UX落地→FD实现，节省QA发现+回流成本
+          │   跨阶段节省：1次回流循环
+          │
+          ├─ 上游遗漏→下游捕获：
+          │   例：「Arch阶段契约金额未用整数→ FD阶段浮点Bug→ QA阶段发现」
+          │   因果：Arch遗漏→FD Bug→QA捕获，跨3阶段
+          │   修复成本：FD+QA回流（2次循环）
+          │
+          ├─ 上游大脑预警→实际命中：
+          │   例：「QA大脑预判FN-ORDER-PC-003为高风险→ 实际测试发现3个Bug」
+          │   因果：QA预测→验证命中，准确率 3/5=60%
+          │
+          └─ 跨脑共识→高效闭环：
+              例：「BA+QA+AC一致判断'空状态设计不统一'是需求问题→ BA修改PRD模板→后续版本不再出现」
+              因果：3脑共识→根因修复→防止重复
+  
+          产出：cross_agent_causal_chains.yml
+          包含：因果链ID + 类型 + 涉及Agent + 因果链路 + 修复成本 + 经验价值
+  
+          追加到经验库（标注因果链+阶段跨度+修复成本）
+
+      - step: 6
+        name: "更新版本索引（PM + DOC协作）"
+        owner: "pm-agent + doc-agent"
+        action: |
+          1. PM 更新 VERSION-INDEX.yml：
+             - 新增版本条目
+             - 记录沉淀内容清单（requirements/reviews/**brain_memories**/lessons/traceability）
+             - 记录关键指标（fn_count/uc_count/br_count/review_issues/pbl_total/**brain_patterns_count**）
+             - 记录可复用经验标签（tags）
+             - **V1.1.0新增：记录大脑进化指标（新增模式数/预测准确率变化/脑力共识次数）**
+          2. DOC Agent 更新 INDEX.md：
+             - 自动索引新增的沉淀文件
+
+      - step: 7
+        name: "沉淀摘要（PM生成）"
+        owner: "pm-agent"
+        action: |
+          1. PM 生成 沉淀摘要.md：
+             - 版本概述（type/desc/modules/platforms）
+             - 沉淀内容清单（需求/Review/经验/追溯链）
+             - 关键指标摘要
+             - 可复用经验摘要（3-5条核心经验）
+             - 关联文件索引
+             - 沉淀质量评分
+
+      - step: 8
+        name: "Journal记录 + 质量校验"
+        owner: "pm-agent"
+        action: |
+          1. conversation-log.md 记录：
+             "版本 {version} 已沉淀到知识库，
+              沉淀内容：需求+7Review+经验+追溯链，
+              质量评分：{score}"
+          2. 沉淀完整性校验（见 sedimation_validation）
+
+  # ============================================
+  # Review经验提炼规则
+  # ============================================
+  review_distillation_rules:
+    dimensions:
+      - dimension: "反复问题"
+        description: "多个阶段Review中重复出现的问题"
+        output: "踩坑记录.md + common/经验库/踩坑避雷库.md"
+        example: "状态机不完整（BA+QA+AC三阶段重复出现）"
+      - dimension: "最佳实践"
+        description: "Review中标注'做得好'或值得推广的部分"
+        output: "最佳实践.md + common/经验库/最佳实践库.md"
+        example: "限流规则前置定义（BA阶段定义，FD阶段直接复用）"
+      - dimension: "阶段薄弱点"
+        description: "哪个阶段Review问题最多"
+        output: "lessons-learned-v{version}.yml"
+        example: "UX阶段问题最多（10项中4项不通过）"
+      - dimension: "跨阶段一致性"
+        description: "上下游阶段Review结论是否一致"
+        output: "lessons-learned-v{version}.yml"
+        example: "BA状态机与FD代码状态流转不一致"
+      - dimension: "Review质量"
+        description: "Review报告本身的深度和准确性"
+        output: "lessons-learned-v{version}.yml"
+        example: "QA Review覆盖全面，FD Review偏浅"
+
+  # ============================================
+  # 沉淀完整性校验
+  # ============================================
+  sedimation_validation:
+    required:
+      - check: "需求沉淀完整"
+        items: ["PRD-v{version}.md", "REQ-产物体系-v{version}.md", "模块清单.yml", "上下游影响矩阵.yml"]
+        on_fail: "阻止close，补齐后重试"
+      - check: "Review沉淀完整"
+        items: ["REV-BS/BA/UX/ARCH/FD/QA/AC 7份报告", "Review经验提炼.md"]
+        on_fail: "阻止close"
+      - check: "追溯链已快照"
+        items: ["traceability-v{version}.yml"]
+        on_fail: "阻止close"
+      - check: "版本索引已更新"
+        items: ["VERSION-INDEX.yml 新增条目"]
+        on_fail: "阻止close"
+    optional:
+      - check: "经验教训已提炼"
+        items: ["lessons-learned", "最佳实践", "踩坑记录"]
+        on_fail: "警告（不阻止）"
+      - check: "沉淀摘要已生成"
+        items: ["沉淀摘要.md"]
+        on_fail: "警告"
+
+  # ============================================
+  # 沉淀质量评分
+  # ============================================
+  quality_scoring:
+    description: "PM对本次沉淀自动评分（0-100，V1.1.0新增brain_evolution维度）"
+    dimensions:
+      - dimension: "requirements_completeness"
+        weight: 20  # V1.1.0从25调整为20
+        description: "需求完整性（PRD+产物体系+模块清单+影响矩阵）"
+      - dimension: "review_depth"
+        weight: 20  # V1.1.0从25调整为20
+        description: "Review深度（7份Review+经验提炼）"
+      - dimension: "lessons_actionability"
+        weight: 15  # V1.1.0从20调整为15
+        description: "经验可操作性（能否被下一版本直接复用）"
+      - dimension: "traceability_coverage"
+        weight: 15
+        description: "追溯覆盖（FN→BO全链覆盖）"
+      - dimension: "brain_evolution"  # V1.1.0新增
+        weight: 15
+        description: "大脑进化质量（新增模式有效性+预测准确率变化+脑力共识质量+跨Agent因果链价值）"
+        sub_dimensions:
+          - name: "新增模式有效性"
+            weight: 5
+            description: "本版本大脑新增的模式是否有实际数据支撑"
+          - name: "预测准确率变化"
+            weight: 5
+            description: "各大脑预测准确率 vs 上版本的变化趋势"
+          - name: "跨Agent因果链价值"
+            weight: 5
+            description: "提取的因果链对下版本的实用价值"
+      - dimension: "cross_version_value"
+        weight: 15
+        description: "跨版本复用价值（经验库+大脑记忆追加质量）"
+    output: "写入VERSION-INDEX.yml的sediment_quality字段"
+
+  # ============================================
+  # 与/init的知识加载交互
+  # ============================================
+  init_integration:
+    description: |
+      下一版本/init时，PM自动加载上一版本沉淀+经验库。
+      加载逻辑在project-lifecycle.yml的/init.pm_actions中定义。
+    load_priority:
+      - priority: 1
+        source: "跨版本传递PBL"
+        description: "必须处理（上一版本未闭环反馈）"
+      - priority: 2
+        source: "上一版本Review经验提炼"
+        description: "避免重复踩坑"
+      - priority: 3
+        source: "上一版本PRD"
+        description: "基线参考"
+      - priority: 4
+        source: "/learn产出的PRD"
+        description: "原始需求"
+      - priority: 5
+        source: "common/经验库"
+        description: "跨版本+跨项目通用经验"
+
+  # ============================================
+  # 跨项目经验复用
+  # ============================================
+  cross_project:
+    description: |
+      沉淀的经验追加到common/经验库/，供其他项目复用。
+      /init时PM检查common/经验库/，若存在则加载为全阶段背景知识。
+    library_path: ".codebuddy/knowledge/common/经验库/"
+    files:
+      - "最佳实践库.md：所有项目的最佳实践（按版本标注来源）"
+      - "踩坑避雷库.md：所有项目的踩坑记录（按版本标注来源）"
+      - "Review模式库.md：所有项目的Review问题模式"
+    dedup_rule: "相同经验不重复追加，仅标注新增来源版本"

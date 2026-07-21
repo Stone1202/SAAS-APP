@@ -1,0 +1,448 @@
+# ============================================
+# Workflow: defect-reflow（反馈回流引擎 V4.1.0）
+# 版本: v4.1.0
+# 最后更新: 2026-07-20
+# ============================================
+#
+# V4.1.0 核心升级：大脑进化闭环
+#   1. 大脑记忆注入：回流信息经过每个中转阶段时，注入该阶段Agent的大脑分析
+#   2. 跨脑协同研判：多个Agent大脑对同一反馈做交叉研判，标记共识/分歧
+#   3. 进化触发：回流闭环后，触发所有涉及Agent的大脑微进化
+#   4. 脑力共识追踪：跨Agent对根因的判断一致性→大脑协同质量指标
+#   5. 大脑进化增量：每次回流闭环产出一个brain-evolution-delta
+#
+# V4.0.0 核心升级（对齐POM V5.0三级把关+Sprint循环）：
+#   1. 分层回流：Sprint级回流（SM调度，Sprint内闭环）+ 版本级回流（PM调度，版本级闭环）
+#   2. AI智能分析：回流触发时AI自动分析根因/影响范围/阶段归属/修复方案/历史模式
+#   3. Sprint级回流升级到版本级：Sprint内3次回流未闭环→升级到版本级PM
+#   4. 版本级回流升级到项目级：版本级3次回流未闭环→升级到PO请求人决策
+#
+# V3.0.0 核心升级（对齐POM宪章V4.0.0）：
+#   1. 反馈回流在Review后进行（不可跳过Review）
+#   2. 反馈信息按阶段节点依次上传至需求分析（不跳跃）
+#   3. PM先展示Review汇总（不足/建议/问题），再请用户确认
+#   4. 跨版本反馈传递（未闭环反馈自动传递到下一版本）
+#   5. 每个经停阶段Agent确认是否需本阶段调整
+#
+# 核心原则：
+#   1. Review先于回流：反馈回流必须在Review完成后才能启动
+#   2. 依次上传：反馈按阶段节点依次上传，不跳跃
+#   3. 经停审视：每经过一个中间阶段，该Agent确认是否需本阶段调整
+#   4. 最终汇聚BA：所有反馈最终汇聚到需求分析阶段
+#   5. 跨版本传递：未闭环反馈自动传递到下一版本
+#   6. 全程留痕：回流路径、经停记录、反馈内容全部写入Journal
+#   7. 有始有终：回流期间不新增其他需求
+#   8. AI分析先行：回流触发时AI先分析，产出分析报告供各阶段Agent参考（V4.0.0新增）
+#   9. 分层闭环：Sprint内问题Sprint内闭环，不轻易升级到版本级（V4.0.0新增）
+# ============================================
+
+workflow:
+  id: "defect-reflow"
+  name: "反馈回流引擎（大脑进化闭环，V4.1.0）"
+  version: "4.1.0"
+  owner: "pm-agent（版本级） / sm-agent（Sprint级）"
+  type: "automation"
+  brain_evolution_engine: ".codebuddy/knowledge/common/brain-evolution-engine.yml"  # V4.1.0新增
+
+  # ============================================
+  # V4.0.0新增：分层定义
+  # ============================================
+  layered_design:
+    sprint_level:
+      description: "Sprint级回流——SM调度，Sprint内闭环"
+      owner: "sm-agent"
+      trigger: "Sprint内Review不通过/障碍/QA发现Bug"
+      routing_scope: "Sprint内的子阶段（BA→UX→Arch→FD→QA）"
+      final_destination: "本Sprint的BA（增量调整本Sprint范围的需求）"
+      escalation: "Sprint内3次回流未闭环→升级到版本级PM"
+      ai_analysis: "AI分析根因+影响范围+Sprint内修复方案"
+    
+    version_level:
+      description: "版本级回流——PM调度，版本级闭环"
+      owner: "pm-agent"
+      trigger: "Final Sprint集成验证Review不通过/跨Sprint一致性问题/版本级handoff问题"
+      routing_scope: "版本级阶段（requirement→design→arch→dev→test→accept）"
+      final_destination: "版本级BA（调整版本级REQ产物）"
+      escalation: "版本级3次回流未闭环→升级到PO请求人决策"
+      ai_analysis: "AI分析根因+影响范围+版本级修复方案+历史模式识别"
+
+  # ============================================
+  # 触发条件（V4.0.0：分层触发）
+  # ============================================
+  trigger:
+    description: |
+      在Review完成后，若Review不通过或用户补充反馈，启动反馈回流。
+      不可跳过Review直接回流。
+      V4.0.0：根据当前所处层级（Sprint内/版本级Final）决定由SM还是PM调度。
+    events:
+      - "review_not_passed"        # Review不通过
+      - "user_supplement"          # 用户补充反馈
+      - "user_reject"              # 用户驳回
+      - "sprint_impediment"        # Sprint内障碍升级（V4.0.0新增，SM触发）
+    precondition: "Review已完成，Review报告已产出"
+    auto: true
+    layer_detection: |
+      V4.0.0新增：触发时判断当前层级
+      - 若当前在Sprint循环内（stage-1_to_N的某Sprint子阶段）→ Sprint级回流，SM调度
+      - 若当前在Final Sprint集成验证或版本级阶段 → 版本级回流，PM调度
+
+  # ============================================
+  # V4.0.0新增：AI智能分析（回流触发后先分析再回流）
+  # ============================================
+  ai_analysis:
+    description: |
+      回流触发时，AI先执行智能分析，产出分析报告供各阶段Agent参考。
+      引用 feedback-processor.yml Skill。
+      AI分析不等同于AI决策——AI给建议，人/Agent做决策。
+    skill_ref: "feedback-processor"
+    analysis_dimensions:
+      
+      ai1_root_cause:
+        name: "根因分析"
+        description: "AI分析问题的根本原因"
+        categories: ["需求不明确", "设计缺陷", "实现错误", "测试遗漏", "环境问题", "沟通缺失"]
+        output: "根因分类+根因说明"
+      
+      ai2_impact_scope:
+        name: "影响范围分析"
+        description: "AI分析反馈影响哪些产物"
+        scope: ["FN编号", "UC编号", "页面", "Sprint", "契约Schema", "sim适配器"]
+        output: "受影响产物清单"
+      
+      ai3_stage_attribution:
+        name: "阶段归属判断（AI辅助）"
+        description: "AI判断反馈应归属哪个阶段（取代纯人工判断）"
+        output: "阶段归属建议+置信度"
+        note: "取代V3.0.1的人工阶段归属判断，AI给建议+置信度，Agent最终确认"
+      
+      ai4_fix_suggestion:
+        name: "修复方案建议"
+        description: "AI基于知识库给出修复方案建议"
+        output: "≥2个修复方案+利弊+AI推荐+置信度（按human-confirm-protocol Q1方案选择型）"
+        knowledge_refs: ["领域知识", "项目知识", "通用知识", "经验库"]
+      
+      ai5_history_pattern:
+        name: "历史模式识别"
+        description: "AI识别是否为重复问题（跨Sprint/跨版本重复出现）"
+        output: "重复问题标识+历史出现次数+上次处理方式"
+        note: "若识别为重复问题≥3次，AI建议升级到版本级或项目级"
+      
+      ai6_sprint_scope_check:
+        name: "Sprint范围校验（V4.0.0新增）"
+        description: "AI判断反馈是否可在当前Sprint内闭环"
+        output: "Sprint内可闭环/需升级版本级+理由"
+        rule: "若反馈影响其他Sprint的产物→建议升级版本级"
+    
+    output_format:
+      path: "projects/{project}/.codebuddy/journal/reflow-analysis/REFLOW-ANALYSIS-{version}-S{n}-{NNN}.md"
+      content: "六维分析报告，附在defect-reflow报告前，供各阶段Agent参考"
+
+  # ============================================
+  # 回流路由表（V4.0.0：Sprint级+版本级双路由）
+  # ============================================
+  routing_table:
+    # === Sprint级路由（SM调度，Sprint内子阶段） ===
+    sprint_level_routing:
+      - source_stage: "sprint_qa"        # Sprint内QA测试反馈
+        upload_path: ["sprint_qa", "sprint_dev", "sprint_arch", "sprint_design", "sprint_requirement"]
+        final_destination: "sprint_requirement（本Sprint的BA）"
+        description: "Sprint内QA问题依次上传：QA→FD→Arch→UX→BA（Sprint内闭环）"
+      - source_stage: "sprint_dev"       # Sprint内开发反馈
+        upload_path: ["sprint_dev", "sprint_arch", "sprint_design", "sprint_requirement"]
+        final_destination: "sprint_requirement（本Sprint的BA）"
+        description: "Sprint内开发问题依次上传：FD→Arch→UX→BA"
+      - source_stage: "sprint_design"    # Sprint内设计反馈
+        upload_path: ["sprint_design", "sprint_requirement"]
+        final_destination: "sprint_requirement（本Sprint的BA）"
+        description: "Sprint内设计问题上传：UX→BA"
+      - source_stage: "sprint_requirement" # Sprint内需求反馈
+        upload_path: ["sprint_requirement"]
+        final_destination: "sprint_requirement（本Sprint的BA）"
+        description: "Sprint内需求问题直接到本Sprint的BA"
+    
+    # === 版本级路由（PM调度，Final Sprint后或跨Sprint问题） ===
+    version_level_routing:
+      - source_stage: "accept"           # 验收阶段反馈
+        upload_path: ["accept", "test", "dev", "arch", "design", "requirement"]
+        final_destination: "requirement（版本级BA）"
+        description: "验收问题依次上传：验收→测试→开发→架构→设计→需求分析"
+      - source_stage: "test"             # 测试阶段反馈
+        upload_path: ["test", "dev", "arch", "design", "requirement"]
+        final_destination: "requirement（版本级BA）"
+        description: "测试问题依次上传：测试→开发→架构→设计→需求分析"
+      - source_stage: "dev"              # 开发阶段反馈
+        upload_path: ["dev", "arch", "design", "requirement"]
+        final_destination: "requirement（版本级BA）"
+        description: "开发问题依次上传：开发→架构→设计→需求分析"
+      - source_stage: "arch"             # 架构阶段反馈
+        upload_path: ["arch", "design", "requirement"]
+        final_destination: "requirement（版本级BA）"
+        description: "架构问题依次上传：架构→设计→需求分析"
+      - source_stage: "design"           # 设计阶段反馈
+        upload_path: ["design", "requirement"]
+        final_destination: "requirement（版本级BA）"
+        description: "设计问题依次上传：设计→需求分析"
+      - source_stage: "requirement"      # 需求阶段反馈
+        upload_path: ["requirement"]
+        final_destination: "requirement（版本级BA）"
+        description: "需求问题直接到版本级BA"
+
+  # ============================================
+  # V4.1.0新增：跨脑协同研判
+  # ============================================
+  cross_brain_consensus:
+    description: |
+      V4.1.0新增：回流触发后，不只看AI的通用分析，
+      还要让涉及的各Agent大脑独立研判同一反馈，
+      对比各大脑的结论→发现共识/分歧→提升大脑协同质量。
+    process:
+      - phase: "独立研判"
+        action: |
+          在AI六维分析产出后，涉及的各Agent大脑独立研判：
+          - BA大脑：「这个反馈的根因是需求不明确，还是需求变了？」
+          - UX大脑：「这个交互问题在本次设计中是否已预判？」
+          - Arch大脑：「这个实现Bug的根因是否在契约层面？」
+          - QA大脑：「这个Bug是否在测试热力图中标记为高风险？」
+          - FD大脑：「这个实现问题是否能通过代码模式预防？」
+          每个大脑产出：{ 根因判断, 置信度, 是否本阶段可预防, 改进建议 }
+      - phase: "共识对比"
+        action: |
+          对比各大脑研判结论：
+          - 判断一致 → 标记"脑力共识"（confidence_level=high）
+          - 判断不同但互补 → 标记"脑力互补"（综合多方视角）
+          - 判断矛盾 → 标记"脑力分歧"（需PM深度分析+可能触发脑力升级）
+          记录：{ consensus_type, agreeing_brains, disagreeing_brains, resolution }
+      - phase: "共识记录"
+        action: |
+          在problem-ledger.md的PBL条目中新增brain_consensus字段：
+          { consensus_type, brain_judgments: [{agent, judgment, confidence}], resolution }
+    
+    escalation:
+      - condition: "脑力分歧（≥2个Agent判断矛盾）"
+        action: "PM介入深度分析，必要时触发脑力升级会议（BA+相关Agent联合讨论）"
+      - condition: "脑力共识但根因严重"
+        action: "标记P0改进项，追加到大脑进化素材最高优先级"
+
+  # ============================================
+  # 回流执行流程（V4.1.0：跨脑协同+进化触发）
+  # ============================================
+  execution:
+    description: |
+      V4.1.0：回流触发后，先AI分析→跨脑协同研判→再按层级执行回流→进化触发。
+      Sprint级由SM调度，版本级由PM调度。
+    steps:
+      - step: -1
+        name: "大脑预激活（V4.1.0新增）"
+        action: |
+          回流触发 → 判定涉及哪些阶段 → 预激活对应Agent大脑
+          → 加载各Agent大脑中与本次反馈相关的历史记忆
+          → 准备跨脑协同研判的上下文
+      
+      - step: 0
+        name: "AI智能分析（V4.0.0新增，回流前置）"
+        action: |
+          回流触发后，先调用feedback-processor.yml Skill执行六维AI分析：
+          ai1根因分析 → ai2影响范围 → ai3阶段归属 → ai4修复方案 → ai5历史模式 → ai6 Sprint范围校验
+          产出REFLOW-ANALYSIS报告，供后续各阶段Agent参考。
+      
+      - step: 0.5
+        name: "跨脑协同研判（V4.1.0新增）"
+        action: |
+          在AI分析之后、依次上传之前：
+          1. 各涉及Agent大脑独立研判同一反馈
+          2. 对比研判结论→标记共识/分歧
+          3. 产出脑力共识报告（合并到REFLOW-ANALYSIS报告）
+          4. 后续依次上传时，各中转Agent参考脑力共识结果
+      
+      - step: 1
+        name: "层级判定+调度方确定"
+        action: |
+          根据AI分析的ai6_sprint_scope_check结果确定层级
+          - Sprint内可闭环 → Sprint级回流，SM调度
+          - 需升级版本级 → 版本级回流，PM调度
+          SM/PM读取Review报告+AI分析报告+脑力共识报告，提取不通过项
+          在problem-ledger.md新建PBL，记录反馈+回流路径+AI分析引用+脑力共识
+      
+      - step: 2
+        name: "依次上传（每阶段注入大脑记忆+参考脑力共识）"
+        action: |
+          对upload_path中的每个阶段（从第二个开始）：
+          1. SM/PM将反馈+AI分析+脑力共识+该Agent大脑相关记忆 传递给该阶段Agent
+          2. 该阶段Agent参考AI的ai3阶段归属+脑力共识中自己的研判：
+             a. 属于本阶段 → 本阶段调整（参考脑力共识中的改进建议）
+             b. 不属于本阶段 → 标注"经由，无需调整"+说明理由
+          3. 该阶段Agent产出「脑力研判补充」（不只是"需要/不需要"）
+          4. SM/PM记录经停信息（含大脑研判补充）到problem-ledger.md
+      
+      - step: 3
+        name: "最终汇聚需求分析"
+        action: |
+          反馈信息到达upload_path终点（requirement阶段）：
+          1. BA接收全部反馈+AI分析+脑力共识+各经停阶段的调整记录和大脑研判
+          2. BA参考脑力共识的综合建议，调整REQ产物
+          3. 产出调整说明（纳入+调整方式+跨版本传递+大脑研判反馈）
+      
+      - step: 4
+        name: "重走后续流程（含大脑重激活）"
+        action: |
+          BA调整完成后，从需求分析阶段开始重走后续流程。
+          重走时重新激活各阶段大脑（大脑基于新调整重新推理）。
+      
+      - step: 5
+        name: "反馈记录在案（含大脑进化素材）"
+        action: |
+          1. problem-ledger.md更新PBL状态+大脑共识记录
+          2. conversation-log.md记录回流完成
+          3. AI分析+脑力共识报告归档到journal/reflow-analysis/
+          4. 若反馈无法闭环 → 标记"跨Sprint传递"或"跨版本传递"
+      
+      - step: 6
+        name: "大脑微进化触发（V4.1.0新增）"
+        action: |
+          回流闭环后，对每个涉及Agent的大脑：
+          1. 记录本次回流的教训（根因+修复方式+效果+跨脑共识）
+          2. 更新大脑记忆中的模式库（新Bug模式/新坑+权重）
+          3. 更新大脑推荐权重（修复方案有效→加权重，无效→降权重）
+          4. 更新脑力共识追踪（跨Agent研判一致性统计）
+          5. 产出 brain-evolution-delta（大脑进化增量）
+          → 下一Sprint/版本自动加载此增量
+
+  # ============================================
+  # 经停审视规则（V4.0.0：AI辅助阶段归属判断）
+  # ============================================
+  transit_review_rules:
+    description: |
+      反馈信息每经过一个中间阶段，该阶段Agent必须审视是否需要本阶段调整。
+      V4.0.0：Agent参考AI分析的ai3阶段归属判断+ai4修复方案建议，而非纯人工判断。
+    rules:
+      - rule: "每个经停阶段必须产出审视结论（需要调整/无需调整+理由）"
+      - rule: "需要调整的阶段，Agent参考AI修复方案建议，调整本阶段产物"
+      - rule: "无需调整的阶段，标注'经由，无需调整'并说明理由"
+      - rule: "Agent可追加本阶段专业建议，随反馈继续上传"
+      - rule: "经停审视结论记录到problem-ledger.md的PBL条目"
+      - rule: "**V4.0.0：Agent先读AI分析的ai3阶段归属判断，再确认是否本阶段问题**"
+      - rule: "AI判断属于本阶段+置信度high → Agent直接调整"
+      - rule: "AI判断不属于本阶段+置信度high → Agent标注'经由'"
+      - rule: "AI判断模糊+置信度low → Agent人工确认"
+    stage_attribution:
+      description: |
+        V4.0.0：阶段归属判断从V3.0.1的纯人工升级为AI辅助。
+        AI给出归属建议+置信度，Agent最终确认。
+      ai_assisted: true
+      examples:
+        - feedback: "栅格系统应该用12列而不是24列"
+          ai_judgment: "设计阶段（置信度high，依据：设计知识库栅格规范）"
+          agent_confirm: "UX确认本阶段问题，参考AI修复方案调整栅格"
+        - feedback: "系统类型应该是B2C电商平台而不是B2B"
+          ai_judgment: "需求阶段（置信度high，依据：需求分析知识库系统类型定义）"
+          agent_confirm: "BA确认本阶段问题，调整系统类型声明"
+        - feedback: "业务操作矩阵缺少'已退款'状态"
+          ai_judgment: "需求阶段（置信度high，依据：状态机是BA产出的）"
+          agent_confirm: "BA确认本阶段问题，补充状态"
+
+  # ============================================
+  # V4.0.0新增：分层升级机制
+  # ============================================
+  layered_escalation:
+    sprint_to_version:
+      trigger: "Sprint内3次回流未闭环"
+      action: "SM升级到PM（版本守护人），PM决定是否调整为版本级回流或调整Sprint范围"
+      ai_assist: "AI分析的ai5历史模式识别若发现重复问题≥3次，主动建议升级"
+    
+    version_to_project:
+      trigger: "版本级3次回流未闭环"
+      action: "PM升级到PO（项目把关人），PO决定是否调整路线图或请求人决策"
+      ai_assist: "AI分析的ai5历史模式识别若发现跨版本重复，主动建议升级到项目级"
+    
+    project_to_human:
+      trigger: "项目级问题需人决策"
+      action: "PO按human-confirm-protocol.yml请求人确认（Q4风险确认型）"
+
+  # ============================================
+  # 跨版本反馈传递（V3.0.0保留）
+  # ============================================
+  cross_version_transfer:
+    description: |
+      当前版本无法完全闭环的反馈，标记为"跨版本传递"，
+      在下一版本/init时自动加载，作为BA需求分析的输入。
+    trigger: "反馈在当前版本无法闭环（如需大改架构/需新增模块）"
+    actions:
+      - "problem-ledger.md中PBL标记status=跨版本传递"
+      - "记录跨版本原因和建议处理版本"
+      - "下一版本/init时PM自动扫描上一版本跨版本传递PBL"
+      - "加载为BA需求分析输入上下文"
+      - "BA在REQ产物中纳入后，PBL标记status=已纳入"
+
+  # ============================================
+  # V4.0.0新增：跨Sprint反馈传递
+  # ============================================
+  cross_sprint_transfer:
+    description: |
+      当前Sprint无法闭环的反馈，标记为"跨Sprint传递"，
+      在下一Sprint启动时由SM加载，作为本Sprint BA需求分析的输入。
+    trigger: "反馈在当前Sprint无法闭环（如需其他Sprint的产物调整）"
+    actions:
+      - "problem-ledger.md中PBL标记status=跨Sprint传递"
+      - "记录跨Sprint原因和建议处理Sprint"
+      - "下一Sprint启动时SM自动扫描上一Sprint跨Sprint传递PBL"
+      - "加载为本Sprint BA需求分析输入上下文"
+
+  # ============================================
+  # 回流保护
+  # ============================================
+  protection:
+    loop_protection:
+      sprint_level:
+        max_retries: 3
+        condition: "Sprint内同一问题回流超过3次仍不通过"
+        action: "SM升级到PM（版本守护人）"
+      version_level:
+        max_retries: 3
+        condition: "版本级同一问题回流超过3次仍不通过"
+        action: "PM升级到PO（项目把关人），PO请求人决策"
+    isolation:
+      rule: "回流期间不新增其他需求，保证有始有终"
+      sprint_rule: "Sprint级回流期间不新增本Sprint其他需求"
+      version_rule: "版本级回流期间不新增其他需求流"
+    close_gate:
+      rule: "/close时校验全部PBL闭环（含跨Sprint传递+跨版本传递已纳入项）"
+
+  # ============================================
+  # 与state.json的交互
+  # ============================================
+  state_interaction:
+    read:
+      - "state.json.streams[].stage"
+      - "state.json.streams[].problem_list"
+      - "state.json.streams[].feedbacks"
+      - "state.json.streams[].review_reports"
+      - "state.json.streams[].current_sprint（V4.0.0新增）"
+    write:
+      - "新增type=修复条目到state.json.streams[]"
+      - "更新problem_list[]中的PBL引用状态"
+      - "更新feedbacks[]中的回流路径记录"
+      - "标记跨Sprint传递PBL（V4.0.0新增）"
+      - "标记跨版本传递PBL"
+      - "更新current_sprint的reflow_count（V4.0.0新增）"
+
+  # ============================================
+  # Review报告与回流的关联
+  # ============================================
+  review_feedback_link:
+    description: |
+      Review报告与反馈回流的关系：
+      1. Review报告是回流的触发源（Review不通过→触发回流）
+      2. Review报告中的"不足/建议/问题"是回流反馈信息的核心内容
+      3. 回流完成后，重走流程时仍需Review，新Review报告覆盖旧报告
+      4. /close时校验最终版Review报告全部通过
+      5. V4.0.0：Sprint级Review（SM主持）触发Sprint级回流；版本级Review（PM编排）触发版本级回流
+    report_path: "projects/{project}/.codebuddy/journal/reviews/"
+    naming: "REV-{STAGE}-{version}.md（版本级）/ REV-{STAGE}-{version}-S{n}.md（Sprint级）"
+
+  # ============================================
+  # V4.0.0引用
+  # ============================================
+  references:
+    - "configs/skills/feedback-processor.yml（AI智能分析Skill）"
+    - "common/human-confirm-protocol.yml（修复方案确认机制）"
+    - "common/sprint-planning-standards.yml（Sprint级回流范围参考）"

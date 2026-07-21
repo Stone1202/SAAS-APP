@@ -1,0 +1,1008 @@
+# ============================================
+# Workflow: project-lifecycle（需求流生命周期总控 V5.1.0）
+# 版本: v5.1.0
+# 最后更新: 2026-07-20
+# ============================================
+#
+# 版本变更历史详见：.codebuddy/knowledge/common/governance-docs/流程版本变更总账.md
+# 当前版本V5.1.0核心：Agent AI大脑融入全生命周期（大脑编排层）
+#   - brain_orchestration 大脑编排引擎（PM在每个stage激活对应Agent大脑）
+#   - brain_sync_chain 脑力协同链（上游大脑输出自动注入下游大脑）
+#   - brain_memory_persistence 大脑记忆持久化 + brain_evolution_trigger 大脑进化触发
+#   - 每个stage新增 ai_brain 段 + PM监管职责新增R6大脑编排
+#
+# 治理来源（方法论溯源，非执行依赖）：
+#   - 大脑体系设计：Agent-AI大脑体系设计方案-V1.0.0.md
+#   - 流程优化方案：POM流程全面优化方案-V5.1.0.md
+#   - 大脑记忆规范：brain-memory-spec.yml（knowledge/common/）
+#   - 大脑进化引擎：brain-evolution-engine.yml（knowledge/common/）
+#   - 方法论宪章：POM方法论与宪章-V4.0.0.md（common/governance-docs/）
+#
+# 核心原则：
+#   1. 流水线单位 = 需求流（project × type × version），非整个 project
+#   2. PM 不写需求/不做设计/不写代码——PM 只回答 6 个问题：
+#      何时开始、是否完成、有没有问题、人工确认了什么、全程留痕、大脑编排
+#   3. V5.1.0 核心：每个stage不仅是"执行任务"，更是"AI大脑思考+验证+学习"
+#   4. 大脑纵向进化：每个版本比上一版本聪明（记忆持久化+进化引擎）
+#   5. 大脑横向协同：上游大脑发现→下游大脑预警（脑力协同链）
+#   6. AI推理≠AI决策：AI给建议+置信度，人/Agent做最终决策
+# ============================================
+
+  workflow:
+  id: "project-lifecycle"
+  name: "需求流生命周期总控（PM 大脑编排层 V5.1.0）"
+  version: "5.1.0"
+  trigger_command: "/init"
+  owner: "pm-agent"
+  type: "orchestrator"  # V5.1.0：编排器 → 大脑编排器（orchestrate brains, not just tasks）
+  gates_reference: ".codebuddy/knowledge/common/gates-registry.yml"
+  iron_rules_reference: ".codebuddy/knowledge/common/iron-rules-registry.yml#agents.pm_agent"
+  brain_memory_spec: ".codebuddy/knowledge/common/brain-memory-spec.yml"  # V5.1.0新增
+  brain_evolution_engine: ".codebuddy/knowledge/common/brain-evolution-engine.yml"  # V5.1.0新增
+
+  # ============================================
+  # V5.1.0新增：大脑编排引擎
+  # ============================================
+  brain_orchestration:
+    description: |
+      PM作为大脑编排者，在每个stage：
+      1. 激活（Activate）对应Agent的大脑推理引擎
+      2. 注入（Inject）上游大脑的输出作为当前大脑的输入
+      3. 导出（Export）当前大脑的输出给下游大脑
+      4. 快照（Snapshot）当前大脑的记忆状态
+    brain_activation_chain: |
+      大脑激活链（按stage顺序）：
+      stage-00 → PM大脑（流程治理：项目性质识别→预判风险模式）
+      stage-0  → BS大脑（会议洞察：议题分析+领域匹配+API识别）
+      stage-0.5→ PO大脑（产品战略：四层价值评估+路线图推理）
+      stage-1  → PM大脑（版本记忆加载：加载上版本各大脑记忆）
+      stage-2  → BA大脑（需求洞察：常识推理+质量预测+历史关联）
+                    ↓ 输出→UX:交互复杂度预估 | Arch:接口复杂度预估 | QA:高风险FN
+      stage-3  → UX大脑（体验洞察：系统分析推理+一致性预测+BA状态覆盖检查）
+                    ↓ 输出→FD:组件实现难度 | QA:多端差异风险
+      stage-4  → Arch大脑（架构决策：契约缺陷预测+安全模式+依赖链推理）
+                    ↓ 输出→FD:实现陷阱预警 | QA:高风险接口
+      stage-5  → FD大脑（实现模式：模式推荐+Bug预防+合规预检）
+                    ↓ 输出→QA:已知高风险区域
+      stage-6  → QA大脑（质量推理：Bug热力图+覆盖盲区+回归推荐）
+                    ↓ 输出→AC:验收高风险点
+      stage-7  → AC大脑+PO大脑（体验验证+商业价值验证）
+                    ↓ 输出→全Agent:大脑进化素材
+      stage-8  → PM大脑（版本总结）→ 触发Brain Evolution Engine
+
+  # ============================================
+  # PM 监管协议（5 项职责，V4.0.0 升级）
+  # ============================================
+  pm_protocol:
+    description: |
+      PM 是互联网项目管理专家 + 大脑编排者（V5.1.0），
+      不写需求、不做设计、不写代码——
+      PM 只回答 6 个问题：
+      ① 流程何时开始？ ② 流程是否完成？ ③ 有没有问题列表？
+      ④ 人工确认了什么/额外输入了什么？ ⑤ 全程留痕。 ⑥ 大脑编排。
+      V5.1.0 新增：PM编排每阶段Agent大脑激活+脑力协同链+大脑记忆快照。
+    responsibilities:
+      - id: "R1"
+        name: "何时开始"
+        action: "上一流程Review通过且用户确认后，PM启动下一流程"
+      - id: "R2"
+        name: "是否完成"
+        action: "PM读取主导Agent产出+state.json+**专家Review报告**+**大脑推理输出**判定"
+      - id: "R3"
+        name: "问题列表"
+        action: "PM汇总该流程产出的Bug/异常/不通过项+**专家Review发现的问题**+**大脑预警未命中分析**"
+      - id: "R4"
+        name: "人工确认 + 额外输入"
+        action: |
+          V4.0.0优化：PM先展示该阶段专家Review汇总（不足/建议/问题），
+          再请用户确认或补充。不直接给通过/驳回选项。
+          V5.1.0增强：展示大脑推理摘要（AI发现了什么、建议了什么、置信度），
+          帮助人在做决策时参考AI的思考。
+          无论什么反馈都回传给需求分析阶段，记录在案。
+      - id: "R5"
+        name: "全程留痕"
+        action: "PM全程实时记录对话、问题、**Review报告**、**大脑活动日志**到Journal"
+      - id: "R6"
+        name: "大脑编排（V5.1.0新增）"
+        action: |
+          PM在每个stage：
+          a. 激活该stage的Agent大脑推理引擎
+          b. 注入上游大脑的brain_sync_export到当前大脑
+          c. 收集当前大脑的brain_sync_export传递给下游
+          d. stage结束时导出当前大脑的记忆快照
+          e. /close时触发Brain Evolution Engine全Agent大脑进化
+
+  # ============================================
+  # 交互式询问（V4.2.0 重构：取消交互式问答，改为参数驱动+自动检测）
+  # ============================================
+  interactive_inquiry:
+    enabled: true
+    description: |
+      V4.2.0 重构：取消"新项目/存量项目"交互式问答，改为自动检测。
+      保留参数说明展示 + 必填项缺失指引。
+      PM 接收 /init 全部参数后，自动检测项目性质，加载上下文，组装参数路由包传递给 BA。
+    flow:
+      - step: "param_display"
+        trigger: "用户输入 /init 命令后"
+        action: |
+          自动展示 /init 全部参数说明（必填+可选），
+          包括参数名、类型、示例值、可选值（enum）。
+      
+      - step: "missing_guide"
+        trigger: "必填参数缺失"
+        action: |
+          对缺失的必填参数，展示参数引导提示：
+          - 参数名 + 说明 + 示例值 + 可选值
+          - 自然语言描述，非技术术语
+          - 给出最可能的默认值建议
+      
+      - step: "auto_detect"
+        trigger: "参数齐全"
+        action: |
+          V4.2.0 自动检测项目性质（新/存量），无需用户回答：
+          1. 扫描 projects/{--project}/ 是否存在 → 存在=存量项目，不存在=新项目
+          2. 存量项目：
+             a. 检查骨架完整性（docs/01-requirements/ 等），补建缺失目录
+             b. 自动加载知识库PRD + 版本沉淀 + 经验库 + PO Backlog + 脑暴确认稿 + 领域知识 + 跨版本反馈
+             c. V4.2.0新增加载 common/metrics-standards.yml 行业统计指标规则
+          3. 新项目：
+             a. 运行 ensure-project.sh {--project} 创建骨架
+          4. PM 组装「参数路由包」传递给 BA，BA 从 requirement-flow §0.5 开始深度分析
+
+  # ============================================
+  # PM 监管总循环（阶段流水线 V4.0.0：每阶段Review）
+  # ============================================
+  pipeline: |
+    V4.1.0 分层流程路由：
+    
+    【战略级】新项目/重大转型
+    /brainstorm --brainstorm-type=strategic → [BS脑暴+战略+商业] → [PO产品架构+规划+Backlog] → /init → [需求BA] → 📝Review → [设计UX] → 📝Review → [架构Arch] → 📝Review → [开发FD] → 📝Review → [测试QA] → 📝Review → [验收AC+PO] → 📝Review → /close → PM询问PO下一版本 → /init v2 → 递归
+    
+    【规划级】新模块/大版本
+    /brainstorm --brainstorm-type=planning → [BS脑暴] → [PO产品架构+规划+Backlog] → /init → [需求BA] → ... → /close → PM询问PO → /init v2 → 递归
+    
+    【常规级】中版本迭代
+    /brainstorm --brainstorm-type=regular → [BS脑暴] → /init → [需求BA] → ... → /close → /init v2 → 递归
+    
+    【修复级】Bug/小变更
+    /init --type=修复 → [开发FD] → [测试QA] → [验收AC] → /close
+    
+    反馈回流（不变）：
+    验收→测试→开发→架构→设计→需求分析（Review后触发，按阶段依次上传）
+
+  # ============================================
+  # 阶段定义（8 阶段 + 脑暴前置 + 交互询问前置）
+  # ============================================
+  stages:
+    - id: "stage-00"
+      name: "项目性质自动检测 + 骨架完整性校验 + 上下文加载（V4.2.1升级：6项完整性校验）"
+      owner: "pm-agent"
+      pm_controlled: true
+      description: |
+        V4.2.1升级：骨架检测从"目录存在与否"升级为6项完整性校验。
+        V4.2.0 重构：PM 按 interactive_inquiry V4.2.0 流程执行（自动检测，非交互式问答）：
+        1. 接收 /init 全部参数（--project/--type/--desc/--brainstorm-topic/--file/--api/--source/--priority）
+        2. 自动检测项目性质：扫描 projects/{--project}/ → 存在=存量，不存在=新项目
+        3. 存量项目：
+           a. **V4.2.1骨架完整性6项校验（替代旧的目录存在检测）**：
+              运行 ensure-project.sh {--project} --check，校验6项必选文件：
+              - .codebuddy/state.json（项目状态机）
+              - pom/project.json（项目元数据）
+              - package.json（构建配置）
+              - .codebuddy/journal/（Journal目录）
+              - docs/（文档目录）
+              - src/（源码目录）
+              任一缺失 → 运行 ensure-project.sh {--project} 幂等补建
+              **铁律：即使 projects/{project}/ 目录存在，也必须运行 --check 校验，不可仅凭目录存在就跳过**
+           b. 加载知识库PRD + 版本沉淀 + 经验库 + PO Backlog + 脑暴确认稿 + 领域知识 + 跨版本反馈
+           c. V4.2.0新增加载 common/metrics-standards.yml 行业统计指标规则
+           d. **V4.2.1新增脑暴议题上下文加载**：
+              - 若提供 --brainstorm-topic={topic}：
+                → 加载 projects/{--project}/docs/00-brainstorm/{topic}/confirmed/BR-脑暴文档-确认稿.md
+                → 提取领域知识清单 → 注入BA上下文
+                → 提取API分析清单（如有）→ 注入BA+Arch上下文
+                → 提取三流草图+BO/BG映射 → 注入BA需求分析参考
+              - 若未提供 --brainstorm-topic：
+                → 扫描 00-brainstorm/ 下议题子目录
+                → 只有1个议题 → 自动加载
+                → 多个议题 → 提示用户选择或通过 --brainstorm-topic 指定
+                → 无议题 → 跳过脑暴上下文加载
+        4. 新项目：运行 ensure-project.sh {--project} 创建骨架（含6项必选文件）
+        5. **V4.2.1新增 state_guard**：PM 在任何操作前确保 state.json 存在（兜底机制）
+        6. PM 组装「参数路由包」传递给 BA（含9项上下文+脑暴议题上下文+路由指令+版本链）
+      checkpoint: true
+      output: "项目性质确认 + 骨架6项完整性校验通过 + 知识库上下文（如有）"
+
+    - id: "stage-0"
+      name: "脑暴（前置，PM 不介入，分层类型 V4.1.0）"
+      owner: "bs-agent"
+      workflow: "brainstorm"
+      pm_controlled: false
+      description: |
+        脑暴会议，产出脑暴文档。需线下确认后手动开需求流。
+        脑暴阶段由 BS Agent 按 brainstorm.yml v3.3.0 流程执行：
+        - V3.3.0 新增：脑暴分层类型（strategic/planning/regular）
+        - V3.2.0 新增：stage-0c 领域知识加载（关键词+AI语义匹配）
+        - V3.2.0 新增：专家发言引用领域知识（铁律 B-09）
+        - V3.2.0 新增：三流草图标注领域知识参考来源
+        - V3.2.0 新增：confirmed/ 含领域知识清单，传递给 BA 继承
+        - V1.2.0 新增：战略型脑暴条件输出战略分析+商业分析产物（铁律 B-10）
+        脑暴完成后按类型路由后续流程：
+        - strategic → 通知 PO Agent（战略级激活）
+        - planning → 通知 PO Agent（规划级激活）
+        - regular → 直接通知 PM 立项（跳过 PO）
+        若 stage-00 已加载知识库上下文（已学 PRD），该上下文同样参与脑暴讨论。
+      output: "projects/{project}/docs/00-brainstorm/confirmed/BR-脑暴文档-{project}-{version}.md（含领域知识清单；战略型额外含战略+商业分析文档）"
+
+    - id: "stage-0.5"
+      name: "产品架构与规划（V4.1.0新增，PO Agent；V5.0引用po-planning-flow.yml）"
+      owner: "po-agent"
+      workflow: "po-planning-flow"  # V5.0新增：引用独立workflow
+      pm_controlled: false
+      activation: "脑暴类型=strategic或planning时激活；regular/fix跳过"
+      description: |
+        V5.0升级：PO Agent按po-planning-flow.yml V1.0.0执行8阶段规划流程：
+        po-1输入加载 → po-2四层价值评估 → po-3产品架构(战略级) → po-4路线图 →
+        po-5 Backlog生成 → po-6 Sprint拆解 → po-7人确认 → po-8交接需求探索
+        
+        - 战略级（strategic）：三层能力全开
+          产出：产品架构 + 路线图 + Backlog + 四层价值评估 + Sprint计划
+        - 规划级（planning）：第二层+第一层
+          产出：路线图 + Backlog + 四层价值评估 + Sprint计划
+        
+        V5.0新增：
+        - 四层价值评估（商业+交付+客户+场景闭环）+ 公司7要素影响（引用value-assessment-standards.yml）
+        - Sprint拆解（引用sprint-planning-standards.yml）
+        - 人确认按human-confirm-protocol.yml（7种询问类型）
+        
+        PO Agent 完成后通知 PM 立项，PM 执行 /init。
+        BA 需求分析时基于 PO 的 Backlog 优先级 + Sprint计划 进行需求分析。
+        产物输出到 projects/{project}/docs/00.5-product/
+      output: "projects/{project}/docs/00.5-product/PROD-ARCH-*.md + PROD-ROADMAP-*.yml + PROD-BACKLOG-*.yml + VALUE-ASSESSMENT-*.yml + SPRINT-PLAN-*.yml"
+      checkpoint: true
+      note: "常规级/修复级跳过此阶段，直接 /init"
+      gates_reference: "gates-registry.yml#G-PO-01~04"  # V5.0新增
+
+    - id: "stage-1"
+      name: "开启需求流"
+      owner: "pm-agent"
+      workflow: null
+      pm_controlled: true
+      actions:
+        - "项目骨架已在 stage-00 就绪（新建或复用），无需重复检查"
+        - "**V4.2.1新增 state_guard**：PM 校验 state.json 存在且可解析，缺失则补建（兜底机制）"
+        - "若 stage-00 已加载知识库上下文（已学 PRD），将其作为 BA 需求分析的背景输入"
+        - "版本自动链：取 streams 同 type 已 closed 最大版本 → 按 version_bump 生成"
+        - "创建需求流 STR-{nnn} 写入 state.json.streams[]，stage=requirement"
+        - "**V4.2.1新增：更新 PROJECT-INDEX.yml**——设置 active_project={project} + 更新对应项目 current_stream + last_activity"
+        - "PM 启动需求分析流程（→ requirement-flow），传递已学 PRD 上下文"
+
+    - id: "stage-2"
+      name: "需求分析（V5.1.0：BA大脑激活）"
+      owner: "ba-agent"
+      supervisor: "pm-agent"
+      workflow: "requirement-flow"
+      workflow_version: "V3.2.0"
+      pm_controlled: true
+      checkpoint: true  # 人工卡点①
+      impact_analysis: true
+      priority_sort: true  # O-06
+      platform_freeze: true  # §0.0 终端冻结
+      # V5.1.0新增：BA大脑激活
+      ai_brain:
+        activate: "ba_brain"
+        brain_version: ">={上版本BA大脑记忆版本}"
+        reasoning_tasks:
+          - "system_common_sense：系统常识推理（L0~L6）→ 盲区发现"
+          - "quality_prediction：跨版本Bug模式→预判高风险FN"
+          - "history_correlation：相似需求→相似问题模式关联"
+          - "impact_intelligence：8维影响扫描→智能影响级别判定"
+        memory_import:
+          - "上版本BA大脑记忆（quality_prediction命中率+盲区发现记录）"
+          - "跨版本QA Bug模式（按FN的热力图）"
+          - "跨版本AC验收Bug（UX类+功能类）"
+          - "经验库/需求分析模式库"
+        brain_sync_export:
+          to_ux: ["页面复杂度评分", "状态数统计", "交互密度预估"]
+          to_arch: ["接口复杂度评分", "预估新接口数", "外部依赖数"]
+          to_qa: ["关键业务规则数", "高风险FN清单（含置信度）"]
+      v4_2_0_enhancement: |
+        V4.2.0 变更：BA 从 PM 的「参数路由包」开始，先执行 §0.5 需求深度分析整合（6维需求分析+8维影响扫描+融合全景图），
+        再进入 §1 旅行地图（基于全景图而非裸desc）。
+        §5 详设新增 CONFIG 集中配置清单 + METRIC 统计指标清单。
+      pm_redlines:
+        - "BA 必须按 requirement-flow §0.0 在需求分析一开始基于业务描述拆出「业务子系统 → 端建议清单」交用户一次性确认冻结"
+        - "冻结结果写入 stream.scope.platforms（逐系统映射）"
+        - "后续 UX/Arch/FD/QA/AC 任何阶段不得再向用户询问「支持哪些端」"
+      completion_criteria:
+        - "终端已冻结（stream.scope.platforms 写入）"
+        - "**V4.2.2新增：gates-registry.yml#stages.requirement 全部G-REQ-01~15通过（PM逐条校验产物完整性）**"
+        - "REQ 产物体系（含业务泳道图/业务操作矩阵/跨系统信息流）"
+        - "版本规划文档产出"
+        - "**V5.1.0新增：BA大脑推理完成（4项推理任务）+ brain_sync_export已传递给PM编排器**"
+        - "用户确认范围无误"
+      problem_sources: ["影响范围争议", "场景缺失", "跨平台冲突", "终端划分争议"]
+      feedback_routing: "用户补充的需求描述 / 测试验收问题 → PM 路由 BA 调整产物，重走后续"
+
+    - id: "stage-3"
+      name: "设计（V5.1.0：UX大脑激活，V3.0.0 7步法 + 9章输出）"
+      owner: "ux-agent"
+      supervisor: "pm-agent"
+      workflow: "design-flow"
+      workflow_version: "V3.3.0"
+      pm_controlled: true
+      checkpoint: true  # 人工卡点②
+      platform_aware: true  # O-07
+      design_token_enforcement: true  # O-07
+      # V5.1.0新增：UX大脑激活
+      ai_brain:
+        activate: "ux_brain"
+        brain_version: ">={上版本UX大脑记忆版本}"
+        reasoning_tasks:
+          - "system_analysis_reasoning：基于BA系统类型声明→栅格/设计语言最优解推荐"
+          - "interaction_consistency_prediction：历史交互Bug模式→当前设计风险点预警"
+          - "ba_state_coverage_check：BA状态矩阵→UX页面状态覆盖缺口检测"
+          - "design_decision_risk：设计决策→验收偏差可能性评估"
+        memory_import:
+          - "BA大脑brain_sync_export（页面复杂度+状态数+交互密度）"
+          - "上版本UX大脑记忆（设计决策→验收偏差模式）"
+          - "跨版本AC Bug（UX类模式）"
+          - "经验库/设计模式库"
+        brain_sync_export:
+          to_fd: ["组件实现难度预估", "交互复杂度分级", "视觉回归关键点"]
+          to_qa: ["设计一致性检查点", "多端差异风险清单"]
+          to_ac: ["UX验收重点清单"]
+      # V3.0.0：设计师在需求分析完成后介入（删除前置参与）
+      # V3.0.0：3标准角色(UX/UI/交互) + 1可选角色(视觉设计师)
+      # V3.0.0：设计师决定栅格和设计语言（BA只声明系统类型和密度）
+      # V3.0.0：视觉设计范围询问（BA标记visual_design_required时触发）
+      pm_redlines:  # C-D1~C-D9
+        - id: "C-D1"
+          name: "信息结构完整性（V3.0.0升级）"
+          description: "每个业务系统×终端组合必须有完整页面树+导航层级+信息层级"
+        - id: "C-D2"
+          name: "组件树+布局"
+          description: "每个页面必须有组件树结构和布局描述"
+        - id: "C-D3"
+          name: "交互卡五段"
+          description: "每个交互必须覆盖：触发→前置→执行→反馈→后置"
+        - id: "C-D4"
+          name: "多端归属显式"
+          description: "每个页面/组件必须标注适用端（pc/app/miniapp/h5）"
+        - id: "C-D5"
+          name: "Design Tokens完整性（V3.0.0新增）"
+          description: "Design Tokens必须完整定义6类：色彩/字体/间距/圆角/阴影/图标"
+        - id: "C-D6"
+          name: "交互一致性检查清单完整性（V3.0.0新增）"
+          description: "交互一致性检查清单必须完整覆盖所有检查项"
+        - id: "C-D7"
+          name: "页面草图完整性（V3.1.0新增）"
+          description: "每个页面+弹窗必须有Markdown表格线框图草图，标注UI元素编号"
+        - id: "C-D8"
+          name: "UI元素编号+交互跳转矩阵完整性（V3.1.0新增）"
+          description: "所有UI元素必须有编号，交互跳转矩阵必须覆盖所有页面+弹窗的跳转"
+        - id: "C-D9"
+          name: "交互跳转矩阵联合评审通过（V3.1.0新增）"
+          description: "交互跳转矩阵必须经过设计团队+BA联合评审且结论为'通过'或'有条件通过'"
+      completion_criteria: "7步法完成 + 9章交互文档产出 + Design Tokens 6类完整 + 视觉设计需求已识别 + PM红线C-D1~D9全部通过 + **V5.1.0：UX大脑推理完成+brain_sync_export传递**"
+      problem_sources: ["需求覆盖缺口", "多端交互冲突", "红线缺项", "栅格系统与系统类型不匹配", "Design Tokens缺失"]
+      feedback_routing: "设计不符需求 → PM路由UX修正；需求本身有变 → PM路由BA；栅格/设计语言问题 → UX阶段归属"
+
+    - id: "stage-4"
+      name: "架构评审（V5.1.0：Arch大脑激活）"
+      owner: "arch-agent"
+      supervisor: "pm-agent"
+      workflow: "arch-flow"
+      workflow_version: "V3.1.0"
+      pm_controlled: true
+      checkpoint: true  # 人工卡点③（架构守门员）
+      gatekeeper: true
+      interface_contract: true  # O-05
+      # V5.1.0新增：Arch大脑激活
+      ai_brain:
+        activate: "arch_brain"
+        brain_version: ">={上版本Arch大脑记忆版本}"
+        reasoning_tasks:
+          - "contract_defect_prediction：历史契约Bug模式→当前契约缺陷预测"
+          - "security_pattern_recognition：接口×参数→安全风险点识别"
+          - "dependency_chain_reasoning：契约变更→影响波及面推理"
+          - "cross_reference_ba_ux：BA接口预估+UX组件难度→架构复杂度综合评估"
+        memory_import:
+          - "BA大脑brain_sync_export（接口复杂度+新接口数+外部依赖）"
+          - "UX大脑brain_sync_export（组件实现难度）"
+          - "上版本Arch大脑记忆（契约缺陷预测准确率+安全模式命中率）"
+          - "跨版本QA契约一致性测试失败模式"
+        brain_sync_export:
+          to_fd: ["实现陷阱预警（按接口）", "安全注意事项"]
+          to_qa: ["高风险接口清单（重点测试）", "契约一致性检查点"]
+      pm_redlines:  # C-A1~C-A7
+        - id: "C-A1"
+          name: "route-contract 路由映射"
+          description: "每个页面路由→组件→数据依赖的完整映射，必须可机器解析"
+        - id: "C-A2"
+          name: "运行骨架契约 + pom 已补"
+          description: "npm run dev 可启动的完整骨架，pom/ 目录包含对应模块文档"
+        - id: "C-A3"
+          name: "仿真开关契约"
+          description: "每个接口的 sim/real 切换契约（adapter 模式）"
+        - id: "C-A4"
+          name: "三段回溯表"
+          description: "需求 FN → 设计页面 → 架构路由的完整追溯映射"
+        - id: "C-A5"
+          name: "契约 Zod 完整性（V3.0.0新增）"
+          description: "每个接口必须有 request/response Zod Schema + 错误码枚举"
+        - id: "C-A6"
+          name: "五维可插拔（V3.0.0新增）"
+          description: "data/transport/stream/asset/auth 五维度都有 sim+real 实现"
+        - id: "C-A7"
+          name: "单元测试架构（V3.0.0新增）"
+          description: "tests/ 存在 + 契约一致性测试覆盖全部接口"
+      completion_criteria: "架构评审通过，技术可行性/依赖/性能结论明确，PM 红线全部通过 + **V5.1.0：Arch大脑推理完成+brain_sync_export传递**"
+      problem_sources: ["技术风险", "跨系统接口冲突", "依赖死锁", "红线缺项"]
+      feedback_routing: "架构不通过 → PM 路由 Arch 重评；若因需求/设计引起 → PM 路由上游"
+
+    - id: "stage-5"
+      name: "开发（V5.1.0：FD大脑激活）"
+      owner: "fd-agent"
+      supervisor: "pm-agent"
+      workflow: "dev-flow"
+      workflow_version: "V2.1.0"
+      pm_controlled: true
+      auto_mode: true  # 用户不介入
+      visual_regression: true  # O-07
+      # V5.1.0新增：FD大脑激活
+      ai_brain:
+        activate: "fd_brain"
+        brain_version: ">={上版本FD大脑记忆版本}"
+        reasoning_tasks:
+          - "implementation_pattern_recommendation：需求特征→历史成功实现模式推荐"
+          - "bug_prevention：上游预警（UX难度+Arch陷阱+QA历史Bug）→主动规避"
+          - "compliance_precheck：编码前AI预检11条铁律"
+          - "design_alignment：UX设计→代码实现的1:1对应性验证"
+        memory_import:
+          - "UX大脑brain_sync_export（组件难度+交互复杂度）"
+          - "Arch大脑brain_sync_export（实现陷阱预警+安全注意事项）"
+          - "QA大脑brain_sync_export（历史Bug热力图+已知高风险区）"
+          - "上版本FD大脑记忆（实现模式成功率+合规预检准确率）"
+        brain_sync_export:
+          to_qa: ["已知高风险区域", "自测通过的场景", "已知限制"]
+      pm_redlines:  # C-F1~C-F5
+        - id: "C-F1"
+          name: "可运行骨架"
+          description: "npm run dev 起服务，用户可浏览器访问"
+        - id: "C-F2"
+          name: "逐页 1:1 还原 UX"
+          description: "套真实组件库（Ant Design / antd-mobile / Taro），禁止占位 div"
+        - id: "C-F3"
+          name: "本地访问地址已验证"
+          description: "可走通主链路（登录→核心页面→核心操作）"
+        - id: "C-F4"
+          name: "不偏离上游"
+          description: "代码实现与架构契约/设计稿一致"
+        - id: "C-F5"
+          name: "视觉回归"
+          description: "设计稿→代码的视觉一致性校验（threshold ≥ 0.95）"
+      completion_criteria: "仿真代码生成 + compliance-checker 通过 + PM 红线全部通过 + **V5.1.0：FD大脑推理完成+brain_sync_export传递**"
+      problem_sources: ["编译错误", "合规违规", "契约不符", "不可访问"]
+      feedback_routing: "研发实现偏差 → PM 路由 Arch 复核；需求不符 → 路由 BA"
+
+    - id: "stage-6"
+      name: "测试（V5.1.0：QA大脑激活）"
+      owner: "qa-agent"
+      supervisor: "pm-agent"
+      workflow: "test-flow"
+      workflow_version: "V3.1.0"
+      pm_controlled: true
+      auto_mode: true  # 用户仅看结果
+      checkpoint: true  # 人工卡点④
+      visual_regression: true  # O-07（五层测试含视觉回归）
+      # V5.1.0新增：QA大脑激活
+      ai_brain:
+        activate: "qa_brain"
+        brain_version: ">={上版本QA大脑记忆版本}"
+        reasoning_tasks:
+          - "bug_hotspot_prediction：跨版本Bug分布→FN级Bug热力图→指导测试资源分配"
+          - "coverage_blind_spot_detection：BA FN/BR vs QA TC→未覆盖测试盲区检测"
+          - "regression_set_recommendation：变更影响分析→最小回归测试集推荐"
+          - "risk_based_prioritization：综合风险评分（历史Bug密度+本次变更+复杂度）→测试优先级"
+        memory_import:
+          - "BA大脑brain_sync_export（关键BR数+高风险FN清单）"
+          - "Arch大脑brain_sync_export（高风险接口清单+契约一致性检查点）"
+          - "FD大脑brain_sync_export（已知高风险区域+自测通过场景）"
+          - "上版本QA大脑记忆（Bug热力图预测vs实际分布+覆盖盲区检测准确率）"
+        brain_sync_export:
+          to_ac: ["验收高风险点清单（FN级）", "已知限制清单"]
+          to_ba: ["需求覆盖缺口建议", "测试过程中发现的需求不明确项"]
+      completion_criteria: "五层测试报告产出，失败项归 Bug + **V5.1.0：QA大脑推理完成+brain_sync_export传递**"
+      problem_sources: ["bugs/open/ 下所有 failed 项"]
+      feedback_routing: "测试问题 → PM 路由 BA（需求分析）重评，据 defect-reflow 生成 type=修复 重走 dev→test→accept"
+
+    - id: "stage-7"
+      name: "验收（V5.1.0：AC大脑+PO大脑激活，V4.1.0新增PO商业价值验收）"
+      owner: "ac-agent"
+      supervisor: "pm-agent"
+      workflow: "acceptance-flow"
+      workflow_version: "V2.2.0"
+      pm_controlled: true
+      auto_mode: true  # 用户仅看结果
+      checkpoint: true  # 人工卡点⑤
+      po_acceptance: true  # V4.1.0新增：PO Agent作为第4验收角色
+      # V5.1.0新增：AC大脑+PO大脑激活
+      ai_brain:
+        activate: ["ac_brain", "po_brain"]
+        ac_brain:
+          reasoning_tasks:
+            - "acceptance_bug_pattern：跨版本AC Bug模式→本次验收重点检查项"
+            - "ux_deviation_detection：UX设计vs实现→偏差检测"
+            - "quality_trend_analysis：跨版本验收质量趋势→版本质量评分"
+            - "persona_specific_risk：四人模拟角色×历史问题→角色特定风险点"
+          memory_import:
+            - "QA大脑brain_sync_export（验收高风险点+已知限制）"
+            - "UX大脑brain_sync_export（UX验收重点清单）"
+            - "上版本AC大脑记忆（验收Bug模式+UX偏差检测准确率）"
+          brain_sync_export:
+            to_po: ["商业价值交付评分（逐BG）", "未达标BG清单"]
+            to_pm: ["版本质量综合评分", "跨版本质量趋势"]
+            to_all: ["验收Bug模式→注入各Agent大脑进化"]
+        po_brain:
+          reasoning_tasks:
+            - "business_value_verification：BO/BG达成情况→价值偏差分析"
+            - "roadmap_deviation：实际交付vs路线图→偏离度评估"
+            - "backlog_effectiveness：Backlog优先级→实际价值实现的对应性"
+          memory_import:
+            - "PO大脑记忆（上版本价值预估准确率+路线图偏离度）"
+            - "AC大脑brain_sync_export（商业价值评分）"
+          brain_sync_export:
+            to_next_version: ["Backlog调整建议", "路线图修正建议"]
+      completion_criteria: "验收报告产出（含PO商业价值验收），需求覆盖率达标 + **V5.1.0：AC+PO大脑推理完成+brain_sync_export传递**"
+      problem_sources: ["bugs/ 下验收不通过项", "PO商业价值验收不通过项"]
+      feedback_routing: "验收问题 → PM 路由 BA（需求分析），复用缺陷回流闭环；PO商业价值不通过 → PM 路由 PO（产品方向调整）"
+
+    - id: "stage-7.5"
+      name: "交付标注与回传闭环（V4.1.1新增，移到close前）"
+      owner: "ux-agent"
+      collab: ["fd-agent", "ba-agent"]
+      workflow: "handoff"
+      pm_controlled: false
+      precondition: "ac_passed_and_prototype_done_and_no_open_bug"
+      description: |
+        V4.1.1 重大调整：handoff 从 /close 之后移到 /close 之前。
+        三步流程：①校验对应性（FN/UC→标注【？】）→ ②用户编辑交互卡 → ③回传BA增量重跑。
+        循环校验直到无变更才进入 /close。
+        标注粒度4级：page/button/metric/field。
+        编号体系：方案B扩展（UC-{系统}-{终端}-{NNN}-{SS}）。
+      output: "交互卡标注 + 对应性校验报告 + 回传记录（如有变更）"
+
+    - id: "stage-8"
+      name: "结束需求流 + 版本快照 + 差异报告 + 三级把关 + 大脑进化（V5.1.0）"
+      owner: "pm-agent"
+      workflow: "knowledge-sedimentation"
+      workflow_version: "V1.1.0"  # V5.1.0：升级为含大脑记忆导出的版本沉淀
+      pm_controlled: true
+      traceability_check: true  # O-10
+      rollback_metadata: true  # O-12
+      # V5.1.0新增：大脑进化触发
+      ai_brain:
+        activate: "pm_brain"
+        phase: "version_close"
+        actions:
+          - "收集全Agent大脑记忆快照（BA/UX/Arch/FD/QA/AC/PO/SM/BS）"
+          - "触发Brain Evolution Engine（brain-evolution-engine.yml）"
+          - "PM大脑版本总结：流程风险预测vs实际、阶段耗时预测vs实际、问题升级率"
+          - "产出大脑进化摘要：每个大脑的进步+跨Agent因果链"
+          - "大脑记忆持久化：各Agent记忆导出到版本沉淀/大脑记忆/"
+          - "标记大脑版本号：各Agent大脑版本+1"
+      actions:
+        # === V5.1.0新增：大脑进化触发（/close第一个动作） ===
+        - "**V5.1.0新增：触发Brain Evolution Engine：**"
+        - "  ① 收集全版本大脑活动日志（brain_activity_log）"
+        - "  ② 导出各Agent大脑记忆快照（brain-memory-spec.yml格式）"
+        - "  ③ AI提取跨Agent因果链（BA的发现→下游的实际收益）"
+        - "  ④ 计算各大脑预测准确率（prediction vs actual）"
+        - "  ⑤ 更新各大脑模式库权重（成功→加权重，失败→降权重）"
+        - "  ⑥ 产出大脑进化摘要（brain-evolution-summary-{version}.md）"
+        - "  ⑦ PM大脑版本总结（流程治理大脑的全局回顾）"
+        # === V5.0新增：三级把关校验（/close前置） ===
+        - "**V5.0新增：版本把关校验（G-VER-GUARD-01~04）——PM（版本守护人）4项把关全部通过**"
+        - "  G-VER-GUARD-01 版本范围完整性：Backlog Must项100%交付，Should项≥80%"
+        - "  G-VER-GUARD-02 版本质量达标：运行时验证+五层测试+验收 全通过"
+        - "  G-VER-GUARD-03 三位一体交付物一致性：G-HO-DELIVERY-01~05全部通过"
+        - "  G-VER-GUARD-04 版本沉淀学习完成：沉淀8步+**大脑记忆导出+进化**+质量评分≥60"
+        - "**V5.0新增：项目把关校验（G-PROJ-GUARD-01~03）——PO（项目把关人）3项把关**"
+        - "  G-PROJ-GUARD-01 商业目标对齐：BO/BG达成率≥80%（block）"
+        - "  G-PROJ-GUARD-02 路线图偏离度：≤20%（warn）"
+        - "  G-PROJ-GUARD-03 价值累积正向：跨版本BO达成率趋势不下降（warn）"
+        # === 原有 /close 流程 ===
+        - "该流 stage=closed，冻结版本"
+        - "**V4.2.1新增：更新 PROJECT-INDEX.yml**——对应项目 current_stream.stage=closed + last_activity 更新"
+        - "过程记录簿闭环校验：核对 journal/problem-ledger.md 中归属该版本的所有 PBL 是否全部「已闭环」"
+        - "**V4.0.0：校验全部8阶段Review报告已产出且通过**"
+        - "**V4.0.0：扫描未闭环PBL，标记'跨版本传递'**"
+        - "追溯链完整性校验（O-10）：逐 FN 校验需求→设计→架构→代码四层追溯"
+        - "回退元数据记录（O-12）：记录回退ID/原因/受影响模块/恢复计划"
+        - "提炼 projects/{project}/.codebuddy/lessons-learned.yml"
+        # V4.0.1 版本沉淀学习（V5.1.0升级为含大脑记忆导出）
+        - "**V4.0.1：启动版本沉淀学习（knowledge-sedimentation.yml V1.1.0）：**"
+        - "  需求沉淀→Review沉淀→**大脑记忆导出（V5.1.0新增）**→经验提炼→追溯链快照→版本索引→沉淀摘要→质量校验"
+        - "  沉淀产物输出到 .codebuddy/knowledge/{project}/版本沉淀/{version}/"
+        - "  大脑记忆输出到 .codebuddy/knowledge/{project}/版本沉淀/{version}/大脑记忆/"
+        - "  经验库追加到 .codebuddy/knowledge/common/经验库/"
+        # === V5.0新增：版本快照 + 差异报告（议题七） ===
+        - "**V5.0新增：版本快照（version-manager.yml mode=snapshot）：**"
+        - "  Git Tag冻结：git tag -a v{version} -m '版本{version}冻结'"
+        - "  构建产物归档：npm run build:sim → docs/09-versions/v{version}/build/"
+        - "  PRD+用例卡片+Demo报告归档到 docs/09-versions/v{version}/"
+        - "  生成SNAPSHOT.yml（version-timeline-standards.yml#snapshot_schema）"
+        - "  更新VERSION-TIMELINE.yml（version-timeline-standards.yml#timeline_schema）"
+        - "**V5.0新增：版本差异报告（version-manager.yml mode=diff）：**"
+        - "  AI自动对比v{version}和v{version-1}的SNAPSHOT.yml，生成DIFF.md一~五章"
+        - "  PO人工补充第六章商业价值变更"
+        - "  PM人工补充第七章风险变更"
+        - "  PO+PM联合补充第八章关键决策记录"
+        - "**V5.0新增：三级把关报告产出：**"
+        - "  SM产出Sprint把关报告（docs/06-sprint-guard/SPRINT-GUARD-*.md）"
+        - "  PM产出版本把关报告（docs/07-version-guard/VERSION-GUARD-*.md）"
+        - "  PO产出项目把关报告（docs/08-project-guard/PROJECT-GUARD-*.md，累积更新）"
+        - "上线基线自动标记（strict_guard）：全 close + 无 open Bug + 无 pending feedback + PBL 全闭环 + Review报告全产出 + 追溯链通过 + **版本沉淀完成** + **大脑进化完成（V5.1.0新增）** + **三级把关通过** + **版本快照完成** + **差异报告生成**"
+
+    - id: "stage-9"
+      name: "自动部署运营（V5.2.0新增 — 多人多项目部署方案）"
+      version: "V5.2.0"
+      owner: "pm-agent"
+      collab: []
+      workflow: "deploy-manager"
+      workflow_version: "V1.0.0"
+      pm_controlled: true
+      precondition: "stage-8版本快照完成"
+      skill: "deploy-manager"
+      description: |
+        V1.0.0新增：/close 版本快照完成后自动部署仿真原型到 EdgeOne Pages。
+        部署失败不阻断 /close（版本已冻结，可 /deploy 手动重试）。
+        部署目标可插拔：默认 EdgeOne Pages，可切换其他平台。
+      actions:
+        - "**V1.0.0新增：自动部署运营（deploy-manager.yml V1.0.0）：**"
+        - "  ① 前置校验：确认 stage-8 版本快照已完成（Git Tag + build:sim 产物存在）"
+        - "  ② 读取部署配置：deploy/edgeone-pages.json 获取项目部署配置"
+        - "  ③ 注入环境变量：VITE_PROJECT_ID={owner}-{project} + VITE_MODE=sim"
+        - "  ④ 执行构建：npm run build:sim（如 stage-8 已构建则复用产物）"
+        - "  ⑤ 推送产物到 EdgeOne Pages：产物路径 projects/{owner}/{project}/dist/ → 部署路径 /{owner}/{project}/{version}/"
+        - "  ⑥ 生成访问 URL：https://{workspace}.edgeone.app/{owner}/{project}/{version}/"
+        - "  ⑦ 更新部署记录："
+        - "    - 追加记录到 deploy/DEPLOY-MANIFEST.yml"
+        - "    - 更新 PROJECT-INDEX.yml 的 deploy 字段（current_version + deploy_url + deploy_history）"
+        - "    - 更新 deploy/access-portal/index.html 访问门户聚合页"
+        - "  ⑧ 输出部署结果（URL + 状态 + 耗时 + IndexedDB数据库名）"
+        - "  ⑨ 部署失败处理：不阻断/close，标记status=failed+error_msg，提示 /deploy --retry 手动重试"
+      output: "部署的仿真原型（EdgeOne Pages URL）+ DEPLOY-MANIFEST.yml 更新 + PROJECT-INDEX.yml deploy字段更新 + access-portal 更新"
+      failure_handling:
+        blocking: false
+        retry: "/deploy --project={project} --retry"
+      deploy_target: "edgeone-pages"
+      deploy_config: "deploy/edgeone-pages.json"
+
+  # ============================================
+  # 回流路由表（V4.0.0：按阶段依次上传，不跳跃）
+  # ============================================
+  feedback_routing_table:
+    - source: "验收问题(AC)"
+      upload_path: ["accept", "test", "dev", "arch", "design", "requirement"]
+      route_to: "需求分析"
+      owner: "ba-agent"
+      description: "验收→测试→开发→架构→设计→需求分析，每经停阶段Agent审视"
+    - source: "测试问题(QA)"
+      upload_path: ["test", "dev", "arch", "design", "requirement"]
+      route_to: "需求分析"
+      owner: "ba-agent"
+      description: "测试→开发→架构→设计→需求分析"
+    - source: "开发问题(FD)"
+      upload_path: ["dev", "arch", "design", "requirement"]
+      route_to: "需求分析"
+      owner: "ba-agent"
+      description: "开发→架构→设计→需求分析"
+    - source: "架构问题(Arch)"
+      upload_path: ["arch", "design", "requirement"]
+      route_to: "需求分析"
+      owner: "ba-agent"
+      description: "架构→设计→需求分析"
+    - source: "设计问题(UX)"
+      upload_path: ["design", "requirement"]
+      route_to: "需求分析"
+      owner: "ba-agent"
+      description: "设计→需求分析"
+    - source: "用户补充"
+      upload_path: "从当前阶段开始依次上传至requirement"
+      route_to: "需求分析"
+      owner: "ba-agent"
+      description: "从当前阶段开始按节点依次上传"
+    precondition: "反馈回流必须在专家Review完成后触发，不可跳过Review"
+    transit_rule: "每经过一个中间阶段，该阶段Agent审视是否需本阶段调整（需要→调整/不需要→标注'经由'）"
+    cross_version: "未闭环反馈标记'跨版本传递'，下一版本/init自动加载"
+
+  # ============================================
+  # 指令与生命周期节点
+  # ============================================
+  commands:
+    init:
+      command: "/init"
+      description: "开启需求流（V4.2.0：自动检测项目性质+参数路由包传递BA+加载metrics-standards）"
+      pm_actions:
+        - "V4.2.0：自动检测项目性质（扫描projects/{--project}/），不再交互式询问'新项目/存量项目'"
+        - "存量项目：自动检查骨架+加载知识库PRD+版本沉淀+经验库+PO Backlog+领域知识+metrics-standards"
+        - "新项目：运行 ensure-project.sh 创建骨架"
+        - "版本自动链：取 streams 同 type 已 closed 最大版本 → 按 version_bump 生成"
+        - "**V4.0.0新增：扫描上一版本 problem-ledger.md 中标记'跨版本传递'的PBL → 加载为BA需求分析输入**"
+        # ↓↓↓ V4.0.1 新增：加载上一版本沉淀 + 经验库 ↓↓↓
+        - "**V4.0.1新增：加载上一版本沉淀（knowledge-sedimentation.yml V1.1.0产物）：**"
+        - "  ① 扫描 .codebuddy/knowledge/{project}/版本沉淀/VERSION-INDEX.yml"
+        - "  ② 取最近版本的沉淀摘要 → 作为BA需求分析的基线参考"
+        - "  ③ 加载上一版本 Review经验提炼 → 避免重复踩坑"
+        - "  ④ 加载上一版本 lessons-learned → 复用最佳实践"
+        - "  ⑤ 加载上一版本 上下游影响矩阵 → 影响范围参考"
+        - "  ⑥ **V5.1.0新增：加载上一版本大脑记忆（各Agent大脑记忆快照）→ 注入当前版本各Agent大脑**"
+        - "**V4.0.1新增：加载跨项目经验库（如有）：**"
+        - "  ① 检查 .codebuddy/knowledge/common/经验库/ 是否存在"
+        - "  ② 加载 最佳实践库.md → 作为全阶段背景知识"
+        - "  ③ 加载 踩坑避雷库.md → 作为全阶段背景知识"
+        - "  ④ 加载 Review模式库.md → 作为各阶段Review参考"
+        - "  ⑤ **V5.1.0新增：加载跨项目大脑模式库（如有）→ 初始化各Agent大脑的基础模式**"
+        # ↑↑↑ 沉淀+经验库加载结束 ↑↑↑
+        - "创建需求流 STR-{nnn} 写入 state.json.streams[]，stage=requirement"
+        - "**V4.2.1新增：更新 PROJECT-INDEX.yml**——设置 active_project={project} + 更新对应项目 current_stream + last_activity"
+        - "PM 启动需求分析流程，传递：已学PRD上下文 + 跨版本反馈 + 上一版本沉淀 + 经验库 + **PO Backlog优先级（V4.1.0，如有）**"
+      usage: "/init --project=X --type=Y --desc=需求描述 [--file=外部需求文件.md] [--api=外部接口文档.md] [--source=local-dir:./docs] [--source=http-url:https://...] [--priority=P0|P1|P2|P3]"
+      brain_storm_link: "**V4.2.1新增--brainstorm-topic参数**：若 /init 提供 --brainstorm-topic=议题名，PM 按议题查找 projects/{project}/docs/00-brainstorm/{topic}/confirmed/BR-脑暴文档-确认稿.md 作为 BA 背景输入。同时加载脑暴 confirmed 中的领域知识清单（BA继承）+ API分析清单（BA+Arch继承，V3.4.0）。若未提供 --brainstorm-topic 但 00-brainstorm/ 下只有一个议题子目录，自动加载该议题；多个议题时提示用户选择。脑暴阶段与 /init 阶段均会智能检测项目骨架：存在则复用，不存在则新建。V3.5.0：confirmed/ 为单文件覆盖式更新（BR-脑暴文档-确认稿.md），含版本概要表格。**场景**：脑暴多轮确认后隔一段时间才 /init，通过 --brainstorm-topic 精确关联对应脑暴产物。"
+      knowledge_base_link: "存量项目在 /init 前自动匹配 .codebuddy/knowledge/{project}/需求文档/ 下的已学 PRD（全部卷 + 学习报告），作为需求分析上下文。"
+      sedimentation_base_link: "**V4.0.1新增**：存量项目在 /init 时自动加载 .codebuddy/knowledge/{project}/版本沉淀/ 下最近版本的沉淀产物（需求快照+Review经验+lessons-learned+追溯链），以及 common/经验库/ 的跨项目经验，作为需求分析和全阶段背景知识。"
+      domain_knowledge_link: "**V3.0.1新增，V3.0.3增强**：脑暴阶段（brainstorm.yml v3.2.0 stage-0c）已加载领域知识并产出领域知识清单写入 confirmed/，/init 时 BA 优先继承该清单（避免重复匹配）。若脑暴阶段未执行或清单缺失，BA 自行扫描 .codebuddy/knowledge/domains/ 领域知识库，通过关键词+AI语义匹配加载与需求相关的领域知识（如退款流/分账/进销存等），作为需求分析的行业标准方案参考。缺失时提示用户先执行 /learn-domain 学习。"
+      metrics_standards_link: "**V4.2.0新增**：/init 时自动加载 .codebuddy/knowledge/common/metrics-standards.yml 行业统计指标通用规则库（11个行业：电商/财务/物流/仓库/直播/AARRR/广告/CRM/SaaS/教育/医疗）。BA 在 §0.5a 需求深度分析时如涉及'看板/报表/统计/指标/大屏'等关键词，从该库匹配标准指标定义，在 METRIC 产物中引用 industry_standard 字段对齐。"
+
+    feedback:
+      command: "/feedback"
+      description: "回流（close 前有效，V4.0.0：Review后触发，按阶段依次上传）"
+      pm_actions:
+        - "绑定当前 stream 的 version（--type 可省略 → 自动选未 close 流）"
+        - "**V4.0.0前置：确认专家Review已完成（不可跳过Review直接回流）**"
+        - "聚合 test 失败项 + accept 不通过项 + 用户 --msg/自然语言补充 + **Review发现的问题**"
+        - "**V4.0.0：按 feedback_routing_table 的 upload_path 依次上传（不跳跃）**"
+        - "每经过一个中间阶段，该阶段Agent审视是否需本阶段调整"
+        - "最终汇聚到需求分析阶段，BA调整REQ产物"
+        - "写入 stream.feedbacks[]，记录回流路径+经停记录"
+        - "**V4.0.0：未闭环反馈标记'跨版本传递'**"
+      usage: "/feedback --project=X --type=Y [--msg=反馈内容]"
+
+    close:
+      command: "/close"
+      description: "结束需求流（V4.0.0：Review校验+跨版本标记+版本沉淀学习）"
+      pm_actions:
+        - "该流 stage=closed，冻结版本"
+        - "过程记录簿闭环校验：核对 journal/problem-ledger.md 中归属该版本的所有 PBL 是否全部「已闭环」"
+        - "**V4.0.0新增：校验全部8阶段Review报告已产出且通过（reviews/目录下7份REV报告）**"
+        - "**V4.0.0新增：扫描未闭环PBL，标记'跨版本传递'并记录建议处理版本**"
+        - "追溯链完整性校验（O-10）：逐 FN 校验需求→设计→架构→代码四层追溯"
+        - "回退元数据记录（O-12）：记录回退ID/原因/受影响模块/恢复计划"
+        - "提炼 projects/{project}/.codebuddy/lessons-learned.yml"
+        # ↓↓↓ V4.0.1 新增：版本沉淀学习（knowledge-sedimentation.yml V1.0.0）↓↓↓
+        - "**V4.0.1新增：启动版本沉淀学习（PM自动执行，详见 knowledge-sedimentation.yml）：**"
+        - "  Step1 创建 .codebuddy/knowledge/{project}/版本沉淀/{version}/ 目录"
+        - "  Step2 需求沉淀（PM+BA协作）：PRD+REQ产物体系+模块清单+上下游影响矩阵 → 需求沉淀/"
+        - "  Step3 Review沉淀（PM收集+提炼）：7份Review归档 + 提炼Review经验提炼.md（反复问题/最佳实践/阶段薄弱点/Review质量）"
+        - "  Step4 经验教训提炼（PM主导）：lessons-learned + 最佳实践 + 踩坑 → 追加到 common/经验库/"
+        - "  Step5 追溯链快照（PM+DOC协作）：traceability-v{version}.yml"
+        - "  Step6 更新版本索引（PM+DOC协作）：VERSION-INDEX.yml 新增条目 + 关键指标 + 经验标签"
+        - "  Step7 沉淀摘要（PM生成）：沉淀摘要.md（概述+清单+指标+经验摘要+质量评分）"
+        - "  Step8 Journal记录 + 沉淀完整性校验（不通过则阻止close）"
+        - "**沉淀质量评分（0-100）：requirements_completeness(25%)+review_depth(25%)+lessons_actionability(20%)+traceability_coverage(15%)+cross_version_value(15%)**"
+        # ↑↑↑ 版本沉淀学习结束 ↑↑↑
+        - "上线基线自动标记（strict_guard）：全 close + 无 open Bug + 无 pending feedback + PBL 全闭环 + Review报告全产出 + 追溯链通过 + **版本沉淀完成** + **自动部署完成（V1.0.0新增）**"
+        # ↓↓↓ V1.0.0 新增：stage-9 自动部署运营 ↓↓↓
+        - "**V1.0.0新增：自动部署运营（stage-9，deploy-manager.yml V1.0.0）：**"
+        - "  ① 读取部署配置 deploy/edgeone-pages.json"
+        - "  ② 注入环境变量 VITE_PROJECT_ID={owner}-{project} + VITE_MODE=sim"
+        - "  ③ 执行 npm run build:sim（如 stage-8 已构建则复用）"
+        - "  ④ 推送构建产物到 EdgeOne Pages"
+        - "  ⑤ 生成访问 URL: https://{workspace}.edgeone.app/{owner}/{project}/{version}/"
+        - "  ⑥ 更新 DEPLOY-MANIFEST.yml + PROJECT-INDEX.yml deploy字段 + access-portal/index.html"
+        - "  ⑦ 输出部署结果（URL + 状态 + 耗时 + IndexedDB数据库名）"
+        - "  ⑧ 部署失败不阻断/close，提示 /deploy --retry 手动重试"
+        # ↑↑↑ stage-9 自动部署运营结束 ↑↑↑
+        # V4.1.0 敏捷递归闭环
+        - "**V4.1.0新增：PM询问PO Agent下一版本规划（敏捷递归闭环）：**"
+        - "  版本沉淀完成后，PM 自动询问 PO Agent「v{version} 已交付，下一版本规划？」"
+        - "  PO Agent 分析：v1交付情况 + v1反馈回流 + v1验收结论 + 产品路线图"
+        - "  PO Agent 产出：PROD-BACKLOG-{project}-v{next}.yml（下一版本需求清单+优先级）"
+        - "  PM 执行 /init --type=迭代，BA 基于 PO Backlog 优先级进行需求分析"
+        - "  形成 Sprint Planning 自动化：Review→Retrospective(沉淀)→Planning(PO Backlog)→/init v2"
+      usage: "/close --project=X --type=Y"
+
+    handoff:
+      command: "/handoff"
+      description: "交付标注与回传闭环（V4.1.1：移到close之前，AC通过后执行）"
+      precondition: "① 验收(AC)已通过 ② 原型开发完成 ③ 测试无 open Bug"
+      usage: "/handoff --project=X [--type=Y] [--module=模块名]"
+      v4_1_1_change: "三步流程：校验对应性→编辑交互卡→回传BA。循环校验直到无变更才进入/close"
+
+  # ============================================
+  # state.json 契约（stream 模型）
+  # ============================================
+  state_schema: |
+    {
+      "project": "AI-SCRM",
+      "industry": "ecommerce",
+      "platforms": ["pc", "miniapp", "app"],
+      "status": "active | closed",
+      "released_baseline": "v1.0.0",
+      "auto_mode": false,
+      "streams": [
+        {
+          "id": "STR-001",
+          "type": "新增",
+          "version": "v1.1.0",
+          "prev_closed_version": "v1.0.0",
+          "scope": {
+            "kind": "多模块多功能",
+            "modules": ["M-goods","M-inventory","M-order"],
+            "platforms": ["pc","miniapp","app"]
+          },
+          "desc": "加入秒杀及基本需求",
+          "files": [], "apis": [],
+          "stage": "requirement | design | arch | dev | test | accept | closed",
+          "checkpoint_pending": false,
+          "problem_list": [],
+          "feedbacks": [
+            { "source":"user", "content":"app端秒杀按钮无响应", "at":"ISO", "routed_to":"requirement" }
+          ],
+          "dev_todos": [],
+          "impact_report": "impact-reports/IMP-STR-001-v1.1.0.json"
+        }
+      ]
+    }
+
+  # ============================================
+  # 过程记录簿（Journal）—— PM 全程留痕
+  # ============================================
+  journal:
+    description: "让整个项目管控过程可回溯——发生过什么问题、我们说过什么、每个问题怎么闭环的，全部有账可查。测试期强制全程记录。V4.0.0新增：Review报告也写入Journal。V5.1.0新增：大脑活动日志。"
+    carrier:
+      conversation_log: "projects/{project}/.codebuddy/journal/conversation-log.md"
+      problem_ledger: "projects/{project}/.codebuddy/journal/problem-ledger.md"
+      review_reports: "projects/{project}/.codebuddy/journal/reviews/"  # V4.0.0新增
+      brain_activity_log: "projects/{project}/.codebuddy/journal/brain-activity-log.md"  # V5.1.0新增
+    conversation_log_schema:
+      columns: ["时间", "角色", "指令", "阶段", "关联流", "内容摘要", "衍生问题", "大脑状态"]  # V5.1.0新增列
+      rules:
+        - "每一轮用户输入、每一次 PM 输出（卡点摘要/调度通知/裁决）都追加一行"
+        - "保留用户原话关键点，不失真"
+        - "本轮产生新问题时在「衍生问题」列填 PBL 编号"
+        - "**V5.1.0：每个stage结束时在「大脑状态」列记录当前激活的大脑+推理摘要**"
+    problem_ledger_schema:
+      fields: ["编号(PBL-{nnn})", "发现时间", "来源", "阶段", "归属流(STR+version+REQ)", "问题描述", "严重级", "路由去向", "状态", "闭环记录", "大脑研判"]  # V5.1.0新增字段
+      sources: ["用户反馈", "测试(QA)", "验收(AC)", "架构评审(Arch)", "设计走查(UX)", "PM 巡检", "**大脑预警（V5.1.0新增）**"]
+      state_machine: "open → 处理中 → 已回流 → 已修复待验 → 已闭环"
+      routing: "严格对齐回流路由表"
+    brain_activity_log_schema:  # V5.1.0新增
+      description: "记录每个Agent大脑在每个stage的激活、推理和输出"
+      fields: ["时间", "Stage", "Agent", "大脑版本", "推理任务", "推理输出摘要", "brain_sync_export", "记忆快照"]
+    triggers:
+      - event: "用户任一指令 / 自然语言输入"
+        action: "conversation-log 追加一行"
+      - event: "PM 任一输出（卡点摘要/调度/裁决）"
+        action: "conversation-log 追加一行"
+      - event: "任一阶段产生问题"
+        action: "problem-ledger 新建 PBL + 回填对话行的「衍生问题」"
+      - event: "问题状态变化（回流/修复/验证/闭环）"
+        action: "更新对应 PBL 状态 + 闭环记录"
+      - event: "**V5.1.0：大脑激活**"
+        action: "**brain-activity-log 记录该stage的大脑激活+推理任务**"
+      - event: "**V5.1.0：大脑推理完成**"
+        action: "**brain-activity-log 记录推理输出摘要+brain_sync_export**"
+      - event: "**V5.1.0：大脑记忆快照**"
+        action: "**brain-activity-log 记录记忆快照导出+大脑版本号**"
+      - event: "**V4.0.0：专家Review完成**"
+        action: "**reviews/ 产出 Review报告（REV-{STAGE}-{version}.md）**"
+      - event: "**V4.0.0：反馈回流启动**"
+        action: "**problem-ledger 记录回流路径+经停阶段+各阶段审视结论+大脑研判**"
+      - event: "**V4.0.0：反馈标记跨版本传递**"
+        action: "**problem-ledger PBL 标记 status=跨版本传递 + 建议处理版本**"
+      - event: "**V4.0.1：版本沉淀启动**"
+        action: "**conversation-log 记录沉淀开始 + 创建 版本沉淀/{version}/ 目录**"
+      - event: "**V5.1.0：大脑进化触发**"
+        action: "**brain-activity-log 记录进化触发+全Agent大脑记忆导出**"
+      - event: "**V4.0.1：版本沉淀完成**"
+        action: "**conversation-log 记录沉淀完成（内容清单+质量评分+大脑进化摘要）+ VERSION-INDEX.yml 更新**"
+      - event: "/close"
+        action: "校验该版本 PBL 全部闭环 + **Review报告全部产出** + **版本沉淀完整性校验** + **大脑进化完成（V5.1.0新增）**，否则阻止 close"
+
+  # ============================================
+  # 专业流程索引
+  # ============================================
+  workflow_index:
+    - flow: "大脑编排（V5.1.0新增）"
+      owner: "pm-agent"
+      file: "project-lifecycle.yml#brain_orchestration"
+      methodology: "PM在每个stage激活对应Agent大脑，管理脑力协同链（brain_sync_chain），大脑记忆持久化，/close触发Brain Evolution Engine"
+    - flow: "大脑记忆规范（V5.1.0新增）"
+      owner: "pm-agent"
+      file: "brain-memory-spec.yml"
+      methodology: "定义每个Agent大脑记忆的标准格式（模式库+预测记录+跨脑协同+进化增量）"
+    - flow: "大脑进化引擎（V5.1.0新增）"
+      owner: "pm-agent"
+      file: "brain-evolution-engine.yml"
+      methodology: "定义大脑进化的触发条件（Sprint/版本/回流/事故）、进化步骤（收集→提取→更新→验证）"
+    - flow: "产品架构与规划"
+      owner: "po-agent"
+      file: "po-planning-flow.yml"
+      methodology: "三层能力金字塔分层激活：战略级→战略+商业+架构+路线图+Backlog+四层价值评估；规划级→架构+路线图+Backlog。脑暴后激活或/close后PM询问下一版本"
+    - flow: "脑暴会议"
+      owner: "bs-agent"
+      file: "brainstorm.yml"
+      methodology: "九部门矩阵匹配专家→四步法→三流草图→决策冻结→二分落盘。V3.3.0：分层类型(strategic/planning/regular)+领域知识+条件输出战略商业"
+    - flow: "版本沉淀学习"
+      owner: "pm-agent"
+      file: "knowledge-sedimentation.yml"
+      methodology: "/close后自动沉淀：需求快照+Review归档+经验提炼+追溯链→知识库（项目+版本维度）+经验库（跨项目）"
+    - flow: "领域知识学习"
+      owner: "pm-agent"
+      file: "learn-domain.yml"
+      methodology: "从行业标准网页链接学习业务领域知识→5部分结构（泳道+流程+信息流+矩阵+方案）→领域知识库→BA需求分析参考"
+    - flow: "需求分析"
+      owner: "ba-agent"
+      file: "requirement-flow.yml"
+      methodology: "用户旅行地图→需求场景(5W2H)→业务流程→版本规划→信息流→状态机→原子用例"
+    - flow: "设计"
+      owner: "ux-agent"
+      file: "design-flow.yml"
+      methodology: "页面/组件/交互说明卡，覆盖需求所有状态 + 多端适配"
+    - flow: "架构"
+      owner: "arch-agent"
+      file: "arch-flow.yml"
+      methodology: "技术可行性/依赖/跨系统接口评审，守门员裁决"
+    - flow: "开发"
+      owner: "fd-agent"
+      file: "dev-flow.yml"
+      methodology: "仿真代码生成，11 条编码铁律 + compliance-checker"
+    - flow: "测试"
+      owner: "qa-agent"
+      file: "test-flow.yml"
+      methodology: "五层测试（contract/unit/browser/whitebox/visual），用例源自 BA 产物"
+    - flow: "验收"
+      owner: "ac-agent"
+      file: "acceptance-flow.yml"
+      methodology: "四人模拟验收（新用户/VIP/管理员/PO Agent），需求覆盖率"
+    - flow: "变更/修复"
+      owner: "ba-agent"
+      collab: ["ux-agent", "fd-agent"]
+      file: "change-request.yml"
+      methodology: "影响分析先行，文档为真理源"
+    - flow: "缺陷回流"
+      owner: "pm-agent"
+      file: "defect-reflow.yml"
+      methodology: "问题→归属版本→生成 type=修复→重走闭环"
+    - flow: "交付标注"
+      owner: "ux-agent"
+      collab: ["fd-agent"]
+      file: "handoff.yml"
+      methodology: "V3.0.0：4级标注(page/button/metric/field) + 三步流程(校验→编辑→回传) + 编号方案B扩展 + 循环校验直到无变更"
+
+  # ============================================
+  # 全局深度检查触发机制（V4.2.0新增）
+  # ============================================
+  governance_audit_trigger:
+    description: |
+      V4.2.0新增：每次重大流程调整后，PM主动询问用户是否进行全面走查。
+      触发条件：流程版本变更/新增删除文件/术语批量修改/编号体系变更/用户主动要求。
+      检查机制定义：.codebuddy/knowledge/common/governance-audit.yml
+    trigger_conditions:
+      - "流程版本变更（任何workflow.yml版本号升级）"
+      - "新增/删除文件（新增流程/Agent/技能/知识库文件）"
+      - "术语批量修改（跨多文件的统一术语调整）"
+      - "编号体系变更"
+      - "用户主动要求（'全面检查/走查/审计'）"
+    pm_action: |
+      PM检测到上述任一条件时，主动询问用户：
+      「检测到流程变更（{变更内容}），是否执行全局深度走查？
+       走查范围：8维度检查+AI智能检查+6专家视角检查
+       预计耗时：3-5分钟」
+    user_confirm: "用户确认 → 按governance-audit.yml执行全局深度检查"
+    user_decline: "用户拒绝 → 记录到Journal，本次跳过（下次变更再次询问）"
+    audit_definition: ".codebuddy/knowledge/common/governance-audit.yml"
+    audit_report_path: ".codebuddy/knowledge/common/audit-reports/"

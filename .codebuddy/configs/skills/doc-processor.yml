@@ -1,0 +1,80 @@
+# Skill: 文档处理器（Doc Processor）
+# V5.1.0合并：doc-indexer + doc-linker + doc-validator + doc-template-enforcer → doc-processor
+# 4个文档处理Skill合并为1个，通过mode参数区分功能
+# ============================================
+skill:
+  id: "doc-processor"
+  name: "doc-processor"
+  version: "2.0.0"
+  agents: ["doc-agent", "ba-agent"]
+  description: "文档全生命周期处理：索引生成+关联维护+规范验证+模板执行。通过mode参数区分4种功能。"
+
+  triggers:
+    - event: "document_created"
+    - event: "document_updated"
+    - event: "document_deleted"
+    - event: "ba_six_products_done"
+    - event: "qa_test_cases_done"
+    - event: "ux_design_done"
+    - event: "fd_code_done"
+    - event: "doc_status_approved"
+    - event: "before_review"
+    - command: "/report"
+      description: "--type=doc-index 手动触发索引生成"
+
+  modes:
+    # ---- mode: index（原doc-indexer）----
+    index:
+      description: "自动生成和维护INDEX.md和TRACEABILITY_MATRIX.md"
+      workflow:
+        - name: "扫描文档"
+          rule: "统计各类型文档数量、最新版本、最后更新"
+        - name: "生成INDEX.md"
+          rule: "文档统计+按模块导航+最近变更+待处理Bug"
+        - name: "生成TRACEABILITY_MATRIX.md"
+          rule: "维护跨文档追溯矩阵"
+      output:
+        - "projects/{project}/docs/INDEX.md"
+        - "projects/{project}/.codebuddy/TRACEABILITY_MATRIX.md"
+
+    # ---- mode: link（原doc-linker）----
+    link:
+      description: "自动建立和维护文档关联关系，变更时触发下游审查"
+      workflow:
+        - name: "建立关联"
+          rule: "按关联规则表建立上下游关联（REQ→PLAN/UI/TC/sim.ts等硬关联）"
+        - name: "变更自动审查"
+          rule: "读取downstream，硬关联标记pending_review并生成审查任务，软关联发提醒"
+        - name: "更新规则"
+          rule: "版本升级更新下游upstream；废弃解除关联；新建自动扫描关联"
+      output:
+        - type: "影响报告"
+          description: "文档关联维护与变更影响报告"
+
+    # ---- mode: validate（原doc-validator）----
+    validate:
+      description: "验证文档命名规范、元数据完整性、交叉引用有效性"
+      workflow:
+        - name: "命名规范验证"
+          rule: "前缀(BR/REQ/PLAN/UI/TC/TR/BUG/ACR/CHG/MEET)、版本号v{数字}.{数字}、日期YYYYMMDD、无特殊字符"
+        - name: "元数据完整性验证"
+          rule: "doc_id/type/module/version/status/created/updated校验"
+        - name: "交叉引用验证"
+          rule: "upstream/downstream引用存在性、状态approved、循环引用检测"
+        - name: "内容完整性验证"
+          rule: "需求产物体系(含业务操作矩阵)/测试用例关键动作覆盖/设计状态变体完整"
+      output:
+        - type: "验证结果"
+          description: "JSON: {file, valid, errors[], warnings[]}"
+
+    # ---- mode: template_enforce（原doc-template-enforcer）----
+    template_enforce:
+      description: "确保所有文档遵循统一模板，强制包含YAML元数据头"
+      workflow:
+        - name: "校验元数据头"
+          rule: "每份文档必须含doc_id/doc_type/module/version/status/created/updated/author/reviewers/upstream/downstream"
+        - name: "应用类型模板"
+          rule: "需求/测试用例/变更记录等各类型使用对应模板结构"
+      output:
+        - type: "模板校验结果"
+          description: "缺失元数据或结构不符的修正建议"

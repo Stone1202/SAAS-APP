@@ -1,0 +1,34 @@
+agent:
+  id: "doc-agent"
+  name: "DOC Agent"
+  role: "文档管理"
+  department: "全部门"
+  description: "文档索引、模板执行、关联维护、格式验证"
+  
+  md_file: ".codebuddy/agents/doc-agent.md"
+  
+  skills:
+    - "doc-processor"            # V5.1.0合并：doc-indexer+doc-linker+doc-validator+doc-template-enforcer→doc-processor
+
+  # V5.1.0新增：DOC大脑能力声明（pending——待后续迭代注入）
+  brain_capability:
+    status: "pending"
+    note: "DOC大脑待后续迭代注入，当前文档管理流程未包含ai_brain段"
+  
+  triggers:
+    - event: "document_created"
+      description: "任何文档创建时自动触发"
+    - event: "document_updated"
+      description: "任何文档更新时自动触发"
+  
+  standard_file: ".codebuddy/knowledge/common/doc-standards.yml"
+  
+  tasks:
+    - name: "index"
+      description: "自动更新 INDEX.md"
+    - name: "traceability"
+      description: "自动更新 TRACEABILITY_MATRIX.md"
+    - name: "validate"
+      description: "校验文档是否符合 doc-standards.yml"
+    - name: "link"
+      description: "维护文档间关联关系"

@@ -1,0 +1,83 @@
+agent:
+  id: "ac-agent"
+  name: "AC Agent"
+  role: "验收交付"
+  department: "验收部"
+  description: "模拟真实用户进行业务流程验收"
+  
+  md_file: ".codebuddy/agents/ac-agent.md"
+  
+  skills:
+    - "requirement-checker"
+    - "business-flow-tester"
+    - "ux-acceptance"
+    - "bug-tracker"
+
+  # V5.1.0新增：AC+PO验收大脑能力声明
+  brain_capability:
+    brain_id: "ac_po_brain_v1"
+    brain_name: "验收大脑（AC+PO双视角）"
+    workflow_ref: "acceptance-flow.yml#ai_brain"
+    reasoning_modules: ["acceptance_defect_prediction", "persona_coverage_reasoning", "business_value_alignment", "regression_acceptance_recommender"]
+    memory_spec: ".codebuddy/knowledge/common/brain-memory-spec.yml"
+    status: "active"
+  
+  triggers:
+    - command: "/init --type=新增|迭代"
+      stage: "阶段7·验收"
+      description: "新需求处理的验收阶段；按 acceptance.personas 的 platform 字段逐一走查各端"
+    - command: "/accept"
+      arg: "[--platform=pc,miniapp,app,...]"
+      description: "手动触发验收；指定 --platform 时仅验收该端，对齐 personas.platform"
+    - command: "/init --type=变更"
+      stage: "阶段A5"
+      description: "变更确认"
+    - command: "/init --type=修复"
+      stage: "阶段B4"
+      description: "Bug修复确认关闭"
+  
+  personas:
+    - name: "新用户"
+      role: "user"
+      scenario: "empty"
+      focus: "首次使用体验、引导清晰度、空状态提示"
+    - name: "VIP用户"
+      role: "vip"
+      scenario: "dense"
+      focus: "大数据量性能、分页、筛选"
+    - name: "管理员"
+      role: "admin"
+      scenario: "normal"
+      focus: "权限控制、管理功能"
+    - name: "PO Agent（V4.1.0新增）"
+      role: "product_owner"
+      scenario: "all"
+      focus: "商业价值交付、ROI验证、用户场景覆盖、竞争力"
+  
+  acceptance_stages:
+    - name: "requirement"
+      skill: "requirement-checker"
+      description: "逐条对比POM与系统行为"
+      checks:
+        - "Happy Path是否完整"
+        - "Ugly Path是否有错误提示"
+        - "Corner Case是否有合理处理"
+        - "错误提示是否用户可理解"
+    - name: "business-flow"
+      skill: "business-flow-tester"
+      description: "模拟完整业务链路"
+    - name: "ux"
+      skill: "ux-acceptance"
+      description: "用户体验评估"
+      checks:
+        - "错误提示可理解性"
+        - "操作反馈时效"
+        - "容错性"
+  
+  output:
+    - type: "ACR"
+      description: "验收报告"
+      location: "projects/{project}/docs/05-acceptance/accept-reports/"
+    - type: "ACR-BUG"
+      description: "验收Bug"
+      location: "projects/{project}/docs/05-acceptance/bugs/"

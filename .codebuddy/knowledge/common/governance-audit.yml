@@ -1,0 +1,516 @@
+# ============================================
+# 全局深度检查机制 V1.0.0
+# ============================================
+# 定位：全局共享的治理检查机制，定义检查维度、检查项、专家视角、AI智能检查、触发规则
+# 关联：project-lifecycle.yml（重大流程调整后触发询问）/ 流程版本变更总账.md（变更后触发）
+# 用法：每次重大流程调整后，PM询问用户"是否进行全面走查"，用户确认后按本文件执行
+# 版本：v1.0.0
+# 创建日期：2026-07-17
+# ============================================
+
+version: "1.0.0"
+description: |
+  全局深度检查机制。定义8维度检查+AI智能检查+专家视角检查+触发规则+修复优先级。
+  每次重大流程调整后触发，确保全局一致性、完整度、专业度、效率。
+
+# ============================================
+# 触发规则
+# ============================================
+trigger:
+  description: "每次重大流程调整后，PM 主动询问用户是否进行全面走查"
+  trigger_conditions:
+    - condition: "流程版本变更（任何 workflow.yml 版本号升级）"
+      action: "PM 询问：「检测到流程版本变更（{变更内容}），是否执行全局深度走查？」"
+    - condition: "新增/删除文件（新增流程/Agent/技能/知识库文件）"
+      action: "PM 询问：「检测到文件结构变更（{新增/删除清单}），是否执行全局深度走查？」"
+    - condition: "术语批量修改（跨多文件的统一术语调整）"
+      action: "PM 询问：「检测到术语批量修改，是否执行全局深度走查确保一致性？」"
+    - condition: "编号体系变更"
+      action: "PM 询问：「检测到编号体系变更，是否执行全局深度走查确保追溯链完整？」"
+    - condition: "用户主动要求"
+      action: "用户说「全面检查/走查/审计」时直接触发"
+  
+  user_response:
+    confirm: "用户确认 → 按本文件执行全局深度检查"
+    decline: "用户拒绝 → 记录到Journal，本次跳过（下次变更再次询问）"
+
+# ============================================
+# 8维度检查框架
+# ============================================
+audit_dimensions:
+
+  # ========== 维度1：单点检查（每个文件内部一致性） ==========
+  - id: "D1"
+    name: "单点检查"
+    description: "检查每个文件内部的结构完整性和一致性"
+    check_items:
+      - id: "D1-01"
+        item: "version字段存在且与头部注释一致"
+        scope: "所有 .yml 和 .md 文件"
+        severity: "error"
+      - id: "D1-02"
+        item: "trigger_command与config.yml注册命令一致"
+        scope: "所有 workflow.yml"
+        severity: "error"
+      - id: "D1-03"
+        item: "owner指向实际存在的agent"
+        scope: "所有 workflow.yml"
+        severity: "error"
+      - id: "D1-04"
+        item: "steps/stages有明确id/name/agent/input/output"
+        scope: "所有 workflow.yml"
+        severity: "warning"
+      - id: "D1-05"
+        item: "铁律(iron_rules)编号连续无重复"
+        scope: "所有含iron_rules的workflow.yml"
+        severity: "warning"
+      - id: "D1-06"
+        item: "产物(output)完整定义"
+        scope: "所有 workflow.yml 和 agent .yml"
+        severity: "error"
+      - id: "D1-07"
+        item: "独立version字段存在（非仅注释）"
+        scope: "common/*.yml"
+        severity: "warning"
+
+  # ========== 维度2：流程检查（workflow内部逻辑） ==========
+  - id: "D2"
+    name: "流程检查"
+    description: "检查流程内部的步骤逻辑、铁律、产物定义"
+    check_items:
+      - id: "D2-01"
+        item: "checkpoint标注合理（用户卡点vs内部流程）"
+        scope: "所有 workflow.yml"
+        severity: "warning"
+      - id: "D2-02"
+        item: "步骤间input/output衔接（上一步output是下一步input）"
+        scope: "所有 workflow.yml"
+        severity: "error"
+      - id: "D2-03"
+        item: "术语统一（无旧术语残留：产物体系/业务操作矩阵/五层测试/四人验收）"
+        scope: "全部文件"
+        severity: "error"
+      - id: "D2-04"
+        item: "condition字段标注的步骤是否正确触发/跳过"
+        scope: "所有含condition的workflow.yml"
+        severity: "warning"
+
+  # ========== 维度3：衔接检查（跨文件引用闭环） ==========
+  - id: "D3"
+    name: "衔接检查"
+    description: "检查命令→流程→Agent→技能→知识库的全链路引用闭环"
+    check_items:
+      - id: "D3-01"
+        item: "命令→流程：config.yml中每个命令的workflow字段指向实际存在的workflow.yml"
+        scope: "config.yml → configs/workflows/"
+        severity: "error"
+      - id: "D3-02"
+        item: "流程→Agent：每个workflow.yml的owner/agent指向实际存在的agent"
+        scope: "configs/workflows/ → agents/"
+        severity: "error"
+      - id: "D3-03"
+        item: "Agent→技能：每个agent.md引用的skills在configs/skills/中存在"
+        scope: "agents/ → configs/skills/"
+        severity: "error"
+      - id: "D3-04"
+        item: "技能→知识库：技能文件引用的common/*.yml存在"
+        scope: "configs/skills/ → knowledge/common/"
+        severity: "error"
+      - id: "D3-05"
+        item: "流程→知识库：workflow.yml引用的doc-standards/command-spec/metrics-standards/api-learner存在"
+        scope: "configs/workflows/ → knowledge/common/"
+        severity: "error"
+      - id: "D3-06"
+        item: "project-lifecycle.yml中workflow_version与实际workflow版本一致"
+        scope: "project-lifecycle.yml → 各workflow.yml"
+        severity: "error"
+      - id: "D3-07"
+        item: "command-spec.yml中workflow版本号与实际workflow版本一致"
+        scope: "command-spec.yml → 各workflow.yml"
+        severity: "error"
+      - id: "D3-08"
+        item: "config.yml中命令注册的workflow_file路径正确"
+        scope: "config.yml → configs/workflows/"
+        severity: "error"
+
+  # ========== 维度4：完整度检查（覆盖面无遗漏） ==========
+  - id: "D4"
+    name: "完整度检查"
+    description: "检查各层面的覆盖面是否有遗漏"
+    check_items:
+      - id: "D4-01"
+        item: "14个命令全部在config.yml和command-spec.yml中注册"
+        scope: "config.yml + command-spec.yml"
+        severity: "error"
+      - id: "D4-02"
+        item: "11个Agent的.md和.yml成对存在（V5.0新增sm-agent）"
+        scope: "agents/ + configs/agents/"
+        severity: "error"
+      - id: "D4-03"
+        item: "agent.md产物列表与对应workflow.yml output一致"
+        scope: "agents/ → configs/workflows/"
+        severity: "error"
+      - id: "D4-04"
+        item: "agent.yml output与agent.md产物列表一致"
+        scope: "configs/agents/ → agents/"
+        severity: "error"
+      - id: "D4-05"
+        item: "技能无孤儿（每个skill.yml被至少一个agent引用）"
+        scope: "configs/skills/ → agents/"
+        severity: "warning"
+      - id: "D4-06"
+        item: "知识库common/*.yml覆盖所有被引用的公共定义"
+        scope: "knowledge/common/"
+        severity: "warning"
+
+  # ========== 维度5：专业度检查（规范性和术语统一） ==========
+  - id: "D5"
+    name: "专业度检查"
+    description: "检查术语统一性、编号体系、追溯链、文档规范"
+    check_items:
+      - id: "D5-01"
+        item: "编号体系方案B扩展统一（FN/UC/PG含系统+终端，MD/SC/ENT/BR含系统，BG/BO含项目前缀）"
+        scope: "doc-standards.yml + 所有引用编号的文件"
+        severity: "error"
+      - id: "D5-02"
+        item: "追溯链完整（UC→FN→PG→MD→SC→BG→BO+CONFIG→BR/FN+METRIC→BG/BO）"
+        scope: "doc-standards.yml"
+        severity: "error"
+      - id: "D5-03"
+        item: "PRD章节结构完整（17章）"
+        scope: "doc-standards.yml + requirement-flow.yml"
+        severity: "warning"
+      - id: "D5-04"
+        item: "术语无旧残留（产物体系/业务操作矩阵/五层测试/四人验收 当前统一）"
+        scope: "全部文件"
+        severity: "error"
+      - id: "D5-05"
+        item: "命令参数语义隔离（--brainstorm-type/--report-type不与/init --type冲突）"
+        scope: "command-spec.yml"
+        severity: "error"
+
+  # ========== 维度6：效率检查（冗余和冲突） ==========
+  - id: "D6"
+    name: "效率检查"
+    description: "检查冗余、冲突、空文件"
+    check_items:
+      - id: "D6-01"
+        item: "无定义冲突（同一概念在多处定义不一致）"
+        scope: "全部文件"
+        severity: "error"
+      - id: "D6-02"
+        item: "无TODO占位空文件（或已标注status:todo+version+owner）"
+        scope: "knowledge/common/"
+        severity: "warning"
+      - id: "D6-03"
+        item: "无重复定义（同一能力在多个文件中重复实现）"
+        scope: "全部文件"
+        severity: "warning"
+      - id: "D6-04"
+        item: "命令模板.md与config.yml/command-spec.yml参数说明对齐"
+        scope: "~/.codebuddy/commands/ + config.yml + command-spec.yml"
+        severity: "warning"
+
+  # ========== 维度7：版本一致性检查 ==========
+  - id: "D7"
+    name: "版本一致性检查"
+    description: "检查所有文件的版本号和引用版本是否对齐"
+    check_items:
+      - id: "D7-01"
+        item: "workflow.yml version字段与文件头注释一致"
+        scope: "所有 workflow.yml"
+        severity: "error"
+      - id: "D7-02"
+        item: "config.yml引用的workflow版本与实际workflow.yml版本一致"
+        scope: "config.yml → workflow.yml"
+        severity: "error"
+      - id: "D7-03"
+        item: "command-spec.yml引用的workflow版本与实际workflow.yml版本一致"
+        scope: "command-spec.yml → workflow.yml"
+        severity: "error"
+      - id: "D7-04"
+        item: "agent .md头部版本与最近变更一致"
+        scope: "agents/*.md"
+        severity: "warning"
+      - id: "D7-05"
+        item: "DOMAIN-INDEX.yml版本与领域知识文件实际版本一致"
+        scope: "DOMAIN-INDEX.yml → domains/*/"
+        severity: "warning"
+      - id: "D7-06"
+        item: "流程版本变更总账.md包含最新变更记录"
+        scope: "governance-docs/流程版本变更总账.md"
+        severity: "warning"
+
+  # ========== 维度8：安全与合规检查 ==========
+  - id: "D8"
+    name: "安全与合规检查"
+    description: "检查安全配置和合规要求"
+    check_items:
+      - id: "D8-01"
+        item: "敏感字段加密标注（API学习技能Part12中SENSITIVE角色参数encryption≠none）"
+        scope: "api-learner.yml + domains/thirdparty/"
+        severity: "error"
+      - id: "D8-02"
+        item: "幂等键唯一性标注（IDEMPOTENT_KEY角色参数有唯一性生成规则）"
+        scope: "api-learner.yml"
+        severity: "warning"
+      - id: "D8-03"
+        item: "金额字段校验标注（AMOUNT角色参数有validation校验规则）"
+        scope: "api-learner.yml"
+        severity: "warning"
+
+# ============================================
+# AI智能检查（自动化扫描）
+# ============================================
+ai_smart_check:
+  description: "AI驱动的自动化扫描，利用搜索工具批量检查"
+  
+  check_patterns:
+    # 旧术语残留扫描
+    - id: "AI-01"
+      name: "旧术语残留扫描"
+      patterns:
+        - "七大产物"
+        - "权限状态矩阵"
+        - "三层测试"
+        - "四层测试"
+        - "三人验收"
+        - "--type=strategic"
+        - "--type=test"
+      expected: "0匹配（排除_archive和审计报告/设计方案文档中的历史描述性引用）"
+      severity: "error"
+    
+    # 版本号不一致扫描
+    - id: "AI-02"
+      name: "版本号不一致扫描"
+      patterns:
+        - "v2.0.0.*requirement-flow"  # 应为v3.0.0
+        - "v2.1.0.*learn-domain"      # 应为v3.0.0
+        - "v5.0.0.*learn-project"     # 应为v6.0.0
+        - "v4.1.0.*project-lifecycle" # 应为v4.2.0
+        - "v3.1.0.*doc-standards"     # 应为v3.2.0
+        - "payment/yeepay"            # 应为thirdparty/yeepay
+      expected: "0匹配"
+      severity: "error"
+    
+    # 断链扫描
+    - id: "AI-03"
+      name: "文件引用断链扫描"
+      method: "提取所有引用的文件路径，验证文件是否存在"
+      scope: "config.yml + command-spec.yml + workflow.yml + agent.md + skill.yml"
+      expected: "0断链"
+      severity: "error"
+    
+    # 孤儿技能扫描
+    - id: "AI-04"
+      name: "孤儿技能扫描"
+      method: "检查configs/skills/下每个skill.yml是否被至少一个agent引用"
+      expected: "0孤儿"
+      severity: "warning"
+    
+    # TODO空文件扫描
+    - id: "AI-05"
+      name: "TODO空文件扫描"
+      method: "检查knowledge/common/下是否有未填充内容的空文件"
+      expected: "0空文件（或已标注status:todo+version+owner）"
+      severity: "warning"
+
+# ============================================
+# 专家视角检查（按Agent角色细分）
+# ============================================
+expert_perspectives:
+
+  # ========== PM Agent视角：管控一致性 ==========
+  - perspective: "PM Agent"
+    focus: "管控一致性"
+    checks:
+      - "14个命令在config.yml/command-spec.yml/.md模板三层一致"
+      - "参数定义（required/optional）三层对齐"
+      - "workflow版本号三层一致"
+      - "interactive_flow一致（auto_detect模式）"
+      - "命令→流程→Agent→技能→知识库全链路闭环"
+      - "stage定义与workflow引用一致"
+
+  # ========== BA Agent视角：需求分析完整度 ==========
+  - perspective: "BA Agent"
+    focus: "需求分析完整度"
+    checks:
+      - "requirement-flow.yml包含§0/§0.5a/§0.5b/§0.5c/§1~§7完整步骤"
+      - "ba-agent.md产物列表与requirement-flow §7 output一致"
+      - "ba-agent.yml output与ba-agent.md一致"
+      - "CONFIG/METRIC产物已定义且编号体系对齐doc-standards"
+      - "领域知识加载机制含thirdparty分类说明"
+      - "§0.5a引用领域知识Part12/Part13和api-learner.yml"
+      - "铁律BA-01~BA-17完整无遗漏"
+
+  # ========== Arch Agent视角：架构一致性 ==========
+  - perspective: "Arch Agent"
+    focus: "架构一致性"
+    checks:
+      - "arch-flow.yml C-A5/C-A6/C-A7红线完整"
+      - "api-learner.yml安全分析完整（敏感字段/幂等键/金额/签名）"
+      - "tech-stack.yml五维可插拔架构定义完整"
+      - "api-specs.yml契约定义与领域知识Part12参数对齐"
+      - "arch-agent.md技能列表与arch-agent.yml一致"
+
+  # ========== QA Agent视角：测试覆盖度 ==========
+  - perspective: "QA Agent"
+    focus: "测试覆盖度"
+    checks:
+      - "test-flow.yml五层测试完整（契约/单元/浏览器/白盒/视觉）"
+      - "TC编号含related_fn字段"
+      - "qa-agent.md铁律与test-flow.yml一致"
+      - "验收流程四人模拟（含PO商业价值验收）"
+
+  # ========== UX Agent视角：设计完整度 ==========
+  - perspective: "UX Agent"
+    focus: "设计完整度"
+    checks:
+      - "design-flow.yml 7步法完整"
+      - "3标准角色+1可选角色定义完整"
+      - "6章强制输出结构完整"
+      - "design-system/ui-components/ux-guidelines三个知识库文件version字段存在"
+
+  # ========== Doc Agent视角：文档规范度 ==========
+  - perspective: "Doc Agent"
+    focus: "文档规范度"
+    checks:
+      - "doc-standards.yml 17章PRD结构完整"
+      - "编号体系方案B扩展统一"
+      - "追溯链完整（UC→FN→PG→MD→SC→BG→BO+CONFIG+METRIC）"
+      - "handoff-spec.yml 4级标注+回传机制完整"
+      - "流程版本变更总账.md包含最新变更记录"
+      - "governance-docs/INDEX.md索引文件存在且最新"
+
+# ============================================
+# 检查执行流程
+# ============================================
+execution_flow:
+  description: "全局深度检查的执行步骤"
+  
+  steps:
+    - step: 1
+      name: "触发确认"
+      actor: "PM Agent"
+      action: "PM检测到流程变更，询问用户「是否执行全局深度走查？」"
+    
+    - step: 2
+      name: "AI智能检查（并行）"
+      actor: "AI（搜索工具）"
+      action: |
+        并行执行AI-01~AI-05自动化扫描：
+        - 旧术语残留扫描
+        - 版本号不一致扫描
+        - 文件引用断链扫描
+        - 孤儿技能扫描
+        - TODO空文件扫描
+    
+    - step: 3
+      name: "8维度检查（并行子Agent）"
+      actor: "4个并行子Agent"
+      action: |
+        启动4个并行子Agent，每个覆盖2个维度：
+        - 子Agent1：维度1(单点检查)+维度7(版本一致性)
+        - 子Agent2：维度2(流程检查)+维度3(衔接检查)
+        - 子Agent3：维度4(完整度)+维度8(安全合规)
+        - 子Agent4：维度5(专业度)+维度6(效率)
+    
+    - step: 4
+      name: "专家视角检查（并行）"
+      actor: "6个专家视角"
+      action: |
+        6个专家视角并行检查：
+        - PM视角（管控一致性）
+        - BA视角（需求分析完整度）
+        - Arch视角（架构一致性）
+        - QA视角（测试覆盖度）
+        - UX视角（设计完整度）
+        - Doc视角（文档规范度）
+    
+    - step: 5
+      name: "汇总审计报告"
+      actor: "PM Agent"
+      action: |
+        汇总所有检查结果，输出审计报告：
+        - 按严重度分组（❌严重/⚠️警告/ℹ️提示）
+        - 每个问题标注文件路径+具体问题
+        - 给出修复优先级（P0/P1/P2）
+        - 综合评分（满分100）
+    
+    - step: 6
+      name: "用户确认修复"
+      actor: "PM Agent + 用户"
+      action: |
+        PM展示审计报告，询问用户：
+        「全局深度走查完成，发现{N}个问题（❌严重{X}/⚠️警告{Y}/ℹ️提示{Z}）。
+         是否修复？
+         1. 全部修复（P0+P1+P2）
+         2. 仅修复严重问题（P0）
+         3. 暂不修复（记录到Journal）」
+    
+    - step: 7
+      name: "执行修复"
+      actor: "AI Agent"
+      action: "按用户选择的修复范围执行修复"
+    
+    - step: 8
+      name: "修复后验证"
+      actor: "AI（搜索工具）"
+      action: "修复后重新执行AI智能检查，确认0 lint错误"
+    
+    - step: 9
+      name: "归档"
+      actor: "PM Agent"
+      action: |
+        审计报告归档到 audit-reports/ 目录
+        流程版本变更总账.md 追加审计记录
+
+# ============================================
+# 修复优先级
+# ============================================
+fix_priority:
+  P0:
+    description: "立即修复（影响功能正确性）"
+    severity: "error"
+    examples: "版本不匹配/断链/产物缺失/命令未注册"
+  
+  P1:
+    description: "近期修复（影响一致性）"
+    severity: "warning"
+    examples: "结构化参数缺失/版本号缺失/产物条目缺失"
+  
+  P2:
+    description: "可选修复（提升质量）"
+    severity: "info"
+    examples: "版本字段补充/空文件清理/索引文件"
+
+# ============================================
+# 审计报告格式
+# ============================================
+report_format:
+  filename: "全局深度审计报告-V{version}-{date}.md"
+  location: ".codebuddy/knowledge/common/audit-reports/"
+  structure:
+    - "审计日期/范围/维度/方法"
+    - "审计结果汇总（严重度统计表）"
+    - "❌严重问题清单（按维度分组，每项含文件路径+问题+修复方案）"
+    - "⚠️警告问题清单"
+    - "ℹ️提示问题清单"
+    - "按维度汇总（评分表）"
+    - "修复优先级（P0/P1/P2）"
+    - "审计结论（综合评分+整体评价）"
+
+# ============================================
+# 评分标准
+# ============================================
+scoring:
+  full_score: 100
+  deduction:
+    error: 2  # 每个error扣2分
+    warning: 1  # 每个warning扣1分
+    info: 0  # info不扣分
+  grades:
+    - { score: "95-100", grade: "A", description: "优秀" }
+    - { score: "85-94", grade: "B", description: "良好" }
+    - { score: "70-84", grade: "C", description: "合格" }
+    - { score: "<70", grade: "D", description: "不合格，需立即修复" }

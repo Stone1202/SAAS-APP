@@ -1,0 +1,184 @@
+# ============================================
+# 版本时间线规范（Version Timeline Standards）
+# 版本: v1.0.0
+# 创建日期: 2026-07-18
+# 所属议题: POM V5.0 议题七
+# ============================================
+version: "1.0.0"
+name: "version-timeline-standards"
+description: "版本时间线规范——版本快照+差异报告+版本切换器的全局索引"
+
+# ============================================
+# 一、版本快照结构
+# ============================================
+version_snapshot_structure:
+  base_path: "projects/{project}/docs/09-versions/"
+  
+  per_version:
+    - path: "v{version}/build/"
+      content: "构建产物（npm run build:sim，可直接部署访问）"
+    - path: "v{version}/prd/"
+      content: "PRD快照"
+    - path: "v{version}/cards/"
+      content: "用例卡片快照"
+    - path: "v{version}/demo/"
+      content: "Demo报告"
+    - path: "v{version}/SNAPSHOT.yml"
+      content: "快照元数据"
+    - path: "v{version}/DIFF.md"
+      content: "与上一版本的差异报告"
+  
+  global:
+    - path: "VERSION-TIMELINE.yml"
+      content: "全局版本时间线"
+
+# ============================================
+# 二、SNAPSHOT.yml Schema
+# ============================================
+snapshot_schema:
+  version: "v1.1.0"
+  project: "{project}"
+  snapshot_date: "2026-07-18"
+  snapshot_by: "pm-agent"
+  
+  version_info:
+    previous_version: "v1.0.0"
+    sprint_count: 3
+    sprints: ["S1", "S2", "S3"]
+  
+  build_info:
+    build_command: "npm run build:sim"
+    build_hash: "abc123..."
+    dev_server_url: "http://localhost:3333"
+    pages_count: 15
+    routes_count: 15
+  
+  artifacts:
+    prd_files: ["REQ-xxx-v1.1.0.md"]
+    card_files: ["UC-xxx.card.yml"]
+    demo_report: "DEMO-v1.1.0-20260718.md"
+  
+  guard_reports:
+    sprint_guard: ["SPRINT-GUARD-xxx-S1.md"]
+    version_guard: "VERSION-GUARD-xxx-v1.1.0.md"
+    project_guard: "PROJECT-GUARD-xxx.md"
+  
+  metrics:
+    total_pages: 15
+    total_use_cases: 45
+    total_fns: 38
+    runtime_verification: "passed"
+    test_coverage: "87%"
+    po_acceptance: "pass"
+
+# ============================================
+# 三、VERSION-TIMELINE.yml Schema
+# ============================================
+timeline_schema:
+  project: "{project}"
+  last_updated: "2026-07-18"
+  
+  versions:
+    - version: "v1.0.0"
+      date: "2026-07-10"
+      sprints: ["S1", "S2"]
+      theme: "商品交易MVP"
+      pages: 12
+      use_cases: 38
+      po_acceptance: "pass"
+      snapshot_path: "docs/09-versions/v1.0.0/"
+      diff_to_previous: null
+      key_changes: ["商品CRUD", "订单交易闭环", "支付对接"]
+    
+    - version: "v1.1.0"
+      date: "2026-07-18"
+      sprints: ["S1", "S2", "S3"]
+      theme: "直播音频审核"
+      pages: 15
+      use_cases: 45
+      po_acceptance: "pass"
+      snapshot_path: "docs/09-versions/v1.1.0/"
+      diff_to_previous: "docs/09-versions/v1.1.0/DIFF.md"
+      key_changes: ["直播间模拟", "音频审核流程", "禁言屏蔽"]
+    
+    - version: "v1.2.0"
+      status: "planning"
+      planned_date: "2026-07-25"
+      theme: "会员体系"
+      planned_pages: 18
+
+# ============================================
+# 四、DIFF.md结构（AI自动+人工补充）
+# ============================================
+diff_report_structure:
+
+  ai_generated:
+    - section: "一、变更摘要"
+      auto: true
+      content: "页面数/用例数/FN数/Sprint数变化对比表"
+    - section: "二、页面变更"
+      auto: true
+      content: "新增页面/修改页面/删除页面清单"
+    - section: "三、用例变更"
+      auto: true
+      content: "新增用例/修改用例/删除用例清单"
+    - section: "四、数据变更"
+      auto: true
+      content: "契约Schema变更/sim适配器变更"
+    - section: "五、差异可视化"
+      auto: true
+      content: "Mermaid差异图（页面级/用例级/数据流级）"
+  
+  human_supplemented:
+    - section: "六、商业价值变更（PO补充）"
+      auto: false
+      by: "po-agent"
+      content: "新增商业价值/价值达成度变化/路线图偏离的商业影响"
+      trigger: "/close时PO执行商业价值验收后补充"
+    - section: "七、风险变更（PM补充）"
+      auto: false
+      by: "pm-agent"
+      content: "新增风险/已关闭风险/风险等级变化"
+      trigger: "/close时PM执行版本把关后补充"
+    - section: "八、关键决策记录（PO/PM补充）"
+      auto: false
+      by: "po-agent + pm-agent"
+      content: "范围调整决策/技术选型决策/风险接受决策"
+      trigger: "/close时PO+PM联合补充"
+
+# ============================================
+# 五、版本切换器3模式
+# ============================================
+version_switcher:
+  location: "仿真原型右上角悬浮组件"
+  default_hidden: true
+  trigger: "点击右上角版本号徽章"
+  
+  modes:
+    single:
+      name: "单版本查看"
+      description: "切换到选中版本的原型"
+      implementation: "dev server根据?version=参数加载对应build产物"
+      use_case: "研发团队首次理解某版本时"
+    
+    diff_highlight:
+      name: "差异高亮"
+      description: "在当前版本上高亮显示与上一版本的差异"
+      implementation: "读取DIFF.md，新增页面绿色边框/修改页面黄色边框"
+      use_case: "研发团队快速理解版本间差异时"
+    
+    side_by_side:
+      name: "并排对比"
+      description: "左右两版本并排显示"
+      implementation: "iframe左=v{version-1}，iframe右=v{version}，同步路由"
+      use_case: "深度对比两版本差异时"
+
+# ============================================
+# 六、引用关系
+# ============================================
+references:
+  - "被 project-lifecycle.yml stage-8 /close引用（快照+差异报告生成）"
+  - "被 version-manager.yml Skill 实现（快照模式）"
+  - "被 version-manager.yml Skill 实现（差异报告模式）"
+  - "被 gates-registry.yml G-SNAPSHOT-01 + G-DIFF-01 引用"
+  - "被 ensure-project.sh 引用（目录创建+VERSION-TIMELINE初始化）"

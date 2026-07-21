@@ -1,0 +1,1676 @@
+# ============================================
+# 业务领域知识库 — 微信账号体系（微信生态·账号身份子领域）
+# 版本：v1.0.0
+# 学习日期：2026-07-18
+# 来源：
+#   https://developers.weixin.qq.com/doc/service/guide/          （服务号）
+#   https://developers.weixin.qq.com/doc/subscription/guide/      （订阅号）
+#   https://developers.weixin.qq.com/miniprogram/dev/framework/   （小程序）
+#   https://developers.weixin.qq.com/doc/oplatform/Mobile_App/    （开放平台·移动应用）
+#   https://developers.weixin.qq.com/doc/oplatform/Website_App/   （开放平台·网站应用）
+# 分类：account（账号）
+# 父领域：微信生态
+# ============================================
+# 学习策略：深度场景分析（非API字典翻译）
+#   AI核心任务：
+#     1. 理解微信账号身份体系的底层逻辑（OpenID/UnionID/平台隔离）
+#     2. 分析每个平台的登录授权场景——不只是接口是什么，而是场景驱动下如何组合
+#     3. 标注Token生命周期与不同平台token的差异性（这是常见坑）
+#     4. 重点分析账号合并/跨平台识别——这是现实中SCRM系统最大痛点
+#     5. 区分不同scope下能获取什么数据——授权粒度决定数据边界
+#   不做的事：
+#     - 不做纯接口字段罗列（那叫API文档翻译，不是领域知识）
+#     - 不关注与账号无关的功能（消息推送、支付、客服等）
+#     - 不记录基本HTTPS协议细节
+# ============================================
+# 场景覆盖：1个身份体系 × 5大平台登录场景 → 15+子场景 → 完整接口调度链
+# 痛点聚焦：账号合并/OpenID碎片化/Token过期/授权粒度/unionid缺失
+# ============================================
+
+domain:
+  name: "微信账号体系"
+  category: "account"
+  version: "v2.0.0"
+  learning_method: "scenario_driven_v1.0.0"
+  learned_at: "2026-07-18"
+  source_urls:
+    - "https://developers.weixin.qq.com/doc/service/guide/"
+    - "https://developers.weixin.qq.com/doc/subscription/guide/"
+    - "https://developers.weixin.qq.com/miniprogram/dev/framework/"
+    - "https://developers.weixin.qq.com/doc/oplatform/Mobile_App/Resource_Center_Homepage.html"
+    - "https://developers.weixin.qq.com/doc/oplatform/Website_App/WeChat_Login/Wechat_Login.html"
+  description: |
+    微信生态账号体系的完整知识库。覆盖5大平台（服务号/订阅号/小程序/移动APP/网站应用）的
+    用户身份识别、授权登录、Token管理、跨平台账号合并。
+    
+    核心命题不是"有哪些API"，而是：
+    - 同一个微信用户在不同平台下身份如何识别？（OpenID碎片化→UnionID统一）
+    - 不同授权scope能拿到的数据边界在哪？
+    - Token体系各平台差异是什么？（最大陷阱：不同平台的access_token含义不同）
+    - 账号合并的真实场景有哪些？技术路径是什么？
+  curation_policy: |
+    聚焦账号身份相关，已过滤：
+    - 消息推送/模板消息/客服消息（非账号领域）
+    - 支付/卡券/门店/设备能力（非账号领域）
+    - JS-SDK非授权部分
+    - 已废弃接口（如wx.getUserInfo旧版授权方式）
+    保留：所有现行账号身份相关API、授权流程、Token管理机制
+
+# ============================================
+# SDL V1.0.0 四层块 — 场景驱动学习结构
+# ============================================
+
+# --- Step 0a: 领域角色识别 ---
+domain_roles:
+  description: "微信账号体系中涉及的关键角色，每个角色在不同场景下有不同视角和职责"
+  roles:
+    - role_id: "R-WXACC-01"
+      name: "微信用户（终端用户）"
+      type: "end_user"
+      description: "使用微信的最终用户，在SCRM系统中是需要被识别和管理的主体"
+      concerns:
+        - "我授权了哪些信息给这个应用？"
+        - "为什么这个公众号要知道我的身份？"
+        - "我不小心点了拒绝授权，怎么重新允许？"
+        - "换了手机/微信后，我的账户信息还在吗？"
+      actions_across_scenes:
+        - "服务号H5：点击授权按钮/静默授权无感知"
+        - "小程序：静默登录无感知 / 点击获取手机号按钮"
+        - "APP：在微信APP内点击确认授权"
+        - "网站：扫码后在手机上确认登录"
+        - "订阅号：关注/取关公众号"
+    - role_id: "R-WXACC-02"
+      name: "SCRM开发者（集成方）"
+      type: "developer"
+      description: "对接微信账号体系的SCRM系统开发人员，负责实现登录、授权、Token管理"
+      concerns:
+        - "如何在不同平台下正确获取用户的OpenID/UnionID？"
+        - "Token过期刷新策略怎么设计才不丢用户？"
+        - "多个微信应用（公众号+小程序+APP）的用户怎么合并？"
+        - "scope选snsapi_base还是snsapi_userinfo？"
+      actions_across_scenes:
+        - "服务号：实现OAuth2.0授权流程 + code换token + 用户信息获取"
+        - "小程序：实现wx.login → code2Session → 自定义登录态"
+        - "APP：集成微信SDK → 处理授权回调 → 后端code换token"
+        - "网站：生成二维码 → 处理扫码回调 → code换token"
+        - "订阅号：接收关注事件XML → 获取用户信息"
+    - role_id: "R-WXACC-03"
+      name: "SCRM运营者"
+      type: "operator"
+      description: "SCRM系统的日常运营人员，管理微信用户账户、处理账号合并、查看用户身份数据"
+      concerns:
+        - "这个用户在我的系统里有几个账户？怎么合并？"
+        - "为什么有些用户看不到unionid？"
+        - "用户换了手机号，账户信息怎么关联？"
+        - "绑定开放平台后，历史用户怎么补全unionid？"
+      actions_across_scenes:
+        - "在SCRM后台查看用户多触点身份（公众号/小程序/APP/网站）"
+        - "手动触发账号合并操作"
+        - "监控unionid缺失的用户比例"
+        - "处理用户授权撤销后的数据清理"
+    - role_id: "R-WXACC-04"
+      name: "微信开放平台"
+      type: "platform"
+      description: "微信提供的账号联邦基础设施，管理AppID/AppSecret/开放平台绑定/授权"
+      concerns:
+        - "应用是否合规使用授权scope？"
+        - "UnionID的绑定关系是否正确？"
+        - "Token使用是否超限？"
+      actions_across_scenes:
+        - "签发OAuth2.0授权code"
+        - "返回/验证access_token"
+        - "通过开放平台绑定维护UnionID一致性"
+        - "推送授权变更事件（user_info_modified / user_authorization_revoke）"
+
+# --- Step 0b: 业务问题识别 ---
+business_problems:
+  description: "微信账号体系在SCRM场景中要解决的核心业务问题"
+  problems:
+    - problem_id: "BP-WXACC-01"
+      title: "多平台用户身份碎片化"
+      severity: "critical"
+      description: |
+        同一个微信用户通过不同触点（公众号H5、小程序、APP、网站）进入SCRM系统时，
+        每个平台产生不同的OpenID，系统无法天然识别为同一用户。
+        这导致：用户画像碎片化、积分/会员等级不统一、重复注册。
+      root_cause: "微信设计的平台隔离机制：每个应用(公众号/小程序/APP)有独立的OpenID命名空间"
+      solution_summary: "通过UnionID统一——将所有应用绑定到同一微信开放平台账号，UnionID作为跨平台唯一标识"
+      related_concepts: ["openid", "unionid", "开放平台绑定"]
+      related_scenes: ["MERGE-01", "MERGE-02", "MERGE-04", "MERGE-05"]
+    - problem_id: "BP-WXACC-02"
+      title: "UnionID获取条件不一致"
+      severity: "high"
+      description: |
+        并非所有平台和授权方式都能自动拿到UnionID。服务号snsapi_base静默授权不返回unionid；
+        订阅号不支持网页授权只能通过关注后获取；APP需要用户授权snsapi_userinfo。
+        这导致部分用户触点下unionid缺失，无法完成账号合并。
+      root_cause: "UnionID的获取前提：①绑定开放平台 ②满足各平台各自的获取条件"
+      solution_summary: "设计静默补全流程——优先使用小程序(code2Session直接返回)或服务号snsapi_userinfo获取unionid，历史缺失用户在下次触点交互时补全"
+      related_concepts: ["unionid_acquisition_by_platform", "open_platform_binding"]
+      related_scenes: ["P-UNION-01", "P-UNION-02", "P-UNION-03", "MERGE-02"]
+    - problem_id: "BP-WXACC-03"
+      title: "Token体系复杂易混淆"
+      severity: "high"
+      description: |
+        微信账号体系存在4种Token：基础access_token(管理API)、网页授权access_token(用户信息)、
+        小程序session_key(数据解密)、自定义登录态(业务API)。它们获取方式不同、有效期不同、
+        刷新策略不同、用途完全不同。开发者极易混淆，用错Token调错接口。
+      root_cause: "微信设计的历史分层：管理类API用基础token，用户授权类API用OAuth2.0 token，小程序用session_key"
+      solution_summary: "命名严格区分(baseAccessToken/oauthAccessToken/sessionKey/customToken)，按平台分开存储，刷新策略按token类型分别设计"
+      related_concepts: ["token_system", "app_credentials"]
+      related_scenes: ["DIFF-05", "DIFF-06", "SCENE-01c", "SCENE-02b"]
+    - problem_id: "BP-WXACC-04"
+      title: "Token并发刷新竞态条件"
+      severity: "medium"
+      description: |
+        网页授权access_token有效期仅2小时，多个请求同时检测到过期并触发刷新时，
+        第二个请求使用已失效的refresh_token会失败，导致用户被强制重新授权。
+        小程序session_key在用户重新wx.login后旧key立即失效，并发场景同样存在竞态。
+      root_cause: "refresh_token一次性使用+access_token共享存储+无分布式锁保护"
+      solution_summary: "刷新操作加分布式锁(Redis SETNX)，refresh_token更新原子化(数据库事务/乐观锁)，刷新失败时降级为用户重新授权"
+      related_concepts: ["token_system"]
+      related_scenes: ["SCENE-01c critical_race_condition"]
+    - problem_id: "BP-WXACC-05"
+      title: "开放平台绑定变更导致UnionID断层"
+      severity: "critical"
+      description: |
+        公司主体变更或业务重组需要更换开放平台账号时，所有应用需要重新绑定到新开放平台。
+        绑定关系变更后，所有用户的UnionID全部变化，历史数据中旧UnionID与新UnionID形成断层，
+        用户画像、积分、会员等级等基于UnionID聚合的数据面临断裂风险。
+      root_cause: "UnionID由「微信用户+开放平台账号」共同决定，更换开放平台=更换UnionID命名空间"
+      solution_summary: "过渡期保留旧开放平台绑定+建新旧UnionID映射表+双写过渡+N个月后下线旧映射"
+      related_concepts: ["unionid", "open_platform_binding"]
+      related_scenes: ["MERGE-04", "P-UNION-02"]
+    - problem_id: "BP-WXACC-06"
+      title: "多商户SaaS场景下的UnionID隔离"
+      severity: "high"
+      description: |
+        SCRM SaaS系统管理多个商户的公众号时，不同商户的公众号可能绑定在不同的开放平台下。
+        即使同一微信用户，在不同商户处获得的UnionID也不同。
+        如果系统设计为全局UnionID唯一，就会出现商户A的用户数据和商户B的用户数据被错误合并。
+      root_cause: "UnionID的作用域是单个开放平台账号，而非全局微信生态"
+      solution_summary: "按「商户+UnionID」做唯一性约束，而非全局UnionID唯一。商户后续绑定到同一开放平台时做UnionID合并处理"
+      related_concepts: ["unionid", "open_platform_binding"]
+      related_scenes: ["MERGE-05", "G-06"]
+
+# --- Step 1: 场景地图 ---
+scenario_maps:
+  description: "5大平台登录场景的场景地图，标注触发条件、参与角色、API链路、场景闭环"
+
+  - scene_map_id: "SM-WXACC-01"
+    scene_name: "服务号网页授权登录"
+    mapped_to: "SCENE-01"
+    trigger: "用户在微信内置浏览器中打开SCRM系统的H5页面，系统需要识别用户身份"
+    participant_roles: ["微信用户", "SCRM开发者", "微信开放平台"]
+    api_chain_summary:
+      - phase: "授权引导"
+        apis: ["WXACC-API-002 (OAuth2.0 authorize)"]
+        actor: "前端H5 → 微信"
+        key_decision: "scope选snsapi_base(静默/仅openid) vs snsapi_userinfo(弹窗/openid+unionid+用户信息)"
+      - phase: "Token交换"
+        apis: ["WXACC-API-003 (code→access_token)"]
+        actor: "后端 → 微信"
+        data_flow: "code(一次性,5分钟有效) → openid + access_token(2h) + refresh_token(30天) + unionid(条件)"
+      - phase: "用户信息获取"
+        apis: ["WXACC-API-005 (获取用户信息)"]
+        actor: "后端 → 微信"
+        precondition: "scope=snsapi_userinfo"
+      - phase: "Token维护"
+        apis: ["WXACC-API-004 (刷新token)", "WXACC-API-011 (检验token)"]
+        actor: "后端 → 微信"
+    closure:
+      success: "用户身份识别完成，SCRM系统获得openid(+unionid)，建立/匹配用户账户，返回自定义登录态"
+      failure: "用户拒绝授权 → 回退到非微信登录方式或仅展示公开内容"
+      token_expired: "refresh_token过期(30天未用) → 用户需重新走授权流程"
+    sub_scenes: ["SCENE-01a(静默授权)", "SCENE-01b(用户信息授权)", "SCENE-01c(Token刷新)", "SCENE-01d(授权变更)"]
+
+  - scene_map_id: "SM-WXACC-02"
+    scene_name: "小程序登录"
+    mapped_to: "SCENE-02"
+    trigger: "用户打开微信小程序，小程序启动时自动触发登录流程"
+    participant_roles: ["微信用户", "SCRM开发者(小程序后端)", "微信开放平台"]
+    api_chain_summary:
+      - phase: "获取临时code"
+        apis: ["WXACC-API-008 (wx.login)"]
+        actor: "小程序前端 → 微信"
+        data_flow: "无参数 → code(一次性,5分钟有效)"
+      - phase: "code换session_key"
+        apis: ["WXACC-API-009 (code2Session)"]
+        actor: "后端 → 微信"
+        data_flow: "code → openid + session_key(仅后端) + unionid(已绑定开放平台时直接返回)"
+      - phase: "建立自定义登录态"
+        apis: ["自建（JWT/Session）"]
+        actor: "后端内部"
+        data_flow: "openid → 自定义token(返回前端) + session_key(存Redis,仅后端)"
+      - phase: "补充用户信息(可选)"
+        apis: ["手机号获取(button组件)", "头像昵称填写组件"]
+        actor: "小程序前端 + 后端"
+        data_flow: "encryptedData → session_key解密 → 手机号"
+    closure:
+      success: "静默完成登录，用户零感知。openid+unionid已获取，自定义token下发前端"
+      failure: "code2Session失败(code过期/网络问题) → 重新wx.login重试"
+      session_key_invalid: "用户重新登录/删除小程序 → session_key失效 → 重新wx.login"
+    sub_scenes: ["SCENE-02a(静默登录)", "SCENE-02b(登录态维护)", "SCENE-02c(手机号获取)", "SCENE-02d(头像昵称)", "SCENE-02e(敏感权限)"]
+    key_advantage: "小程序是获取unionid的最佳触点——code2Session直接返回，无需用户手动授权"
+
+  - scene_map_id: "SM-WXACC-03"
+    scene_name: "移动APP微信登录"
+    mapped_to: "SCENE-03"
+    trigger: "用户在原生APP（iOS/Android/鸿蒙）中点击「微信登录」按钮"
+    participant_roles: ["微信用户", "SCRM开发者(APP后端)", "微信开放平台"]
+    api_chain_summary:
+      - phase: "APP唤起微信授权"
+        apis: ["WXACC-API-010 (SDK sendReq)"]
+        actor: "商户APP → 微信APP"
+        data_flow: "scope=snsapi_userinfo(固定) + state(防CSRF) → code(10分钟有效)"
+      - phase: "code换token"
+        apis: ["WXACC-API-003 (code→access_token)"]
+        actor: "后端 → 微信"
+        data_flow: "code → openid + access_token(2h) + refresh_token(180天) + unionid"
+      - phase: "获取用户信息"
+        apis: ["WXACC-API-005 (用户信息)"]
+        actor: "后端 → 微信"
+    closure:
+      success: "获取openid+unionid+用户信息，建立/匹配账户，返回APP自定义登录态"
+      failure: "用户取消授权 / 未安装微信 → 降级为手机号登录"
+    key_difference: "refresh_token有效期180天(vs服务号30天)；未上架APP每日限100次登录"
+
+  - scene_map_id: "SM-WXACC-04"
+    scene_name: "网站应用扫码登录"
+    mapped_to: "SCENE-04"
+    trigger: "用户在PC浏览器中访问SCRM后台管理系统，选择「微信扫码登录」"
+    participant_roles: ["微信用户", "SCRM开发者", "微信开放平台"]
+    api_chain_summary:
+      - phase: "展示二维码"
+        apis: ["WXACC-API-012 (qrconnect)"]
+        actor: "PC前端 → 微信"
+        data_flow: "scope=snsapi_login → 二维码页面 / 快速登录弹窗"
+      - phase: "用户扫码确认"
+        apis: ["用户操作"]
+        actor: "微信用户"
+        data_flow: "扫一扫→扫码→手机确认登录 / PC微信已登录→快速登录弹窗"
+      - phase: "code换token"
+        apis: ["WXACC-API-003 → WXACC-API-005"]
+        actor: "后端 → 微信"
+        data_flow: "code → openid + unionid + 用户信息"
+    closure:
+      success: "PC端登录成功，获得openid+unionid+用户信息"
+      failure: "扫码后未确认 / 二维码过期 → 刷新二维码重新扫码"
+    fast_login: "PC微信≥3.9.11时优先弹快速登录确认框，无需扫码"
+
+  - scene_map_id: "SM-WXACC-05"
+    scene_name: "订阅号用户管理"
+    mapped_to: "SCENE-05"
+    trigger: "用户关注/取关订阅号，或在订阅号内发送消息"
+    participant_roles: ["微信用户", "SCRM开发者", "微信开放平台"]
+    api_chain_summary:
+      - phase: "被动接收事件"
+        apis: ["微信服务器 → 商户服务器 (XML事件推送)"]
+        actor: "微信 → 后端"
+        data_flow: "关注事件: FromUserName(openid) + Event=subscribe"
+      - phase: "获取用户信息"
+        apis: ["WXACC-API-006 (获取用户信息)"]
+        actor: "后端 → 微信"
+        data_flow: "基础access_token + openid → 用户信息 + unionid(已绑定开放平台时)"
+    closure:
+      success: "用户关注后获取openid，绑定开放平台时可获得unionid"
+      limitation: "不支持网页授权→无法在H5中主动获取openid；不关注无法获取任何身份"
+    key_limitation: "订阅号是5大平台中能力最受限的——无网页授权、无UnionID主动获取、无支付"
+
+# --- Step 2: 跨域桥接 ---
+cross_domain_bridges:
+  description: "微信账号体系与相邻领域的连接关系——OpenID/UnionID如何流向支付、企微等域"
+
+  - bridge_id: "CDB-WXACC-01"
+    source_domain: "wechat-account"
+    target_domain: "wechat-pay"
+    bridge_name: "OpenID → 支付用户标识"
+    description: |
+      微信支付JSAPI支付和小程序支付需要openid参数来指定支付用户。
+      openid的获取完全依赖微信账号体系的OAuth授权或wx.login。
+      支付域不负责获取openid，只消费账号域提供的openid。
+    data_flow:
+      - from: "wechat-account: OAuth授权/wx.login"
+        to: "wechat-pay: 统一下单 openid参数"
+        param: "openid"
+        relationship: "用户身份标识——支付必须知道是谁在付钱"
+      - from: "wechat-account: 开放平台绑定"
+        to: "wechat-pay: 分账到个人(PERSONAL_OPENID)"
+        param: "openid"
+        relationship: "分账接收方为个人时，用openid标识"
+    key_dependency: "JSAPI/小程序支付的前置条件是已获取openid。如果账号体系没拿到openid，支付无法发起"
+
+  - bridge_id: "CDB-WXACC-02"
+    source_domain: "wechat-account"
+    target_domain: "wechat-work (企业微信)"
+    bridge_name: "微信UnionID ↔ 企微external_userid"
+    description: |
+      企业微信的客户联系功能中，外部联系人用external_userid标识。
+      微信用户添加企业微信成员后，企业可通过UnionID将external_userid与微信生态内的用户关联。
+      这是SCRM系统中「微信粉丝→企微客户」身份打通的关键桥梁。
+    data_flow:
+      - from: "wechat-account: UnionID"
+        to: "wechat-work: 企业微信客户 external_userid"
+        param: "unionid → external_userid映射"
+        relationship: "同一微信用户在企业微信侧的客户标识"
+    integration_point: "SCRM系统需要维护 unionid ↔ external_userid 映射表，实现微信粉丝与企微客户的身份统一"
+
+  - bridge_id: "CDB-WXACC-03"
+    source_domain: "wechat-account"
+    target_domain: "trade (交易/订单)"
+    bridge_name: "用户身份 → 订单归属"
+    description: |
+      SCRM系统的交易模块需要知道每笔订单属于哪个用户。
+      微信账号体系提供的openid/unionid/user_id是订单归属的核心标识。
+      用户在不同触点(公众号/小程序/APP)产生的订单，通过UnionID归集到同一用户。
+    data_flow:
+      - from: "wechat-account: user_id + unionid"
+        to: "trade: 订单 user_id"
+        param: "user_id"
+        relationship: "订单归属——每笔交易必须关联到具体的SCRM用户"
+      - from: "wechat-account: 多触点openid"
+        to: "trade: 订单来源渠道标识"
+        param: "openid + platform"
+        relationship: "记录订单来自哪个触点(公众号/小程序/APP/网站)"
+
+  - bridge_id: "CDB-WXACC-04"
+    source_domain: "wechat-account"
+    target_domain: "marketing (营销)"
+    bridge_name: "用户授权scope → 营销触达能力"
+    description: |
+      营销模块需要知道能通过什么渠道触达用户。
+      用户授权了snsapi_userinfo → 可以获取头像昵称做个性化营销；
+      用户在小程序授权了手机号 → 可以短信营销；
+      用户关注了服务号 → 可以通过模板消息触达。
+    data_flow:
+      - from: "wechat-account: scope授权记录"
+        to: "marketing: 触达渠道白名单"
+        param: "授权scope列表"
+        relationship: "授权范围决定营销触达能力边界"
+
+# --- Step 3: 角色视角展开 ---
+role_perspectives:
+  description: "关键场景按角色视角展开，帮助不同角色在需求分析和设计时聚焦自己的关注点"
+
+  - perspective_id: "RP-WXACC-01"
+    scene: "服务号网页授权登录"
+    mapped_to: "SCENE-01"
+    perspectives:
+      - role: "SCRM开发者（集成方）"
+        focus_areas:
+          - title: "scope选择决策树"
+            detail: |
+              Q1: 只需要识别用户是谁？ → snsapi_base（静默，用户无感知）
+              Q2: 需要unionid做跨平台识别？ → snsapi_userinfo（弹窗授权）
+              Q3: 需要用户头像昵称？ → snsapi_userinfo
+              Q4: 只是活动落地页统计UV？ → snsapi_base够用
+              建议：注册/登录场景用snsapi_userinfo，浏览类场景用snsapi_base
+          - title: "redirect_uri配置"
+            detail: "必须在公众号后台「网页授权域名」配置纯域名（不带http://），回调URL域名必须与配置一致。常见错误：配置了www.example.com但回调用m.example.com"
+          - title: "state参数防CSRF"
+            detail: "后端生成随机state → 存入session → 回调时比对。不可省略！否则存在CSRF登录劫持风险"
+          - title: "code一次性+短有效期"
+            detail: "前端拿到code后立即传后端，不要在前端做任何其他操作。后端code换token接口要有幂等保护（code只能使用一次）"
+      - role: "微信用户（终端用户）"
+        focus_areas:
+          - title: "授权体验差异"
+            detail: "snsapi_base: 完全无感知，页面直接打开。snsapi_userinfo: 弹出授权页，显示应用名称和请求的信息，需手动点击「确认授权」"
+          - title: "拒绝授权后怎么办"
+            detail: "用户拒绝snsapi_userinfo后，页面仍可访问但拿不到用户信息。系统应降级展示公开内容或引导用户使用其他登录方式"
+          - title: "授权信息变更"
+            detail: "用户修改微信昵称/头像后，已授权的应用不会自动更新。需要用户重新授权或系统主动触发刷新"
+      - role: "SCRM运营者"
+        focus_areas:
+          - title: "授权转化率监控"
+            detail: "监控snsapi_userinfo授权页的确认率（用户看到授权弹窗→点击确认的比例）。授权率过低可能是：①授权页文案不清晰 ②用户不信任应用 ③redirect_uri域名与公众号主体不符"
+          - title: "授权撤销处理"
+            detail: "监听user_authorization_revoke事件。用户撤销授权后：①标记用户授权状态为已撤销 ②清除缓存的用户敏感信息 ③用户下次访问时引导重新授权"
+
+  - perspective_id: "RP-WXACC-02"
+    scene: "小程序登录"
+    mapped_to: "SCENE-02"
+    perspectives:
+      - role: "SCRM开发者（集成方）"
+        focus_areas:
+          - title: "session_key安全铁律"
+            detail: "session_key绝不返回小程序前端！前端只需要自定义token。session_key仅后端持有，用于解密encryptedData。存储：Redis key=openid, value=session_key, TTL合理设置"
+          - title: "自定义登录态设计"
+            detail: "推荐JWT: payload存openid或内部user_id，不存session_key。有效期建议2h-7天。提供静默刷新机制：前端检测token即将过期→重新wx.login→更新token"
+          - title: "登录态失效场景"
+            detail: "①用户重新wx.login(code2Session返回新session_key，旧key失效) ②小程序长时间后台 ③用户删除小程序→重新进入。检测：解密encryptedData失败→session_key已变→重新wx.login"
+          - title: "手机号获取最佳实践"
+            detail: "必须用户主动点击<button open-type='getPhoneNumber'>触发，不能JS自动调用。encryptedData+iv传后端，用session_key做AES-128-CBC解密。解密后验证watermark.appid是否匹配"
+      - role: "微信用户（终端用户）"
+        focus_areas:
+          - title: "登录零感知"
+            detail: "小程序静默登录完全透明，用户打开小程序即自动完成身份识别，无需任何操作"
+          - title: "手机号授权"
+            detail: "需要手机号时，用户点击按钮→弹出确认框（显示「XXX小程序申请获取你的手机号」）→用户确认→手机号传给小程序。用户拒绝不影响小程序基本功能使用"
+          - title: "删除小程序的影响"
+            detail: "用户在微信中删除小程序后，所有授权状态重置。重新添加后需要重新授权各项权限"
+      - role: "SCRM运营者"
+        focus_areas:
+          - title: "小程序是最佳获客触点"
+            detail: "code2Session直接返回unionid(需绑定开放平台)，无需用户手动授权。新用户注册转化率最高。建议将小程序作为SCRM账号体系的主入口"
+          - title: "手机号获取率监控"
+            detail: "监控手机号授权按钮的点击转化率。优化点：①按钮位置和文案 ②在合适的场景触发（如需要发货/客服联系时）③不要在首次打开就弹手机号授权"
+
+  - perspective_id: "RP-WXACC-03"
+    scene: "账号合并与跨平台识别"
+    mapped_to: "MERGE-01~05"
+    perspectives:
+      - role: "SCRM开发者（集成方）"
+        focus_areas:
+          - title: "数据模型设计"
+            detail: |
+              推荐双表设计：
+              users表: id(PK) + unionid(UNIQUE) + phone + created_at
+              user_openids表: user_id(FK) + openid + platform(mp/app/mini/web) + appid + created_at
+              优势：一个用户多个OpenID，通过unionid聚合；unionid变化时只需更新users表
+          - title: "合并时机策略"
+            detail: "方案A(实时)：每次用户通过新触点进入时，检测unionid是否已存在→存在则自动合并。方案B(异步)：定时任务扫描同一unionid的多条记录→合并。推荐实时+异步双保险"
+          - title: "合并冲突处理"
+            detail: "当两个账户(都有手机号/订单/积分)需要合并时：①以先注册的账户为主账户 ②后注册账户的数据合并到主账户 ③合并日志完整记录，便于审计和回滚"
+          - title: "开放平台绑定变更预案"
+            detail: "代码层面unionid不作为物理主键，用内部user_id做主键。unionid变更时：①建新旧映射表 ②双写过渡 ③定时清理旧映射"
+      - role: "SCRM运营者"
+        focus_areas:
+          - title: "账号合并后台"
+            detail: "SCRM后台提供：①用户多触点身份视图(展示该用户在所有平台的openid/unionid/手机号) ②手动合并功能(搜索两个用户→确认合并→预览合并结果→执行) ③合并历史记录查询"
+          - title: "unionid缺失监控"
+            detail: "每日监控unionid为空的用户比例和趋势。按来源渠道分维度：公众号XX%、小程序XX%、APP XX%。缺失率高的渠道→排查开放平台绑定或授权scope配置"
+          - title: "合并数据一致性校验"
+            detail: "定期巡检：①同一unionid是否有多个user_id→应合并 ②同一手机号是否有多个user_id→人工确认是否合并 ③user_openids表中孤立记录(无对应user_id)→数据修复"
+
+# ============================================
+# Part 0: 核心概念先行——读懂微信身份体系的前提
+# ============================================
+core_concepts:
+  description: |
+    在深入场景之前，先理解微信账号体系的底层设计哲学。
+    微信的设计核心：【平台隔离 + UnionID桥接】
+    
+    每个微信应用（服务号/小程序/APP）有独立的用户命名空间。
+    同一个用户在不同应用中看到不同的OpenID——这是设计，不是bug。
+    UnionID是唯一横跨所有应用的统一标识——但前提是你要主动做开放平台绑定。
+
+  # --- 0.1 OpenID ---
+  openid:
+    definition: "微信用户针对单个应用的唯一标识"
+    formula: "微信用户 + AppID = OpenID"
+    key_properties:
+      - "同一用户在不同AppID下的OpenID完全不同，不可互推"
+      - "只要AppID不变，OpenID永久不变（即使用户取消关注再重新关注）"
+      - "无需用户授权即可获取（只要与应用产生交互）"
+      - "作用域：单个应用内"
+    common_misconceptions:
+      - "❌ 误区：OpenID是微信用户的全局ID → ✅ 事实：OpenID是应用级ID，跨应用不同"
+      - "❌ 误区：可以用OpenID做跨平台用户识别 → ✅ 事实：必须用UnionID"
+    in_requirement_analysis: |
+      当需求涉及「用户身份识别」时，BA必须追问：
+      Q1: 这个用户在系统中会通过几个微信应用触点进入？（多触点→必须用UnionID）
+      Q2: OpenID是否直接作为用户主键？（不建议——应该以UnionID为主键，OpenID为关联键）
+
+  # --- 0.2 UnionID ---
+  unionid:
+    definition: "微信用户针对同一个微信开放平台账号的唯一标识"
+    formula: "微信用户 + 开放平台账号 = UnionID"
+    prerequisite: "必须将所有需要识别的应用（公众号/小程序/APP/网站）绑定到同一个微信开放平台账号下"
+    key_properties:
+      - "同一开放平台下的所有应用，同一用户的UnionID相同"
+      - "绑定关系不变则UnionID不变"
+      - "解除绑定或更换开放平台账号→UnionID会变化（⚠️ 历史数据断层风险）"
+      - "UnionID获取不是自动的——每个平台有各自的获取条件（见Part 2各场景）"
+    unionid_acquisition_by_platform:
+      service_account: "scope=snsapi_userinfo时，/sns/oauth2/access_token返回unionid；或用户关注后调用/cgi-bin/user/info"
+      subscription_account: "订阅号无网页授权能力，只有用户关注后才能通过/cgi-bin/user/info获取（需绑定开放平台）"
+      miniprogram: "wx.login→code2Session直接返回unionid（需绑定开放平台，无需用户授权）"
+      mobile_app: "scope=snsapi_userinfo时，/sns/oauth2/access_token返回unionid（需用户授权）"
+      website_app: "scope=snsapi_login时，/sns/oauth2/access_token直接返回unionid"
+    pain_points:
+      - id: "P-UNION-01"
+        title: "历史应用未绑定开放平台"
+        desc: "已上线的公众号/小程序如果最初没绑定开放平台，历史用户的unionid缺失。补绑后新用户有unionid，老用户需要触发一次交互才能拿到。"
+        solution: "设计「静默补齐」流程——老用户下次进入时静默调用相关接口补全unionid"
+      - id: "P-UNION-02"
+        title: "更换开放平台账号"
+        desc: "如因公司主体变更需更换开放平台，所有人unionid全变。"
+        solution: "在更换期间双写新旧unionid映射表，逐步迁移"
+      - id: "P-UNION-03"
+        title: "订阅号无unionid获取能力"
+        desc: "订阅号不支持网页授权，无法主动拿到unionid。如果SCRM系统只接订阅号，跨平台识别就无从谈起。"
+        solution: "订阅号只能靠用户关注后获取→引导用户关注→或升级为服务号"
+
+  # --- 0.3 AppID / AppSecret ---
+  app_credentials:
+    appid: "应用唯一标识（公开，可出现在前端）"
+    appsecret: "应用密钥（绝密，仅后端使用）"
+    key_rule: "AppSecret泄露=应用被接管。所有涉及AppSecret的调用必须在服务端完成。"
+    platform_differences:
+      - platform: "服务号/订阅号"
+        acquisition: "mp.weixin.qq.com → 设置与开发 → 基本配置"
+      - platform: "小程序"
+        acquisition: "mp.weixin.qq.com → 开发管理 → 开发设置"
+      - platform: "开放平台（APP/网站）"
+        acquisition: "open.weixin.qq.com → 管理中心 → 应用详情"
+
+  # --- 0.4 开放平台绑定 ---
+  open_platform_binding:
+    description: |
+      开放平台（open.weixin.qq.com）是微信生态的「账号联邦中心」。
+      在这里把服务号、订阅号、小程序、APP、网站应用绑定到一起，
+      才能让同一用户的UnionID在所有应用中一致。
+    binding_portal: "open.weixin.qq.com → 管理中心 → 我的业务 → 开放平台 → 绑定关系"
+    important: |
+      ⚠️ 常见踩坑：很多人去了「我的业务→小程序→绑定关系→开放平台」，
+      那是错误入口。正确入口是「我的业务→开放平台→绑定关系→小程序/公众号」。
+    effect_timing: "绑定后即时生效，新产生的用户交互将返回unionid"
+    historical_users: "绑定前的历史用户需要重新触发交互才能拿到unionid"
+
+
+# ============================================
+# Part 1: 全局API注册表（账号相关）
+# ============================================
+api_registry:
+  description: |
+    微信账号体系涉及的全部API。注意区分三类access_token：
+    1. 基础access_token——调用公众号/小程序管理API用（/cgi-bin/token，2h有效）
+    2. 网页授权access_token——OAuth2.0登录后调用用户信息用（/sns/oauth2/access_token，2h有效）
+    3. session_key——小程序专用，用于解密用户数据（不下发给前端，永久有效直到重新登录）
+    
+    ⚠️ 最大陷阱：基础access_token ≠ 网页授权access_token，两者完全独立！
+
+  apis:
+    # ===== 基础凭证 =====
+    - id: "WXACC-API-001"
+      name: "获取基础access_token"
+      url: "GET https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=APPID&secret=APPSECRET"
+      type: "基础凭证"
+      applicable_platforms: ["服务号", "订阅号", "小程序"]
+      core_input: ["appid", "secret", "grant_type=client_credential"]
+      core_output: ["access_token(2h)", "expires_in(7200)"]
+      usage: "调用公众号/小程序管理类API的前提凭证（获取用户信息/发送消息/菜单管理等）"
+      frequency_limit: "2000次/天（可按AppID维度提额）"
+      must_cache: true
+      note: "⚠️ 这个token与网页授权access_token完全不是同一个东西！"
+      scenes: ["所有公众号管理API调用前"]
+
+    # ===== 网页授权（服务号） =====
+    - id: "WXACC-API-002"
+      name: "网页授权—引导用户授权"
+      url: "GET https://open.weixin.qq.com/connect/oauth2/authorize?appid=APPID&redirect_uri=REDIRECT_URI&response_type=code&scope=SCOPE&state=STATE#wechat_redirect"
+      type: "OAuth2.0授权"
+      applicable_platforms: ["服务号"]
+      core_input: ["appid", "redirect_uri(需urlencode+域名白名单)", "scope(snsapi_base或snsapi_userinfo)", "state(防CSRF)"]
+      core_output: ["浏览器重定向到redirect_uri?code=CODE&state=STATE"]
+      scope_difference:
+        snsapi_base: "静默授权，无感知，仅获取openid（用户无感知）"
+        snsapi_userinfo: "弹窗授权，用户手动同意，可获取openid+unionid+昵称+头像（需绑定开放平台才有unionid）"
+      key_constraints:
+        - "redirect_uri域名必须在公众号后台「网页授权域名」中配置（纯域名，不带http(s)://）"
+        - "末尾必须带#wechat_redirect"
+        - "scope=snsapi_userinfo时，若用户未关注公众号，也会产生openid"
+      scenes: ["场景1a: 静默登录", "场景1b: 用户信息授权登录"]
+
+    - id: "WXACC-API-003"
+      name: "网页授权—code换网页授权access_token"
+      url: "GET https://api.weixin.qq.com/sns/oauth2/access_token?appid=APPID&secret=SECRET&code=CODE&grant_type=authorization_code"
+      type: "OAuth2.0 Token交换"
+      applicable_platforms: ["服务号", "开放平台APP", "开放平台网站"]
+      core_input: ["appid", "secret", "code(一次性，10分钟有效)"]
+      core_output: ["access_token(网页授权token，2h)", "refresh_token(30天)", "openid", "unionid(仅scope=snsapi_userinfo且已绑定开放平台时返回)", "scope"]
+      frequency_limit: "5万次/分钟"
+      code_is_one_time: true
+      note: |
+        ⚠️ 这里返回的access_token是【网页授权access_token】，不是基础access_token。
+        只能用这个token调/sns/userinfo获取用户信息，不能调/cgi-bin/*管理接口。
+      scenes: ["场景1a: 静默登录", "场景1b: 用户信息授权登录", "场景3a: APP授权登录", "场景4a: 网站扫码登录"]
+
+    - id: "WXACC-API-004"
+      name: "网页授权—刷新access_token"
+      url: "GET https://api.weixin.qq.com/sns/oauth2/refresh_token?appid=APPID&grant_type=refresh_token&refresh_token=REFRESH_TOKEN"
+      type: "OAuth2.0 Token刷新"
+      applicable_platforms: ["服务号", "开放平台APP", "开放平台网站"]
+      core_input: ["appid", "grant_type=refresh_token", "refresh_token(30天有效)"]
+      core_output: ["access_token(新，2h)", "refresh_token(新，30天)", "openid", "scope"]
+      refresh_token_one_time: "⚠️ refresh_token使用一次后旧token失效，同时返回新refresh_token。必须原子化更新存储！"
+      frequency_limit: "5万次/分钟"
+      scenes: ["场景1c: Token过期刷新"]
+
+    - id: "WXACC-API-005"
+      name: "网页授权—获取用户信息"
+      url: "GET https://api.weixin.qq.com/sns/userinfo?access_token=ACCESS_TOKEN&openid=OPENID&lang=zh_CN"
+      type: "OAuth2.0用户信息"
+      applicable_platforms: ["服务号", "开放平台APP", "开放平台网站"]
+      precondition: "access_token有效且scope=snsapi_userinfo"
+      core_input: ["网页授权access_token", "openid", "lang"]
+      core_output: ["openid", "nickname", "headimgurl", "unionid(已绑定开放平台时)", "sex(⚠️已不可靠)", "province(⚠️已不可靠)", "city(⚠️已不可靠)"]
+      frequency_limit: "5万次/分钟"
+      deprecated_fields: "2021-10-20起：sex、province、city字段返回值已不准确，产品设计不应依赖这些字段"
+      headimgurl_volatile: "⚠️ 用户更换头像后旧URL立即失效。建议下载到自己的存储，不要长期引用微信URL"
+      scenes: ["场景1b: 用户信息授权登录"]
+
+    # ===== 用户管理（公众号通用） =====
+    - id: "WXACC-API-006"
+      name: "获取用户基本信息（通过OpenID）"
+      url: "GET https://api.weixin.qq.com/cgi-bin/user/info?access_token=BASE_ACCESS_TOKEN&openid=OPENID&lang=zh_CN"
+      type: "用户管理"
+      applicable_platforms: ["服务号", "订阅号"]
+      precondition: "用户已关注公众号（未关注时返回的subscribe=0，仅返回openid）"
+      core_input: ["基础access_token(⚠️注意是基础token不是网页授权token)", "openid"]
+      core_output: ["subscribe(1已关注0未关注)", "openid", "nickname", "headimgurl", "unionid(已绑定开放平台时返回)", "subscribe_time(关注时间)", "remark(备注)", "groupid", "tagid_list"]
+      scenes: ["场景5b: 已关注用户信息获取"]
+
+    - id: "WXACC-API-007"
+      name: "批量获取用户基本信息"
+      url: "POST https://api.weixin.qq.com/cgi-bin/user/info/batchget?access_token=BASE_ACCESS_TOKEN"
+      type: "用户管理"
+      applicable_platforms: ["服务号", "订阅号"]
+      core_input: ["基础access_token", "user_list[{openid, lang}] 最多100条"]
+      core_output: ["user_info_list[]"]
+      scenes: ["批量用户信息同步"]
+
+    # ===== 小程序登录 =====
+    - id: "WXACC-API-008"
+      name: "小程序—wx.login获取code"
+      url: "小程序前端调用 wx.login()"
+      type: "小程序登录"
+      applicable_platforms: ["小程序"]
+      core_input: ["无（前端SDK自动处理）"]
+      core_output: ["code（临时凭证，5分钟有效，一次性使用）"]
+      code_one_time: true
+      scenes: ["场景2a: 小程序静默登录"]
+
+    - id: "WXACC-API-009"
+      name: "小程序—code2Session"
+      url: "GET https://api.weixin.qq.com/sns/jscode2session?appid=APPID&secret=SECRET&js_code=CODE&grant_type=authorization_code"
+      type: "小程序登录"
+      applicable_platforms: ["小程序"]
+      core_input: ["appid", "secret", "js_code(来自wx.login的code)"]
+      core_output: ["openid", "session_key(⚠️严禁下发前端)", "unionid(已绑定开放平台时返回)", "errcode"]
+      session_key_rule: |
+        ⚠️ session_key是解密用户敏感数据（手机号/用户信息）的密钥。
+        铁律：session_key绝不返回给小程序前端，仅服务端持有。
+        用途：后端用session_key对encryptedData做AES-128-CBC解密。
+      frequency_limit: "无明确限制，但code只能使用一次"
+      scenes: ["场景2a: 小程序静默登录"]
+
+    # ===== 开放平台APP登录 =====
+    - id: "WXACC-API-010"
+      name: "APP—拉起微信授权"
+      url: "SDK调用（iOS SendReq / Android sendReq / 鸿蒙）"
+      type: "APP授权"
+      applicable_platforms: ["iOS APP", "Android APP", "鸿蒙 APP"]
+      core_input: ["appid", "scope=snsapi_userinfo(必须)", "state(防CSRF)"]
+      core_output: ["code（通过微信回调URL返回给APP）"]
+      code_validity: "10分钟，一次性"
+      unlisted_app_limit: "⚠️ 未上架应用每日限制100次登录"
+      scenes: ["场景3a: APP拉起微信授权登录"]
+
+    - id: "WXACC-API-011"
+      name: "APP/网站—检验access_token有效性"
+      url: "GET https://api.weixin.qq.com/sns/auth?access_token=ACCESS_TOKEN&openid=OPENID"
+      type: "Token校验"
+      applicable_platforms: ["开放平台APP", "开放平台网站", "服务号"]
+      core_input: ["网页授权access_token", "openid"]
+      core_output: ["errcode(0=有效，其他=无效)"]
+      scenes: ["Token有效性校验"]
+
+    # ===== 网站应用扫码登录 =====
+    - id: "WXACC-API-012"
+      name: "网站应用—扫码登录引导"
+      url: "GET https://open.weixin.qq.com/connect/qrconnect?appid=APPID&redirect_uri=REDIRECT_URI&response_type=code&scope=snsapi_login&state=STATE#wechat_redirect"
+      type: "网站扫码登录"
+      applicable_platforms: ["网站应用"]
+      core_input: ["appid", "redirect_uri", "response_type=code", "scope=snsapi_login", "state"]
+      core_output: ["二维码页面→用户扫码→回调redirect_uri?code=CODE&state=STATE"]
+      embedded_js_option: |
+        也可以通过引入wxLogin.js在页面内嵌二维码：
+        <script src="http://res.wx.qq.com/connect/zh_CN/htmledition/js/wxLogin.js"></script>
+        new WxLogin({id:"container", appid:"xxx", scope:"snsapi_login", ...})
+      fast_login: "PC端微信≥3.9.11(Win)/≥4.0.0(Mac)时，优先弹快速登录确认框，无需扫码"
+      scenes: ["场景4a: 网站扫码登录"]
+
+    # ===== 小程序授权 =====
+    - id: "WXACC-API-013"
+      name: "小程序—wx.authorize"
+      url: "小程序前端调用 wx.authorize({scope: 'xxx'})"
+      type: "小程序权限授权"
+      applicable_platforms: ["小程序"]
+      core_input: ["scope（如scope.userLocation）"]
+      core_output: ["用户同意→success / 用户拒绝→fail（之后不再弹窗）"]
+      user_rejected_behavior: |
+        ⚠️ 用户一旦拒绝某个scope，后续wx.authorize不会再弹窗。
+        只能引导用户通过wx.openSetting手动开启。
+      scenes: ["场景2e: 敏感权限授权"]
+
+    - id: "WXACC-API-014"
+      name: "小程序—wx.getSetting"
+      url: "小程序前端调用 wx.getSetting()"
+      type: "授权状态查询"
+      applicable_platforms: ["小程序"]
+      core_output: ["authSetting: {scope.xxx: true/false/undefined}"]
+      status_values:
+        - "true: 已授权"
+        - "false: 已拒绝"
+        - "undefined: 从未询问"
+      scenes: ["场景2e: 敏感权限授权(预检)"]
+
+    - id: "WXACC-API-015"
+      name: "小程序—wx.openSetting"
+      url: "小程序前端调用 wx.openSetting()"
+      type: "授权管理"
+      applicable_platforms: ["小程序"]
+      core_output: ["打开小程序设置页面，用户手动开启/关闭权限"]
+      usage: "用户拒绝授权后的补救措施"
+      scenes: ["场景2e: 拒绝后引导"]
+
+
+# ============================================
+# Part 2: 五大平台登录场景深度分析
+# ============================================
+login_scenes:
+  description: |
+    微信生态5大平台×15+登录子场景。每个场景标注：
+    - 接口调度链（精确到API+参数流转）
+    - Token生命周期
+    - 能拿到什么身份标识（OpenID? UnionID? 用户信息?）
+    - 常见坑
+
+  # ================================================================
+  # 场景1：服务号网页授权登录（OAuth2.0 H5）
+  # 这是SCRM系统最常用的登录方式之一
+  # ================================================================
+  - scene_id: "SCENE-01"
+    scene_name: "服务号网页授权登录"
+    platform: "微信服务号"
+    description: |
+      用户在微信内打开H5页面，通过OAuth2.0获取用户身份。
+      核心流程：拼接授权URL→微信回跳带code→后端code换token→获取用户信息。
+    applicable_when:
+      - "SCRM系统中需要微信内H5登录/注册"
+      - "微信内打开的活动页面需要识别用户"
+      - "公众号内嵌网页需要个性化展示"
+
+    # --- 子场景1a：静默授权（snsapi_base）---
+    sub_scenes:
+      - sub_id: "SCENE-01a"
+        name: "静默授权登录（仅OpenID）"
+        scope: "snsapi_base"
+        user_experience: "用户无感知，直接跳转回调页"
+        what_you_get: ["openid"]
+        what_you_dont_get: ["unionid", "用户昵称/头像（如需必须用snsapi_userinfo）"]
+        api_chain:
+          - step: 1
+            actor: "前端(H5)"
+            action: "拼接授权URL并跳转"
+            api: "WXACC-API-002 (scope=snsapi_base)"
+            params_flow:
+              - param: "appid"
+                source: "公众号后台配置"
+              - param: "redirect_uri"
+                source: "当前页面URL（urlencode），必须与后台配置的授权域名一致"
+              - param: "state"
+                source: "后端生成随机数，与session绑定，回调时校验防CSRF"
+
+          - step: 2
+            actor: "微信服务器→浏览器"
+            action: "静默授权后302跳转到redirect_uri"
+            params_flow:
+              - param: "code"
+                source: "微信生成"
+                drives: ["下一步:code换token"]
+              - param: "state"
+                source: "原样返回"
+                validation: "与session中state比对"
+
+          - step: 3
+            actor: "后端"
+            action: "用code换取网页授权access_token"
+            api: "WXACC-API-003"
+            params_flow:
+              - param: "code"
+                source: "步骤2回调URL中的code"
+              - param: "appid"
+                source: "公众号后台配置"
+              - param: "secret"
+                source: "公众号后台配置（⚠️仅后端）"
+            result_flow:
+              - param: "openid"
+                target: "用户身份标识，存入数据库user.openid_mp"
+              - param: "access_token"
+                target: "暂存（snsapi_base下无更多用途，可直接丢弃）"
+            note: "snsapi_base下不返回unionid和refresh_token"
+
+        typical_use_case: |
+          用户进入活动页面→静默获取openid→查询该用户是否已注册
+          →未注册展示注册引导 / 已注册展示个性化内容
+
+      # --- 子场景1b：用户信息授权（snsapi_userinfo）---
+      - sub_id: "SCENE-01b"
+        name: "用户信息授权登录（OpenID + UnionID + 用户资料）"
+        scope: "snsapi_userinfo"
+        user_experience: "弹出授权页，用户需手动点击「确认授权」"
+        what_you_get: ["openid", "access_token(网页授权)", "refresh_token(30天)", "unionid(需绑定开放平台)", "昵称", "头像"]
+        what_you_dont_get: ["性别/地区(已不可靠)", "手机号(公众号无法直接获取手机号)"]
+        api_chain:
+          - step: 1
+            actor: "前端(H5)"
+            action: "拼接授权URL并跳转"
+            api: "WXACC-API-002 (scope=snsapi_userinfo)"
+            params_flow:
+              - param: "redirect_uri"
+                source: "当前页面URL（urlencode）"
+              - param: "state"
+                source: "后端生成随机数"
+
+          - step: 2
+            actor: "用户"
+            action: "在微信授权页点击「确认授权」"
+
+          - step: 3
+            actor: "微信→浏览器"
+            action: "302跳转回调"
+            params_flow:
+              - param: "code"
+                source: "微信生成"
+                drives: ["下一步"]
+
+          - step: 4
+            actor: "后端"
+            action: "code换token"
+            api: "WXACC-API-003"
+            result_flow:
+              - param: "openid"
+                target: "数据库 user.openid_mp"
+              - param: "access_token"
+                target: "数据库 user.oauth_access_token + 记录过期时间(2h)"
+              - param: "refresh_token"
+                target: "数据库 user.oauth_refresh_token + 记录过期时间(30天)"
+              - param: "unionid"
+                target: "数据库 user.unionid（⚠️ 仅当已绑定开放平台时）"
+                null_check: "如果unionid为空→检查是否绑定开放平台"
+              - param: "scope"
+                target: "记录授权范围(snsapi_userinfo)"
+
+          - step: 5
+            actor: "后端"
+            action: "用网页授权access_token获取用户信息"
+            api: "WXACC-API-005"
+            params_flow:
+              - param: "access_token"
+                source: "步骤4返回的access_token"
+              - param: "openid"
+                source: "步骤4返回的openid"
+            result_flow:
+              - param: "nickname"
+                target: "数据库 user.nickname"
+              - param: "headimgurl"
+                target: "⚠️ 立即下载到自有存储，不要长期引用微信URL"
+              - param: "unionid"
+                target: "如果步骤4未返回，这里还可能返回（确认绑定后补全）"
+
+        typical_use_case: |
+          SCRM注册/登录页→用户点击「微信登录」→跳转授权→确认→
+          后端同时拿到openid+unionid+头像昵称→判断是否新用户→
+          新用户自动注册 / 老用户自动登录
+
+        pitfalls:
+          - id: "PIT-01b-01"
+            title: "快照页模式（is_snapshotuser=1）"
+            desc: "2022-07-12起，不规范使用snsapi_userinfo可能触发快照页模式，此时用户是虚拟账号，openid不可靠"
+          - id: "PIT-01b-02"
+            title: "头像URL失效"
+            desc: "微信返回的头像URL在用户更换头像后立即失效。必须下载到自有OSS/COS存储"
+          - id: "PIT-01b-03"
+            title: "unionid缺失"
+            desc: "最常见踩坑：明明scope=snsapi_userinfo但没有unionid。99%是因为没有绑定开放平台"
+
+      # --- 子场景1c：Token刷新 ---
+      - sub_id: "SCENE-01c"
+        name: "网页授权Token刷新"
+        description: |
+          网页授权access_token有效期仅2小时。过期后用refresh_token刷新。
+          refresh_token有效期30天，使用后旧token失效，同时返回新refresh_token。
+        api_chain:
+          - step: 1
+            actor: "后端（定时任务/懒检查）"
+            action: "检测access_token是否过期"
+            check_method: "方法1：记录获取时间+2h / 方法2：调用WXACC-API-011检验 / 方法3：业务接口报40001时触发刷新"
+
+          - step: 2
+            actor: "后端"
+            action: "用refresh_token刷新"
+            api: "WXACC-API-004"
+            params_flow:
+              - param: "refresh_token"
+                source: "数据库 user.oauth_refresh_token"
+            result_flow:
+              - param: "access_token"
+                target: "更新 user.oauth_access_token + 重置过期时间"
+              - param: "refresh_token"
+                target: "更新 user.oauth_refresh_token（旧token已失效）"
+
+          - step: 3
+            actor: "后端"
+            action: "如果refresh_token也过期（30天未使用或使用过一次后丢失）"
+            fallback: "用户需重新走场景1a或1b授权流程"
+
+        critical_race_condition: |
+          ⚠️ 并发刷新风险：多个请求同时触发刷新，第二个请求用已失效的refresh_token会失败。
+          必须加分布式锁或数据库乐观锁避免。
+
+      # --- 子场景1d：授权变更 ---
+      - sub_id: "SCENE-01d"
+        name: "用户授权信息变更处理"
+        description: |
+          微信可推送 user_info_modified（用户修改资料）和 user_authorization_revoke（用户取消授权）事件。
+          SCRM系统应监听这些事件。
+        actions:
+          - event: "user_info_modified"
+            response: "重新调用获取用户信息接口更新资料"
+          - event: "user_authorization_revoke"
+            response: "标记用户已取消授权，清除敏感数据，下次访问时重新请求授权"
+
+  # ================================================================
+  # 场景2：小程序登录
+  # ================================================================
+  - scene_id: "SCENE-02"
+    scene_name: "小程序登录"
+    platform: "微信小程序"
+    description: |
+      小程序登录与服务号网页授权有本质不同：
+      - 不需要用户手动授权（wx.login直接获取openid）
+      - 使用session_key而非access_token
+      - unionid在code2Session直接返回（已绑定开放平台时）
+      - 用户信息通过组件填写获取（新版），不再走wx.getUserProfile
+
+    sub_scenes:
+      - sub_id: "SCENE-02a"
+        name: "小程序静默登录（标准流程）"
+        user_experience: "用户打开小程序→几秒内自动完成登录→进入首页"
+        what_you_get: ["openid", "session_key(仅后端)", "unionid(已绑定开放平台时)"]
+        what_you_dont_get: ["用户昵称/头像（新版需用户主动填写）", "手机号（需用户主动点击获取）"]
+        api_chain:
+          - step: 1
+            actor: "小程序前端"
+            action: "调用wx.login获取code"
+            api: "WXACC-API-008 (wx.login)"
+            params_flow:
+              - param: "无（SDK自动）"
+            result_flow:
+              - param: "code"
+                target: "立即发送给后端（⚠️ 不要在前端做任何其他操作，code有效期极短）"
+
+          - step: 2
+            actor: "后端"
+            action: "code2Session换session_key+openid"
+            api: "WXACC-API-009"
+            params_flow:
+              - param: "js_code"
+                source: "前端传来的code"
+              - param: "appid+secret"
+                source: "小程序后台配置"
+            result_flow:
+              - param: "openid"
+                target: "数据库 user.openid_mini"
+              - param: "session_key"
+                target: "仅后端存储（Redis/DB），绝不下发前端"
+              - param: "unionid"
+                target: "数据库 user.unionid（已绑定开放平台时）"
+                null_check: "未返回→检查开放平台绑定"
+
+          - step: 3
+            actor: "后端"
+            action: "生成自定义登录态（如JWT token）"
+            result_flow:
+              - param: "custom_token"
+                target: "返回给小程序前端，前端存入storage"
+                usage: "后续所有业务请求携带此token，后端解析识别用户"
+
+        typical_use_case: |
+          小程序启动→app.js中调用wx.login→后端静默登录→
+          返回JWT→页面正常展示。用户体验零感知。
+
+        security_reminder: "session_key绝不返回前端！前端只需要自定义token。"
+
+      - sub_id: "SCENE-02b"
+        name: "自定义登录态维护"
+        description: |
+          code2Session返回的session_key不直接用于身份识别。
+          需要建立自己的登录态体系。
+        best_practices:
+          - "使用JWT（无状态）或Redis Session（有状态）作为自定义登录态"
+          - "JWT payload中存储openid（或内部user_id），不存session_key"
+          - "session_key单独存储在Redis中，key=openid，设置合理过期时间"
+          - "提供刷新机制：前端检测token即将过期→重新wx.login→更新token"
+        check_session_key_validity: |
+          ⚠️ session_key可能因以下原因失效：
+          1. 用户重新wx.login（code2Session返回新session_key，旧key立即失效）
+          2. 小程序长时间后台后session_key过期
+          3. 用户在微信中删除小程序→重新进入
+          检测方式：用session_key解密encryptedData时，若解密失败→session_key已变→重新wx.login
+
+      - sub_id: "SCENE-02c"
+        name: "获取用户手机号"
+        user_experience: "用户点击<button open-type='getPhoneNumber'>→微信弹出确认框→用户同意→返回加密数据"
+        what_you_get: ["加密的手机号数据(encryptedData+iv)"]
+        api_chain:
+          - step: 1
+            actor: "小程序前端"
+            action: "放置<button open-type='getPhoneNumber' bindgetphonenumber='callback'>"
+            note: "必须用户主动点击按钮触发，不能JS自动触发"
+
+          - step: 2
+            actor: "小程序前端→后端"
+            action: "将encryptedData、iv传给后端"
+            note: "有时需要同时传code用于refreshSession"
+
+          - step: 3
+            actor: "后端"
+            action: "用session_key对encryptedData做AES-128-CBC解密"
+            algorithm: "AES-128-CBC, PKCS7 padding, key=session_key, iv=前端传来的iv"
+            result: "纯净手机号（不含区号），需验证watermark.appid是否匹配"
+
+        two_methods:
+          - method: "快速验证组件"
+            desc: "返回加密密文，后端解密得到手机号"
+          - method: "实时验证组件"
+            desc: "微信实时校验手机号真实性，适合安全要求高的场景"
+
+      - sub_id: "SCENE-02d"
+        name: "获取用户头像昵称（新版）"
+        description: |
+          新版（基础库2.10.4+）不再通过wx.getUserProfile弹窗授权获取用户信息。
+          改为用户主动在头像昵称填写组件中填写。
+        note: "昵称头像不是登录的必要前提——登录只靠openid。用户信息需要另外获取"
+
+      - sub_id: "SCENE-02e"
+        name: "敏感权限授权（位置/相机/麦克风等）"
+        description: |
+          小程序部分能力需要用户授权（scope体系），与账号登录无关但同属授权机制。
+        scope_list:
+          userLocation: "精确位置→wx.getLocation"
+          userFuzzyLocation: "模糊位置→wx.getFuzzyLocation"
+          userLocationBackground: "后台定位"
+          record: "麦克风→RecorderManager"
+          camera: "摄像头→camera组件"
+          bluetooth: "蓝牙→wx.openBluetoothAdapter"
+          writePhotosAlbum: "保存到相册"
+          werun: "微信运动→wx.getWeRunData"
+        key_behaviors:
+          - "用户拒绝后→再次调用不会弹窗→直接fail→需引导至设置页(wx.openSetting)"
+          - "授权状态持久化→用户删除小程序后重置"
+          - "用wx.getSetting预检用户授权状态→避免直接调接口导致静默失败"
+
+  # ================================================================
+  # 场景3：移动APP微信登录
+  # ================================================================
+  - scene_id: "SCENE-03"
+    scene_name: "移动APP微信登录"
+    platform: "iOS / Android / 鸿蒙 APP"
+    description: |
+      APP唤起微信客户端完成授权登录。与服务号H5授权流程类似但不同：
+      - refresh_token有效期180天（非服务号的30天）⚠️ 这是重要差异！
+      - scope固定为snsapi_userinfo（必须）
+      - 需要APP在开放平台注册并审核通过
+    applicable_when:
+      - "自有APP需要微信登录"
+      - "既支持手机号登录又支持微信登录的混合体系"
+      - "需要跨APP与H5/小程序用户打通"
+
+    sub_scenes:
+      - sub_id: "SCENE-03a"
+        name: "APP微信授权登录标准流程"
+        api_chain:
+          - step: 1
+            actor: "APP"
+            action: "调用微信SDK发起授权请求"
+            api: "WXACC-API-010"
+            params_flow:
+              - param: "scope"
+                source: "固定snsapi_userinfo"
+              - param: "state"
+                source: "APP生成随机数（通常用时间戳+随机串）"
+            note: "用户需安装微信且版本支持"
+
+          - step: 2
+            actor: "微信APP→本APP"
+            action: "微信回调返回code"
+            params_flow:
+              - param: "code"
+                source: "微信生成"
+                validity: "10分钟，一次性"
+
+          - step: 3
+            actor: "后端"
+            action: "code换access_token"
+            api: "WXACC-API-003"
+            result_flow:
+              - param: "access_token"
+                target: "数据库 user.app_oauth_access_token (2h)"
+              - param: "refresh_token"
+                target: "数据库 user.app_oauth_refresh_token (180天)"
+              - param: "openid"
+                target: "数据库 user.openid_app"
+              - param: "unionid"
+                target: "数据库 user.unionid"
+
+          - step: 4
+            actor: "后端"
+            action: "获取用户信息"
+            api: "WXACC-API-005"
+            result_flow:
+              - param: "nickname+headimgurl"
+                target: "更新用户资料"
+
+        key_difference_from_service_account:
+          - "refresh_token有效期：APP/网站=180天，服务号=30天"
+          - "scope：APP固定snsapi_userinfo，服务号可选snsapi_base"
+          - "code有效期：APP=10分钟，服务号=5分钟（差异不大但要注意）"
+
+        limitation: "未上架（审核中）的APP→每日微信登录限100次→正式上线前需设为「已上架」状态"
+
+      - sub_id: "SCENE-03b"
+        name: "APP Token刷新"
+        description: "与场景1c机制相同，但refresh_token有效期180天（服务号仅30天）"
+
+  # ================================================================
+  # 场景4：网站应用扫码登录
+  # ================================================================
+  - scene_id: "SCENE-04"
+    scene_name: "网站应用扫码登录"
+    platform: "PC Web（浏览器）"
+    description: |
+      在PC端网页显示二维码，用户用微信扫码授权登录。
+      scope固定为snsapi_login。
+      refresh_token有效期180天（与服务号的30天不同）。
+    applicable_when:
+      - "PC端后台管理系统需要微信扫码登录"
+      - "SCRM运营后台与微信用户体系打通"
+
+    sub_scenes:
+      - sub_id: "SCENE-04a"
+        name: "扫码登录标准流程"
+        user_experience: "PC网页显示二维码→用户打开微信扫码→手机确认→PC回调登录成功"
+        api_chain:
+          - step: 1
+            actor: "PC前端"
+            action: "展示二维码"
+            methods:
+              - method: "方式A: 直接跳转"
+                desc: "window.location跳转到WXACC-API-012的URL→微信扫码页→回调redirect_uri"
+              - method: "方式B: 内嵌JS"
+                desc: "引入wxLogin.js→new WxLogin({id:'container', ...})→页面内显示二维码"
+                advantage: "体验更好，不离开当前页面"
+
+          - step: 2
+            actor: "用户"
+            action: "打开微信→扫一扫→扫码→手机上确认登录"
+            fast_login: "PC微信已登录≥3.9.11版→优先弹「快速登录」确认框→无需扫码"
+
+          - step: 3
+            actor: "微信→PC浏览器"
+            action: "回调redirect_uri?code=CODE&state=STATE"
+
+          - step: 4
+            actor: "后端"
+            action: "code换token → 获取用户信息"
+            api: "WXACC-API-003 → WXACC-API-005"
+            result_flow:
+              - param: "openid"
+                target: "数据库 user.openid_web"
+              - param: "unionid"
+                target: "数据库 user.unionid"
+              - param: "access_token(2h)/refresh_token(180天)"
+                target: "存库备用"
+
+  # ================================================================
+  # 场景5：订阅号用户管理
+  # ================================================================
+  - scene_id: "SCENE-05"
+    scene_name: "订阅号用户管理"
+    platform: "微信订阅号"
+    description: |
+      订阅号能力受限——不支持网页授权（无法主动拿openid），不支持JS-SDK完整能力。
+      用户身份获取的唯一途径：用户关注订阅号后，被动接收消息时获得FromUserName(openid)。
+      然后通过基础API获取用户信息。
+    applicable_when:
+      - "SCRM系统需要对接订阅号（轻量级内容传播场景）"
+    limitations:
+      - "不支持网页授权→无法在H5中主动获取openid"
+      - "不支持UnionID直接获取→需用户关注+绑定开放平台"
+      - "无微信支付/卡券等高级功能"
+
+    sub_scenes:
+      - sub_id: "SCENE-05a"
+        name: "用户关注→身份获取"
+        api_chain:
+          - step: 1
+            actor: "微信→订阅号服务器"
+            action: "推送关注事件（XML格式）"
+            result_flow:
+              - param: "FromUserName"
+                target: "即用户的openid"
+              - param: "Event"
+                target: "subscribe(关注)/unsubscribe(取关)"
+
+          - step: 2
+            actor: "后端"
+            action: "用openid获取用户信息"
+            api: "WXACC-API-006"
+            prerequisite: "需先获取基础access_token（WXACC-API-001）"
+            result_flow:
+              - param: "unionid"
+                target: "已绑定开放平台时返回"
+
+      - sub_id: "SCENE-05b"
+        name: "自动回复→身份识别"
+        description: |
+          用户在订阅号内发送消息→消息XML中包含FromUserName(openid)→
+          后端可以此识别用户身份→查询/创建用户记录
+
+
+# ============================================
+# Part 3: Token与凭证体系全景图
+# ============================================
+token_system:
+  description: |
+    微信账号体系中最容易出Bug的地方就是Token管理。
+    不同平台的token含义、获取方式、有效期、用途完全不同。
+    以下是完整对比——BA做需求分析时必须清楚这些差异。
+
+  token_types:
+
+    - token_name: "基础access_token"
+      acquisition: "/cgi-bin/token (appid+secret)"
+      platforms: ["服务号", "订阅号", "小程序"]
+      validity: "2小时（7200秒）"
+      usage: "调用公众号/小程序管理API（获取用户信息/发消息/菜单等）"
+      refresh: "重新调用/cgi-bin/token（旧token可能继续有效5分钟，需提前刷新）"
+      frequency: "2000次/天"
+      storage: "全局缓存（所有用户共享），建议Redis + 提前5分钟刷新"
+      security: "⚠️ 不能下发前端"
+
+    - token_name: "网页授权access_token"
+      acquisition: "/sns/oauth2/access_token (appid+secret+code)"
+      platforms: ["服务号", "开放平台APP", "开放平台网站"]
+      validity: "2小时（7200秒）"
+      usage: "调用/sns/userinfo获取用户信息 / /sns/auth检验有效性"
+      refresh: "/sns/oauth2/refresh_token → 新的access_token+refresh_token"
+      refresh_token_validity: "服务号:30天 / APP+网站:180天"
+      frequency: "5万次/分钟"
+      storage: "按用户存储（每个用户独立）"
+
+    - token_name: "小程序session_key"
+      acquisition: "/sns/jscode2session (appid+secret+code)"
+      platforms: ["小程序"]
+      validity: "动态（重新wx.login后旧key失效）"
+      usage: "仅用于服务端解密用户敏感数据（encryptedData→手机号/用户信息）"
+      refresh: "重新wx.login→code2Session→新session_key"
+      storage: "⚠️ 仅后端存储，绝不下发前端。key=openid存入Redis"
+      security: "泄漏=所有用户数据可被解密"
+
+    - token_name: "自定义登录态"
+      acquisition: "后端自行生成（如JWT/Session ID）"
+      platforms: ["所有平台"]
+      validity: "自行定义（建议2h-7天）"
+      usage: "小程序/APP前端携带此token调用业务API"
+      storage: "前端：localStorage/Storage。后端：无需存储(JWT)或Redis(Session)"
+
+  token_comparison_matrix: |
+    | 维度 | 基础access_token | 网页授权access_token | 小程序session_key | 自定义登录态 |
+    |------|:---:|:---:|:---:|:---:|
+    | 有效期 | 2h | 2h | 动态(重登录失效) | 自定 |
+    | 作用域 | 全局(所有用户共享) | 单用户 | 单用户 | 单用户 |
+    | 刷新方式 | 重新获取 | refresh_token刷新 | 重新wx.login | 重新获取 |
+    | 刷新token有效期 | N/A | 30d/180d | N/A | N/A |
+    | 能否下发前端 | ❌绝不 | ❌绝不 | ❌绝不 | ✅可以 |
+    | 获取接口 | /cgi-bin/token | /sns/oauth2/access_token | /sns/jscode2session | 自建 |
+    | 主要用途 | 管理API调用 | 用户信息获取 | 数据解密 | 业务API身份 |
+    | 服务号 | ✅ | ✅ | ❌不适用 | ✅ |
+    | 订阅号 | ✅ | ❌不支持网页授权 | ❌不适用 | ❌ |
+    | 小程序 | ✅ | ❌不适用 | ✅ | ✅ |
+    | APP | ❌不适用 | ✅ | ❌不适用 | ✅ |
+    | 网站 | ❌不适用 | ✅ | ❌不适用 | ✅ |
+
+
+# ============================================
+# Part 4: 账号合并与跨平台识别（核心痛点场景）
+# ============================================
+account_merging:
+  description: |
+    这是SCRM系统对接微信生态最核心、最复杂的命题。
+    一个用户可能通过多个触点（小程序+公众号+APP+H5活动页）进入系统。
+    每个触点产生不同的OpenID——如何识别为同一用户？
+    答案：UnionID。但现实远比「用UnionID就行」复杂得多。
+
+  # --- 场景6：多端用户识别 ---
+  scenes:
+    - merge_scene_id: "MERGE-01"
+      name: "用户通过不同触点进入SCRM系统"
+      description: |
+        典型场景：用户在微信里打开公众号的H5活动页注册了→
+        后来下载了你的APP用微信登录→再到小程序里用微信登录。
+        以上三次操作产生三个OpenID，但如果是同一个人，UnionID相同。
+      flow:
+        - touchpoint: "服务号H5→网页授权登录"
+          yields: "openid_mp + unionid"
+        - touchpoint: "APP→微信授权登录"
+          yields: "openid_app + unionid"
+        - touchpoint: "小程序→wx.login"
+          yields: "openid_mini + unionid"
+      identification: "三个openid→同一unionid→合并为同一用户"
+      data_model_suggestion: |
+        users表:
+          - id (内部主键)
+          - unionid (UNIQUE, 唯一索引)
+          - phone (手机号，另一个合并锚点)
+          - created_at
+        
+        user_openids表:
+          - user_id (关联users.id)
+          - openid
+          - platform (mp/app/mini/web)
+          - appid (对应公众号/小程序/APP的AppID)
+          - created_at
+        
+        这样设计的好处：一个用户可以有多个OpenID，通过unionid聚合。
+
+    - merge_scene_id: "MERGE-02"
+      name: "历史用户unionid补全"
+      description: |
+        已上线业务，最初没有绑定开放平台→用户表里只有openid没有unionid。
+        后来绑定了开放平台→新用户有unionid，旧用户没有→无法合并。
+      solution_flow:
+        - step: 1
+          action: "在开放平台完成绑定"
+        - step: 2
+          action: "识别所有unionid为空的用户"
+        - step: 3
+          action: "设计「静默补全」流程——用户下次通过任意触点进入时，捕获unionid并回填"
+        - step: 4
+          action: "对于长期不活跃用户，可考虑通过模板消息/服务通知引导访问，触发授权获取unionid"
+        - step: 5
+          action: "补全后发现unionid相同的记录→合并"
+
+    - merge_scene_id: "MERGE-03"
+      name: "手机号作为补充锚点"
+      description: |
+        UnionID是微信生态内最佳用户标识，但有局限：
+        - 订阅号用户无法获取unionid（不支持网页授权）
+        - 更换开放平台后unionid全变
+        - 部分触点场景下unionid依赖用户授权才能获取
+        
+        手机号是另一个强力锚点——但如果用户没授权手机号呢？
+      multi_anchor_strategy: |
+        建议采用「多锚点」策略：
+        主锚点：unionid（最优，微信生态内天然唯一）
+        辅锚点1：手机号（APP/小程序可获取）
+        辅锚点2：身份证号（金融/高安全场景）
+        辅锚点3：设备指纹（弱锚点，辅助校验）
+
+    - merge_scene_id: "MERGE-04"
+      name: "更换开放平台账号"
+      description: |
+        公司主体变更 → 新注册开放平台 → 所有应用重新绑定到新账号 →
+        全部unionid变化 → 历史数据断层。
+      migration_strategy:
+        - step: 1
+          action: "在旧开放平台保留应用绑定（不解除）"
+        - step: 2
+          action: "建新旧unionid映射表（old_unionid ↔ new_unionid）"
+        - step: 3
+          action: "过渡期双写——新生成的openid/unionid同时查映射表关联旧数据"
+        - step: 4
+          action: "N个月后，新用户已稳定使用新unionid，旧映射可下线"
+        - step: 5
+          action: "⚠️ 过渡期间用户可能在旧开放平台关联的应用中触发授权→拿到旧unionid→需要映射"
+
+    - merge_scene_id: "MERGE-05"
+      name: "同一用户在不同公众号下有不同unionid？"
+      description: |
+        这是常见误区澄清：
+        Q: 用户关注了两个公众号A和B，A绑定开放平台X，B绑定开放平台Y，
+           用户在A和B下的UnionID是什么？
+        A: 在公众号A下→UnionID由开放平台X决定
+           在公众号B下→UnionID由开放平台Y决定
+           如果X≠Y→两个UnionID不同！
+           
+        所以：UnionID的唯一性前提是→所有应用绑定到【同一个开放平台账号】下。
+        
+        这为什么重要？如果你的SCRM系统同时管理多个商户的公众号，
+        这些公众号可能绑定在不同的开放平台下→即使同一微信用户的unionid也不同。
+        ⚠️ 这是SCRM SaaS系统中极易被忽略的设计缺陷！
+
+
+# ============================================
+# Part 5: 授权scope体系横向对比
+# ============================================
+scope_system:
+  description: |
+    不同scope决定了你能从微信拿到什么数据。
+    BA在做需求分析时，必须清楚地知道：
+    Q1: 这个功能需要拿到用户的什么信息？
+    Q2: 对应需要什么scope？
+    Q3: 该scope是否在该平台可用？
+    Q4: 需要哪种用户体验（静默/弹窗授权）？
+
+  scope_by_platform:
+    service_account_h5:
+      - scope: "snsapi_base"
+        yields: ["openid"]
+        ux: "静默，用户无感知"
+        use_case: "仅需识别用户身份（如积分查询、会员卡号展示）"
+      - scope: "snsapi_userinfo"
+        yields: ["openid", "unionid(需绑定)", "昵称", "头像"]
+        ux: "弹窗，用户手动确认"
+        use_case: "需要用户信息或跨平台识别的场景"
+
+    miniprogram:
+      - scope: "（不需要scope，wx.login直接拿openid）"
+        yields: ["openid", "session_key", "unionid(需绑定)"]
+        ux: "静默，完全透明"
+      - scope: "手机号（button组件触发）"
+        yields: ["手机号(加密后解密)"]
+        ux: "用户点击按钮→弹出确认框"
+      - scope: "scope.userLocation 等"
+        yields: ["按scope对应"]
+        ux: "首次弹窗授权→拒绝后需引导设置页"
+
+    mobile_app:
+      - scope: "snsapi_userinfo（固定，必选）"
+        yields: ["openid", "unionid(需授权)", "昵称", "头像"]
+        ux: "APP内跳转微信→用户确认→返回APP"
+
+    website_app:
+      - scope: "snsapi_login（固定，必选）"
+        yields: ["openid", "unionid", "昵称", "头像"]
+        ux: "PC网页展示二维码→用户扫码→手机确认"
+
+
+# ============================================
+# Part 6: 关键差异与常见陷阱
+# ============================================
+critical_differences:
+  description: |
+    微信各平台账号体系的关键差异点——这些是SCRM系统设计和需求分析中最容易忽略的。
+
+  differences:
+    - id: "DIFF-01"
+      title: "refresh_token有效期不同"
+      impact: "如果SCRM同时对接服务号和APP，Token策略必须分开处理"
+      detail: |
+        服务号网页授权：refresh_token 30天
+        APP授权：refresh_token 180天
+        网站应用授权：refresh_token 180天
+      action: "存储时记录platform字段，刷新逻辑按platform区分有效期"
+
+    - id: "DIFF-02"
+      title: "unionid获取条件不同"
+      impact: "并非所有平台/场景都能自动拿到unionid"
+      detail: |
+        服务号snsapi_base：不返回unionid（需要snsapi_userinfo或用户关注后用/cgi-bin/user/info）
+        服务号snsapi_userinfo：返回unionid（需绑定开放平台）
+        小程序wx.login→code2Session：直接返回unionid（需绑定开放平台）✅最优
+        APP授权：返回unionid（需绑定开放平台+用户授权）
+        订阅号：需要用户关注+调用/cgi-bin/user/info+绑定开放平台
+      action: "优先使用小程序或APP获取unionid作为用户注册的首要触点"
+
+    - id: "DIFF-03"
+      title: "订阅号没有网页授权能力"
+      impact: "如果SCRM的H5拉新活动只通过订阅号传播，无法在H5中识别用户"
+      detail: "订阅号只支持：①用户关注后通过消息推送获取openid ②调用/cgi-bin/user/info获取信息"
+      action: "订阅号场景下，必须引导用户关注公众号后才能获取身份——这影响H5转化漏斗设计"
+
+    - id: "DIFF-04"
+      title: "code使用限制：一次性+短有效期"
+      impact: "code使用一次后立即失效；有效期5-10分钟"
+      detail: |
+        服务号：code有效期5分钟（估算）
+        小程序：code有效期约5分钟
+        APP：code有效期10分钟
+        所有平台：code一次使用后立即失效，不可重复使用
+      action: "前端拿到code后必须立即传给后端，不要在前端做任何其他操作。后端code换token接口要有幂等保护。"
+
+    - id: "DIFF-05"
+      title: "access_token：基础 vs 网页授权——完全不同的东西"
+      impact: "这是最常见的开发错误——用基础access_token调用户信息接口（或反过来）"
+      detail: |
+        基础access_token：/cgi-bin/token获取，用于管理类API（发消息/菜单/获取用户信息/cgi-bin/*）
+        网页授权access_token：/sns/oauth2/access_token获取，用于/sns/userinfo获取用户信息
+        两者接口不同、用途不同、不能混用
+      action: "代码中命名要区分：baseAccessToken vs oauthAccessToken"
+
+    - id: "DIFF-06"
+      title: "小程序session_key不能下发前端"
+      impact: "有些开发者把session_key存在前端localStorage→安全灾难"
+      detail: "session_key是解密用户敏感数据的密钥，只能存在后端（Redis/DB），前端只需要自定义token"
+      action: "小程序登录态=自定义token(给前端) + session_key(仅后端)。两者分离。"
+
+    - id: "DIFF-07"
+      title: "开放平台绑定的正确入口"
+      impact: "很多人找不到正确入口，导致绑定失败"
+      detail: "正确路径：open.weixin.qq.com → 管理中心 → 我的业务 → 开放平台 → 绑定关系 → 小程序/公众号"
+      wrong_path: "很多人去了「我的业务→小程序→绑定关系→开放平台」——这是错误路径"
+
+
+# ============================================
+# Part 7: SCRM系统设计要点
+# ============================================
+scrm_design_guidelines:
+  description: |
+    针对SCRM系统对接微信账号体系时，BA在需求分析阶段就应该考虑的设计要点。
+
+  guidelines:
+    - id: "G-01"
+      title: "用户主键设计"
+      recommendation: |
+        内部user_id为主键，unionid为唯一索引（非主键）。
+        user_openids表存储多平台openid映射。
+        原因：unionid可能因更换开放平台而变化，不适合做物理主键。
+
+    - id: "G-02"
+      title: "账号注册/登录流程设计"
+      recommendation: |
+        首选触点：小程序（wx.login自动获取openid+unionid，零用户感知）
+        次选触点：服务号网页授权（需用户手动授权snsapi_userinfo）
+        补充锚点：APP/网站/手机号
+        
+        注册时拿到的unionid作为首要关联标识。
+        如果多个触点先后到达，以第一个到达时为注册时间，后续到达为绑定。
+
+    - id: "G-03"
+      title: "Token刷新策略"
+      recommendation: |
+        - 基础access_token：全局单例，Redis缓存，提前5分钟刷新
+        - 网页授权access_token：按用户存储，懒刷新（调用/sns/userinfo前检测过期）
+        - session_key：按用户存储Redis，设置TTL
+        - 并发刷新保护：分布式锁（Redis SETNX）
+
+    - id: "G-04"
+      title: "头像URL处理策略"
+      recommendation: |
+        微信返回的头像URL在用户更换头像后立即失效。
+        SCRM系统展示用户头像时，如果用微信原始URL→头像可能404。
+        建议：用户注册/登录时，后台异步下载头像到自有OSS/COS，
+        头像字段存储自有URL。
+
+    - id: "G-05"
+      title: "授权过期/撤销处理"
+      recommendation: |
+        监控微信推送的 user_authorization_revoke 事件。
+        用户撤销授权后：清除该用户的oauth token，标记待重新授权。
+        用户下次访问时自动触发重新授权流程。
+
+    - id: "G-06"
+      title: "多商户/多公众号场景的unionid隔离"
+      recommendation: |
+        SCRM SaaS管理多个商户的公众号时：
+        - 不同商户的公众号可能绑定在不同开放平台下
+        - 同一微信用户在不同商户处的unionid可能不同
+        - 必须按「商户+unionid」做唯一性约束，而非全局unionid唯一
+        - 如果商户后续把公众号绑定到同一开放平台→需要做unionid合并处理
+
+    - id: "G-07"
+      title: "用户昵称处理"
+      recommendation: |
+        2021年起微信用户昵称中含特殊字符/emoji的概率很高。
+        数据库字符集必须用 utf8mb4，否则存储失败。
+        服务号获取的昵称和小程序获取的昵称可能不同（用户在不同平台可能设置不同昵称）
+        建议显示时取最新获取的为准。
+
+    - id: "G-08"
+      title: "冷启动与账号沉淀"
+      recommendation: |
+        新SCRM系统上线初期：
+        Step 1: 设计一个「账号锚点优先」策略——
+               决定哪个触点作为账号体系的主入口（建议小程序，因为unionid获取最简单）
+        Step 2: 其他触点产生的用户数据→通过unionid合并到主账号
+        Step 3: 如果主触点还没拿到unionid（如仅关注订阅号）→暂时以openid独立存在
+               等用户通过有unionid能力的触点进入后→自动合并
+        Step 4: 建立openid→unionid的映射日志，便于审计和数据修复
+
+
+# ============================================
+# 元信息
+# ============================================
+meta:
+  total_scenes: "5大平台 × 15+子场景"
+  total_scenarios_covered: 15
+  total_apis_registered: 15
+  total_pain_points_documented: 3
+  total_design_guidelines: 8
+  keywords_for_ba_matching:
+    - "微信登录"
+    - "微信授权"
+    - "openid"
+    - "unionid"
+    - "微信绑定"
+    - "微信账号合并"
+    - "微信账号体系"
+    - "小程序登录"
+    - "公众号授权"
+    - "网页授权"
+    - "OAuth2.0"
+    - "session_key"
+    - "access_token"
+    - "refresh_token"
+    - "scope"
+    - "snsapi_base"
+    - "snsapi_userinfo"
+    - "snsapi_login"
+    - "扫码登录"
+    - "静默授权"
+    - "用户标识"
+    - "跨平台用户识别"
+    - "微信生态"
+    - "账号识别"
+    - "code换token"
+    - "手机号授权"
+    - "wx.login"
+    - "code2Session"
+    - "开放平台绑定"
+    - "unionid机制"
+    - "token刷新"
+    - "授权撤销"

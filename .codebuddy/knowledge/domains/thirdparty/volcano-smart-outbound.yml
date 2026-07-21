@@ -1,0 +1,1597 @@
+# ============================================
+# 火山引擎智能外呼（Volcano Smart Outbound）领域知识 V1.1.0
+# 学习方法：场景驱动学习法（Scenario-Driven Learning）V1.0.0
+# 分类：thirdparty
+# 学习日期：2026-07-20
+# 来源：官方产品页 + Apifox OpenAPI文档 + 架构实践文章 + SCRM融合案例
+# ============================================
+
+domain:
+  name: "火山引擎智能外呼"
+  category: "thirdparty"
+  version: "v1.1.0"
+  learned_at: "2026-07-20"
+  learning_method: "scenario_driven_v1.0.0"
+  source_urls:
+    - "https://www.volcengine.com/product/smart-outbound"
+    - "https://www.volcengine.com/docs/6784/164616"
+    - "https://www.volcengine.com/docs/6784/116666"
+    - "https://docs.volcengine.com/docs/6784/116667"
+    - "https://explinks.com/api/scd20240624917018b8c5f8"
+    - "https://avj0wyz1ke.apifox.cn/"
+    - "https://developer.baidu.com/article/detail.html?id=5417146"
+    - "https://jishuzhan.net/article/1994795509110865922"
+    - "https://devpress.csdn.net/v1/article/detail/153327083"
+    - "https://cloud.tencent.com/developer/article/2289834"
+  description: >
+    火山引擎智能外呼是字节跳动旗下火山引擎提供的AI语音外呼服务。
+    基于行业领先的自研语音对话技术（ASR+TTS+NLU），实现真实互动语音外呼机器人。
+    核心能力：多轮对话意图识别、话术剧本配置、批量任务调度、通话结果回调。
+    定价模式：按通计费（0.08元/通）/ 按并发机器人（599-899元/并发/月）/ 按分钟（0.10-0.18元/分钟）。
+    系统架构：名单系统 → 任务调度（Redis+分布式锁）→ 呼叫引擎（FreeSWITCH+SIP Trunk）
+            → 对话管理（DMS意图识别）→ ASR/TTS → 结果回调 → 数据闭环。
+    与SCRM集成价值：外呼系统作为SCRM的"感知触手"，SCRM作为外呼的"决策大脑"，
+    实现客户触达→记录→分析→优化的全链路闭环。
+  status: "draft"
+
+  # ═══════════════════════════════════════════════════════════════
+  # 新增区块A：核心业务问题（Step1 问题发散）
+  # AI推理：这个服务能帮企业解决什么问题？
+  # ═══════════════════════════════════════════════════════════════
+  business_problems:
+    - id: "BP-SO-001"
+      problem: "客户触达效率低，人工坐席日均有效通话量仅120通，人力成本高"
+      pain_point: >
+        销售/客服每天大量时间花在拨号、等待接通、重复话术上。高价值客户和低价值
+        线索被同等对待，无法差异化服务。客户跟进周期长达72小时，商机流失严重。
+      value: >
+        接入智能外呼后，单台服务器日均外呼量可达人工50倍以上。坐席只处理
+        高意向客户（AI筛选后转人工），人力成本下降60%，跟进周期压缩至8小时。
+      evidence: "某金融企业案例数据：回款率提升35%，人力成本下降60%"
+
+    - id: "BP-SO-002"
+      problem: "营销活动触达率低、转化难以追踪，缺乏数据驱动的精细化运营"
+      pain_point: >
+        群发短信打开率不足5%，微信推送折叠严重。营销ROI无法精确归因到单次触达。
+        客户分层靠Excel，无法根据客户行为实时调整触达策略。
+      value: >
+        智能外呼接通率可达70-80%，配合VeCDP客户数据平台，实现基于客户画像的
+        精准触达。每次通话产生结构化结果（意向等级/关键标签/情绪评分），回流至
+        CRM形成数据闭环，驱动下一轮营销策略优化。
+      evidence: "火山引擎官方：结合VeCDP，接通率稳定保持70%-80%，某企业转化率提升27%"
+
+    - id: "BP-SO-003"
+      problem: "客户生命周期管理缺乏主动触达机制，沉睡客户大量流失"
+      pain_point: >
+        企业微信添加客户后，80%的客户没有后续互动就流失了。加粉只是第一步，
+        缺乏系统化的激活、留存、召回机制。客户在哪个阶段、该用什么方式触达、
+        触达效果如何——全凭一线员工自觉。
+      value: >
+        智能外呼可以作为SCRM的"主动触达引擎"：新客加粉48h后自动外呼欢迎→
+        沉默7天自动外呼激活→高价值客户生日/节日自动外呼关怀→流失预警客户
+        自动外呼召回。与企微客户联系API形成互补：消息触达+语音触达双通道。
+      evidence: "AI推理：基于SCRM+外呼融合架构，打通企微ID↔外呼号码映射"
+
+    - id: "BP-SO-004"
+      problem: "通知类业务（物流、缴费、审批）人工通知成本高、遗漏风险大"
+      pain_point: >
+        物流状态变更、缴费提醒、审批催办等通知类任务重复性高、价值低但必做。
+        人工通知经常遗漏，客户投诉率高。不同通知需要不同的话术和拨打策略。
+      value: >
+        智能外呼可自动批量通知，单通成本0.08元（远低于人工）。通知结果
+        （已接听/未接听/号码无效）实时回调至业务系统，未接通自动重试。
+      evidence: "官方文档：支持模板式通知话术+自定义变量播报（如订单号、金额）"
+
+    - id: "BP-SO-005"
+      problem: "客户意向判断依赖人工经验，线索分配效率低，商机转化率难以提升"
+      pain_point: >
+        市场部门获取的线索名单动辄数千条，销售团队只能凭经验筛选，优质线索
+        常常被遗漏。没有统一的意向评估标准，A销售觉得是A类线索，B销售觉得
+        是C类——无法规模化。
+      value: >
+        智能外呼自动清洗线索：标准化话术多轮对话→AI判定意向等级（高/中/低）
+        →高意向自动分配销售→低意向进入培育池。意向标签+对话关键信息回写
+        CRM，形成结构化线索画像。
+      evidence: "官方文档：支持意向等级分级+标签采集+意向结果回调"
+
+    - id: "BP-SO-006"
+      problem: "多个第三方服务独立运作，数据孤岛导致客户360°画像不全"
+      pain_point: >
+        企业微信沉淀了客户关系和聊天记录，但缺乏语音触达数据。
+        智能外呼有通话结果，但不知道这个客户在企微里是什么状态。
+        CRM有客户档案，但外呼结果和企微互动数据都没进来——三张皮。
+      value: >
+        通过统一客户ID（external_userid/手机号/corp_user_id互映射），
+        实现企微互动+外呼触达+CRM画像三合一。一个客户从加粉→外呼→跟进
+        →转化的完整轨迹，全部可追溯、可分析、可优化。
+      evidence: "AI推理：基于企业微信+SCRM+智能外呼三域融合架构"
+
+  # ═══════════════════════════════════════════════════════════════
+  # 新增区块B：场景驱动地图（Step2+3 场景构建+API能力匹配）
+  # 每个场景 = 完整业务闭环 + 精确API能力链
+  # ═══════════════════════════════════════════════════════════════
+  scenario_maps:
+
+    # --- 场景1：线索清洗与意向筛选 ---
+    - scene_id: "SC-SO-001"
+      scene_name: "线索清洗与意向筛选"
+      problem_ref: "BP-SO-005"       # 关联「线索分配效率低」
+      trigger: "市场部门导入一批新线索（来自广告投放/展会/企微加粉），需要进行意向初筛"
+      participant_roles:
+        - "市场运营人员"    # 创建线索清洗任务
+        - "智能外呼机器人"  # 执行外呼对话
+        - "客户"           # 接听电话
+        - "销售经理"       # 接收高意向线索
+        - "SCRM系统"       # 接收结果更新客户画像
+      
+      api_chain:
+        - seq: 1
+          api_name: "上传文件(返回上传成功后的文件url)"
+          api_path: "POST /api/upload"
+          purpose: "上传包含客户姓名和电话号码的Excel名单文件"
+          inputs_from: "市场部门导出/企微加粉导出/展会签到表"
+          outputs_to: "file_url → 下一步创建任务"
+
+        - seq: 2
+          api_name: "创建任务(使用文件模版)"
+          api_path: "POST /api/task/create-by-file"
+          purpose: "基于上传的名单创建外呼任务，绑定清洗话术场景"
+          inputs_from: "file_url(来自seq1) + scene_id(场景UUID)"
+          outputs_to: "task_id → 任务进入调度队列"
+
+        - seq: 3
+          api_name: "获取场景的动态属性"
+          api_path: "POST /api/scene/dynamic-attributes"
+          purpose: "获取该线索清洗场景需要的动态参数（如行业/来源渠道）"
+          inputs_from: "scene_id(来自seq2)"
+          outputs_to: "属性key列表 → 填充变量值"
+
+        - seq: 4
+          api_name: "通话状态回调（Webhook推送）"
+          api_path: "POST {客户配置的回调URL}/callback"
+          purpose: "外呼系统主动推送每通电话的执行状态和结果"
+          inputs_from: "外呼引擎内部触发"
+          outputs_to: >
+            回调数据结构 → SCRM系统解析：
+            - call_id: 通话唯一标识
+            - callee: 被叫号码
+            - status: 通话状态（已接通/未接通/号码无效）
+            - intent_level: 意向等级（高/中/低）
+            - tags: 客户意向标签（如「有预算」「3个月内采购」）
+            - conversation_text: 对话文本摘要
+            - recording_url: 通话录音地址
+
+        - seq: 5
+          api_name: "分页查询通话列表"
+          api_path: "POST /api/call/list"
+          purpose: "主动拉取批量通话详细结果（补充Webhook可能丢失的数据）"
+          inputs_from: "task_id(来自seq2)"
+          outputs_to: "通话结果列表 → 写入CRM客户档案"
+
+        - seq: 6
+          api_name: "查询通话的标签"
+          api_path: "POST /api/call/tags"
+          purpose: "获取AI标注的客户意向标签集"
+          inputs_from: "call_id(来自seq4回调)"
+          outputs_to: "标签集 → SCRM客户标签更新"
+
+        - seq: 7
+          api_name: "音频下载 (返回wav文件)"
+          api_path: "GET /api/call/audio/download"
+          purpose: "下载高意向客户通话录音，供销售回听做跟进准备"
+          inputs_from: "call_id(来自seq4回调)"
+          outputs_to: "wav文件 → 挂载到SCRM客户详情页"
+
+      # 场景内的异常分支
+      exceptions:
+        - condition: "号码无效/空号/停机"
+          handling: "自动标记号码状态→不重试→回写CRM标记号码失效"
+        - condition: "客户未接通（响铃无应答）"
+          handling: "根据配置重试策略（最多N次/间隔M分钟）→超限后标记「无法触达」"
+        - condition: "客户中途挂断"
+          handling: "保留已获取的部分信息→标记意向为「未确认」→可手工补呼"
+        - condition: "回调URL不可达"
+          handling: "外呼系统本地缓存结果→定期重推→降级为定时拉取API主动查询"
+
+      # 系统边界：智能外呼不管什么
+      boundaries:
+        - "不负责客户数据来源——名单需由业务系统提供"
+        - "不负责CRM写入——需业务方实现回调接收逻辑"
+        - "不负责号码合法性校验——上传前业务方自行清洗（可调用校验接口辅助）"
+        - "不负责销售分配——高意向线索的分配逻辑属于CRM/SCRM范畴"
+
+      # 场景上下衔接
+      pre_scene: "企微加粉 / 广告投放获客 / 展会签到 → 数据导出为名单文件"
+      post_scene: "高意向客户 → 自动分配销售 → SCRM创建跟进任务 → 企微触达"
+      
+      mermaid: |
+        sequenceDiagram
+            participant MKT as 市场运营
+            participant API as 外呼API
+            participant ENGINE as 外呼引擎
+            participant CUSTOMER as 客户
+            participant WEBHOOK as 回调服务
+            participant SCRM as SCRM系统
+            participant SALES as 销售
+            
+            MKT->>API: 1.上传名单文件
+            API-->>MKT: file_url
+            MKT->>API: 2.创建外呼任务(file_url+scene_id)
+            API-->>MKT: task_id(任务进入调度)
+            
+            loop 批量外呼
+                ENGINE->>CUSTOMER: 3.外呼拨号
+                CUSTOMER-->>ENGINE: 接通/未接/无效
+                ENGINE->>CUSTOMER: 4.多轮对话(话术剧本)
+                CUSTOMER-->>ENGINE: 语音回答
+                ENGINE->>ENGINE: 5.意图识别+意向判定
+            end
+            
+            ENGINE->>WEBHOOK: 6.回调推送(通话结果+意向+标签)
+            WEBHOOK->>SCRM: 7.写入客户画像+更新标签
+            SCRM->>SCRM: 8.高意向→自动分配销售
+            SCRM->>SALES: 9.推送跟进任务
+            SALES->>SCRM: 10.查看录音+对话文本(通过API拉取)
+
+    # --- 场景2：客户生命周期主动触达 ---
+    - scene_id: "SC-SO-002"
+      scene_name: "SCRM客户生命周期主动触达"
+      problem_ref: "BP-SO-003"
+      trigger: >
+        SCRM系统检测到客户生命周期事件，自动触发外呼任务：
+        ①新客加粉48h后未互动 → 外呼欢迎
+        ②沉默7天无任何互动 → 外呼激活
+        ③高价值客户生日/节日 → 外呼关怀
+        ④流失预警（30天无互动）→ 外呼召回
+      participant_roles:
+        - "SCRM系统"       # 触发方
+        - "智能外呼机器人" # 执行方
+        - "客户"          # 接收方
+        - "一线员工"      # 接收跟进任务
+
+      api_chain:
+        - seq: 1
+          api_name: "创建计划任务"
+          api_path: "POST /api/plan-task/create"
+          purpose: "为生命周期事件配置定时/周期性外呼计划（如每天10:00对昨日新增未互动客户外呼）"
+          inputs_from: "SCRM生命周期事件分析结果"
+          outputs_to: "plan_task_id → 计划进入定时调度"
+
+        - seq: 2
+          api_name: "创建任务(直接呼叫名单)"
+          api_path: "POST /api/task/create-by-list"
+          purpose: "SCRM实时推送符合条件的客户号码列表，即时创建外呼任务"
+          inputs_from: "SCRM客户筛选结果（customer_id→phone_number映射）"
+          outputs_to: "task_id"
+
+        - seq: 3
+          api_name: "通话状态回调"
+          api_path: "POST {回调URL}/callback"
+          purpose: "接收每通电话的生命周期触达结果"
+          inputs_from: "外呼引擎"
+          outputs_to: >
+            回调数据→SCRM解析：
+            - contact_status: 触达状态（已触达/未接通/号码错误）
+            - customer_response: 客户反馈特征（感兴趣/明确拒绝/稍后联系）
+            - engagement_score: 互动评分增益
+            → 更新SCRM客户生命周期阶段
+
+        - seq: 4
+          api_name: "查询通话对话文本列表"
+          api_path: "POST /api/call/conversation-text"
+          purpose: "获取客户在电话中的具体反馈文本，用于SCRM客户画像丰富"
+          inputs_from: "call_id"
+          outputs_to: "对话文本 → SCRM客户备注/跟进记录"
+
+      exceptions:
+        - condition: "客户明确表示「不要再打」"
+          handling: "标记为「勿扰」→回写SCRM→从所有外呼列表中移除"
+        - condition: "客户号码已变更"
+          handling: "标记「号码失效」→回写SCRM→触发企微/短信渠道更新号码"
+        - condition: "客户接听后要求转人工"
+          handling: "记录需求→SCRM创建人工跟进任务→分配对应员工"
+
+      boundaries:
+        - "不负责客户生命周期规则定义——该逻辑属于SCRM范畴"
+        - "不负责客户隐私授权——业务方需确保外呼号码有合法授权"
+        - "不负责内容个性化——话术变量由SCRM在任务创建时传入"
+
+      pre_scene: "SCRM客户生命周期事件检测"
+      post_scene: "客户反馈 → SCRM更新画像 → 一线员工跟进 / 自动进入下一生命周期阶段"
+
+      mermaid: |
+        sequenceDiagram
+            participant SCRM as SCRM系统
+            participant API as 外呼API
+            participant PLAN as 计划任务引擎
+            participant ENGINE as 外呼引擎
+            participant CUSTOMER as 客户
+            participant STAFF as 一线员工
+            
+            SCRM->>SCRM: 1.检测生命周期事件(新客48h/沉默7天/流失预警)
+            SCRM->>API: 2.创建计划任务(定时触发+话术变量)
+            API-->>SCRM: plan_task_id
+            
+            Note over PLAN: 定时触发
+            PLAN->>API: 3.按计划创建外呼任务(号码+变量)
+            API-->>PLAN: task_id
+            
+            ENGINE->>CUSTOMER: 4.外呼(动态话术:欢迎/激活/关怀/召回)
+            CUSTOMER-->>ENGINE: 5.语音回复
+            ENGINE->>ENGINE: 6.意图分析
+            
+            ENGINE->>SCRM: 7.回调(触达状态+反馈+互动评分)
+            SCRM->>SCRM: 8.更新客户生命周期阶段
+            
+            alt 客户积极反馈
+                SCRM->>STAFF: 9.分配人工跟进任务
+            else 客户拒绝
+                SCRM->>SCRM: 10.标记勿扰+移出外呼列表
+            else 号码失效
+                SCRM->>STAFF: 11.触发企微渠道更新号码
+            end
+
+    # --- 场景3：营销活动精准触达 ---
+    - scene_id: "SC-SO-003"
+      scene_name: "营销活动精准触达与效果追踪"
+      problem_ref: "BP-SO-002"
+      trigger: "营销部门策划新品推广活动，需要向目标客群批量外呼推广"
+      participant_roles:
+        - "营销运营"      # 配置活动
+        - "智能外呼机器人"
+        - "客户"
+        - "VeCDP/CRM"    # 客户画像数据源
+
+      api_chain:
+        - seq: 1
+          api_name: "获取当前用户剩余并发数"
+          api_path: "POST /api/concurrency/remain"
+          purpose: "确认当前并发资源是否满足营销活动外呼量需求"
+          inputs_from: "系统自动"
+          outputs_to: "remain_concurrency → 决定是否需要扩容"
+
+        - seq: 2
+          api_name: "创建任务(使用文件模版)"
+          api_path: "POST /api/task/create-by-file"
+          purpose: "批量上传营销名单（可从VeCDP导出的人群包）"
+          inputs_from: "VeCDP人群包导出 + 营销话术scene_id"
+          outputs_to: "task_id"
+
+        - seq: 3
+          api_name: "通话状态回调"
+          api_path: "POST {回调URL}/callback"
+          purpose: "接收营销外呼效果数据"
+          inputs_from: "外呼引擎"
+          outputs_to: >
+            效果数据→营销数据看板：
+            - answer_rate: 接通率
+            - intent_distribution: 意向等级分布
+            - conversion_tag: 转化标签（如「已预约」「已领券」）
+            → 关联VeCDP人群包计算ROI
+
+        - seq: 4
+          api_name: "创建外呼通话导出任务"
+          api_path: "POST /api/call/export-task"
+          purpose: "导出活动全部通话明细供营销复盘分析"
+          inputs_from: "task_id + 时间范围"
+          outputs_to: "导出文件 → BI分析 → 优化下一轮话术和人群"
+
+        - seq: 5
+          api_name: "查询通话结果枚举值数据"
+          api_path: "GET /api/call/result-enums"
+          purpose: "获取通话状态的标准枚举值，统一数据口径"
+          inputs_from: "系统配置"
+          outputs_to: "枚举值映射 → 营销看板的统计维度标准化"
+
+      exceptions:
+        - condition: "并发资源不足"
+          handling: "提示扩容 → 降级为先发高价值客户 → 剩余客户排队"
+        - condition: "活动时间段受限（如21:00后）"
+          handling: "自动切至次日允许时段 → 任务自动恢复"
+        - condition: "客户已在活动中被外呼过"
+          handling: "去重校验 → 跳过已触达客户"
+
+      boundaries:
+        - "不负责人群包生成——客户分层由VeCDP/CRM完成"
+        - "不负责ROI计算——归因和效果归集属于BI层"
+        - "不负责优惠券发放——发券动作需另一系统完成（话术可引导）"
+
+      pre_scene: "VeCDP人群包生成 → 营销活动策划"
+      post_scene: "效果数据→BI分析→话术优化→下一轮活动"
+
+    # --- 场景4：通知自动化（物流/缴费/审批） ---
+    - scene_id: "SC-SO-004"
+      scene_name: "通知类业务自动外呼"
+      problem_ref: "BP-SO-004"
+      trigger: "业务系统产生通知事件（物流状态变更/缴费到期/审批待办）"
+      participant_roles:
+        - "业务系统"      # 事件源
+        - "智能外呼机器人"
+        - "客户"
+
+      api_chain:
+        - seq: 1
+          api_name: "创建任务(直接呼叫名单)"
+          api_path: "POST /api/task/create-by-list"
+          purpose: "业务系统实时推送需要通知的客户号码+变量参数"
+          inputs_from: "业务系统事件（order_no, amount, deadline, etc.）"
+          outputs_to: "task_id"
+
+        - seq: 2
+          api_name: "通话状态回调"
+          api_path: "POST {回调URL}/callback"
+          purpose: "确认通知是否送达"
+          inputs_from: "外呼引擎"
+          outputs_to: >
+            通知结果→业务系统：
+            - delivered: 已通知（客户接听）
+            - undelivered: 未通知（未接/号码无效）
+            → 未送达的自动切换短信/企微消息通知
+
+        - seq: 3
+          api_name: "增加任务号码"
+          api_path: "POST /api/task/add-numbers"
+          purpose: "通知任务进行中追加新的通知对象"
+          inputs_from: "业务系统新增事件"
+          outputs_to: "更新后的任务号码列表"
+
+      exceptions:
+        - condition: "连续多次通知失败"
+          handling: "降级为短信/企微消息 → 记录通知渠道偏好"
+        - condition: "客户接听后要求不再接收此类通知"
+          handling: "标记通知偏好 → 回写业务系统 → 后续走静默渠道"
+
+      boundaries:
+        - "不负责通知内容生成——通知文案由业务系统提供"
+        - "不负责消息渠道切换——渠道降级逻辑属于业务层"
+
+      pre_scene: "业务系统事件触发"
+      post_scene: "通知结果→业务系统→渠道降级/人工跟进"
+
+    # --- 场景5：催收催缴 ---
+    - scene_id: "SC-SO-005"
+      scene_name: "智能催收催缴"
+      problem_ref: "BP-SO-001"
+      trigger: "账单逾期/还款到期，需要按催收策略分级外呼"
+      participant_roles:
+        - "风控/催收系统"
+        - "智能外呼机器人"
+        - "客户"
+        - "催收专员"
+
+      api_chain:
+        - seq: 1
+          api_name: "创建计划任务"
+          api_path: "POST /api/plan-task/create"
+          purpose: "按催收策略创建递进式外呼计划（如M1:轻柔提醒→M2:正式催缴→M3:升级通知）"
+          inputs_from: "风控系统逾期名单+催收等级"
+          outputs_to: "plan_task_id"
+
+        - seq: 2
+          api_name: "暂停任务"
+          api_path: "POST /api/task/pause"
+          purpose: "客户还款后自动暂停后续催收外呼"
+          inputs_from: "支付系统还款通知"
+          outputs_to: "任务状态=暂停"
+
+        - seq: 3
+          api_name: "通话状态回调"
+          api_path: "POST {回调URL}/callback"
+          purpose: "接收协商结果（承诺还款日/要求分期/拒绝沟通）"
+          inputs_from: "外呼引擎"
+          outputs_to: "催收结果→风控系统更新催收状态"
+
+      exceptions:
+        - condition: "客户情绪激动/投诉"
+          handling: "ASR情绪识别→自动转人工→风控系统标记→暂停该客户外呼"
+        - condition: "客户已还款但系统未同步"
+          handling: "保留通话录音→人工核实→更新还款记录"
+
+      boundaries:
+        - "不负责催收策略制定——风控系统负责"
+        - "不负责合规审查——话术合规需业务方把控"
+
+      pre_scene: "风控系统逾期检测"
+      post_scene: "还款/协商结果→风控系统→催收专员跟进/结案"
+
+  # ═══════════════════════════════════════════════════════════════
+  # 新增区块C：跨域衔接设计（Step4）
+  # 核心问题：智能外呼如何与SCRM的其它组件协同工作？
+  # ═══════════════════════════════════════════════════════════════
+  cross_domain_bridge:
+    connections:
+      - target_domain: "企业微信（WeChat Work）"
+        connection_type: "data_flow + event_trigger"
+        scenario_refs: ["SC-SO-002", "SC-SO-003"]
+        integration_point: >
+          1. 客户ID映射：企微external_userid ↔ 外呼phone_number（通过SCRM统一客户ID）
+          2. 加粉→外呼流水线：企微加粉成功后，SCRM记录external_userid+手机号→
+             触发48h新客外呼欢迎（SC-SO-002）
+          3. 外呼→企微跟进：外呼判定客户为高意向后→SCRM创建企微跟进任务→
+             员工通过企微触达客户
+          4. 触达渠道互补：外呼未接通→降级为企微消息/群发→形成消息+语音双通道
+        mermaid: |
+          graph LR
+            A[企微加粉] -->|external_userid+phone| B[SCRM统一客户ID]
+            B -->|48h触发| C[智能外呼欢迎]
+            C -->|高意向| D[SCRM创建跟进任务]
+            D -->|推送给员工| E[企微客户联系]
+            E -->|跟进结果| B
+            C -->|未接通| F[企微消息触达]
+            F -->|已读/回复| B
+
+      - target_domain: "VeCDP客户数据平台"
+        connection_type: "data_flow"
+        scenario_refs: ["SC-SO-003"]
+        integration_point: >
+          1. 人群包→外呼名单：VeCDP人群包导出→外呼上传名单文件
+          2. 外呼结果→画像回流：通话意向标签+情绪评分→回写VeCDP丰富标签体系
+          3. 触达策略协同：VeCDP基于客户接听时段偏好，输出最优拨打时间窗口
+          4. ROI闭环：外呼触达数据+VeCDP转化数据→归因分析→优化人群包策略
+        mermaid: |
+          graph TD
+            A[VeCDP人群包] -->|导出号码+标签| B[外呼名单文件]
+            B --> C[智能外呼执行]
+            C -->|意向+标签+情绪| D[VeCDP画像更新]
+            D -->|最优时段推荐| C
+            D -->|下一轮人群包| A
+
+      - target_domain: "SCRM客户管理"
+        connection_type: "event_trigger + data_flow"
+        scenario_refs: ["SC-SO-001", "SC-SO-002", "SC-SO-005"]
+        integration_point: >
+          1. 线索清洗→客户创建：外呼确认有效线索→SCRM自动创建客户档案
+          2. 意向等级→跟进分配：高意向→自动创建跟进任务+分配销售
+          3. 客户生命周期→触达触发：生命周期阶段变化→自动触发对应外呼
+          4. 通话记录→客户时间线：每次外呼记录+录音+文本→挂载到客户时间线
+          5. 标签聚合：外呼标签+企微标签+手动标签→统一客户标签体系
+
+      - target_domain: "支付系统"
+        connection_type: "event_trigger"
+        scenario_refs: ["SC-SO-005"]
+        integration_point: >
+          1. 还款通知→暂停催收：支付回调成功后→调用外呼API暂停该客户的催收任务
+          2. 缴费提醒→外呼通知：缴费到期前N天→自动触发外呼缴费提醒
+
+    dependency_matrix:
+      - source_domain: "企业微信"
+        target_domain: "智能外呼"
+        dependency_type: "identity_bridge"
+        key: "external_userid ↔ phone_number 映射"
+        managed_by: "SCRM统一客户ID服务"
+
+      - source_domain: "VeCDP"
+        target_domain: "智能外呼"
+        dependency_type: "data_input"
+        key: "人群包+客户标签+最优时段"
+        direction: "VeCDP → 外呼"
+
+      - source_domain: "智能外呼"
+        target_domain: "SCRM"
+        dependency_type: "result_feedback"
+        key: "通话结果+意向标签+情绪评分+录音"
+        direction: "外呼 → SCRM"
+
+      - source_domain: "支付系统"
+        target_domain: "智能外呼"
+        dependency_type: "event_trigger"
+        key: "还款通知 → 暂停催收外呼"
+        direction: "支付 → 外呼"
+
+      - source_domain: "智能外呼"
+        target_domain: "企业微信"
+        dependency_type: "channel_fallback"
+        key: "外呼未接通 → 企微消息兜底"
+        direction: "外呼 → 企微"
+
+  # ═══════════════════════════════════════════════════════════════
+  # SDL V1.1.0 增强：跨域衔接补充
+  # ═══════════════════════════════════════════════════════════════
+  cross_domain_bridges_enhanced:
+    connections:
+      - target_domain: "企业微信（WeChat Work）"
+        connection_type: "channel_complement + event_trigger"
+        description: >
+          语音+消息双通道触达矩阵：
+          1. 企微加粉→SCRM记录external_userid+手机号→48h触发外呼欢迎
+          2. 外呼高意向判定→SCRM创建企微跟进任务→员工企微触达客户
+          3. 外呼未接通→自动降级为企微消息/群发→双通道互补确保触达
+          4. 外呼通话记录+录音→挂载SCRM客户详情页→销售回听做跟进准备
+          5. 客户明确拒绝外呼→SCRM标记勿扰→仅通过企微消息触达
+        key: "企微消息 ↔ 外呼语音 双通道触达矩阵"
+        scenario_refs: ["SC-SO-002"]
+
+      - target_domain: "Coze智能体平台"
+        connection_type: "intelligence_driver"
+        description: >
+          AI智能体驱动外呼话术和策略：
+          1. Coze工作流→生成个性化外呼话术（基于客户画像+历史互动）
+          2. Coze意图识别→外呼对话中的实时意图判定增强
+          3. Coze知识库→外呼话术剧本的存储和版本管理
+          4. Coze长期记忆→外呼结果回流客户画像→驱动下一轮外呼策略优化
+          5. Coze多Agent→销售Agent设计话术+运营Agent分析效果+客服Agent处理投诉
+        key: "Coze AI → 外呼话术生成 → 外呼执行 → 结果回流Coze画像"
+        scenario_refs: ["SC-SO-001", "SC-SO-002", "SC-SO-003"]
+
+      - target_domain: "易宝支付"
+        connection_type: "event_trigger"
+        description: >
+          支付事件触发外呼通知/催收：
+          1. 缴费到期→易宝账单事件→触发外呼缴费提醒
+          2. 支付成功→易宝回调→自动暂停该客户的催收外呼任务
+          3. 退款处理→易宝退款事件→外呼通知客户退款进度
+        key: "易宝支付事件 → 外呼通知/催收"
+        scenario_refs: ["SC-SO-004", "SC-SO-005"]
+
+  # ═══════════════════════════════════════════════════════════════
+  # SDL V1.1.0 增强：角色视角（按场景展开）
+  # ═══════════════════════════════════════════════════════════════
+  role_perspectives:
+    - role_name: "运营人员"
+      scenarios: ["SC-SO-001", "SC-SO-002", "SC-SO-003"]
+      perspective: >
+        关注外呼任务的ROI和数据闭环。需要直观的任务创建界面、
+        实时进度监控、接通率/意向分布/转化漏斗等数据看板。
+        话术A/B测试能力是核心需求——同一场景设计2-3版话术，
+        数据驱动迭代优化。外呼结果必须自动回流CRM，否则数据闭环断裂。
+      key_metrics: ["接通率", "意向转化率", "单通成本", "任务完成率"]
+
+    - role_name: "销售经理"
+      scenarios: ["SC-SO-001", "SC-SO-002"]
+      perspective: >
+        关注高意向线索的及时分配和跟进效率。
+        需要外呼结束后立即收到高意向客户通知（含通话摘要+录音），
+        快速回听录音了解客户需求，在SCRM中查看完整客户画像（企微互动+外呼反馈）。
+        线索分配公平性和跟进时效（SLA）是管理重点。
+      key_metrics: ["线索响应时间", "跟进转化率", "客户满意度"]
+
+    - role_name: "客户"
+      scenarios: ["SC-SO-001", "SC-SO-002", "SC-SO-003", "SC-SO-004", "SC-SO-005"]
+      perspective: >
+        关注通话体验自然度和隐私保护。期望AI外呼语音自然、
+        对话逻辑合理（不机械重复）、能理解基本意图。
+        反感频繁骚扰——每日外呼不超过1次、避免休息时段、
+        明确拒绝后不再拨打。有权要求转人工服务。
+      key_metrics: ["通话体验评分", "投诉率", "勿扰标记率"]
+
+    - role_name: "系统管理员"
+      scenarios: ["SC-SO-001", "SC-SO-002", "SC-SO-003", "SC-SO-004", "SC-SO-005"]
+      perspective: >
+        关注系统稳定性和数据安全。需要确保Webhook回调服务高可用
+        （设计补偿拉取机制防回调丢失）、access_token/API密钥安全管理、
+        并发资源监控与告警、通话录音存储合规（脱敏+定期清理）。
+        号码授权合规（《个人信息保护法》）是底线要求。
+      key_metrics: ["回调成功率", "API可用性", "并发利用率", "安全合规"]
+
+  # ═══════════════════════════════════════════════════════════════
+  # 新增区块D：角色决策支持卡（Step5）
+  # 每种下游角色关心的视角不同，这里提炼专属内容
+  # ═══════════════════════════════════════════════════════════════
+  role_views:
+    # --- 脑暴视角：有了这个能力，可以做什么？ ---
+    brainstorm:
+      possibilities:
+        - id: "BS-SO-001"
+          title: "SCRM全生命周期自动触达引擎"
+          description: >
+            将客户生命周期各关键节点（加粉/沉默/活跃/流失）与外呼能力绑定，
+            实现「客户状态变化→自动外呼→反馈回流→状态更新」的完全自动化闭环。
+            企业无需人工干预即可完成80%的客户触达工作。
+          difficulty: "中等（需要SCRM生命周期规则+外呼话术设计）"
+          cross_domain: ["企业微信", "SCRM客户管理"]
+
+        - id: "BS-SO-002"
+          title: "AI外呼+企微消息双通道差异化触达"
+          description: >
+            按客户偏好和触达紧急度，智能选择触达渠道：
+            紧急通知→外呼（接听率最高）；日常运营→企微消息（免打扰）；
+            活动推广→外呼+企微群发组合。未接通自动降级到另一渠道。
+          difficulty: "较低（主要是渠道路由逻辑）"
+          cross_domain: ["企业微信"]
+
+        - id: "BS-SO-003"
+          title: "基于外呼反馈的客户价值动态评分"
+          description: >
+            将外呼中AI判断的客户意向等级、情绪评分、对话关键信息纳入客户价值模型。
+            每次外呼都是一次数据采集机会，形成「外呼越多、画像越准」的正向飞轮。
+          difficulty: "较高（需要ML模型训练+数据工程）"
+          cross_domain: ["VeCDP", "SCRM客户管理"]
+
+        - id: "BS-SO-004"
+          title: "外呼结果驱动自动化工作流"
+          description: >
+            外呼结果不只是一个标签，而是整个工作流的触发器：
+            高意向线索 → 自动创建CRM商机+分配销售+企微通知+3天未跟进告警
+            客户投诉 → 自动创建工单+升级主管+72h回访
+            客户生日 → 自动外呼祝福+企微发券+短信优惠
+          difficulty: "中等（需要工作流引擎支持）"
+          cross_domain: ["企业微信", "SCRM客户管理"]
+
+        - id: "BS-SO-005"
+          title: "智能外呼+大模型深度融合（下一代方向）"
+          description: >
+            当前外呼基于预置话术剧本。未来可接入大模型实现：
+            - 实时动态话术生成（根据客户每轮回答实时调整话术）
+            - 零样对话（无需预定义话术，AI自主对话）
+            - 多模态客户画像（通话内容自动提取实体→关联CRM数据）
+          difficulty: "高（需要LLM+ASR+TTS深度集成）"
+          cross_domain: ["Coze智能体平台"]
+
+    # --- 产品规划（PO）视角 ---
+    product_planning:
+      business_value: >
+        核心价值：将SCRM从「被动记录」升级为「主动触达」平台。
+        外呼能力补齐了SCRM最关键的缺失环节——规模化语音触达。
+        结合企微的消息触达，形成「消息+语音」全渠道客户触达矩阵。
+      priority: "P0 高优先级（SCRM核心差异化能力）"
+      resource_estimate:
+        development: "2-3个Sprint（含API对接+回调服务+话术设计+前端任务管理）"
+        operation: "话术迭代需要持续投入（每个场景1-2天话术设计）"
+        cost: "外呼成本0.08元/通，按日均1000通算月成本约2400元（远低于人工成本）"
+      success_metrics:
+        - "客户触达率提升至70%+（vs 企微消息的5-10%打开率）"
+        - "线索清洗效率提升50倍（AI vs 人工）"
+        - "客户跟进周期从72h压缩至8h"
+        - "营销活动转化率提升20%+"
+
+    # --- 需求分析（BA）视角 ---
+    requirements:
+      feature_candidates:
+        - id: "FN-SO-001"
+          name: "外呼任务管理"
+          description: "创建/编辑/暂停/重启/停止/重建外呼任务，支持文件导入和直接号码列表"
+          priority: "P0"
+          complexity: "中"
+
+        - id: "FN-SO-002"
+          name: "外呼场景管理"
+          description: "话术场景配置、对话剧本设计、意向等级定义、标签体系管理"
+          priority: "P0"
+          complexity: "高（需要话术设计专业知识）"
+
+        - id: "FN-SO-003"
+          name: "外呼结果看板"
+          description: "数据概览、接通率、意向分布、任务进度、转化漏斗"
+          priority: "P0"
+          complexity: "中"
+
+        - id: "FN-SO-004"
+          name: "通话明细与录音回放"
+          description: "通话记录列表、对话文本查看、录音下载与播放、标签查看"
+          priority: "P1"
+          complexity: "低"
+
+        - id: "FN-SO-005"
+          name: "计划任务（定时/周期性外呼）"
+          description: "创建周期外呼计划、CRON定时触发、与SCRM生命周期事件联动"
+          priority: "P1"
+          complexity: "中"
+
+        - id: "FN-SO-006"
+          name: "SCRM客户生命周期外呼联动"
+          description: "新客欢迎外呼、沉默激活外呼、流失召除外呼、节日关怀外呼"
+          priority: "P0（差异化功能）"
+          complexity: "高（需要跨模块联动）"
+
+        - id: "FN-SO-007"
+          name: "外呼结果回写CRM"
+          description: "通话结果、意向标签、情绪评分自动回写客户档案"
+          priority: "P0"
+          complexity: "中"
+
+        - id: "FN-SO-008"
+          name: "渠道降级策略"
+          description: "外呼未接通→企微消息兜底，客户偏好记录，渠道选择优化"
+          priority: "P2"
+          complexity: "低"
+
+      constraints:
+        - "外呼时段限制：通常8:00-21:00（合规要求）"
+        - "号码授权：外呼号码必须有客户授权（《个人信息保护法》）"
+        - "并发上限：受购买的并发机器人数量限制"
+        - "回调延迟：Webhook推送非100%可靠，需要定时拉取API做数据补偿"
+        - "话术合规：金融催收、医疗等场景话术需法务审核"
+
+    # --- 架构（Arch）视角 ---
+    architecture:
+      auth_scheme: >
+        鉴权方式：请求头 Authorization: Bearer {apikey}
+        （部分接口可能使用HMAC-SHA256签名，需以官方接入文档为准）
+      data_boundaries:
+        inbound: "客户名单（姓名+手机号+变量参数）、话术场景配置、任务策略"
+        outbound: "通话状态、意向等级、标签、对话文本、录音文件、导出数据"
+        realtime_push: "通话状态Webhook回调（需提供HTTPS回调URL）"
+      performance:
+        concurrency_model: "按购买的并发机器人数控制，单任务可配置最大并发数"
+        latency: "对话实时性要求高（ASR+TTS+NLU端到端延迟需控制在数百毫秒级）"
+        throughput: "单台服务器日均外呼量可达人工50倍以上"
+        retry_mechanism: "支持未接通自动重试（可配置次数+间隔）"
+      tech_stack:
+        - "后端：Node.js/Python FastAPI/Go（任选，对接REST API）"
+        - "回调接收：HTTPS Webhook服务（需幂等处理+异步消费）"
+        - "文件处理：支持Excel解析（名单上传/下载模板）"
+        - "录音存储：wav文件，建议转存到OSS/CDN"
+        - "消息队列：建议回调消费使用MQ（RabbitMQ/Kafka）异步化"
+        - "缓存：Redis缓存任务状态+并发计数器"
+      risks:
+        - "火山引擎API可能变更（需关注官方文档更新）"
+        - "Webhook回调可能存在丢失（需设计补偿拉取机制）"
+        - "ASR方言识别准确率需实测验证"
+        - "高并发时外呼API可能限流（需对接限流策略）"
+        - "号码归属地与外显号码匹配可能影响接通率"
+
+  # ═══════════════════════════════════════════════════════════════
+  # 以下为标准模板区块（Step6 API文档补全）
+  # ═══════════════════════════════════════════════════════════════
+
+  # 1. 业务泳道图（整体视角）
+  swimlane:
+    roles:
+      - "业务运营人员"    # 创建任务、配置话术、查看报表
+      - "智能外呼机器人"  # AI外呼执行核心
+      - "客户"           # 接听方
+      - "回调服务"       # 接收外呼结果推送
+      - "SCRM/CRM系统"   # 客户数据主系统
+      - "一线员工"       # 跟进高意向客户
+    stages:
+      - "数据准备"       # 名单清洗、场景配置、话术设计
+      - "任务下发"       # 创建外呼任务、配置策略
+      - "外呼执行"       # 拨号、对话、意图识别、意向判定
+      - "结果回流"       # Webhook回调、结果入库、数据分析
+      - "后续跟进"       # 高意向分配、CRM任务创建、企微触达
+    actions:
+      - role: "业务运营人员"
+        stage: "数据准备"
+        action: "整理客户名单、去重清洗、设计话术剧本"
+        input: "VeCDP人群包/企微加粉导出/展会名单"
+        output: "标准化号码名单文件"
+      - role: "业务运营人员"
+        stage: "任务下发"
+        action: "创建外呼任务、选择话术场景、设定并发与时段"
+        input: "号码名单文件+话术场景ID"
+        output: "外呼任务进入调度队列"
+      - role: "智能外呼机器人"
+        stage: "外呼执行"
+        action: "拨号→接通→多轮对话→意图识别→意向判定→录音"
+        input: "客户语音回答"
+        output: "通话结果（状态+意向+标签+文本+录音）"
+      - role: "回调服务"
+        stage: "结果回流"
+        action: "接收Webhook推送→解析结果→写入SCRM客户档案"
+        input: "外呼引擎推送的通话结果JSON"
+        output: "SCRM客户画像更新+标签刷新"
+      - role: "SCRM/CRM系统"
+        stage: "后续跟进"
+        action: "高意向自动创建跟进任务→分配销售→通知企微员工"
+        input: "外呼结果中的意向等级+标签"
+        output: "跟进任务+企微触达通知"
+
+  # 2. 业务流程图
+  flow:
+    happy_path: |
+      ① 运营人员在SCRM中筛选目标客户→导出号码名单
+      ② 在火山引擎控制台/通过API创建外呼任务，绑定话术场景
+      ③ 外呼引擎按并发策略开始批量拨号
+      ④ 客户接通→AI按话术剧本进行多轮对话
+      ⑤ 对话结束→AI判定意向等级+打标签+生成对话文本
+      ⑥ 外呼引擎通过Webhook推送通话结果至业务系统
+      ⑦ SCRM接收回调→更新客户画像→高意向自动分配销售
+      ⑧ 运营人员在SCRM中查看外呼数据看板
+    exceptions:
+      - desc: "号码无效/空号/停机 → 标记号码状态→不再重试→回写CRM"
+      - desc: "客户未接通 → 按重试策略N次→超限后标记「无法触达」"
+      - desc: "客户中途挂断 → 保留已获取的部分信息→标记意向「未确认」"
+      - desc: "Webhook回调不可达 → 外呼系统本地缓存→定期重推→降级为主动拉取"
+      - desc: "并发资源耗尽 → 任务排队等待→高优先级任务优先"
+    branches:
+      - desc: "高意向客户 → 自动转人工坐席/自动创建CRM商机"
+      - desc: "中意向客户 → 进入培育池→定期企微消息触达→N天后再次外呼"
+      - desc: "低意向/拒绝客户 → 标记勿扰→移出外呼列表→仅在客户主动联系后恢复"
+      - desc: "客户要求转人工 → 记录需求→SCRM创建人工回拨任务"
+
+  # 3. 业务信息流
+  info_flow:
+    entities:
+      - name: "外呼任务(task)"
+        producer: "业务运营人员/SCRM系统"
+        consumer: "外呼引擎调度器"
+        depends_on: "号码名单+话术场景配置"
+      - name: "通话记录(call_record)"
+        producer: "外呼引擎"
+        consumer: "回调服务/SCRM系统"
+        depends_on: "外呼任务执行"
+      - name: "意向标签(intent_tag)"
+        producer: "外呼引擎AI判定"
+        consumer: "SCRM客户标签体系"
+        depends_on: "通话完成+意图识别"
+      - name: "客户对话文本(conversation_text)"
+        producer: "外呼ASR引擎"
+        consumer: "CRM客户备注/销售回听"
+        depends_on: "通话录音+ASR转写"
+      - name: "计划任务(plan_task)"
+        producer: "SCRM生命周期规则引擎"
+        consumer: "外呼计划调度器"
+        depends_on: "SCRM客户事件触发"
+      - name: "Webhook回调推送"
+        producer: "外呼引擎"
+        consumer: "业务系统回调接口"
+        depends_on: "每通电话结束"
+    cross_system: >
+      客户ID贯穿全链路：企微external_userid → SCRM统一客户ID → 手机号 → 外呼callee。
+      回调结果通过手机号反查SCRM客户ID，回写客户档案。
+      通话录音URL关联到SCRM客户详情页，供销售回听。
+
+  # 4. 业务操作矩阵
+  operation_matrix:
+    roles: ["运营人员", "销售经理", "系统自动化"]
+    states: ["任务待执行", "任务执行中", "任务已暂停", "任务已完成", "任务已停止"]
+    matrix:
+      - role: "运营人员"
+        state: "任务待执行"
+        operations: ["编辑任务信息", "增加号码", "调整并发", "设置时段", "删除任务"]
+      - role: "运营人员"
+        state: "任务执行中"
+        operations: ["暂停任务", "停止任务", "查看进度", "增加号码", "调整并发"]
+      - role: "运营人员"
+        state: "任务已暂停"
+        operations: ["重启任务", "停止任务", "编辑后重启"]
+      - role: "运营人员"
+        state: "任务已完成"
+        operations: ["重建任务(所有号码重新外呼)", "导出结果", "查看统计"]
+      - role: "运营人员"
+        state: "任务已停止"
+        operations: ["查看统计", "导出结果"]
+      - role: "系统自动化"
+        state: "任务执行中"
+        operations: ["还款后自动暂停催收任务", "活动到期自动停止营销任务"]
+
+  # 5. 解决方案概括
+  solution:
+    patterns:
+      - desc: "API对接模式：业务系统通过REST API创建/管理外呼任务，通过Webhook接收结果回调"
+      - desc: "计划任务模式：预设定时触发规则，与SCRM生命周期事件联动，实现自动化批量触达"
+      - desc: "双通道互补模式：外呼（高触达率）+企微消息（低打扰），未接通自动降级"
+      - desc: "数据闭环模式：外呼结果→回流SCRM→更新画像→优化策略→下一轮外呼"
+    tech_considerations:
+      - desc: "Webhook回调非100%可靠，必须设计补偿拉取机制（定时查询通话列表API）"
+      - desc: "回调消费需异步化（MQ），避免外呼引擎因回调处理慢而限流"
+      - desc: "客户ID映射是核心基础设施：external_userid ↔ phone_number ↔ corp_user_id 三向映射必须可靠"
+      - desc: "话术设计是业务成功的关键，非技术问题——需要业务专家深度参与"
+      - desc: "ASR方言/噪音环境识别率需实测验证，可能影响意向判定准确率"
+    best_practices:
+      - desc: "先单场景试点（如线索清洗），验证ROI后再扩展多场景"
+      - desc: "话术设计遵循A/B测试——同一场景设计2-3版话术，数据驱动迭代"
+      - desc: "外呼结果必须回流到CRM，否则数据闭环断裂——这是最高优先级对接"
+      - desc: "建立号码黑名单机制——「明确拒绝」「号码失效」「投诉」类客户自动隔离"
+      - desc: "外呼时段和频次严格合规——避开休息时间，同一客户每日不超过1次外呼"
+
+  # ═══════════════════════════════════════════════════════════════
+  # 9. 接口自动发现与串联（API Integration）
+  # ═══════════════════════════════════════════════════════════════
+  api_integration:
+    auth:
+      method: "Bearer Token"
+      header: "Authorization: Bearer {apikey}"
+      note: "部分接口可能使用HMAC-SHA256签名(x-app-id + x-timestamp + x-sign)，以官方最新文档为准"
+    base_url: "https://{domain}/api"
+    
+    discovered_apis:
+      # --- 任务管理 ---
+      - api_id: "API-SO-001"
+        path: "POST /api/file/upload"
+        name: "上传文件(返回上传成功后的文件url)"
+        group: "任务管理"
+        description: "上传呼叫名单Excel文件"
+
+      - api_id: "API-SO-002"
+        path: "POST /api/template/download"
+        name: "下载excel模版"
+        group: "任务管理"
+
+      - api_id: "API-SO-003"
+        path: "POST /api/number/validate"
+        name: "校验上传号码信息"
+        group: "任务管理"
+
+      - api_id: "API-SO-004"
+        path: "POST /api/task/create-by-file"
+        name: "创建任务(使用文件模版)"
+        group: "任务管理"
+
+      - api_id: "API-SO-005"
+        path: "POST /api/task/create-by-list"
+        name: "创建任务(直接呼叫名单)"
+        group: "任务管理"
+
+      - api_id: "API-SO-006"
+        path: "POST /api/task/edit"
+        name: "编辑任务信息"
+        group: "任务管理"
+
+      - api_id: "API-SO-007"
+        path: "POST /api/task/add-numbers"
+        name: "增加任务号码"
+        group: "任务管理"
+
+      - api_id: "API-SO-008"
+        path: "POST /api/task/rebuild"
+        name: "重建任务,所有号码重新发起外呼"
+        group: "任务管理"
+
+      - api_id: "API-SO-009"
+        path: "POST /api/task/pause"
+        name: "暂停任务"
+        group: "任务管理"
+
+      - api_id: "API-SO-010"
+        path: "POST /api/task/restart"
+        name: "重启任务"
+        group: "任务管理"
+
+      - api_id: "API-SO-011"
+        path: "POST /api/task/stop"
+        name: "停止任务"
+        group: "任务管理"
+
+      - api_id: "API-SO-012"
+        path: "POST /api/concurrency/remain"
+        name: "获取当前用户剩余并发数"
+        group: "任务管理"
+
+      - api_id: "API-SO-013"
+        path: "POST /api/task/list"
+        name: "分页查询外呼任务列表"
+        group: "任务管理"
+
+      - api_id: "API-SO-014"
+        path: "GET /api/task/detail-by-uuid"
+        name: "查询任务详情(根据任务uuid)"
+        group: "任务管理"
+
+      - api_id: "API-SO-015"
+        path: "GET /api/task/detail-by-id"
+        name: "查询任务详情(根据任务自增id)"
+        group: "任务管理"
+
+      - api_id: "API-SO-016"
+        path: "GET /api/task/uuid-by-id"
+        name: "根据任务ID查询任务的uuid"
+        group: "任务管理"
+
+      - api_id: "API-SO-017"
+        path: "GET /api/task/download-failed"
+        name: "下载任务中上传未成功的数据"
+        group: "任务管理"
+
+      # --- 计划任务管理 ---
+      - api_id: "API-SO-018"
+        path: "POST /api/plan-task/create"
+        name: "创建计划任务"
+        group: "计划任务管理"
+
+      - api_id: "API-SO-019"
+        path: "POST /api/plan-task/edit"
+        name: "编辑计划任务"
+        group: "计划任务管理"
+
+      - api_id: "API-SO-020"
+        path: "POST /api/plan-task/list"
+        name: "分页查询计划任务列表"
+        group: "计划任务管理"
+
+      - api_id: "API-SO-021"
+        path: "POST /api/plan-task/detail"
+        name: "查询计划任务详情"
+        group: "计划任务管理"
+
+      - api_id: "API-SO-022"
+        path: "POST /api/plan-task/pause"
+        name: "暂停计划任务"
+        group: "计划任务管理"
+
+      - api_id: "API-SO-023"
+        path: "POST /api/plan-task/stop"
+        name: "终止计划任务"
+        group: "计划任务管理"
+
+      - api_id: "API-SO-024"
+        path: "POST /api/plan-task/resume"
+        name: "恢复计划任务"
+        group: "计划任务管理"
+
+      # --- 场景管理 ---
+      - api_id: "API-SO-025"
+        path: "POST /api/scene/list"
+        name: "分页查询场景列表"
+        group: "场景管理"
+
+      - api_id: "API-SO-026"
+        path: "POST /api/scene/dynamic-attributes"
+        name: "根据场景uuid获取场景的动态属性列表"
+        group: "场景管理"
+
+      - api_id: "API-SO-027"
+        path: "GET /api/scene/intent-levels"
+        name: "查询场景的意向等级列表"
+        group: "场景管理"
+
+      - api_id: "API-SO-028"
+        path: "POST /api/scene/tags"
+        name: "查询场景的标签列表"
+        group: "场景管理"
+
+      # --- 通话记录与导出 ---
+      - api_id: "API-SO-029"
+        path: "POST /api/call/list"
+        name: "分页查询通话列表"
+        group: "通话记录"
+
+      - api_id: "API-SO-030"
+        path: "POST /api/call/tags"
+        name: "查询通话的标签"
+        group: "通话记录"
+
+      - api_id: "API-SO-031"
+        path: "POST /api/call/conversation-text"
+        name: "查询通话对话文本列表"
+        group: "通话记录"
+
+      - api_id: "API-SO-032"
+        path: "GET /api/call/conversation-text/download"
+        name: "下载通话对话文本列表"
+        group: "通话记录"
+
+      - api_id: "API-SO-033"
+        path: "GET /api/call/audio/download"
+        name: "音频下载(返回wav文件)"
+        group: "通话记录"
+
+      - api_id: "API-SO-034"
+        path: "GET /api/call/result-enums"
+        name: "查询通话结果枚举值数据"
+        group: "通话记录"
+
+      - api_id: "API-SO-035"
+        path: "POST /api/call/export-task"
+        name: "创建外呼通话导出任务"
+        group: "通话记录"
+
+      - api_id: "API-SO-036"
+        path: "POST /api/call/export-query"
+        name: "查询已发起的下载任务"
+        group: "通话记录"
+
+      - api_id: "API-SO-037"
+        path: "POST /api/call/export-link"
+        name: "创建外呼历史下载链接"
+        group: "通话记录"
+
+      - api_id: "API-SO-038"
+        path: "POST /api/export/create"
+        name: "创建导出任务"
+        group: "通话记录"
+
+      - api_id: "API-SO-039"
+        path: "POST /api/phone/search"
+        name: "检索所有电话号码资源"
+        group: "通话记录"
+
+      # --- 回调推送 ---
+      - api_id: "API-SO-040"
+        path: "POST {客户配置的回调URL}"
+        name: "通话状态回调（Webhook推送）"
+        group: "回调推送"
+        note: "由外呼系统主动推送到客户配置的HTTPS URL"
+
+      - api_id: "API-SO-041"
+        path: "POST /api/callback/update-url"
+        name: "更新推送地址"
+        group: "回调推送"
+
+    # 核心调用时序（简化版，详细版见scenario_maps）
+    call_sequence:
+      - step: 1
+        api: "上传号码文件"
+        api_id: "API-SO-001"
+        next: "创建外呼任务"
+      - step: 2
+        api: "创建外呼任务"
+        api_id: "API-SO-004 / API-SO-005"
+        next: "外呼执行中"
+      - step: 3
+        api: "外呼引擎自动执行"
+        api_id: "N/A（引擎内部）"
+        next: "通话结果回调"
+      - step: 4
+        api: "Webhook回调推送"
+        api_id: "API-SO-040"
+        next: "业务系统处理结果"
+      - step: 5
+        api: "查询通话详情/标签/文本/录音"
+        api_id: "API-SO-029~033"
+        next: "数据写入CRM"
+
+    sequence_diagram: |
+      sequenceDiagram
+          participant BIZ as 业务系统
+          participant API as 外呼API
+          participant ENGINE as 外呼引擎
+          participant HOOK as Webhook服务
+          participant CRM as CRM系统
+          
+          BIZ->>API: POST 上传号码文件
+          API-->>BIZ: {file_url}
+          BIZ->>API: POST 创建外呼任务(file_url+scene_id+config)
+          API-->>BIZ: {task_id, status: "running"}
+          
+          loop 每通电话
+              ENGINE->>ENGINE: 拨号+对话+意向判定
+              ENGINE->>HOOK: POST 通话结果回调
+              HOOK->>CRM: 写入客户画像更新
+              HOOK-->>ENGINE: 200 OK
+          end
+          
+          BIZ->>API: POST 查询通话列表(task_id)
+          API-->>BIZ: {calls: [...], total, page}
+          BIZ->>API: GET 下载录音(call_id)
+          API-->>BIZ: wav文件
+
+    orphan_apis:
+      - api_id: "API-SO-017"
+        name: "下载任务中上传未成功的数据"
+        note: "独立使用的辅助API，不在主流程中，运营人员手动触发"
+
+  # ═══════════════════════════════════════════════════════════════
+  # 10. API参数字典（Part12）—— 核心API的参数定义
+  # ═══════════════════════════════════════════════════════════════
+  api_param_dictionary:
+    description: "核心API的请求/响应参数定义，覆盖任务创建、结果回调、通话查询等关键接口"
+    
+    apis:
+      # --- 创建外呼任务 ---
+      - api_id: "API-SO-004"
+        api_name: "创建任务(使用文件模版)"
+        api_path: "POST /api/task/create-by-file"
+        
+        request_params:
+          - field: "file_url"
+            type: "string"
+            required: true
+            description: "上传号码文件返回的URL"
+            semantic_role: "REFERENCE"
+            source_type: "upstream_api"
+            source_api: "API-SO-001"
+            source_field: "file_url"
+            validation: "非空URL"
+            
+          - field: "scene_id"
+            type: "string"
+            required: true
+            description: "话术场景UUID"
+            semantic_role: "REFERENCE"
+            source_type: "user_input"
+            validation: "有效场景UUID"
+            
+          - field: "task_name"
+            type: "string"
+            required: true
+            description: "任务名称"
+            semantic_role: "BUSINESS_PARAM"
+            source_type: "user_input"
+            max_length: "100"
+            
+          - field: "concurrency"
+            type: "number"
+            required: false
+            description: "并发路数限制"
+            semantic_role: "BUSINESS_PARAM"
+            source_type: "user_input"
+            default: "系统默认值"
+            validation: "正整数，不超过剩余并发数"
+            
+          - field: "call_time_range"
+            type: "object"
+            required: false
+            description: "允许外呼时间段"
+            semantic_role: "BUSINESS_PARAM"
+
+          - field: "retry_count"
+            type: "number"
+            required: false
+            description: "未接通重试次数"
+            semantic_role: "BUSINESS_PARAM"
+            default: "3"
+
+          - field: "dynamic_variables"
+            type: "object"
+            required: false
+            description: "话术动态变量（如{客户姓名}{产品名称}）"
+            semantic_role: "BUSINESS_PARAM"
+            source_type: "user_input"
+        
+        response_params:
+          - field: "task_id"
+            type: "string"
+            description: "任务唯一标识"
+            semantic_role: "PRIMARY_KEY"
+            downstream_usage: ["API-SO-009~011", "API-SO-029"]
+          - field: "status"
+            type: "string"
+            description: "任务状态"
+            semantic_role: "STATUS"
+            enum_values: ["pending", "running", "paused", "completed", "stopped"]
+
+      # --- Webhook回调 ---
+      - api_id: "API-SO-040"
+        api_name: "通话状态回调（Webhook推送）"
+        api_path: "POST {客户配置的回调URL}"
+        note: "这是最重要的对接接口——外呼系统主动推送到客户服务器"
+        
+        notification_params:
+          notification_event: "call_status_change"
+          params:
+            - field: "call_id"
+              type: "string"
+              description: "通话唯一标识（串联整通会话）"
+              semantic_role: "PRIMARY_KEY"
+            - field: "task_id"
+              type: "string"
+              description: "所属任务ID"
+              semantic_role: "REFERENCE"
+            - field: "callee"
+              type: "string"
+              description: "被叫号码"
+              semantic_role: "PRIMARY_KEY"
+              encryption: "mask"
+              validation: "11位手机号"
+            - field: "status"
+              type: "enum"
+              description: "通话状态"
+              semantic_role: "STATUS"
+              enum_values: ["answered", "no_answer", "invalid_number", "busy", "refused", "hang_up"]
+            - field: "intent_level"
+              type: "enum"
+              description: "客户意向等级"
+              semantic_role: "BUSINESS_PARAM"
+              enum_values: ["high", "medium", "low", "unknown"]
+              nullable: true
+            - field: "tags"
+              type: "array"
+              description: "AI标注的客户标签"
+              semantic_role: "BUSINESS_PARAM"
+              nullable: true
+            - field: "duration"
+              type: "number"
+              description: "通话时长（秒）"
+              semantic_role: "BUSINESS_PARAM"
+            - field: "start_time"
+              type: "string"
+              description: "通话开始时间"
+              semantic_role: "TIMESTAMP"
+            - field: "end_time"
+              type: "string"
+              description: "通话结束时间"
+              semantic_role: "TIMESTAMP"
+            - field: "recording_url"
+              type: "string"
+              description: "通话录音文件URL"
+              semantic_role: "REFERENCE"
+              nullable: true
+            - field: "conversation_summary"
+              type: "string"
+              description: "对话内容摘要"
+              semantic_role: "BUSINESS_PARAM"
+              nullable: true
+          correlation_field: "call_id"
+
+      # --- 创建计划任务 ---
+      - api_id: "API-SO-018"
+        api_name: "创建计划任务"
+        api_path: "POST /api/plan-task/create"
+        
+        request_params:
+          - field: "scene_id"
+            type: "string"
+            required: true
+            description: "话术场景UUID"
+            semantic_role: "REFERENCE"
+            
+          - field: "cron_expression"
+            type: "string"
+            required: true
+            description: "CRON触发表达式"
+            semantic_role: "BUSINESS_PARAM"
+            validation: "有效CRON表达式"
+            
+          - field: "number_source"
+            type: "string"
+            required: true
+            description: "号码来源（固定列表URL / 动态查询接口）"
+            semantic_role: "REFERENCE"
+
+          - field: "dynamic_params"
+            type: "object"
+            required: false
+            description: "每次执行时的动态参数（可从业务系统实时拉取）"
+            semantic_role: "BUSINESS_PARAM"
+
+        response_params:
+          - field: "plan_task_id"
+            type: "string"
+            description: "计划任务唯一标识"
+            semantic_role: "PRIMARY_KEY"
+
+      # --- 查询通话列表 ---
+      - api_id: "API-SO-029"
+        api_name: "分页查询通话列表"
+        api_path: "POST /api/call/list"
+        
+        request_params:
+          - field: "task_id"
+            type: "string"
+            required: false
+            description: "按任务ID过滤"
+            semantic_role: "QUERY_FILTER"
+          - field: "status"
+            type: "enum"
+            required: false
+            description: "按通话状态过滤"
+            semantic_role: "QUERY_FILTER"
+          - field: "start_time"
+            type: "string"
+            required: false
+            description: "通话开始时间范围-起"
+            semantic_role: "QUERY_FILTER"
+          - field: "end_time"
+            type: "string"
+            required: false
+            description: "通话开始时间范围-止"
+            semantic_role: "QUERY_FILTER"
+          - field: "page"
+            type: "number"
+            required: false
+            description: "页码"
+            semantic_role: "PAGINATION"
+            default: "1"
+          - field: "page_size"
+            type: "number"
+            required: false
+            description: "每页条数"
+            semantic_role: "PAGINATION"
+            default: "20"
+        
+        response_params:
+          - field: "total"
+            type: "number"
+            description: "总记录数"
+            semantic_role: "RESPONSE_META"
+
+      # --- 下载录音 ---
+      - api_id: "API-SO-033"
+        api_name: "音频下载(返回wav文件)"
+        api_path: "GET /api/call/audio/download"
+        
+        request_params:
+          - field: "call_id"
+            type: "string"
+            required: true
+            description: "通话唯一标识"
+            semantic_role: "PRIMARY_KEY"
+        
+        response_params:
+          - field: "audio_data"
+            type: "binary(wav)"
+            description: "录音文件二进制数据"
+
+  # ═══════════════════════════════════════════════════════════════
+  # 11. 参数流转图（Part13）
+  # ═══════════════════════════════════════════════════════════════
+  param_flow:
+    description: "核心场景下关键参数的跨API流转路径"
+    
+    intra_scene_param_flow:
+      - scene_id: "SC-SO-001"
+        scene_name: "线索清洗与意向筛选"
+        flows:
+          - from_api: "API-SO-001"
+            from_field: "file_url"
+            to_api: "API-SO-004"
+            to_field: "file_url"
+            dependency: "required"
+          - from_api: "API-SO-004"
+            from_field: "task_id"
+            to_api: "API-SO-029"
+            to_field: "task_id"
+            dependency: "required"
+          - from_api: "API-SO-040"
+            from_field: "call_id"
+            to_api: "API-SO-030"
+            to_field: "call_id"
+            dependency: "required"
+          - from_api: "API-SO-040"
+            from_field: "call_id"
+            to_api: "API-SO-033"
+            to_field: "call_id"
+            dependency: "optional"
+        mermaid: |
+          graph LR
+            A[API-001:上传文件] -->|file_url| B[API-004:创建任务]
+            B -->|task_id| C[API-040:回调]
+            C -->|call_id| D[API-030:查询标签]
+            C -->|call_id| E[API-033:下载录音]
+            B -->|task_id| F[API-029:查询通话列表]
+
+    cross_scene_param_flow:
+      - from_scene: "SC-SO-001(线索清洗)"
+        from_api: "API-SO-040"
+        from_field: "callee"
+        to_scene: "SC-SO-002(生命周期触达)"
+        to_api: "API-SO-005"
+        to_field: "phone_numbers[]"
+        dependency: "required"
+        note: "通过SCRM统一客户ID中转：callee→SCRM查customer_id→匹配external_userid→生命周期判定"
+
+    param_source_trace:
+      - param_name: "task_id"
+        semantic_role: "PRIMARY_KEY"
+        origin:
+          api_id: "API-SO-004/005"
+          source_type: "system_generated"
+        flows_to: ["API-SO-009", "API-SO-010", "API-SO-011", "API-SO-029"]
+        trace_chain: "创建任务 → 系统生成 task_id → 后续所有任务操作/查询以此ID为锚点"
+
+      - param_name: "call_id"
+        semantic_role: "PRIMARY_KEY"
+        origin:
+          api_id: "API-SO-040(回调)"
+          source_type: "system_generated"
+        flows_to: ["API-SO-030", "API-SO-031", "API-SO-033"]
+        trace_chain: "外呼引擎分配call_id → 回调推送 → 业务方以此ID查询标签/文本/录音"
+
+      - param_name: "callee(手机号)"
+        semantic_role: "PRIMARY_KEY"
+        origin:
+          api_id: "用户上传的号码名单"
+          source_type: "user_input"
+        flows_to: ["API-SO-040 → SCRM统一客户ID服务"]
+        trace_chain: "号码名单 → 外呼引擎 → 回调推送callee → SCRM ID服务反查customer_id → 回写客户档案"
+
+    param_dependency_matrix:
+      description: "API间参数依赖矩阵（核心路径）"
+      matrix:
+        - consumer_api: "API-SO-004(创建任务-文件)"
+          producer_api: "API-SO-001(上传文件)"
+          params: ["file_url"]
+          dependency: "required"
+        - consumer_api: "API-SO-029(查询通话)"
+          producer_api: "API-SO-004(创建任务)"
+          params: ["task_id"]
+          dependency: "required"
+        - consumer_api: "API-SO-030(查询标签)"
+          producer_api: "API-SO-040(回调)"
+          params: ["call_id"]
+          dependency: "required"
+
+    param_security_analysis:
+      sensitive_fields:
+        - param_name: "callee"
+          api_id: "API-SO-040(回调)"
+          encryption: "mask"
+          risk: "手机号明文泄露风险——回调传输和存储必须脱敏"
+      idempotent_keys:
+        - param_name: "request_id(如果有)"
+          api_id: "API-SO-004(创建任务)"
+          uniqueness_mechanism: "建议业务方生成唯一request_id防重复创建"
+      amount_fields:
+        - param_name: "N/A"
+          note: "智能外呼不涉及金额字段"
+
+  # ═══════════════════════════════════════════════════════════════
+  # 自动化巡检配置
+  # ═══════════════════════════════════════════════════════════════
+  auto_check:
+    enabled: false
+    schedule: "monthly"
+    last_checked: ""
+    last_changed: ""
+    status: "up_to_date"

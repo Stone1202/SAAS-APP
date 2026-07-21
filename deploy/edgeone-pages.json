@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json.schema.vercel.app/deploy/config",
+  "deploy_target": "edgeone-pages",
+  "version": "1.0.0",
+  "description": "EdgeOne Pages 部署配置 — 多人多项目路径路由",
+  "global": {
+    "workspace": "ai-scrm",
+    "base_domain": "edgeone.app",
+    "access_protection": {
+      "enabled": true,
+      "auth_type": "password",
+      "accounts": [
+        { "username": "admin", "role": "admin", "scope": "all" },
+        { "username": "viewer", "role": "viewer", "scope": "all" }
+      ]
+    }
+  },
+  "projects": {
+    "jojo-ai-scrm": {
+      "owner": "jojo",
+      "project": "AI-SCRM",
+      "root": "projects/jojo/AI-SCRM",
+      "build_command": "npm run build:sim",
+      "output_directory": "dist",
+      "env": {
+        "VITE_PROJECT_ID": "jojo-ai-scrm",
+        "VITE_MODE": "sim"
+      },
+      "routes": [
+        { "src": "/jojo/AI-SCRM/(.*)", "dest": "/$1" }
+      ],
+      "access_url_pattern": "/jojo/AI-SCRM/{version}/"
+    }
+  },
+  "deploy_hooks": {
+    "pre_deploy": "npm run build:sim",
+    "post_deploy": "更新 DEPLOY-MANIFEST.yml + access-portal/index.html + PROJECT-INDEX.yml"
+  }
+}

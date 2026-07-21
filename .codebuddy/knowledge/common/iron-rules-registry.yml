@@ -1,0 +1,643 @@
+# ============================================
+# iron-rules-registry.yml — 全流程铁律注册中心
+# 版本：v1.8.0
+# 创建：2026-07-17
+# 定位：所有Agent铁律的单一事实源，统一编号统一管理
+# 引用方：各agent.md声明"遵守iron-rules-registry.yml"，各workflow.yml引用对应Agent的铁律段
+# 维护：新增/修改/废弃铁律时只需修改本文件
+# 关联方案：audit-reports/POM门禁治理与铁律统一管理架构方案-2026-07-17.md
+# ============================================
+
+version: "1.8.0"
+last_updated: "2026-07-21"
+
+# V1.8.0新增：PO-08(问题分解+关键链) + BA-29(端到端闭环) + UX-10(设计上下文+趋势+交互)
+# V1.7.0新增：LP-01~05 learn-project场景深度还原铁律
+# V1.6.0新增：PO-07 实现方式识别+小版本迭代铁律
+# V1.5.0新增：BA-28 状态机中文命名铁律
+# V1.4.0新增：ARCH-11 NFR主题识别铁律——Arch必须用AI辅助识别非功能需求主题
+# V1.3.0新增：Brain铁律——每个注入大脑的Agent增加大脑推理完整性铁律
+# 新增：BA-26 PM-09 UX-09 FD-13 ARCH-10 QA-06 AC-06 PO-06
+# V1.3.0新增：BA-27 UC六段不可省略铁律——根因修复
+
+# ============================================
+# 铁律通用规则
+# ============================================
+iron_rule_principles:
+  numbering: "每个Agent的铁律统一使用 {AGENT_PREFIX}-{NNN} 编号，全局唯一不重复"
+  enforcement: "每条铁律标注 enforcement：hard=阻止流程 / soft=警告"
+  traceability: "每条铁律标注 workflow_check（在哪个workflow/门禁有可执行检查）"
+  version_tracking: "铁律新增/修改/废弃须记录版本变更"
+  conflict_resolution: "如agent.md与本文件冲突，以本文件为最终事实源"
+
+# ============================================
+# 各Agent铁律（统一编号，单一事实源）
+# ============================================
+agents:
+
+  # ============================================
+  # BS Agent（脑暴主持人）
+  # ============================================
+  bs_agent:
+    prefix: "BS"
+    source: "bs-agent.md + brainstorm-standards.yml"
+    rules:
+      - id: "BS-01"
+        rule: "需求描述≠需求文档：--desc只是起点，BS必须展开为结构化脑暴产物"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-BS-01~03"
+      - id: "BS-02"
+        rule: "三流草图须标注领域知识参考来源"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-BS-01"
+      - id: "BS-03"
+        rule: "BO/BG映射为追溯链链首，必须产出"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-BS-02"
+      - id: "BS-04"
+        rule: "领域知识清单必须产出（传递给BA继承）"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-BS-03"
+      - id: "BS-05"
+        rule: "脑暴不存在驳回，只有确认或补充后继续"
+        enforcement: "hard"
+        workflow_check: "brainstorm.yml stage-7"
+      - id: "BS-06"
+        rule: "confirmed/只保留一份确认稿覆盖式更新+版本概要"
+        enforcement: "hard"
+        workflow_check: "brainstorm.yml stage-6"
+      - id: "BS-07"
+        rule: "战略型脑暴须输出战略分析+商业分析产物"
+        enforcement: "hard"
+        workflow_check: "brainstorm.yml brainstorm_types.strategic"
+      - id: "BS-08"
+        rule: "脑暴过程中识别到API时必须执行API分析并注入专家讨论"
+        enforcement: "hard"
+        workflow_check: "brainstorm.yml stage-1.5"
+      - id: "BS-09"
+        rule: "专家发言须引用领域知识作为技术论据"
+        enforcement: "hard"
+        workflow_check: "brainstorm.yml stage-3"
+      - id: "BS-10"
+        rule: "同一项目允许多次脑暴，按议题子目录组织产物"
+        enforcement: "hard"
+        workflow_check: "brainstorm.yml --topic参数"
+
+  # ============================================
+  # BA Agent（业务分析师）— 编号冲突已修复
+  # ============================================
+  ba_agent:
+    prefix: "BA"
+    source: "ba-agent.md + requirement-flow.yml + doc-standards.yml"
+    note: |
+      V1.0.0修复：原ba-agent.md编号11~14重复（V3.1.0新增BA-14~17 vs V3.0.0原有11~14）。
+      修复方案：BA-01~BA-13保留，BA-14~BA-17保留（V3.1.0新增），原V3.0.0的11~17重新编号为BA-18~BA-24。
+    rules:
+      - id: "BA-01"
+        rule: "需求描述≠需求文档：--desc只是起点，BA必须展开为结构化产物"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-REQ-01~14"
+      - id: "BA-02"
+        rule: "影响范围是分析结果，非用户预声明：BA必须跑req-impact-analyzer"
+        enforcement: "hard"
+        workflow_check: "requirement-flow §0.5b"
+      - id: "BA-03"
+        rule: "终端在§0.0一次性冻结，后续禁止零散重复确认"
+        enforcement: "hard"
+        workflow_check: "project-lifecycle stage-2 pm_redlines"
+      - id: "BA-04"
+        rule: "每个User Story必须包含Happy Path + ≥2 Ugly Path + ≥1 Corner Case"
+        enforcement: "hard"
+        workflow_check: "requirement-flow §2"
+      - id: "BA-05"
+        rule: "业务流程必须覆盖：主干/分支/异常/跨部门/跨角色/跨系统"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-REQ-12"
+      - id: "BA-06"
+        rule: "状态机必须配套状态过渡操作表"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-REQ-05"
+      - id: "BA-07"
+        rule: "每个FN使用标准用例模板（编号/用例编号/名称/页面/参与者/优先级/关联BG/自动化类型）"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-REQ-01/02"
+      - id: "BA-08"
+        rule: "BR必须独立编号BR-{系统}-{NNN}，声明depends_on依赖链"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-REQ-07"
+      - id: "BA-09"
+        rule: "需求阶段产出接口契约初稿（自然语言）"
+        enforcement: "hard"
+        workflow_check: "requirement-flow §6"
+      - id: "BA-10"
+        rule: "版本规划必须包含优先级排序（P0~P3）"
+        enforcement: "hard"
+        workflow_check: "requirement-flow §4"
+      - id: "BA-11"
+        rule: "产物体系缺一不可，少任一视为需求分析未完成"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-REQ-01~14（14条逐条校验）"
+      - id: "BA-12"
+        rule: "全类型同步铁律：无论何种类型，REQ产物必须同步更新"
+        enforcement: "hard"
+        workflow_check: "requirement-flow sync_iron_rule"
+      - id: "BA-13"
+        rule: "全局文档契约附录：所有产物必须有交叉引用索引"
+        enforcement: "hard"
+        workflow_check: "requirement-flow §7 global_doc_appendix"
+      - id: "BA-14"
+        rule: "§0.5不可跳过：旅行地图前必须完成§0.5需求深度分析整合"
+        enforcement: "hard"
+        workflow_check: "requirement-flow §0.5 checkpoint"
+      - id: "BA-15"
+        rule: "领域知识深度结合：§0.5a必须引用领域知识Part12和Part13"
+        enforcement: "hard"
+        workflow_check: "requirement-flow §0.5a 维度5"
+      - id: "BA-16"
+        rule: "CONFIG必识别：§5详设必须产出集中配置清单(CONFIG)"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-REQ-09"
+      - id: "BA-17"
+        rule: "METRIC引标准：§5详设METRIC必须引用metrics-standards.yml行业标准"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-REQ-10"
+      # --- 以下为原V3.0.0的11~17，重新编号为BA-18~BA-24（修复编号冲突）---
+      - id: "BA-18"
+        rule: "BR依赖声明：每个BR须声明depends_on依赖链"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-REQ-07"
+        note: "原V3.0.0编号11，与BA-14冲突，重新编号为BA-18"
+      - id: "BA-19"
+        rule: "接口契约初稿：需求阶段须产出接口契约初稿"
+        enforcement: "hard"
+        workflow_check: "requirement-flow §6"
+        note: "原V3.0.0编号12，与BA-15冲突，重新编号为BA-19"
+      - id: "BA-20"
+        rule: "需求优先级标注：每个FN须标注P0/P1/P2/P3优先级"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-REQ-01"
+        note: "原V3.0.0编号13，与BA-16冲突，重新编号为BA-20"
+      - id: "BA-21"
+        rule: "系统类型声明：PRD元信息必须包含system_declaration"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-REQ-11"
+        note: "原V3.0.0编号14，与BA-17冲突，重新编号为BA-21"
+      - id: "BA-22"
+        rule: "PRD按业务系统×终端组织（不再按模块组织）"
+        enforcement: "hard"
+        workflow_check: "doc-standards prd_chapter_structure"
+        note: "原V3.0.0编号15，重新编号为BA-22"
+      - id: "BA-23"
+        rule: "业务操作矩阵：必须产出（四图浓缩产物）"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-REQ-06"
+        note: "原V3.0.0编号16，重新编号为BA-23"
+      - id: "BA-24"
+        rule: "视觉设计需求识别：需求分析末尾须询问品牌VI/海报/活动主视觉"
+        enforcement: "soft"
+        workflow_check: "requirement-flow §7"
+        note: "原V3.0.0编号17，重新编号为BA-24"
+      - id: "BA-25"
+        rule: "系统常识完整性（V3.3.0新增）：§0.5c必须调用system-common-sense-analyzer，AI基于系统类型声明+7层推理模型（身份入口/身份治理/业务功能/信息触达/系统治理/数据分析/体验辅助）发现需求盲区，BA确认后纳入或排除。这不是硬编码检查清单——AI推理结果只是「建议+置信度」，BA做最终决策。"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-REQ-15"
+        note: "V3.3.0新增：AI增强Agent思考能力，让AI辅助BA发现系统常识盲区，而非硬编码规则"
+      - id: "BA-26"
+        rule: "大脑推理完整性（V5.1.0新增）：BA大脑必须执行quality_predictor(质量预测推理)+history_correlator(历史关联推理)+brain_memory_import(加载上版本记忆)+brain_sync_export(向UX/Arch/QA输出推理结果)，不可跳过任一步骤"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-REQ-16"
+      - id: "BA-27"
+        rule: "UC六段不可省略（V5.1.1根因修复）：每个UC必须包含①前置条件 ②基本流程(分步编号+[手动]/[系统自动]/[事件驱动]标注) ③备选流程 ④数据范围(R/W) ⑤后置条件 ⑥关联UC，缺任一段视为PRD不合格。token优化不可压缩用例说明内容——优化只针对加载策略和冗余注释，不针对用例说明/验收标准/状态机等核心内容。"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-REQ-17"
+        note: "V5.1.1根因修复：Sprint 3 PRD初版26个UC中仅1个有完整描述，根因是门禁只检查UC编号存在不检查UC格式完整性+UC模板缺少数据范围和关联UC字段+token优化思维渗透到内容创建"
+      - id: "BA-28"
+        rule: "状态机中文命名（V5.1.3新增）：状态机图(stateDiagram)节点和状态过渡操作表必须使用中文状态名，不可使用英文原名。英文enum值保留在数据实体(ENT)的status字段定义中。示例：pending→待处理, processing→处理中, completed→已完成, failed→已失败。状态机是给人看的业务文档，中文状态名可读性远高于英文。"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-REQ-19"
+      - id: "BA-29"
+        rule: "端到端闭环+规划边界感知（V5.1.4新增）：BA必须用AI辅助执行规划边界探测（planning_boundary_detector——基于PO Backlog识别In-Scope/Out-of-Scope/边界交叉点）→端到端闭环校验（e2e_closure_analyzer——每个FN做6链闭环检查：入口链/操作链/状态链/异常链/信息链/统计链）→全面用例设计（comprehensive_uc_designer——基于闭环缺口补全UC+四向一致性校验UC↔BR↔状态机↔业务操作矩阵）。BA不是凭空分析，而是在PO规划的边界内做端到端完整闭环——确保每个FN是'端到端完整闭环'而非'功能碎片'。"
+        enforcement: "hard"
+        workflow_check: "requirement-flow.yml §0.5/§5/§7 + gates-registry G-REQ-20"
+        note: "V5.1.4新增：解决BA需求分析不感知PO规划边界、不做端到端闭环校验的问题。"
+
+  # ============================================
+  # PM Agent（项目管理）
+  # ============================================
+  pm_agent:
+    prefix: "PM"
+    source: "pm-agent.md + project-lifecycle.yml"
+    rules:
+      - id: "PM-01"
+        rule: "state_guard：任何操作前先确保state.json存在且可解析"
+        enforcement: "hard"
+        workflow_check: "project-lifecycle stage-00 state_guard"
+      - id: "PM-02"
+        rule: "骨架完整性6项校验：不可仅凭目录存在跳过"
+        enforcement: "hard"
+        workflow_check: "ensure-project.sh --check"
+      - id: "PM-03"
+        rule: "会话恢复读PROJECT-INDEX.yml定位活跃项目"
+        enforcement: "hard"
+        workflow_check: "pm-agent.yml session_restore"
+      - id: "PM-04"
+        rule: "每阶段Review不可跳过，Review后才能反馈回流"
+        enforcement: "hard"
+        workflow_check: "project-lifecycle feedback_routing_table.precondition"
+      - id: "PM-05"
+        rule: "先展示Review汇总再请用户确认，不直接给选项"
+        enforcement: "hard"
+        workflow_check: "pm-agent.md R4"
+      - id: "PM-06"
+        rule: "completion_criteria必须按gates-registry逐条校验"
+        enforcement: "hard"
+        workflow_check: "gates-registry 各stage gates"
+      - id: "PM-07"
+        rule: "跨版本反馈传递：未闭环反馈自动传递到下一版本/init"
+        enforcement: "hard"
+        workflow_check: "project-lifecycle close.pm_actions"
+      - id: "PM-08"
+        rule: "/close前校验PBL全闭环+Review全产出+追溯链+版本沉淀"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-CLOSE-01~04"
+      - id: "PM-09"
+        rule: "大脑编排（V5.1.0新增）：PM负责全生命周期大脑编排——确保每个Stage的ai_brain被激活+brain_sync_chain脑力协同链运转+brain_memory_persistence记忆持久化+brain_evolution_trigger(/close时触发全Agent大脑进化)。大脑编排是PM第六项职责，缺失则/close阻塞。"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-CLOSE-05"
+
+  # ============================================
+  # UX Agent（设计师）
+  # ============================================
+  ux_agent:
+    prefix: "UX"
+    source: "ux-agent.md + design-flow.yml + design-output-standards.yml"
+    rules:
+      - id: "UX-01"
+        rule: "8章强制结构不可缺章"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-DES-01"
+      - id: "UX-02"
+        rule: "UI元素编号体系贯穿全链路（PG/B/BTN/IPT/M）"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-DES-02"
+      - id: "UX-03"
+        rule: "每个页面+弹窗必须有Markdown表格线框图草图"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-DES-03"
+      - id: "UX-04"
+        rule: "交互跳转矩阵必须覆盖所有页面+弹窗的所有交互跳转"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-DES-04"
+      - id: "UX-05"
+        rule: "PM红线C-D1~D9全部通过才可交付"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-DES-05"
+      - id: "UX-06"
+        rule: "设计师决定栅格系统和设计语言（BA只声明系统类型和密度）"
+        enforcement: "hard"
+        workflow_check: "design-flow.yml responsibility_boundary"
+      - id: "UX-07"
+        rule: "视觉回归基线：设计稿作为视觉回归基准（threshold≥0.95）"
+        enforcement: "hard"
+        workflow_check: "config.yml visual_regression"
+      - id: "UX-08"
+        rule: "无障碍设计：颜色对比度WCAG AA 4.5:1，触摸目标≥44px"
+        enforcement: "soft"
+        workflow_check: "design-flow.yml design-output-standards §6"
+      - id: "UX-09"
+        rule: "大脑推理完整性（V5.1.0新增）：UX大脑必须执行design_pattern_reasoning(设计模式推理)+interaction_flaw_detection(交互缺陷预检)+accessibility_gap_detection(无障碍合规推理)+terminal_adaptation_reasoning(终端适配推理)+brain_memory_import+brain_sync_export，不可跳过任一步骤"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-DES-06"
+      - id: "UX-10"
+        rule: "设计上下文+趋势+交互优化（V5.1.4新增）：UX必须用AI辅助执行设计上下文合成（design_context_synthesizer——加载PO规划+BA需求提取设计相关信息，合成设计上下文摘要）→设计趋势学习（design_trend_learner——基于项目特征推荐设计语言/色彩/布局/交互/动效趋势）→交互体验优化（interaction_experience_optimizer——尼尔森十大原则+5维分析实时优化交互质量）。设计不是凭空画——必须结合PO规划（知道做什么）+BA需求分析（知道用户要什么）+设计领域知识（知道怎么做最好），AI辅助做出更好的设计方案。"
+        enforcement: "hard"
+        workflow_check: "design-flow.yml + gates-registry G-DES-07"
+        note: "V5.1.4新增：解决UX设计不结合上游决策、不学习设计趋势、不实时优化交互体验的问题。"
+
+  # ============================================
+  # FD Agent（前端开发）
+  # ============================================
+  fd_agent:
+    prefix: "FD"
+    source: "fd-agent.md + dev-flow.yml"
+    rules:
+      - id: "FD-01"
+        rule: "可运行骨架：npm run dev可启动"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-DEV-01"
+      - id: "FD-02"
+        rule: "逐页1:1还原UX设计稿，禁止占位div"
+        enforcement: "hard"
+        workflow_check: "dev-flow pm_redlines C-F2"
+      - id: "FD-03"
+        rule: "本地访问地址已验证，可走通主链路"
+        enforcement: "hard"
+        workflow_check: "dev-flow pm_redlines C-F3"
+      - id: "FD-04"
+        rule: "不偏离上游：代码实现与架构契约/设计稿一致"
+        enforcement: "hard"
+        workflow_check: "dev-flow pm_redlines C-F4"
+      - id: "FD-05"
+        rule: "视觉回归：设计稿→代码视觉一致性校验（threshold≥0.95）"
+        enforcement: "hard"
+        workflow_check: "dev-flow pm_redlines C-F5"
+      - id: "FD-06"
+        rule: "compliance-checker通过"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-DEV-02"
+      - id: "FD-07"
+        rule: "套真实组件库（Ant Design/antd-mobile/Taro）"
+        enforcement: "hard"
+        workflow_check: "dev-flow coding_iron_rules IRON-02"
+      - id: "FD-08"
+        rule: "状态机必须落地为代码（不可遗漏状态分支）"
+        enforcement: "hard"
+        workflow_check: "dev-flow coding_iron_rules IRON-06"
+      - id: "FD-09"
+        rule: "业务操作矩阵必须落地为权限控制"
+        enforcement: "hard"
+        workflow_check: "dev-flow coding_iron_rules IRON-12"
+      - id: "FD-10"
+        rule: "sim/real适配器隔离，单接口粒度开关"
+        enforcement: "hard"
+        workflow_check: "dev-flow coding_iron_rules IRON-09"
+      - id: "FD-11"
+        rule: "契约Zod Schema定义完整"
+        enforcement: "hard"
+        workflow_check: "dev-flow coding_iron_rules IRON-10"
+      - id: "FD-12"
+        rule: " IndexedDB仿真数据层完整"
+        enforcement: "hard"
+        workflow_check: "dev-flow coding_iron_rules IRON-11"
+      - id: "FD-13"
+        rule: "大脑推理完整性（V5.1.0新增）：FD大脑必须执行implementation_trap_prediction(实现陷阱预测)+component_reuse_reasoning(组件复用推理)+compliance_pattern_recognition(合规模式识别)+visual_regression_risk(视觉回归风险预测)+brain_memory_import+brain_sync_export，不可跳过任一步骤"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-DEV-03"
+
+  # ============================================
+  # ARCH Agent（架构师）
+  # ============================================
+  arch_agent:
+    prefix: "ARCH"
+    source: "arch-agent.md + arch-flow.yml"
+    rules:
+      - id: "ARCH-01"
+        rule: "route-contract路由映射完整（每个页面路由→组件→数据依赖）"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-ARCH-01"
+      - id: "ARCH-02"
+        rule: "运行骨架可启动（npm run dev）"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-ARCH-02"
+      - id: "ARCH-03"
+        rule: "sim/real开关契约（每个接口可切换）"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-ARCH-03"
+      - id: "ARCH-04"
+        rule: "三段回溯表（需求→设计→架构）"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-ARCH-04"
+      - id: "ARCH-05"
+        rule: "禁止脱离tech-stack.yml自创技术栈"
+        enforcement: "hard"
+        workflow_check: "arch-flow pm_redlines C-A5"
+      - id: "ARCH-06"
+        rule: "禁止跳过契约Zod定义"
+        enforcement: "hard"
+        workflow_check: "arch-flow pm_redlines C-A5"
+      - id: "ARCH-07"
+        rule: "禁止跳过五维可插拔架构"
+        enforcement: "hard"
+        workflow_check: "arch-flow pm_redlines C-A6"
+      - id: "ARCH-08"
+        rule: "禁止无单元测试架构"
+        enforcement: "hard"
+        workflow_check: "arch-flow pm_redlines C-A7"
+      - id: "ARCH-09"
+        rule: "守门员裁决：架构不通过则阻止开发"
+        enforcement: "hard"
+        workflow_check: "arch-flow gatekeeper"
+      - id: "ARCH-10"
+        rule: "大脑推理完整性（V5.1.0新增）：Arch大脑必须执行contract_defect_prediction(契约缺陷预测)+security_pattern_recognition(安全模式识别)+dependency_chain_reasoning(依赖链推理)+brain_memory_import+brain_sync_export，不可跳过任一步骤"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-ARCH-05"
+      - id: "ARCH-11"
+        rule: "NFR主题识别（V5.1.2新增）：Arch必须用AI辅助（nfr_topic_identification推理模块）识别本次需求涉及的非功能需求主题（8大主题：高并发/异步/同步/数据一致性/安全/可扩展/可用性/性能），产出NFR清单（含严重级别+实现建议+关联FN），并回传BA纳入PRD §18非功能需求章节。AI不是替代Arch思考——AI基于需求内容推理出NFR主题建议，Arch做最终确认和方案决策。"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-ARCH-06 + G-REQ-18"
+        note: "V5.1.2新增：解决PRD只有功能需求没有非功能需求的系统性缺陷。Arch参与需求阶段（架构评审前置），识别NFR主题回传BA。"
+
+  # ============================================
+  # QA Agent（质量保障）— 补全（原仅1条）
+  # ============================================
+  qa_agent:
+    prefix: "QA"
+    source: "qa-agent.md + test-flow.yml"
+    rules:
+      - id: "QA-01"
+        rule: "TC测试用例必须关联FN编号"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-TEST-02"
+      - id: "QA-02"
+        rule: "五层测试全覆盖（契约/单元/浏览器/白盒/视觉回归）"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-TEST-01"
+      - id: "QA-03"
+        rule: "用例源自BA产物（FN/UC/状态机/业务操作矩阵）"
+        enforcement: "hard"
+        workflow_check: "test-flow test_layers"
+      - id: "QA-04"
+        rule: "Bug必须编号管理，状态流转open→处理中→已修复待验→已闭环"
+        enforcement: "hard"
+        workflow_check: "defect-reflow.yml"
+      - id: "QA-05"
+        rule: "测试不通过项归Bug，触发缺陷回流"
+        enforcement: "hard"
+        workflow_check: "project-lifecycle stage-6 feedback_routing"
+      - id: "QA-06"
+        rule: "大脑推理完整性（V5.1.0新增）：QA大脑必须执行bug_hotspot_prediction(Bug热力图预测)+coverage_blind_spot_detection(覆盖盲区检测)+regression_set_recommendation(回归测试推荐)+risk_based_prioritization(风险驱动排序)+brain_memory_import+brain_sync_export，不可跳过任一步骤"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-TEST-03"
+
+  # ============================================
+  # AC Agent（验收交付）— 补全（原0条）
+  # ============================================
+  ac_agent:
+    prefix: "AC"
+    source: "ac-agent.md + acceptance-flow.yml"
+    rules:
+      - id: "AC-01"
+        rule: "验收报告必须产出"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-ACC-01"
+      - id: "AC-02"
+        rule: "需求覆盖率达标（≥80%）"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-ACC-02"
+      - id: "AC-03"
+        rule: "四人模拟验收（新用户/VIP/管理员/PO Agent）"
+        enforcement: "hard"
+        workflow_check: "acceptance-flow personas"
+      - id: "AC-04"
+        rule: "业务流程闭环验收：模拟完整操作链路"
+        enforcement: "hard"
+        workflow_check: "acceptance-flow stages.business-flow"
+      - id: "AC-05"
+        rule: "验收不通过项触发缺陷回流"
+        enforcement: "hard"
+        workflow_check: "project-lifecycle stage-7 feedback_routing"
+      - id: "AC-06"
+        rule: "大脑推理完整性（V5.1.0新增）：AC+PO大脑必须执行acceptance_defect_prediction(验收缺陷模式识别)+persona_coverage_reasoning(角色覆盖推理)+business_value_alignment(商业价值对齐推理)+regression_acceptance_recommender(回归验收推荐)+brain_memory_import+brain_sync_export，不可跳过任一步骤"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-ACC-03"
+
+  # ============================================
+  # PO Agent（产品负责人）— 补全（原0条）
+  # ============================================
+  po_agent:
+    prefix: "PO"
+    source: "po-agent.md"
+    rules:
+      - id: "PO-01"
+        rule: "Backlog优先级排序必须产出"
+        enforcement: "hard"
+        workflow_check: "po-agent.yml output"
+      - id: "PO-02"
+        rule: "产品架构须对齐脑暴确认稿的核心方案"
+        enforcement: "hard"
+        workflow_check: "po-agent.md 三层能力金字塔"
+      - id: "PO-03"
+        rule: "版本路线图须含商业价值标注"
+        enforcement: "hard"
+        workflow_check: "po-agent.md roadmap-planner"
+      - id: "PO-04"
+        rule: "商业价值验收：BO/BG是否实现+ROI验证"
+        enforcement: "hard"
+        workflow_check: "acceptance-flow stages.po-value"
+      - id: "PO-05"
+        rule: "/close后PM询问PO下一版本规划（敏捷递归）"
+        enforcement: "hard"
+        workflow_check: "project-lifecycle close.pm_actions"
+      - id: "PO-06"
+        rule: "商业大脑推理（V5.1.0新增）：PO大脑在验收阶段必须执行business_value_alignment(商业价值对齐推理)——评估BO/BG达成度+识别商业价值缺口+产出价值缺口清单。PO不可只做功能验收而跳过商业价值评估。"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-ACC-03"
+      - id: "PO-07"
+        rule: "实现方式识别+小版本迭代（V5.1.3新增）：PO在规划时必须用AI辅助（implementation_approach_analyzer推理模块）识别每个Backlog项的实现方式（backend_config/code_development/hybrid），配置优先于开发——backend_config项拆为独立patch小版本快速交付，不与code_development项混在同一Sprint。PO必须根据需求目标选择版本粒度（patch/minor/major），每个小版本只需围绕1-2个需求目标完成即可。AI建议仅供参考，PO做最终确认。"
+        enforcement: "hard"
+        workflow_check: "po-planning-flow.yml po-2/po-4/po-6 + value-assessment-standards.yml V1.1.0 implementation_approach"
+        note: "V5.1.3新增：解决PO规划只按价值排序不区分配置/开发方式的问题。如多MPS模板配置可通过腾讯云MPS控制台配置实现，不应作为代码开发Non-Goal。"
+      - id: "PO-08"
+        rule: "问题分解+关键链+多角色轮询（V5.1.4新增）：PO在规划时必须用AI辅助执行问题分解（problem_decomposer——大问题→问题树，区分主因/次因/依赖）→关键链分析（key_chain_analyzer——6条关键链：问题链/答案链/业务单元链/业务流程链/信息链/状态链）→多角色轮询（multi_stakeholder_facilitator——5轮收敛：问题确认→技术约束→设计影响→综合决策→规划定稿）。PO为决策人，AI为分析员和facilitator。AI不是替代PO思考，而是帮PO把大问题肢解成小问题并找到关键链主干，通过多轮提问让各角色参与，PO做最终决策。"
+        enforcement: "hard"
+        workflow_check: "po-planning-flow.yml po-2/po-4 + gates-registry G-PO-05"
+        note: "V5.1.4新增：解决PO规划只做价值排序不做问题分解和关键链分析的问题。核心是找到主干路径而非平均用力。"
+
+  # ============================================
+  # DOC Agent（文档管理）
+  # ============================================
+  doc_agent:
+    prefix: "DOC"
+    source: "doc-agent.md"
+    rules:
+      - id: "DOC-01"
+        rule: "文档索引必须自动维护（INDEX.md）"
+        enforcement: "hard"
+        workflow_check: "config.yml documents.auto_index"
+      - id: "DOC-02"
+        rule: "文档模板强制执行（template_enforcement: strict）"
+        enforcement: "hard"
+        workflow_check: "doc-processor技能（含文档验证）"
+      - id: "DOC-03"
+        rule: "追溯矩阵必须维护（TRACEABILITY_MATRIX.md）"
+        enforcement: "hard"
+        workflow_check: "config.yml documents.auto_traceability"
+
+  # ============================================
+  # Learn Project（项目学习，V1.7.0新增——场景深度还原铁律）
+  # ============================================
+  learn_project:
+    prefix: "LP"
+    source: "learn-project.yml + scene-learning-standards.yml"
+    rules:
+      - id: "LP-01"
+        rule: "双态标注合规：🟡隐式挖掘必须附≥2处原文依据链（交叉印证），无依据=推测=违规。AI是深度还原器不是分析推导器——挖掘原本就存在的需求，不加AI自己的想法"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-LEARN-02"
+      - id: "LP-02"
+        rule: "场景编排图谱必须产出：还原场景间编排关系（顺序/并行/互斥/循环/依赖），不闭环场景必须记录到学习报告"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-LEARN-01"
+      - id: "LP-03"
+        rule: "五大业务产物深度还原必须执行：业务场景(含隐式挖掘)+业务流程图(含异常路径矩阵)+业务信息结构(含血缘)+业务状态机(含隐式状态+完整性)+业务操作矩阵(含四维验证)"
+        enforcement: "hard"
+        workflow_check: "learn-project.yml Stage 2.6 + gates-registry G-LEARN-03/04"
+      - id: "LP-04"
+        rule: "挖掘≠创造：挖掘的是原文有碎片但分散的需求（≥2处交叉印证），禁止补充原文完全无线索的内容（如凭行业经验枚举异常）。判定标准：原型作者能从原型找到依据=挖掘（允许）；找不到=创造（禁止）"
+        enforcement: "hard"
+        workflow_check: "scene-learning-standards.yml dual_state_annotation.forbidden"
+      - id: "LP-05"
+        rule: "深度还原问题只进学习报告不进PRD正文：不闭环/不一致/缺口/不可达/死状态等问题记录到学习报告'场景流程深度还原报告'章节，🟡隐式挖掘内容可写入PRD正文（标注依据链）"
+        enforcement: "hard"
+        workflow_check: "learn-project.yml Stage 5 note"
+
+# ============================================
+# 铁律统计
+# ============================================
+statistics:
+  total_rules: 98
+  by_agent:
+    BS: 10
+    BA: 29
+    PM: 9
+    UX: 10
+    FD: 13
+    ARCH: 11
+    QA: 6
+    AC: 6
+    PO: 8
+    DOC: 3
+    SM: 5
+    LEARN: 5
+  by_enforcement:
+    hard: 94
+    soft: 4
+
+# ============================================
+# V5.0新增 Agent铁律（议题六：SM Agent）
+# ============================================
+  sm_agent:
+    prefix: "SM"
+    source: "sm-agent.md"
+    rules:
+      - id: "SM-01"
+        rule: "Sprint DoD不可降级——DoD 6项不可跳过任何一项，不达标必须返工"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-SM-01"
+      - id: "SM-02"
+        rule: "Scrum事件不可跳过——4个Scrum事件（计划会/立会/评审会/回顾会）必须执行，缺一不可"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-SM-06"
+      - id: "SM-03"
+        rule: "障碍1天未解必须升级——障碍超过1天未解决必须升级到PM（版本守护人），不可隐瞒"
+        enforcement: "hard"
+        workflow_check: "sm-agent.yml impediment_escalation"
+      - id: "SM-04"
+        rule: "增量必须可演示——Sprint结束必须产出可演示增量，不可是半成品"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-SM-02"
+      - id: "SM-05"
+        rule: "Sprint学习必须记录——Sprint Retrospective必须产出，经验必须记录"
+        enforcement: "hard"
+        workflow_check: "sm-agent.md SM5"
+
+# ============================================
+# V5.0全局铁律（议题一：AI人性化确认）
+# ============================================
+global_rules:
+  - id: "GLOBAL-01"
+    rule: "凡需人确认必须按human-confirm-protocol.yml构造询问——禁止Y/N二选一，必须提供≥2选项+AI推荐+置信度+知识库引用+追问通道"
+    enforcement: "hard"
+    applies_to: "全Agent"
+    workflow_check: "common/human-confirm-protocol.yml"
+    referenced_by: "redlines.yml RL-SUP-03"

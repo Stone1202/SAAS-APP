@@ -1,0 +1,74 @@
+# ============================================
+# POM 红线补充清单
+# ============================================
+# 版本: v1.0.0
+# 最后更新: 2026-07-16
+version: "1.0.0"
+#
+# 设计原则：
+#   单一事实源原则——可执行红线已在 project-lifecycle.yml
+#   各阶段 pm_redlines 中定义，本文档仅补充尚未被覆盖的缺口。
+#   绝不重复定义已存在于 project-lifecycle.yml 的红线。
+#
+# 维护规则：
+#   1. 若 project-lifecycle.yml 新增阶段覆盖了此处某条红线，
+#      立即从此文件移除该条，并记录到 governance-mapping.md。
+#   2. 新识别的治理缺口先加入此处，待下一轮迭代迁移到 project-lifecycle.yml。
+#   3. 本文档不应超过 5 条——超过则说明 project-lifecycle.yml 需要同步升级。
+# ============================================
+
+redlines:
+  supplement:
+    - id: "RL-SUP-01"
+      name: "跨页面数据一致性"
+      source: "POM RL-11"
+      severity: "high"
+      check_stage: "accept"
+      status: "已清偿（V4.0.0：通过REV-FD-08/09+REV-AC-10/11覆盖）"
+      description: >
+        关键数据字段在多个页面中展示的值必须一致。
+        例如：客户名称在列表页、详情页、编辑弹窗中展示的内容相同。
+      check_method: "验收阶段人工交叉比对：抽查 ≥3 个关键字段在 ≥2 个页面的展示一致性"
+      target_coverage: "已在 project-lifecycle.yml stage-7 验收阶段覆盖，V4.0.0已通过Review机制覆盖"
+
+    - id: "RL-SUP-02"
+      name: "状态机流转一致性"
+      source: "POM RL-12"
+      severity: "high"
+      check_stage: "accept"
+      status: "已清偿（V4.0.0：通过REV-FD-08/09+REV-AC-10/11覆盖）"
+      description: >
+        原型中的状态流转行为必须与 PRD 中定义的状态机（stateDiagram）一致。
+        包括：状态值名称、允许的流转路径、流转触发条件、流转后的数据变化。
+      check_method: "验收阶段按 PRD 状态机逐条验证原型中的状态变化行为"
+      target_coverage: "已在 project-lifecycle.yml stage-7 验收阶段覆盖，V4.0.0已通过Review机制覆盖"
+
+    - id: "RL-SUP-03"
+      name: "AI确认询问必须附AI推荐+置信度+知识库引用"
+      source: "POM V5.0 议题一"
+      severity: "high"
+      check_stage: "全阶段"
+      status: "新增（V5.0：通过human-confirm-protocol.yml覆盖）"
+      description: >
+        凡需人确认的决策，AI必须按human-confirm-protocol.yml构造询问：
+        禁止Y/N二选一，必须提供≥2选项+利弊分析+AI推荐选项+置信度+置信依据+知识库引用+追问通道+自由兜底。
+        同阶段多个确认点合并为决策清单，支持fast/detailed/hybrid三模式。
+      check_method: "PM在各stage checkpoint时校验确认询问是否符合human-confirm-protocol.yml的confirm_request_schema"
+      target_coverage: "common/human-confirm-protocol.yml + configs/skills/human-confirm-handler.yml + iron-rules-registry.yml GLOBAL-01"
+
+# ============================================
+# 已被 project-lifecycle.yml 完整覆盖的红线（不在此重复定义）：
+# ============================================
+# ✅ RL-01 POM四件套缺失       → stage-5 pm_redlines C-F1~C-F5
+# ✅ RL-02 五图缺一             → stage-2 pm_redlines
+# ✅ RL-03 原型变更未同步用例    → stage-5 pm_redlines C-F4
+# ✅ RL-04 指标未登记           → doc-standards.yml
+# ✅ RL-05 三方一致性矩阵缺失    → stage-6 completion_criteria
+# ✅ RL-06 P0缺陷未闭环         → stage-8 /close 闭环校验
+# ✅ RL-07 版本非最新           → stage-8 /close 版本冻结
+# ✅ RL-08 验收FN阻断           → stage-7 completion_criteria
+# ✅ RL-09 无版本记录表         → doc-standards.yml
+# ✅ RL-10 无脑暴记录           → stage-0→stage-2 输入链
+# ✅ 设计红线 C-D1~C-D4         → stage-3 pm_redlines
+# ✅ 架构红线 C-A1~C-A4         → stage-4 pm_redlines
+# ✅ 开发红线 C-F1~C-F5         → stage-5 pm_redlines

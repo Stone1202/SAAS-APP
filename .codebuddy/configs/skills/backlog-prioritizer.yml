@@ -1,0 +1,45 @@
+skill:
+  id: "backlog-prioritizer"
+  name: "Backlog优先级排序器"
+  owner: "po-agent"
+  version: "1.0.0"
+  
+  description: |
+    使用MoSCoW法则 + 价值/复杂度矩阵对版本Backlog进行优先级排序。
+    产出结构化YML，供BA版本规划参考。
+  
+  triggers:
+    - command: "PO Agent脑暴后激活"
+      stage: "阶段0.5·产品规划"
+    - command: "/close后PM询问下一版本"
+      stage: "敏捷递归·下一版本规划"
+  
+  input:
+    - type: "brainstorm_confirmed"
+      description: "脑暴确认稿（含需求构想+BO/BG映射）"
+    - type: "product_architecture"
+      description: "产品架构文档（如有，规划级以上）"
+    - type: "product_roadmap"
+      description: "产品路线图（如有，规划级以上）"
+    - type: "previous_version_feedback"
+      description: "上一版本反馈回流（如 /close 后触发）"
+  
+  output:
+    - type: "PROD-BACKLOG"
+      location: "projects/{project}/docs/00.5-product/PROD-BACKLOG-{project}-v{version}.yml"
+      format: "YAML"
+  
+  methodology: |
+    1. 收集需求项（从脑暴confirmed/或上一版本反馈）
+    2. 对每个需求项评估商业价值(1-10)和实现复杂度(1-10)
+    3. 应用MoSCoW法则分类（Must/Should/Could/Won't）
+    4. 计算优先级得分 = value / complexity
+    5. 按优先级得分排序
+    6. 标注依赖关系和目标版本
+    7. 产出YML格式Backlog
+  
+  moscow_definition:
+    M: "必须有 - 核心功能，缺失则版本无法交付"
+    S: "应该有 - 重要功能，本版本尽量交付"
+    C: "可以有 - 锦上添花，时间允许则交付"
+    W: "暂不有 - 明确排除，下版本考虑"

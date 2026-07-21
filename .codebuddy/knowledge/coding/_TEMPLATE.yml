@@ -1,0 +1,37 @@
+# ============================================
+# 编码规范知识库 — 跨项目复用的技术规范
+# 版本：v1.0.0
+# 最后更新：2026-07-16
+# ============================================
+#
+# 定位：从领域知识中提炼的可复用技术规范/架构模式/最佳实践。
+# 产出者：Arch 架构师（/learn-domain Step9 提炼）
+# 消费者：FD 开发 + Arch 架构评审
+# 存储位置：.codebuddy/knowledge/coding/{domain-name}-coding.yml
+#
+# 规范来源：
+#   - solution.tech_considerations（技术考量）
+#   - solution.patterns（方案模式）
+# ============================================
+
+# 文件名：{domain-name}-coding.yml
+# 示例：refund-coding.yml
+
+coding_standards:
+  - id: "CS-{DOMAIN}-{NNN}"            # 规范编号
+    domain: ""                          # 领域名称（如"退款流"）
+    standard: ""                        # 规范描述（如"退款接口必须幂等"）
+    category: ""                        # 分类：api / state_machine / data_safety / performance / security
+    pattern: ""                         # 实现模式（如"使用 refund_id 作为幂等键"）
+    code_example: ""                    # 代码示例
+    rationale: ""                       # 原因（如"防止重复退款导致资金损失"）
+    source: ""                          # 来源（领域知识 + 网页链接）
+    source_url: ""                      # 源网页链接
+    projects_used: []                   # 哪些项目使用了此规范
+    version: "v1.0.0"                   # 规范版本
+    created_at: ""                      # 创建日期
+
+# ============================================
+# 索引文件：CODING-INDEX.yml
+# ============================================
+# 记录所有编码规范的注册表，FD 开发时按领域查找相关规范。

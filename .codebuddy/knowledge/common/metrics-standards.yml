@@ -1,0 +1,363 @@
+# ============================================
+# 行业统计指标通用规则库 V1.0.0
+# ============================================
+# 定位：全局共享的行业统计指标标准定义，供 BA 需求分析时引用
+# 关联：requirement-flow.yml V3.0.0 §0.5a / §5 METRIC产物
+# 用法：BA 分析需求时如涉及"看板/报表/统计/指标/大屏"等关键词，
+#       从本库按行业匹配标准指标定义，在 METRIC 产物中引用 industry_standard 字段对齐
+# 版本：v1.0.0
+# 创建日期：2026-07-17
+# 行业覆盖：电商/财务/物流/仓库/直播/AARRR/广告/CRM/SaaS/教育/医疗（11个行业）
+# ============================================
+
+version: "1.0.0"
+description: "行业统计指标通用规则库，BA 分析需求时按行业匹配标准指标定义，确保跨项目指标口径一致"
+
+# ============================================
+# 电商指标
+# ============================================
+ecommerce:
+  - id: "METRIC-EC-001"
+    name: "GMV（商品交易总额）"
+    formula: "SUM(订单实付金额) WHERE 支付状态=成功"
+    dimensions: [时间, 商户, 品类, 渠道, 终端]
+    granularity: [实时, 日, 周, 月, 季, 年]
+    notes: "含退款订单（退款单独统计），不含未支付订单"
+  - id: "METRIC-EC-002"
+    name: "客单价"
+    formula: "GMV / 成功订单数"
+    dimensions: [时间, 商户, 品类, 渠道]
+    granularity: [日, 周, 月]
+    notes: "仅统计成功订单"
+  - id: "METRIC-EC-003"
+    name: "转化率"
+    formula: "成功支付订单数 / 访问UV × 100%"
+    dimensions: [时间, 页面, 渠道, 终端]
+    granularity: [实时, 日, 周, 月]
+  - id: "METRIC-EC-004"
+    name: "复购率"
+    formula: "周期内购买≥2次的用户数 / 周期内购买≥1次的用户数 × 100%"
+    dimensions: [时间, 品类, 渠道]
+    granularity: [月, 季, 年]
+  - id: "METRIC-EC-005"
+    name: "退货率"
+    formula: "退货订单数 / 成功订单数 × 100%"
+    dimensions: [时间, 商户, 品类]
+    granularity: [日, 周, 月]
+
+# ============================================
+# 财务指标
+# ============================================
+finance:
+  - id: "METRIC-FIN-001"
+    name: "营业收入"
+    formula: "SUM(已确认收入) WHERE 收入确认状态=已确认"
+    dimensions: [时间, 部门, 业务线, 科目]
+    granularity: [月, 季, 年]
+  - id: "METRIC-FIN-002"
+    name: "应收账款周转天数"
+    formula: "平均应收账款 × 360 / 营业收入"
+    dimensions: [时间, 客户, 业务线]
+    granularity: [月, 季, 年]
+  - id: "METRIC-FIN-003"
+    name: "毛利率"
+    formula: "(营业收入 - 营业成本) / 营业收入 × 100%"
+    dimensions: [时间, 业务线, 品类]
+    granularity: [月, 季, 年]
+  - id: "METRIC-FIN-004"
+    name: "应付账款"
+    formula: "SUM(未付款账单金额) WHERE 付款状态=未付款"
+    dimensions: [时间, 供应商, 业务线]
+    granularity: [月, 季, 年]
+
+# ============================================
+# 物流指标
+# ============================================
+logistics:
+  - id: "METRIC-LG-001"
+    name: "发货量"
+    formula: "COUNT(发货单) WHERE 发货状态=已发货"
+    dimensions: [时间, 仓库, 物流商, 目的省]
+    granularity: [日, 周, 月]
+  - id: "METRIC-LG-002"
+    name: "妥投率"
+    formula: "已签收订单数 / 已发货订单数 × 100%"
+    dimensions: [时间, 物流商, 目的省]
+    granularity: [日, 周, 月]
+  - id: "METRIC-LG-003"
+    name: "物流时效（小时）"
+    formula: "AVG(签收时间 - 发货时间) WHERE 状态=已签收"
+    dimensions: [时间, 物流商, 目的省, 仓库]
+    granularity: [日, 周, 月]
+
+# ============================================
+# 仓库指标
+# ============================================
+warehouse:
+  - id: "METRIC-WH-001"
+    name: "库存周转率"
+    formula: "期间出库量 / 平均库存量"
+    dimensions: [时间, 仓库, 品类, SKU]
+    granularity: [月, 季, 年]
+  - id: "METRIC-WH-002"
+    name: "缺货率"
+    formula: "缺货SKU数 / 在售SKU数 × 100%"
+    dimensions: [时间, 仓库, 品类]
+    granularity: [日, 周, 月]
+  - id: "METRIC-WH-003"
+    name: "库存周转天数"
+    formula: "平均库存量 / 日均出库量"
+    dimensions: [时间, 仓库, 品类]
+    granularity: [日, 周, 月]
+
+# ============================================
+# 直播指标
+# ============================================
+live:
+  - id: "METRIC-LV-001"
+    name: "最高同时在线人数（PCU）"
+    formula: "MAX(同时在线观众数) WHERE 直播状态=直播中"
+    dimensions: [时间, 主播, 直播间]
+    granularity: [实时, 单场]
+  - id: "METRIC-LV-002"
+    name: "平均同时在线人数（ACU）"
+    formula: "AVG(同时在线观众数) WHERE 直播状态=直播中"
+    dimensions: [时间, 主播, 直播间]
+    granularity: [实时, 单场]
+  - id: "METRIC-LV-003"
+    name: "直播带货GMV"
+    formula: "SUM(直播间订单实付金额) WHERE 支付状态=成功"
+    dimensions: [时间, 主播, 商品, 直播间]
+    granularity: [单场, 日, 周, 月]
+  - id: "METRIC-LV-004"
+    name: "直播互动率"
+    formula: "(点赞数+评论数+分享数) / 观看人数 × 100%"
+    dimensions: [时间, 主播, 直播间]
+    granularity: [单场, 日, 周]
+
+# ============================================
+# AARRR指标
+# ============================================
+aarrr:
+  acquisition:
+    - id: "METRIC-AR-001"
+      name: "新增用户数"
+      formula: "COUNT(DISTINCT 用户ID) WHERE 首次注册时间在统计周期内"
+      dimensions: [时间, 渠道, 终端]
+      granularity: [日, 周, 月]
+    - id: "METRIC-AR-002"
+      name: "获客成本（CAC）"
+      formula: "营销总投入 / 新增用户数"
+      dimensions: [时间, 渠道]
+      granularity: [月, 季]
+  activation:
+    - id: "METRIC-AR-003"
+      name: "激活率"
+      formula: "完成核心行为的用户数 / 新增用户数 × 100%"
+      dimensions: [时间, 渠道, 终端]
+      granularity: [日, 周, 月]
+  retention:
+    - id: "METRIC-AR-004"
+      name: "次日留存率"
+      formula: "次日活跃用户数 / 当日新增用户数 × 100%"
+      dimensions: [时间, 渠道, 终端]
+      granularity: [日]
+    - id: "METRIC-AR-005"
+      name: "7日留存率"
+      formula: "第7日活跃用户数 / 当日新增用户数 × 100%"
+      dimensions: [时间, 渠道]
+      granularity: [周]
+  revenue:
+    - id: "METRIC-AR-006"
+      name: "ARPU（单用户平均收入）"
+      formula: "总收入 / 活跃用户数"
+      dimensions: [时间, 渠道, 用户等级]
+      granularity: [月, 季, 年]
+    - id: "METRIC-AR-007"
+      name: "LTV（用户生命周期价值）"
+      formula: "ARPU × 平均用户生命周期"
+      dimensions: [渠道, 用户等级]
+      granularity: [季, 年]
+  referral:
+    - id: "METRIC-AR-008"
+      name: "推荐转化率"
+      formula: "通过推荐注册的用户数 / 推荐点击数 × 100%"
+      dimensions: [时间, 渠道]
+      granularity: [日, 周, 月]
+
+# ============================================
+# 广告指标
+# ============================================
+advertising:
+  - id: "METRIC-AD-001"
+    name: "曝光量"
+    formula: "COUNT(广告展示事件)"
+    dimensions: [时间, 广告位, 广告主, 渠道]
+    granularity: [实时, 日, 周, 月]
+  - id: "METRIC-AD-002"
+    name: "点击率（CTR）"
+    formula: "广告点击数 / 广告曝光数 × 100%"
+    dimensions: [时间, 广告位, 广告主]
+    granularity: [实时, 日, 周, 月]
+  - id: "METRIC-AD-003"
+    name: "转化率（CVR）"
+    formula: "转化数 / 点击数 × 100%"
+    dimensions: [时间, 广告位, 广告主]
+    granularity: [日, 周, 月]
+  - id: "METRIC-AD-004"
+    name: "ROI"
+    formula: "(转化收入 - 广告投入) / 广告投入 × 100%"
+    dimensions: [时间, 广告主, 渠道]
+    granularity: [日, 周, 月]
+  - id: "METRIC-AD-005"
+    name: "CPM（千次曝光成本）"
+    formula: "广告投入 / 曝光数 × 1000"
+    dimensions: [时间, 广告位, 渠道]
+    granularity: [日, 周, 月]
+  - id: "METRIC-AD-006"
+    name: "CPC（单次点击成本）"
+    formula: "广告投入 / 点击数"
+    dimensions: [时间, 广告位, 渠道]
+    granularity: [日, 周, 月]
+
+# ============================================
+# CRM指标
+# ============================================
+crm:
+  - id: "METRIC-CR-001"
+    name: "客户活跃度"
+    formula: "活跃客户数 / 总客户数 × 100%（活跃定义：周期内有≥1次行为）"
+    dimensions: [时间, 客户等级, 渠道]
+    granularity: [日, 周, 月]
+  - id: "METRIC-CR-002"
+    name: "客户流失率"
+    formula: "周期内流失客户数 / 期初客户数 × 100%（流失定义：连续N天无行为）"
+    dimensions: [时间, 客户等级, 渠道]
+    granularity: [月, 季]
+  - id: "METRIC-CR-003"
+    name: "客户生命周期价值（LTV）"
+    formula: "SUM(客户生命周期内收入) / 客户数"
+    dimensions: [客户等级, 渠道]
+    granularity: [季, 年]
+  - id: "METRIC-CR-004"
+    name: "转化漏斗"
+    formula: "逐阶段：阶段N人数 / 阶段N-1人数 × 100%"
+    dimensions: [时间, 漏斗阶段, 渠道]
+    granularity: [日, 周, 月]
+
+# ============================================
+# SaaS指标
+# ============================================
+saas:
+  - id: "METRIC-SA-001"
+    name: "MRR（月度经常性收入）"
+    formula: "SUM(有效订阅月费) WHERE 订阅状态=有效"
+    dimensions: [时间, 套餐, 客户类型]
+    granularity: [月]
+    notes: "仅统计付费订阅，不含一次性费用"
+  - id: "METRIC-SA-002"
+    name: "ARR（年度经常性收入）"
+    formula: "MRR × 12"
+    dimensions: [时间, 套餐]
+    granularity: [月, 季, 年]
+  - id: "METRIC-SA-003"
+    name: "Churn Rate（客户流失率）"
+    formula: "周期内取消订阅客户数 / 期初付费客户数 × 100%"
+    dimensions: [时间, 套餐, 客户类型]
+    granularity: [月, 季]
+  - id: "METRIC-SA-004"
+    name: "续费率"
+    formula: "续费客户数 / 到期客户数 × 100%"
+    dimensions: [时间, 套餐]
+    granularity: [月, 季, 年]
+  - id: "METRIC-SA-005"
+    name: "试用转化率"
+    formula: "试用期转付费用户数 / 试用注册用户数 × 100%"
+    dimensions: [时间, 渠道, 套餐]
+    granularity: [周, 月]
+  - id: "METRIC-SA-006"
+    name: "NPS（净推荐值）"
+    formula: "推荐者占比(9-10分) - 贬损者占比(0-6分)"
+    dimensions: [时间, 套餐, 客户类型]
+    granularity: [季, 年]
+
+# ============================================
+# 教育指标
+# ============================================
+education:
+  - id: "METRIC-ED-001"
+    name: "完课率"
+    formula: "完成全部课时的学员数 / 报名学员数 × 100%"
+    dimensions: [时间, 课程, 班级, 渠道]
+    granularity: [单期, 月, 季]
+  - id: "METRIC-ED-002"
+    name: "到课率"
+    formula: "实际到课人次 / 应到课人次 × 100%"
+    dimensions: [时间, 课程, 班级, 教师]
+    granularity: [日, 周, 月]
+  - id: "METRIC-ED-003"
+    name: "退费率"
+    formula: "退费学员数 / 报名学员数 × 100%"
+    dimensions: [时间, 课程, 渠道, 退费原因]
+    granularity: [月, 季]
+  - id: "METRIC-ED-004"
+    name: "续报率"
+    formula: "续报学员数 / 上一期结业学员数 × 100%"
+    dimensions: [时间, 课程, 渠道]
+    granularity: [单期, 季, 年]
+  - id: "METRIC-ED-005"
+    name: "平均学习时长（分钟）"
+    formula: "AVG(学员单日学习时长) WHERE 学习状态=活跃"
+    dimensions: [时间, 课程, 学员等级]
+    granularity: [日, 周, 月]
+  - id: "METRIC-ED-006"
+    name: "NPS（学员净推荐值）"
+    formula: "推荐者占比(9-10分) - 贬损者占比(0-6分)"
+    dimensions: [时间, 课程]
+    granularity: [单期, 季]
+
+# ============================================
+# 医疗指标
+# ============================================
+medical:
+  - id: "METRIC-MD-001"
+    name: "就诊量"
+    formula: "COUNT(就诊记录) WHERE 就诊状态=已完成"
+    dimensions: [时间, 科室, 医生, 就诊类型]
+    granularity: [日, 周, 月]
+  - id: "METRIC-MD-002"
+    name: "复诊率"
+    formula: "周期内复诊患者数 / 初诊患者数 × 100%"
+    dimensions: [时间, 科室, 疾病类型]
+    granularity: [月, 季, 年]
+  - id: "METRIC-MD-003"
+    name: "患者满意度"
+    formula: "AVG(满意度评分) WHERE 评价状态=已评价"
+    dimensions: [时间, 科室, 医生]
+    granularity: [月, 季]
+  - id: "METRIC-MD-004"
+    name: "预约取消率"
+    formula: "取消预约数 / 总预约数 × 100%"
+    dimensions: [时间, 科室, 预约渠道]
+    granularity: [日, 周, 月]
+  - id: "METRIC-MD-005"
+    name: "平均候诊时间（分钟）"
+    formula: "AVG(就诊开始时间 - 预约到达时间) WHERE 就诊状态=已完成"
+    dimensions: [时间, 科室, 时段]
+    granularity: [日, 周, 月]
+
+# ============================================
+# BA 引用机制
+# ============================================
+ba_integration:
+  trigger_keywords: ["看板", "报表", "数据统计", "指标", "大屏", "数据分析", "数据看板"]
+  matching_flow:
+    - step: 1
+      action: "BA 在 §0.5a 需求深度分析时，检测需求描述是否包含 trigger_keywords"
+    - step: 2
+      action: "如包含，从本库按行业匹配标准指标定义（先按需求涉及的行业匹配，再按指标名称语义匹配）"
+    - step: 3
+      action: "在 METRIC 产物中引用 industry_standard 字段对齐标准指标ID"
+    - step: 4
+      action: "如有自定义指标（标准库中没有），标注 industry_standard: null 并定义完整 formula"
+  rule: "METRIC 产物的 formula 必须与 industry_standard 引用的标准定义一致；如需调整口径，须在 METRIC 中注明偏差说明"

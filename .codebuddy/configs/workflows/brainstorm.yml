@@ -1,0 +1,629 @@
+# ============================================
+# Workflow: brainstorm（脑暴会议）
+# 版本: v3.5.1
+# 最后更新: 2026-07-17
+# ============================================
+#
+# V3.5.1 升级：
+#   1. 骨架检测升级为6项完整性校验（ensure-project.sh --check），不再仅凭目录存在跳过
+#   2. 修复多项目场景下 state.json/pom/package.json 缺失的根因缺陷
+#
+# V3.5.0 优化调整：
+#   1. 反馈模板重构：从"通过/补充/驳回"改为多选项交互（确认→/init、补充→重新脑暴、调整方案→修改后重新讨论）
+#   2. 移除"驳回"选项：脑暴不存在驳回，只有确认或补充后继续脑暴
+#   3. confirmed文件管理策略：confirmed/只保留一份当前确认稿（BR-脑暴文档-确认稿.md），
+#      每次脑暴覆盖更新，文件内记录版本概要（版本号+日期+变更摘要）；历史版本归档到process/
+#   4. Stage 7增加"补充"分支：用户选择补充时，将补充资料注入脑暴流程重新讨论
+#   5. 版本号从v3.4.0→v3.5.0
+#
+# V3.4.0 优化调整：
+#   1. 新增--topic参数（议题名，必填）：同一项目同一议题允许多次脑暴，产物按议题子目录组织
+#   2. 产物路径调整：00-brainstorm/{topic}/process/ + 00-brainstorm/{topic}/confirmed/
+#   3. 新增Stage 1.5 API分析与注入：脑暴过程中识别到API文档/接口时，引用common/api-learner.yml执行API分析
+#      （参数深度提取+参数流转图+参数级校验），将分析结果注入专家讨论，使方案更深入
+#   4. 门禁新增：API分析完整性检查（如识别到API但未执行分析则不通过）
+#   5. 版本号从v3.3.0→v3.4.0
+#
+# v3.3.0 新增：脑暴分层类型（strategic/planning/regular），
+#   战略型脑暴条件输出战略分析+商业分析产物，完成后通知 PO Agent。
+#   v3.2.0 新增：领域知识加载（stage-0c），复用 BA 的关键词+AI语义匹配机制，
+#   为九部门专家讨论提供行业标准方案参考。
+#   v3.1.0 新增：交互式询问（新项目 vs 存量项目）、存量项目自动加载知识库上下文、
+#   存量项目骨架智能检测（存在则跳过构建）、
+#   干系人识别（O-01）、冲突仲裁（O-02）、三源输入扩展、
+#   三流草图强制（业务流/信息流/资金流）、二分落盘门禁。
+#
+# 核心原则：
+#   1. PM 不介入脑暴阶段
+#   2. 脑暴开始前必须确认项目性质（新项目 / 存量项目）+ 脑暴类型（v3.3.0）+ 议题名（v3.4.0）
+#   3. 存量项目自动加载 .codebuddy/knowledge/{project}/需求文档/ 下已学 PRD 作为上下文
+#   4. 存量项目优先检查项目骨架（projects/{project}/）是否存在：
+#      - 已存在 → 跳过构建，脑暴产物直接输出到该项目目录
+#      - 不存在 → 运行 ensure-project.sh 创建骨架
+#   5. 脑暴阶段自动构建项目骨架（projects/{project}/），与 /init 共用 ensure-project.sh
+#   6. 脑暴结论需线下确认后手动开需求流（/init）
+#   7. 仅 confirmed/ 作为需求基线，process/ 为过程草稿
+#   8. 同项目同议题已有确认结论时可跳过脑暴直接 /init
+#   9. 脑暴阶段必须加载领域知识（v3.2.0新增），为专家讨论提供行业标准参考
+#   10. 三流草图须标注领域知识参考来源（v3.2.0新增，铁律 B-02增强）
+#   11. 战略型脑暴须输出战略分析+商业分析产物（v3.3.0新增，铁律 B-10）
+#   12. 脑暴完成后按类型决定后续：strategic/planning→PO Agent，regular→PM直接立项（v3.3.0新增）
+#   13. 脑暴过程中识别到API时必须执行API分析并注入专家讨论（v3.4.0新增）
+#   14. 同一项目允许多次脑暴，每次按议题子目录组织产物（v3.4.0新增）
+#   15. 脑暴不存在"驳回"，只有"确认"或"补充后继续脑暴"（v3.5.0新增）
+#   16. confirmed/只保留一份当前确认稿，每次脑暴覆盖更新并记录版本概要；历史版本归档到process/（v3.5.0新增）
+# ============================================
+
+workflow:
+  id: "brainstorm"
+  name: "脑暴会议"
+  version: "3.5.1"
+  trigger_command: "/brainstorm --brainstorm-type=strategic|planning|regular --topic=议题名"
+  owner: "bs-agent"
+  gates_reference: ".codebuddy/knowledge/common/gates-registry.yml#stages.brainstorm"
+  iron_rules_reference: ".codebuddy/knowledge/common/iron-rules-registry.yml#agents.bs_agent"
+  standard: ".codebuddy/knowledge/common/brainstorm-standards.yml"
+  pm_controlled: false
+
+  # ============================================
+  # 脑暴分层类型（v3.3.0 新增）
+  # ============================================
+  brainstorm_types:
+    - id: "strategic"
+      name: "战略型脑暴"
+      description: "新项目/重大方向转型，需要战略分析+商业分析"
+      trigger_condition: "新项目立项 or 重大方向转型"
+      outputs:
+        - "脑暴文档（confirmed/）"
+        - "战略分析文档（SWOT+市场定位+竞争分析）"
+        - "商业分析文档（商业模式画布+盈利模式+ROI）"
+      next_action: "通知 PO Agent（战略级激活：三层能力全开）"
+      expert_departments: [市场部, 商业部, 运营部, 业务部, 产品部, 设计部, 开发部, 测试部, 验收部]
+    - id: "planning"
+      name: "规划型脑暴"
+      description: "新模块/大版本迭代，需要产品架构规划"
+      trigger_condition: "新模块立项 or 大版本迭代"
+      outputs:
+        - "脑暴文档（confirmed/）"
+      next_action: "通知 PO Agent（规划级激活：第二层+第一层）"
+      expert_departments: [运营部, 业务部, 产品部, 设计部, 开发部, 测试部]
+    - id: "regular"
+      name: "常规型脑暴"
+      description: "功能优化/中版本迭代，不需要产品架构"
+      trigger_condition: "功能优化 or 中版本迭代"
+      outputs:
+        - "脑暴文档（confirmed/）"
+      next_action: "PM 直接立项（跳过 PO Agent）"
+      expert_departments: [产品部, 业务部, 运营部, 测试部]
+
+  # ============================================
+  # 三源输入扩展（v3.0.0）+ 议题参数（v3.4.0）
+  # ============================================
+  input_sources:
+    - type: "natural_language"
+      description: "用户自然语言描述的业务构想"
+      required: true
+    - type: "local_dir"
+      flag: "--source=local-dir:./path"
+      description: "本地文档目录，BS Agent 自动扫描并加载相关文档"
+    - type: "http_url"
+      flag: "--source=http-url:https://..."
+      description: "HTTP 内容，BS Agent 自动抓取并解析"
+    - type: "topic"
+      flag: "--topic=议题名"
+      description: "脑暴议题名（v3.4.0新增，必填）。同一项目同一议题允许多次脑暴，产物按议题子目录组织。例如：--topic=直播音频审核 或 --topic=退款流程优化"
+      required: true
+
+  # ============================================
+  # 交互式询问（v3.1.0 增强）
+  # ============================================
+  interactive_inquiry:
+    enabled: true
+    description: "脑暴开始前，BS Agent 必须确认项目性质+脑暴类型并智能构建/复用项目骨架"
+    flow:
+      - step: "ask_project_type"
+        question: "这是新项目还是存量项目？"
+        options:
+          - id: "new"
+            label: "新项目（全新立项，无需已有知识库）"
+            action: "ask_brainstorm_type"
+          - id: "existing"
+            label: "存量项目（已有原型/需求文档，需加载知识库上下文）"
+            action: "ask_project_name"
+      - step: "ask_brainstorm_type"
+        question: "本次脑暴类型是什么？（v3.3.0 新增）"
+        condition: "项目性质已确认"
+        options:
+          - id: "strategic"
+            label: "战略型（新项目/重大方向转型，输出脑暴+战略+商业分析）"
+            action: "build_project_skeleton"
+          - id: "planning"
+            label: "规划型（新模块/大版本迭代，输出脑暴）"
+            action: "build_project_skeleton"
+          - id: "regular"
+            label: "常规型（功能优化/中版本迭代，输出脑暴）"
+            action: "build_project_skeleton"
+        note: "脑暴类型决定后续流程：strategic/planning→PO Agent；regular→PM直接立项"
+      - step: "ask_topic"
+        question: "请提供本次脑暴的议题名称（v3.4.0 新增）"
+        condition: "脑暴类型已确认"
+        description: |
+          议题名用于产物子目录组织。同一项目允许对同一议题多次脑暴，
+          每次脑暴产物在 00-brainstorm/{topic}/ 下独立组织。
+          议题名应简明扼要，如"直播音频审核""退款流程优化""分销佣金重构"。
+        action: "build_project_skeleton"
+        note: "议题名将作为产物子目录名，支持中文（自动转为拼音或保留中文目录名）"
+      - step: "ask_project_name"
+        question: "请提供项目名称（例如：AI-SCRM）"
+        condition: "选择了「存量项目」"
+        action: "check_project_skeleton_and_knowledge"
+      - step: "check_project_skeleton_and_knowledge"
+        description: "先检查项目骨架完整性（V3.5.1升级：6项必选校验），再检查知识库"
+        sub_steps:
+          - order: 1
+            name: "检查项目骨架完整性（V3.5.1升级）"
+            check: "运行 ensure-project.sh {project} --check 进行6项完整性校验"
+            integrity_items:
+              - path: ".codebuddy/state.json"
+                description: "项目状态机"
+              - path: "pom/project.json"
+                description: "项目元数据"
+              - path: "package.json"
+                description: "构建配置"
+              - path: ".codebuddy/journal/"
+                description: "Journal目录"
+              - path: "docs/"
+                description: "文档目录"
+              - path: "src/"
+                description: "源码目录"
+            outcomes:
+              all_present:
+                action: |
+                  骨架6项全部完整，跳过构建。
+                  后续脑暴产物直接输出到 projects/{project}/docs/00-brainstorm/ 目录。
+                message: "✅ 项目骨架「{project}」6项完整性校验全部通过，将复用现有目录结构"
+              any_missing:
+                action: |
+                  骨架有缺失项，运行 .codebuddy/scripts/ensure-project.sh {project}（幂等补建，已存在的跳过）。
+                  补建后，脑暴产物输出到 projects/{project}/docs/00-brainstorm/ 目录。
+                  **V3.5.1铁律：即使 projects/{project}/ 目录存在，也必须运行 --check 校验6项完整性，不可仅凭目录存在就跳过。**
+                message: "🔨 项目骨架「{project}」有{N}项缺失，已自动补建（幂等），脑暴产物输出到 projects/{project}/"
+          - order: 2
+            name: "检查知识库"
+            check: ".codebuddy/knowledge/{project}/需求文档/ 目录是否存在"
+            outcomes:
+              found:
+                action: |
+                  加载以下内容作为脑暴上下文：
+                  1. 卷索引文件：{项目}-PRD-v{version}-index.md
+                  2. 全部 PRD 卷：{项目}-PRD-v{version}-vol{N}-*.md
+                  3. 学习报告：{项目}-学习报告-v{version}.md（含原型问题清单）
+                  加载后，BS Agent 在脑暴讨论中引用已学内容作为讨论基础。
+                context_injection: "已加载知识库项目「{project}」的已学 PRD（{卷数} 卷），将作为本次脑暴的上下文基础。"
+              not_found:
+                action: |
+                  提示用户：「该项目尚未在知识库中学习（.codebuddy/knowledge/{project}/需求文档/ 不存在）。
+                  建议先执行 /learn-project --project={project} --source=... 将原型文档学习入库，
+                  再回来脑暴。是否继续脑暴（无知识库上下文）？」
+                fallback: "用户确认后，继续正常脑暴流程（无知识库上下文）"
+      - step: "build_project_skeleton"
+        description: "新项目的骨架构建"
+        condition: "选择了「新项目」"
+        action: |
+          新项目默认项目名为「未命名」（用户可在后续 /init 阶段指定正式名称）。
+          运行 .codebuddy/scripts/ensure-project.sh 创建标准骨架。
+          脑暴产物输出到 projects/未命名/docs/00-brainstorm/ 目录。
+
+  # ============================================
+  # 步骤定义
+  # ============================================
+  stages:
+    - id: "0a"
+      name: "项目性质确认 + 骨架检测 + 知识库加载（v3.1.0 增强）"
+      agent: "bs-agent"
+      action: |
+        按 interactive_inquiry 流程执行：
+        1. 询问「新项目还是存量项目」
+        2. 若存量项目：
+           a. 追问项目名称
+           b. 先检查项目骨架（projects/{project}/）是否存在
+              - 存在 → 跳过构建，直接复用，产物输出到 projects/{project}/
+              - 不存在 → 运行 ensure-project.sh {project} 创建骨架
+           c. 再检查知识库 .codebuddy/knowledge/{project}/需求文档/
+              - 存在 → 加载卷索引 + 全部 PRD 卷 + 学习报告 → 注入脑暴上下文
+              - 不存在 → 提示先 /learn，用户确认后继续（无知识库上下文）
+        3. 若新项目：
+           a. 默认项目名「未命名」
+           b. 运行 ensure-project.sh 创建骨架
+      output: "项目性质确认 + 骨架就绪（新建/复用）+ 知识库上下文（如有）"
+      checkpoint: true
+      note: "存量项目的已学 PRD 作为上下文参与后续所有脑暴讨论阶段；骨架存在则跳过构建"
+
+    - id: "0b"
+      name: "脑暴产物落盘准备（v3.1.0 增强，v3.4.0 议题子目录）"
+      agent: "bs-agent"
+      action: |
+        确认产物输出目录 projects/{project}/docs/00-brainstorm/{topic}/ 已就绪：
+        1. 存量项目（骨架已存在）：直接使用现有目录，无需重复创建
+        2. 存量项目（骨架刚创建）：目录已由 stage-0a 创建完毕
+        3. 新项目：目录已由 stage-0a 创建完毕
+        4. v3.4.0新增：按议题创建子目录 {topic}/process/ 和 {topic}/confirmed/
+        确保 {topic}/process/ 和 {topic}/confirmed/ 子目录存在
+      output: "脑暴产物落盘路径确认（含议题子目录）"
+      gate: "projects/{project}/docs/00-brainstorm/{topic}/process/ 和 confirmed/ 目录存在"
+
+    - id: "0c"
+      name: "领域知识加载（v3.2.0 新增）"
+      agent: "bs-agent"
+      action: |
+        BS Agent 从用户诉求描述中识别涉及的业务领域，加载领域知识库为专家讨论提供行业标准参考。
+        复用 BA Agent 的领域知识匹配机制（关键词匹配 + AI 语义匹配）。
+
+        匹配流程：
+        1. 关键词匹配：扫描用户诉求描述，匹配 DOMAIN-INDEX.yml 中各领域的关键词列表
+           - 示例：诉求含"退款" → 加载 aftersale/refund-flow.yml
+           - 示例：诉求含"分账" → 加载 settlement/split-payment.yml
+           - 示例：诉求含"进销存" → 加载 supplychain/inventory.yml
+        2. AI 语义匹配：关键词未覆盖时，AI 分析诉求语义识别涉及领域
+           - 示例：诉求"卖家收到货款后按比例分给平台和供应商" → AI识别为"分账" → 加载 settlement/split-payment.yml
+        3. 多领域识别：一个诉求可能涉及多个领域，全部加载
+        4. 同时加载业务规则知识库（.codebuddy/knowledge/rules/）中对应领域的可复用业务规则
+
+        领域知识来源（按优先级）：
+        1. 项目知识库（.codebuddy/knowledge/{project}/需求文档/ 已学PRD，stage-0a已加载）
+        2. 领域知识库（.codebuddy/knowledge/domains/，关键词匹配）
+        3. 领域知识库（.codebuddy/knowledge/domains/，AI语义匹配）
+        4. 跨版本沉淀（.codebuddy/knowledge/{project}/版本沉淀/，上一版本经验）
+
+        领域知识缺失处理：
+        - 若诉求涉及某领域但领域知识库中没有相关知识，BS Agent 提示：
+          "本次脑暴涉及【退款流】领域，但领域知识库中暂无相关知识。
+           建议先执行 /learn-domain --domain=退款流 --category=售后 --source=...
+           学习行业标准的退款流程，以获得更完整的方案参考。
+           是否继续脑暴（不加载该领域知识）？"
+        - 用户确认后，继续脑暴流程（标记该领域知识缺失，后续专家讨论时注意）
+
+        加载结果：
+        - 产出「领域知识清单」（领域名 + 文件路径 + 版本 + 关键摘要）
+        - 清单写入 process/ 过程稿，最终同步到 confirmed/ 确认稿
+        - 清单将传递给 /init 阶段的 BA，避免重复匹配（BA 继承脑暴已加载清单）
+      output: "领域知识清单（领域名+文件路径+版本+关键摘要）+ 业务规则清单"
+      checkpoint: true
+      note: |
+        领域知识作为专家讨论的"行业标准方案参考"，不是照搬——
+        九部门专家引用领域知识中的泳道/流程/信息流/矩阵作为论据，
+        结合项目实际情况讨论调整。
+        领域知识清单将传递给 /init 阶段 BA 直接继承。
+
+    # ---- Stage 1.5: API分析与注入（V3.4.0 新增）----
+    - id: "1.5"
+      name: "API分析与注入（V3.4.0 新增）"
+      agent: "bs-agent"
+      skills: ["api-learner"]
+      standard: ".codebuddy/knowledge/common/api-learner.yml"
+      action: |
+        V3.4.0 新增：脑暴过程中识别到API文档/接口时，执行API分析并注入专家讨论。
+
+        ## 触发条件（满足任一即触发）
+        1. --source 抓取的文档内容包含API接口信息（接口路径/请求参数/响应参数/SDK方法签名）
+        2. 用户诉求中明确提及集成第三方API（如"集成腾讯云ASR""对接微信支付"）
+        3. 领域知识加载（stage-0c）识别到第三方API领域知识
+        4. 存量项目已学PRD中包含外部接口标注
+
+        ## 分析流程（引用 common/api-learner.yml 公共定义）
+
+        ### 阶段1：API参数深度提取
+        对识别到的每个API/SDK执行：
+        a. 入参提取：参数名/类型/必填/默认值/枚举值/校验规则/参数来源
+        b. 出参提取：参数名/类型/含义/嵌套结构
+        c. 通知参数提取（如有）：回调/ webhook 参数
+        d. 错误码提取：错误码/名称/描述/处理建议
+        e. 参数语义角色标注（12种）：PRIMARY_KEY/IDEMPOTENT_KEY/AMOUNT/STATUS/SENSITIVE/
+           TIMESTAMP/SIGNATURE/REFERENCE/BUSINESS_PARAM/PAGINATION/QUERY_FILTER/RESPONSE_META
+        f. 加密要求识别：哪些参数需要加密/签名
+        g. 参数来源类型标注（5种）：user_input/upstream_api/system_generated/config/computed
+
+        ### 阶段2：参数流转图
+        a. 场景内参数流转：API调用链中参数如何传递
+        b. 跨场景参数流转：不同业务场景间参数如何流转
+        c. 参数来源溯源：每个参数从哪里来到哪里去
+        d. 参数依赖矩阵：参数间的前置依赖关系
+        e. 参数×状态机关联：参数变化如何触发状态转换
+        f. 参数×业务规则关联：参数如何参与业务规则判断
+        g. 参数安全分析：敏感字段加密/签名/脱敏要求
+
+        ### 阶段3：参数级校验
+        a. 参数来源一致性校验
+        b. 类型匹配校验
+        c. 必填参数可达性校验
+        d. 幂等键唯一性校验
+        e. 敏感字段加密校验
+        f. 金额校验
+        g. 参数-状态机一致性校验
+        h. 参数-业务规则一致性校验
+
+        ## 注入专家讨论
+
+        API分析完成后，将以下内容注入Stage 3专家讨论：
+        1. API能力清单：识别到的API/SDK能力列表（方法名+功能描述+关键参数）
+        2. 参数语义角色分析：哪些参数影响核心业务逻辑（如AMOUNT/STATUS/SENSITIVE）
+        3. 参数流转路径：数据在API间的流转路径（供信息流草图引用）
+        4. 技术约束：加密/签名/幂等/限流等技术约束（供开发部专家引用）
+        5. 异常场景：错误码+处理建议（供测试部专家引用）
+        6. 业务规则提取：从API参数推断的业务规则（供业务部专家引用）
+
+        注入格式：
+        [部门][姓名] 引用API分析《{API名称}》：{引用内容摘要}
+        示例：[开发部][李四] 引用API分析《腾讯云ASR SDK》：setFilterDirty(1)开启脏话过滤，
+              setNeedvad(1)开启VAD语音断句，onSliceSuccess返回中间态识别结果（毫秒级延迟），
+              onSegmentSuccess返回稳定态结果（秒级延迟），技术约束为WebSocket连接需稳定网络。
+
+        ## 不触发时的处理
+        若未识别到API文档/接口信息，Stage 1.5跳过，直接进入Stage 1。
+        在过程稿中标注"本次脑暴未识别到API文档，Stage 1.5跳过"。
+
+      output:
+        - "API能力清单（API名称+方法+功能+关键参数）"
+        - "参数语义角色分析（12种角色标注）"
+        - "参数流转图（场景内+跨场景+来源溯源+依赖矩阵+安全分析）"
+        - "参数级校验结果（8项校验）"
+        - "技术约束清单（加密/签名/幂等/限流）"
+        - "异常场景清单（错误码+处理建议）"
+        - "业务规则提取（从API参数推断）"
+        - "API分析注入摘要（供Stage 3专家讨论引用）"
+      checkpoint: false
+      note: |
+        API分析作为专家讨论的"技术深度增强"，不是照搬API文档——
+        九部门专家引用API分析中的参数语义/流转路径/技术约束作为论据，
+        结合业务实际情况讨论方案可行性。
+        API分析清单将传递给 /init 阶段的 BA 和 Arch，避免重复分析。
+        触发条件不满足时本阶段跳过，不影响脑暴流程。
+
+    - id: "1"
+      name: "识别行业和业务 + 领域确认（v3.2.0 增强）"
+      agent: "bs-agent"
+      action: |
+        1. 加载行业知识库（config.yml → industries）
+        2. 向用户展示 stage-0c 已加载的领域知识清单，确认识别到的领域是否准确
+        3. 展示格式：
+           "已加载以下领域知识：
+            - 退款流（aftersale/refund-flow.yml v1.2.0）：标准退款7状态机+3方分账规则
+            - 进销存（supplychain/inventory.yml v1.0.0）：采购→入库→盘点→出库标准流程
+            - 分账（settlement/split-payment.yml v1.1.0）：平台/供应商/服务商三方分账模型
+            以上领域知识将作为本次脑暴的行业标准参考。
+            是否准确？如需补充或调整，请说明。"
+        4. 用户确认后，领域知识清单锁定，后续专家讨论引用
+      output: "行业特征清单 + 业务场景初筛 + 领域知识清单确认"
+
+    - id: "2"
+      name: "干系人识别（O-01，v2.0.0 新增）"
+      agent: "bs-agent"
+      action: |
+        识别所有干系人（Stakeholder），包括：
+        - 直接用户（如运营人员、客户、管理员）
+        - 间接影响者（如审核员、财务、上级管理者）
+        - 外部干系人（如供应商、物流、支付通道）
+        支持 --stakeholders 参数导入外部干系人清单
+      output: "干系人清单（角色 + 利益诉求 + 影响级别）"
+
+    - id: "3"
+      name: "模拟专家讨论（四步法 + 9部门矩阵 + 领域知识注入 + API分析注入，v3.4.0 增强）"
+      agent: "bs-agent"
+      action: |
+        四步法：
+        1. 发散：各专家角色自由提出方案（v3.2.0：发言须引用领域知识作为论据；v3.4.0：发言须引用API分析作为技术论据）
+        2. 收敛：归并相似方案，淘汰不可行方案
+        3. 连线：强制产出三流草图（业务流/信息流/资金流）
+           （v3.2.0：三流草图以领域知识标准流程为基准模板，标注参考来源）
+           （v3.4.0：信息流草图须标注API参数流转路径，引用API分析参数流转图）
+        4. 定调：形成共识方案
+
+        v3.2.0 领域知识注入规则：
+        - 九部门专家发言时，强制引用领域知识作为论据支撑
+        - 引用格式：[部门][姓名] 引用领域知识《{领域名}》{版本}：{引用内容摘要}
+        - 示例：[业务部][张三] 引用领域知识《退款流》v1.2.0：标准退款流程包含7个状态，建议本项目退款状态机以此为基准，增加"风控审核中"状态
+        - 示例：[开发部][李四] 引用领域知识《分账》v1.1.0：三方分账需对接支付通道的分账接口，技术可行性确认
+        - 领域知识缺失时，专家须标注"领域知识缺失，建议后续 /learn-domain 学习"
+
+        v3.4.0 API分析注入规则（Stage 1.5触发时生效）：
+        - 九部门专家发言时，须引用API分析作为技术论据支撑
+        - 引用格式：[部门][姓名] 引用API分析《{API名称}》：{引用内容摘要}
+        - 示例：[开发部][李四] 引用API分析《腾讯云ASR SDK》：setFilterDirty(1)开启脏话过滤，onSliceSuccess返回中间态结果（毫秒级延迟），技术约束为WebSocket需稳定网络
+        - 示例：[测试部][陈测试] 引用API分析《腾讯云ASR SDK》：错误码-106为WebSocket网络连接失败，需设计重连机制
+        - API分析未触发时，专家正常讨论（不强制引用）
+
+        v3.2.0 三流草图领域知识标注：
+        - 三流草图以领域知识的标准流程为基准模板
+        - 草图须标注参考来源：> 参考来源：领域知识《退款流》v1.2.0 → aftersale/refund-flow.yml
+        - 与领域知识标准流程的差异处须显式标注并说明理由
+
+        v3.4.0 三流草图API分析标注（Stage 1.5触发时）：
+        - 信息流草图须标注API参数流转路径，引用Stage 1.5参数流转图
+        - 标注格式：> API参数流转参考：API分析《{API名称}》参数流转图
+        - 技术约束（加密/签名/幂等）须在信息流草图中标注
+      output: "专家讨论纪要（含领域知识引用+API分析引用）+ 三流草图（含参考来源标注+API参数流转标注）"
+
+    - id: "4"
+      name: "冲突仲裁（O-02，v2.0.0 新增）"
+      agent: "bs-agent"
+      action: |
+        当多专家意见冲突时：
+        1. 识别冲突点（技术可行性 vs 业务需求 vs 成本 vs 时间）
+        2. 按仲裁规则排序：业务价值 > 技术难度 > 实现成本
+        3. 记录仲裁结论和理由
+        4. 未被采纳的方案记录为「备选方案」
+      output: "冲突仲裁记录（冲突点 + 仲裁结论 + 理由 + 备选方案）"
+
+    - id: "5"
+      name: "汇总方案（往复确认）"
+      agent: "bs-agent"
+      action: "收敛各方意见，交还用户选择直至拍板"
+      output: "方案定稿"
+
+    - id: "6"
+      name: "输出脑暴文档（二分落盘，v3.2.0 增强领域知识清单，v3.4.0 议题子目录+API分析清单，v3.5.0 confirmed单文件+版本概要）"
+      agent: "bs-agent"
+      output:
+        - "BR-脑暴文档（process/ 过程稿）：讨论过程、冲突记录、备选方案、领域知识引用记录、API分析引用记录"
+        - "BR-脑暴文档（confirmed/ 确认稿）：最终方案、BO/BG映射、决策冻结、领域知识清单（传递给BA）、API分析清单（传递给BA+Arch）、版本概要"
+      path: "projects/{project}/docs/00-brainstorm/{topic}/process/ + projects/{project}/docs/00-brainstorm/{topic}/confirmed/"
+      gate: "三流草图齐全 + 决策冻结 + BO/BG 映射 + 命名/版本追溯 + 领域知识清单完整（v3.2.0）+ API分析完整性（v3.4.0：如识别到API须有分析清单）"
+      methodology: |
+        二分落盘：
+        - process/：完整讨论过程，保留所有方案和冲突记录（含领域知识引用记录+API分析引用记录）
+          文件名：BR-脑暴文档-过程稿-v{version}.md（每次脑暴生成独立过程稿，保留全部历史）
+        - confirmed/：最终确认的方案，作为 /init 的背景输入
+          v3.5.0 文件管理策略（覆盖式更新）：
+          - confirmed/只保留一份当前确认稿：BR-脑暴文档-确认稿.md（不带版本号，每次脑暴覆盖更新）
+          - 每次覆盖前，将旧确认稿归档到process/：BR-脑暴文档-确认稿-v{旧version}.md
+          - 确认稿内首部维护「版本概要」表格，记录历次脑暴版本信息：
+
+            | 版本 | 日期 | 脑暴类型 | 变更摘要 |
+            |------|------|----------|----------|
+            | v1.0.0 | 2026-07-17 | regular | 初次脑暴，确定混合三层审核架构 |
+            | v1.1.0 | 2026-07-18 | regular | 补充OBS插件开发细节，调整词库管理方案 |
+
+          - 版本概要表格追加记录，不删除历史行
+          - 确认稿正文始终反映最新版本的方案内容
+
+          v3.2.0 新增：confirmed/ 须包含「领域知识清单」章节
+          v3.4.0 新增：confirmed/ 须包含「API分析清单」章节（如Stage 1.5触发）
+          v3.4.0 新增：产物按议题子目录 {topic}/ 组织
+
+        v3.5.0 confirmed/单文件策略的优势：
+        - /init 阶段BA只需读取一份confirmed稿，无需判断最新版本
+        - 版本概要表格保留完整演进历史
+        - 历史版本归档到process/不影响当前需求基线
+        仅 confirmed/ 进入需求基线，process/ 仅供回溯
+
+    - id: "7"
+      name: "后续流程路由（v3.3.0 增强：分层路由，v3.5.0 增加补充分支，V5.0增加显式交接清单）"
+      action: |
+        脑暴完成后，向用户展示多选项交互（v3.5.0重构，无"驳回"）：
+
+        ## 用户选项（3选1）
+
+        ### 选项1：确认 → 进入需求流
+        用户确认方案后，按脑暴类型决定后续流程：
+        - strategic（战略型）：通知 PO Agent（战略级激活）
+          → PO 按po-planning-flow.yml V1.0.0执行8阶段规划
+          → PO 产出：产品架构 + 路线图 + Backlog + 四层价值评估 + Sprint计划
+          → PO 完成后通知 PM 立项 → /init --project={project}
+        - planning（规划型）：通知 PO Agent（规划级激活）
+          → PO 按po-planning-flow.yml V1.0.0执行8阶段规划
+          → PO 产出：路线图 + Backlog + 四层价值评估 + Sprint计划
+          → PO 完成后通知 PM 立项 → /init --project={project}
+        - regular（常规型）：直接通知 PM 立项（跳过 PO Agent）
+          → /init --project={project}
+
+        ## V5.0新增：脑暴→PO显式交接清单（G-BS-HO-01~03）
+        strategic/planning型脑暴确认后，BS Agent产出交接清单供PO Agent加载：
+        - G-BS-HO-01：confirmed/BR-脑暴文档-确认稿.md（含版本概要表）
+        - G-BS-HO-02：confirmed/STRATEGY-分析.md + BUSINESS-分析.md（仅strategic型）
+        - G-BS-HO-03：confirmed/domain-knowledge-list.yml（即使为空也要标注'无匹配领域'）
+        交接清单门禁未通过时，BS Agent补充后才可通知PO Agent。
+
+        ### 选项2：补充 → 补充资料后重新脑暴
+        用户提供补充资料/新信息后，将补充内容注入脑暴流程重新讨论：
+        - 用户补充内容形式：文字描述 / 新的--source文档 / 新的API文档链接
+        - BS Agent将补充内容注入：
+          a. 若补充内容含新API → 重新执行Stage 1.5 API分析（增量）
+          b. 若补充内容含新领域知识 → 重新执行Stage 0c领域知识加载（增量）
+          c. 重新执行Stage 3专家讨论（基于上次方案+补充内容迭代）
+          d. 重新执行Stage 4-6（冲突仲裁→汇总→输出）
+        - 过程稿保留上次讨论记录，confirmed/覆盖更新（版本概要追加新版本行）
+        - 再次展示多选项交互
+
+        ### 选项3：调整方案 → 修改指定部分后重新讨论
+        用户指定需调整的部分（如"调整技术选型""修改业务流程"），BS Agent针对性调整：
+        - 仅重新讨论用户指定的部分，保留已确认的部分
+        - 调整后重新执行Stage 3-6（局部）
+        - confirmed/覆盖更新（版本概要追加新版本行）
+        - 再次展示多选项交互
+
+        ## v3.5.0 核心变更
+        - 移除"驳回"选项：脑暴不存在驳回，只有确认或继续补充/调整
+        - "补充"和"调整"都是继续脑暴，不是终止
+        - confirmed/每次覆盖更新，版本概要追加记录
+
+      note: "同项目同议题已有 confirmed/ 结论时可跳过脑暴直接 /init；用户选择补充/调整时confirmed/暂不覆盖，等用户最终确认后才覆盖"
+
+    - id: "8"
+      name: "准入准出门禁"
+      action: "校验 brainstorm-standards.yml#gates，未过不得移交阶段2"
+      gates:
+        - "三流草图（业务流/信息流/资金流）齐全"
+        - "三流草图标注领域知识参考来源（v3.2.0 新增）"
+        - "干系人清单完整"
+        - "冲突仲裁记录完整"
+        - "BO/BG 映射完成"
+        - "方案已用户确认冻结"
+        - "领域知识清单已加载或用户确认无领域知识可加载（v3.2.0 新增）"
+        - "confirmed/ 包含领域知识清单章节（v3.2.0 新增）"
+        - "API分析完整性检查（v3.4.0 新增：如识别到API须执行分析且confirmed/包含API分析清单章节；未识别到API则跳过此项）"
+        - "议题子目录组织正确（v3.4.0 新增：产物在 {topic}/ 子目录下）"
+
+  # ============================================
+  # 脑暴标准引用
+  # ============================================
+  standard_reference:
+    file: ".codebuddy/knowledge/common/brainstorm-standards.yml"
+    iron_rules: "B-01~B-10"
+    description: "脑暴会议的 8 条铁律，定义讨论范式、产出标准、门禁条件"
+
+  # ============================================
+  # 交互反馈模板
+  # ============================================
+  feedback_template: |
+    📋 脑暴完成确认
+
+    **项目**：{project}（{项目性质：新项目 / 存量项目}）
+    **议题**：{topic}
+    **脑暴类型**：{brainstorm_type}
+    **行业**：{industry}
+    **干系人**：{数量} 个角色
+    **专家讨论**：{部门数} 个部门视角
+    **冲突仲裁**：{数量} 个冲突点已裁决
+
+    **领域知识加载**：
+    - 已加载领域：{领域名列表}（{数量} 个领域）
+    - 领域知识缺失：{缺失领域列表 / 无}
+
+    **API分析注入**：
+    - 是否触发：{是 / 否（未识别到API）}
+    - 已分析API：{API名称列表}（{数量} 个）
+    - 专家讨论API引用：{数量} 处
+
+    **三流草图**：
+    - 业务流：[已产出 / 缺失]（参考：{领域知识来源}）
+    - 信息流：[已产出 / 缺失]（参考：{领域知识来源} + API参数流转：{API名称}）
+    - 资金流：[已产出 / 缺失]（参考：{领域知识来源}）
+
+    **方案概要**：
+    {方案核心摘要，3-5句话概述推荐方案}
+
+    **产出文件**：
+    - 过程稿：projects/{project}/docs/00-brainstorm/{topic}/process/BR-脑暴文档-过程稿-v{version}.md
+    - 确认稿：projects/{project}/docs/00-brainstorm/{topic}/confirmed/BR-脑暴文档-确认稿.md（v3.5.0单文件覆盖式更新）
+
+    **清单传递**：
+    - 领域知识清单 → /init 阶段 BA 直接继承
+    - API分析清单 → /init 阶段 BA + Arch 直接继承
+
+    ---
+
+    **请选择下一步**：
+
+    **1️⃣ 确认 — 进入需求流**
+    → 执行 /init --project={project} 开启需求流
+    → {根据脑暴类型的路由说明：strategic→PO Agent→/init；planning→PO Agent→/init；regular→直接/init}
+
+    **2️⃣ 补充 — 补充资料后重新脑暴**
+    → 请提供补充资料（文字描述 / 新文档 / 新API链接）
+    → BS Agent将补充内容注入脑暴流程，重新讨论并更新方案
+    → 适合：有新的信息需要纳入讨论、需要补充技术细节等场景
+
+    **3️⃣ 调整方案 — 修改指定部分后重新讨论**
+    → 请说明需调整的部分（如"调整技术选型""修改业务流程""更换方案"）
+    → BS Agent针对性调整，保留已确认部分
+    → 适合：方案大体可行但部分需要修改的场景

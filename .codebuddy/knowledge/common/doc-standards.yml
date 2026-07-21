@@ -1,0 +1,459 @@
+# ============================================
+# BA 需求文档标准模板（单一事实源）
+# 版本：v3.3.0
+# 最后更新：2026-07-20
+# 说明：本文件是 BA Agent 所有需求产物的唯一模板事实源。
+#       V3.3.0新增：五大业务产物深度还原标准（引用scene-learning-standards.yml），双态标注（显式照录+🟡隐式挖掘还原）
+#       严格对齐「产品经理梳理需求过程」：
+#         真实场景 → 业务流程 → 业务泳道图(角色/部门/关键动作)
+#         → 信息流转图(信息主体/依赖动作) → 业务状态机约束
+#         → 每个操作的详细用例(功能编号/模块/业务系统/流程/用户故事
+#           /前置/主流程/次流程/异常/后置含跨模块数据影响)
+# 所有下游（UX/Arch/FD/QA/AC/handoff）以本文件衍生出的 REQ 产物为唯一事实源。
+# ============================================
+
+doc_standard:
+  # 通用元数据头（每个 REQ 产物文件必须包含）
+  metadata_header:
+    fields: [doc_id, module, business_system, version, platform, author, created, source_brainstorm]
+    rule: "doc_id 格式 REQ-{module}-{产物}-{version}；business_system 必填（多业务系统项目）；platform 来自 §0.0 冻结映射"
+
+  # 功能编号体系（贯穿所有产物，用于跨文档追溯）
+  function_numbering:
+    pattern: "FN-{系统缩写}-{终端缩码}-{nnn}"
+    rule: "V3.0.0方案B：每个业务系统×终端组合有独立FN编号；用例说明、状态机触发操作、业务操作矩阵、交互卡、handoff标注全部引用同一FN"
+    system_abbreviations:
+      OPS: "运营平台"
+      SHP: "电商平台"
+      LIV: "直播平台"
+      SOC: "社群平台"
+      DAS: "数据大屏"
+      TOL: "工具"
+    terminal_codes:
+      PC: "PC端"
+      APP: "APP端"
+      MINI: "小程序端"
+      H5: "H5端"
+      PAD: "平板端"
+      DSK: "桌面端"
+    examples:
+      - "FN-SHP-PC-001 商品列表（电商平台PC端）"
+      - "FN-SHP-APP-001 商品列表（电商平台APP端）"
+      - "FN-OPS-PC-001 商品审核（运营平台PC端）"
+
+  # 业务泳道图标准（产品经理方法论第一环产物）
+  swimlane_diagram:
+    required: true
+    dimensions: [业务阶段, 角色, 部门, 关键动作, 输入信息, 输出信息]
+    rule: "必须识别跨角色/跨部门协作边界；标注每个动作归属的部门与角色；作为业务流程与信息流的骨架"
+
+  # 信息主体清单（信息流转图依赖）
+  info_entities:
+    required: true
+    fields: [信息主体名, 归属业务系统, 生产者(角色/动作), 消费者(角色/动作), 依赖的前置动作]
+    rule: "列出业务流程中流转的所有信息主体（如订单/客户/资质/工单），明确谁生产、谁消费、依赖哪个业务动作"
+
+  # 跨系统信息流转图标准
+  cross_system_info_flow:
+    required: true
+    rule: "多业务系统时必画端到端信息流转图：标注信息在 systems 间的同步源/同步目标、同步触发动作(FN)、失败兜底；状态机跨系统同步须标注同步约束"
+
+  # 业务操作矩阵（四图浓缩，V5.0当前术语）
+  business_operation_matrix:
+    required: true
+    description: |
+      四图浓缩产物（V3.0.0从早期矩阵升级而来，V5.0统一为"业务操作矩阵"）。
+      四图浓缩：业务泳道图(提取角色) + 信息流转图(提取信息可见性)
+              + 业务流程图(提取操作和时序) + 状态机(提取状态)
+              → 浓缩为一个矩阵 + 操作详情卡
+    matrix_structure:
+      rows: "角色（来自泳道图）"
+      columns: "状态（来自状态机）"
+      cells: "操作（来自流程图）✅=可操作 ❌=不可操作 —=无此操作"
+      cell_content: "信息可见性（来自信息流图）+ 时序约束（来自流程图+时序图）"
+    operation_detail_card:
+      required: true
+      fields: [入口, 前置条件, 信息可见, 后置动作, 异常处理]
+      rule: "每个✅单元格挂载一张操作详情卡，给设计师作为交互行为清单的输入"
+    designer_guidance:
+      rows_to_design: "角色权限差异设计（不同角色登录看到不同界面）"
+      columns_to_design: "页面状态变化设计（每个状态下页面长什么样）"
+      cells_to_design: "按钮入口和可用性设计（disabled/enabled逻辑）"
+      detail_card_to_design: "交互行为清单（入口/前置/后置/异常=交互卡五段）"
+    legacy_name: "raci_state_matrix（已升级）"
+
+  # 五大业务产物深度还原标准（V3.3.0新增，引用scene-learning-standards.yml）
+  five_business_artifacts_deep_restoration:
+    standard: ".codebuddy/knowledge/common/scene-learning-standards.yml"
+    description: |
+      V3.3.0新增：learn-project V7.0.0五大业务产物深度还原标准。
+      AI定位为"深度还原器"——从原文碎片交叉印证还原原本就存在的完整需求。
+      双态标注：📗显式照录 + 🟡隐式挖掘还原(≥2处依据交叉印证)。
+    artifacts:
+      business_scene:
+        deep_requirements:
+          - "显式场景提取（从标题/菜单/按钮组）"
+          - "🟡隐式场景挖掘（页面跳转链中间态/按钮组功能聚类/状态转换触发动作/角色权限交叉点4维度）"
+          - "场景编排图谱（顺序/并行/互斥/循环/依赖5种编排关系）"
+          - "场景闭环验证（入口/出口/状态/数据四闭环）"
+      business_flow:
+        deep_requirements:
+          - "Happy Path还原（从原文分散操作步骤还原主干流程）"
+          - "分支流程还原（从原文条件判断还原分支）"
+          - "异常路径矩阵（从校验规则/前置条件/错误提示/按钮禁用/状态约束5种来源挖掘，非AI推导）"
+          - "跨页面衔接点还原"
+      business_information:
+        deep_requirements:
+          - "信息主体完整字段还原（从表单/列表/详情字段集合）"
+          - "信息生命周期追踪（CRUD-L：创建/读取/更新/归档/删除）"
+          - "跨场景信息血缘图（信息主体→产生场景→消费场景）"
+          - "信息一致性校验（字段类型/约束/状态跨场景一致性）"
+      business_state_machine:
+        deep_requirements:
+          - "显式状态提取（从状态标签/筛选项/状态列）"
+          - "🟡隐式状态挖掘（按钮置灰条件/操作前置条件/页面跳转条件/字段值变化推导）"
+          - "状态机完整性分析（可达性分析+转换完整性，识别不可达/死状态/缺失转换）"
+          - "非法转换挖掘（从原文禁止性描述还原）"
+      business_operation_matrix:
+        deep_requirements:
+          - "四维交叉验证矩阵（角色×状态×操作×数据）"
+          - "缺口分析（角色×状态覆盖/操作×状态覆盖/数据×角色覆盖）"
+          - "操作详情卡还原（入口/前置/信息可见/后置/异常）"
+    mining_rule: "所有🟡隐式挖掘必须附≥2处原文依据交叉印证，无依据=推测=违规。挖掘的是原本就存在但分散的需求，不是AI创造的。"
+
+  # 系统类型声明（V3.0.0新增，PRD元信息必须包含）
+  system_declaration:
+    required: true
+    description: |
+      BA在需求分析第一步识别系统类型，写入PRD元信息。
+      BA只声明类型和密度，不决定栅格和设计语言（由设计师决定）。
+    fields:
+      backends: "业务后端类型（11类选N）"
+      frontends: "业务前端类型（5类选N）"
+      terminals: "运行终端（7种+H5选N）"
+      density: "信息密度倾向（high/low/ultra_high）"
+      visual_design_required: "是否涉及品牌VI/海报/活动主视觉（BA询问用户后标记）"
+    backend_types: [商家业务后台, 租户业务后台, 内容运营后台, 业务中台, 规则引擎, 运营业务后台, OA系统, 进销存, ERP, 项目管理, 直播推流端, 工具]
+    frontend_types: [B2C电商平台, 直播电商平台, 社群平台, 社交平台, 数据大屏]
+    terminal_types: [PC, 小程序, 安卓, 苹果, 三星, 华为, 小米, H5]
+    ba_responsibility_boundary:
+      ba_decides: [业务后端类型, 业务前端类型, 运行终端, 信息密度, 视觉设计是否需要]
+      designer_decides: [栅格系统, Gutter/Margin/Grid_Unit, 设计语言, 断点定义, 组件变体]
+
+  # PRD功能需求章节结构（V3.0.0：按业务系统×终端组织）
+  prd_chapter_structure:
+    description: |
+      V3.0.0变更：PRD功能需求章节不再按"模块"组织，改为按"业务系统×终端"组织。
+      因为同一功能在不同终端上呈现完全不同，设计师可直接按章节定位设计范围。
+    structure_example: |
+      §9 功能需求列表与用例
+        §9.1 运营平台（PC端）
+          §9.1.1 商品管理
+            FN-OPS-PC-001 商品审核 [运行终端: PC]
+              UC-OPS-PC-001 运营人员审核商品
+          §9.1.2 订单管理
+            FN-OPS-PC-002 订单查询 [运行终端: PC]
+        §9.2 电商平台（PC端）
+          §9.2.1 商品浏览
+            FN-SHP-PC-001 商品列表 [运行终端: PC]
+        §9.3 电商平台（APP端）
+          §9.3.1 商品浏览
+            FN-SHP-APP-001 商品列表 [运行终端: APP]
+        §9.4 电商平台（小程序端）
+          §9.4.1 商品浏览
+            FN-SHP-MINI-001 商品列表 [运行终端: MINI]
+
+  # 用例标准模板（ER关系与用例产物强制结构）
+  use_case_template:
+    fields:
+      - name: "功能名称"
+      - name: "功能编号(FN)"
+      - name: "所属模块"
+      - name: "所属业务系统"
+      - name: "运行终端（V3.0.0新增）"
+      - name: "信息密度（V3.0.0新增，high/low/ultra_high）"
+      - name: "所属业务流程"
+      - name: "用户故事"
+      - name: "用例基本描述"
+      - name: "前置条件(权限/登录/当前状态)"
+      - name: "主要操作流(分步编号，完成主操作)"
+      - name: "次要操作流(主流程中涉及的分支流程)"
+      - name: "异常(字段校验/条件不符/超时/并发)"
+      - name: "后置条件(跳转页面/打开对话框/营销等业务数据 新增·更新·删除·更新状态，及可能影响的多模块数据)"
+      - name: "数据范围(R/W)（V5.1.1新增：标注本UC读取和写入的数据实体）"
+      - name: "关联UC（V5.1.1新增：标注与本UC有关联的其他UC编号）"
+    rule: |
+      异常流至少3种；每条异常须有明确用户提示文案；后置条件须显式列出跨模块数据影响；
+      V3.0.0：运行终端和信息密度为必填字段；
+      V5.1.1根因修复：每个UC必须包含六段标准格式，缺任一段视为PRD不合格：
+        ① 前置条件 ② 基本流程(分步编号+[手动]/[系统自动]/[事件驱动]标注) ③ 备选流程 ④ 数据范围(R/W) ⑤ 后置条件 ⑥ 关联UC
+      token优化不可压缩用例说明内容——优化只针对加载策略和冗余注释，不针对用例说明/验收标准/状态机等核心内容。
+
+  # 状态机标准（带约束，非仅状态列表）
+  state_machine:
+    required: true
+    fields: [实体, 状态列表, 合法转换(从→到→触发FN→操作者角色), 非法转换(从→到→原因)]
+    rule: "每个合法转换必须绑定触发 FN 与操作者角色；非法转换须标注原因；与 business_operation_matrix 双向一致（V3.0.0：raci_state_matrix 已废弃，统一使用 business_operation_matrix）"
+    chinese_naming_rule: |
+      V5.1.3新增：状态机节点必须使用中文状态名，不可使用英文原名。
+      英文enum值保留在数据实体(ENT)的status字段定义中，但状态机图和状态过渡操作表必须用中文。
+      示例：pending→待处理, processing→处理中, completed→已完成, failed→已失败。
+      状态过渡操作表的"当前状态"和"目标状态"列也必须使用中文。
+      原因：状态机是给人看的业务文档，中文状态名可读性远高于英文。
+
+  # 文档同步铁律（全类型需求 + 未 close 补齐）
+  sync_rules:
+    - "无论新增/迭代/变更/修复，凡涉及需求变动，受影响模块的 REQ 产物必须同步更新（修复类型至少同步受影响模块产物）"
+    - "当前立项存在未 close 需求流时，BA 开工新版本前须扫描历史版本 REQ 产物缺口并补齐，禁止只产局部"
+    - "REQ 产物变更后，下游 UX/Arch/FD/handoff 标注须以最新 REQ 版本为准重对齐"
+
+  # ============================================================
+  # v2.0.0 增强（2026-07-15 用户裁定，提炼自 AI-SCRM 实践，全局生效）
+  # 来源：projects/AI-SCRM/.codebuddy/knowledge/common/ba-output-standard.yml
+  #       + handoff-spec.yml + incidents(INC-005/INC-006)
+  # ============================================================
+
+  # 文档组织模式（单一事实源铁律①，全局开关）
+  document_model:
+    single_document:
+      enabled: true
+      rule: >
+        每个产品版本（如 v1.1.0）只允许产出 ONE 份主需求文档，落库于
+        docs/01-requirements/，内部强逻辑串联。禁止按端口/模块拆分多份
+        「场景需求 / 流程闭环 / 业务操作矩阵 / 信息流 / 时序流 / ER / 状态机」兄弟文档。
+      conflict_with: "分散产物体系模型（docs/01-requirements/plan/{version}/{platforms}/{module}/）"
+      decision: >
+        二者互斥。采用单文档模式时，产物体系合并为单文件章节（背景→目标→范围→复用→
+        BO/BG→用户故事→五类图→功能用例+页面级用例→规则→配置CONFIG→实体→指标METRIC→验收→接口→清单→深度分析摘要）；
+        V3.2.0新增CONFIG和METRIC章节。requirement-flow §6 目录契约须据本开关选模式。AI-SCRM 已裁定 single_document=true。
+      naming: "AI-SCRM-超级需求文档-PRD-{version}.md"
+
+  # HTML需求文档命名规范（V5.1.3新增）
+  html_document_naming:
+    rule: "close阶段生成的HTML需求文档按 {项目}-{版本}-{Sprint}.html 命名"
+    format: "{项目}-{版本}-{Sprint}.html"
+    examples:
+      - "SAAS-v2.0.0-S3.html"
+      - "SAAS-v2.0.0-S2.html"
+      - "SAAS-v2.0.0-S1.html"
+    path: "docs/09-versions/v{version}/prd-html/{项目}-{版本}-{Sprint}.html"
+    note: "每个Sprint版本独立生成对应HTML，不可使用通用名index.html"
+
+  # 编号体系（铁律②，V3.2.0新增CONFIG/METRIC编号——全链含系统缩写+终端缩码+版本维度）
+  # V3.2.0变更：新增CONFIG和METRIC编号，追溯链扩展
+  # V3.1.0变更：废弃方案A（FN-{PREFIX}-{NNN}），统一为方案B扩展
+  #   - FN/UC/PG 含系统缩写+终端缩码（与 function_numbering 段一致）
+  #   - MD/SC 含系统缩写（模块/场景跨终端，不含终端缩码）
+  #   - BG/BO 含项目前缀（业务/商业目标跨系统，不含系统缩写）
+  #   - ENT/BR 含系统缩写（实体/规则属于业务系统，不含终端缩码）
+  #   - 新增版本维度：编号状态标记（new/inherited/modified/deprecated）
+  numbering:
+    version: "3.2.0"
+    scheme: |
+      FN-{系统缩写}-{终端缩码}-{NNN}     功能编号（如 FN-OPS-PC-001）
+      UC-{系统缩写}-{终端缩码}-{NNN}-{SS}  用例编号（如 UC-OPS-PC-001-01）
+      PG-{系统缩写}-{终端缩码}-{NNN}     页面编号（如 PG-OPS-PC-001）
+      MD-{系统缩写}-{NNN}               模块编号（如 MD-OPS-001，跨终端）
+      SC-{系统缩写}-{NNN}               场景编号（如 SC-OPS-001，跨终端）
+      ENT-{系统缩写}-{NNN}              数据实体编号（如 ENT-OPS-001）
+      BR-{系统缩写}-{NNN}               业务规则编号（如 BR-OPS-001）
+      BG-{PREFIX}-{NNN}                 业务目标编号（如 BG-ACRM-001，跨系统）
+      BO-{PREFIX}-{NNN}                 商业目标编号（如 BO-ACRM-001，跨系统）
+      CONFIG-{系统缩写}-{NNN}            集中配置编号（如 CONFIG-PAY-001，V3.2.0新增）
+      METRIC-{系统缩写}-{NNN}            统计指标编号（如 METRIC-PAY-001，V3.2.0新增）
+    prefix_rule: "PREFIX 为项目专属前缀（如 AI-SCRM=ACRM），仅用于 BG/BO；FN/UC/PG/MD/SC/ENT/BR 使用系统缩写"
+    page_prefix: "PG-{系统缩写}-{终端缩码}"
+
+    # 系统缩写定义（与 function_numbering 段一致）
+    system_abbreviations:
+      OPS: "运营平台"
+      SHP: "电商平台"
+      LIV: "直播平台"
+      SOC: "社群平台"
+      DAS: "数据看板"
+      TOL: "工具系统"
+    terminal_codes:
+      PC: "PC端"
+      APP: "APP端"
+      MINI: "小程序端"
+      H5: "H5端"
+      PAD: "平板端"
+      DSK: "桌面端"
+
+    # 版本维度（V3.1.0新增）
+    version_dimension:
+      rule: "编号版本间不复用，但可跨版本继承"
+      status_tracking:
+        new: "本版本新增"
+        inherited: "从上版本继承，无变更"
+        modified: "从上版本继承，有变更"
+        deprecated: "本版本废弃"
+      traceability_matrix_column: "归属版本 + 状态(new/inherited/modified/deprecated)"
+
+    # 追溯链：UC → FN → PG → MD → SC → BG → BO + CONFIG → BR/FN + METRIC → BG/BO
+    traceability_chain:
+      chain: "UC → FN → PG → MD → SC → BG → BO + CONFIG → BR/FN + METRIC → BG/BO"
+      purpose: "确保从页面交互到商业价值逐层可回溯，任何需求变动都能定位到受影响的功能、页面、指标、场景和商业目标。V3.2.0新增CONFIG→BR/FN和METRIC→BG/BO关系。handoff回传依赖此链精确定位。"
+      levels:
+        - id: UC
+          name: 用例 (Use Case)
+          format: "UC-{系统缩写}-{终端缩码}-{NNN}-{SS}"
+          owner: BA
+          source: "功能需求 FN 的细化操作流程"
+          points_to: "FN"
+          example: "UC-OPS-PC-001-01 运营人员审核商品通过"
+          handoff_role: "handoff交互卡的核心定位编号——每个交互卡关联唯一UC"
+        - id: FN
+          name: 功能 (Function)
+          format: "FN-{系统缩写}-{终端缩码}-{NNN}"
+          owner: BA
+          source: "业务流程中的原子操作"
+          points_to: "PG / 状态机 / 业务操作矩阵"
+          example: "FN-OPS-PC-001 商品审核"
+          handoff_role: "handoff标注的按钮级定位——每个按钮关联唯一FN"
+        - id: PG
+          name: 页面 (Page)
+          format: "PG-{系统缩写}-{终端缩码}-{NNN}"
+          owner: UX + BA
+          source: "高保真原型页面"
+          points_to: "MD / 业务流程节点"
+          example: "PG-OPS-PC-001 商品审核页"
+          handoff_role: "handoff标注的页面级定位——每个页面关联唯一PG"
+        - id: MD
+          name: 模块 (Module)
+          format: "MD-{系统缩写}-{NNN}"
+          owner: BA / Arch
+          source: "业务子系统或功能模块（跨终端）"
+          points_to: "SC / 业务流程"
+          example: "MD-OPS-001 商品管理模块"
+        - id: SC
+          name: 场景 (Scenario)
+          format: "SC-{系统缩写}-{NNN}"
+          owner: BA
+          source: "E2E 验收场景（跨终端）"
+          points_to: "BG / 用户旅程节点"
+          example: "SC-OPS-001 商品审核并上架"
+        - id: BG
+          name: 业务目标 (Business Goal)
+          format: "BG-{PREFIX}-{NNN}"
+          owner: PM / PO / 业务方
+          source: "产品阶段性目标（跨系统）"
+          points_to: "BO"
+          example: "BG-ACRM-001 提升客户接入效率 30%"
+        - id: BO
+          name: 商业目标 (Business Objective)
+          format: "BO-{PREFIX}-{NNN}"
+          owner: 业务方 / 管理层 / PO
+          source: "公司战略或商业机会（跨系统）"
+          points_to: "-"
+          example: "BO-ACRM-001 私域客户规模增长"
+
+      rules:
+        - "每个 UC 必须归属唯一父 FN（UC继承FN序号段：UC-{系统}-{终端}-{FN序号}-{子序号}）"
+        - "每个 FN 必须关联至少一个 PG（如跨页面需标注全部PG编号）"
+        - "每个 PG 必须归属唯一 MD"
+        - "每个 MD 必须归属唯一业务系统（系统缩写）"
+        - "每个 SC 必须覆盖一条或多条 BG，并在验收标准中可验证"
+        - "每条 BG 必须反向上级 BO"
+        - "编号一旦发布不得复用；废弃编号须在 TRACEABILITY_MATRIX.md 中标记 deprecated"
+        - "版本间编号继承时须标记状态（new/inherited/modified/deprecated）"
+        - "FN/UC/PG 含终端缩码——同一功能在不同终端有不同FN编号（如FN-OPS-PC-001和FN-OPS-APP-001）"
+        - "MD/SC/ENT/BR 不含终端缩码——模块/场景/实体/规则跨终端共享"
+        - "BG/BO 不含系统缩写——业务/商业目标跨系统共享，使用项目前缀"
+
+    # 可追溯性矩阵（每个项目一份，随 docs/ 跟项目走）
+    traceability_matrix:
+      location: "docs/TRACEABILITY_MATRIX.md"
+      required: true
+      update_trigger: ["/init 完成后", "/feedback 回流后", "PRD 版本升级后", "/close 前"]
+      columns:
+        - "BO 编号 / 名称"
+        - "BG 编号 / 名称"
+        - "SC 编号 / 名称"
+        - "MD 编号 / 名称"
+        - "PG 编号 / 名称"
+        - "FN 编号 / 名称"
+        - "UC 编号 / 名称"
+        - "状态（已实现 / 待实现 / 变更中 / 废弃）"
+        - "归属版本"
+      rule: "矩阵必须能双向查询：从 BO 向下找到 UC，从 UC 向上回溯到 BO"
+
+  # 五类图位置铁律（铁律⑤，v2 调整：在用户故事下方）
+  five_diagrams:
+    mandatory: true
+    position: "用户故事（§八）之后、功能需求（§九/§十）之前，先总后分"
+    list:
+      - 业务流程图(flowchart)
+      - 信息流转图(跨模块 flowchart)
+      - 状态机(stateDiagram-v2) + 状态过渡操作表
+      - 业务时序图(sequenceDiagram)
+      - 三方接口时序图(含接口路径)
+    format: mermaid
+    state_transition_table:
+      required: true
+      columns: [当前状态, 触发操作, 目标状态, 操作者, 前置约束, 后置动作]
+    coverage_rule: "图中每个节点须映射到至少一个 FN；非主线 FN 至少在主流程图中出现一次"
+    scene_orchestration_graph:
+      required: true
+      description: "V3.3.0新增：场景编排图谱（引用scene-learning-standards.yml），还原场景间编排关系"
+      relation_types: [顺序(sequential), 并行(parallel), 互斥(exclusive), 循环(loop), 依赖(dependency)]
+      rule: "从原文跳转链/后置条件→前置条件/条件分支交叉印证还原场景编排关系，标注📗显式或🟡隐式挖掘+依据链"
+
+  # 用例标准模板强化（铁律④ + ④a + ④b，v2）
+  use_case_template_v2:
+    # ④a：fields 必须含「所属页面」
+    mandatory_fields_add: [所属页面(PG-{系统缩写}-{终端缩码})]
+    # ④b：逐原子操作拆分，禁止吞并
+    subfunction_split:
+      enabled: true
+      forbid_merging: "禁止把『客户库管理（导入/查询/分层/标签）』写成单个用例；父 FN 仅作聚合标题"
+      required_sub_uc_per_page:
+        list_operations: [搜索, 列表排序, 筛选, 分页, 查看, 导出]
+        write_operations: [新增, 编辑, 删除, 导入, 禁用, 启用, 拉黑]
+        batch_operations: [批量启用, 批量禁用, 批量删除, 批量打标签, 批量分配]
+        row_operations: [行内查看, 行内编辑, 行内删除, 行内禁用启用]
+      naming: "子功能 UC 继承父 FN 序号段，如 FN-ACRM-002 下 UC-ACRM-002-01 搜索、…-14 分层打标签"
+
+  # 页面级用例（铁律⑧，v2 新增）
+  page_level_usecase:
+    mandatory: true
+    structure:
+      - 页面编号(PG-{系统缩写}-{终端缩码})
+      - 页面名称（与高保真原型页面名同源，供 handoff 检索）
+      - 所属模块 / 业务系统
+      - 业务流程定位（引用流程节点/上下游页面）
+      - 页面总体业务流程
+      - 状态机梳理（引用状态机或简述）
+      - 页面指标统计（必须指向指标登记 key，且 key 含 definition/source；并反标关联 BG）
+      - 关联功能用例（由 UC 编号倒推，避免手抄）
+      - 关联UC
+    metric_closure: "页面指标须双向闭环：① 指向 §指标登记 key ② key 已含 definition+source ③ 页面反标 BG"
+
+  # handoff 契约（铁律⑨，v2 新增；细则见 handoff-spec.yml）
+  handoff_contract:
+    rule: >
+      需求文档每个 UC / PG 必须可被开发通过「高保真功能名称 / 页面名称」检索命中；
+      UC 标题、PG 标题须与高保真原型命名同源。开发据名检索 → 原型【？】挂载 →
+      右侧抽屉(右到左)弹出交互用例说明卡（字体规范见 handoff-spec.yml）。
+    see_also: "knowledge/common/handoff-spec.yml"
+
+  # 商业价值假设（铁律⑩，v2 新增；商业/市场专家诉求）
+  # 每个 PRD 须显式登记商业价值假设，使变现路径/ROI 在验收时可回溯。
+  business_value:
+    mandatory: true
+    fields: [商业目标(BG 反标), 价值假设, 度量指标, 预期收益(量化), 验证方式]
+    rule: "页面指标统计(铁律⑧)与 BO/BG 映射(铁律④)须可反标到本段；商业部在脑暴阶段产出的 ROI 视角结论须落入此处"
+
+  # 治理档案（INC 系列，全局复用）
+  governance:
+    incidents_source: "knowledge/common/incidents.yml"
+    related: [handoff-spec.yml, incidents.yml, ba-output-standard(已并入本文件)]
+    # 上游脑暴标准（阶段1 → 阶段2 输入边界）
+    upstream_brainstorm:
+      standard: "knowledge/common/brainstorm-standards.yml"
+      version: "v1.2.0"
+      contract: >
+        脑暴阶段产出的 confirmed/ 二分文档为 BA 需求分析唯一权威输入；
+        其 BO/BG 映射为本文档编号追溯链（UC→FN→PG→MD→SC→BG→BO）链首；
+        其铁律 B-02 三流草图为本文档 swimlane/cross_system_info_flow/state_machine 起点。
+

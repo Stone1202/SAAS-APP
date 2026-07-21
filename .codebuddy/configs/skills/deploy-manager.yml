@@ -1,0 +1,148 @@
+# Skill: 部署管理器（Deploy Manager）
+# V1.0.0 — /close 后自动部署仿真原型到 EdgeOne Pages + 手动 /deploy 命令
+# ============================================
+skill:
+  id: "deploy-manager"
+  name: "deploy-manager"
+  version: "1.0.0"
+  agents: ["pm-agent"]
+  description: "/close stage-9 自动部署仿真原型到 EdgeOne Pages。支持手动 /deploy 触发/重试/查看状态。引用 deploy/edgeone-pages.json 配置。"
+
+  triggers:
+    - command: "/close"
+      stage: "stage-9 自动部署运营"
+      description: "版本快照完成后自动执行部署"
+    - command: "/deploy"
+      stage: "手动部署"
+      description: "手动触发部署、重试失败部署、查看部署状态"
+
+  # ============================================
+  # 部署配置引用
+  # ============================================
+  config:
+    deploy_config: "deploy/edgeone-pages.json"
+    deploy_manifest: "deploy/DEPLOY-MANIFEST.yml"
+    access_portal: "deploy/access-portal/index.html"
+    project_index: ".codebuddy/knowledge/PROJECT-INDEX.yml"
+
+  # ============================================
+  # 部署流程（7步）
+  # ============================================
+  workflow:
+    - name: "1.前置校验"
+      rule: |
+        确认以下条件全部满足：
+        - stage-8 版本快照已完成（Git Tag + build:sim 产物存在）
+        - deploy/edgeone-pages.json 配置存在且有效
+        - PROJECT-INDEX.yml 中对应项目的 owner 和 path 存在
+        如不满足则跳过部署，提示用户。
+
+    - name: "2.读取项目部署配置"
+      rule: |
+        从 deploy/edgeone-pages.json 读取对应项目的配置：
+        - root（项目根目录）
+        - build_command（构建命令）
+        - output_directory（产物目录）
+        - env（环境变量，含 VITE_PROJECT_ID）
+        - routes（路径路由规则）
+
+    - name: "3.注入环境变量并构建"
+      rule: |
+        设置环境变量（VITE_PROJECT_ID={owner}-{project} + VITE_MODE=sim）
+        执行构建命令：npm run build:sim
+        如 stage-8 已构建则复用产物（检查 dist/ 是否存在且为最新）
+        构建失败则标记部署失败，不阻断 /close
+
+    - name: "4.推送产物到 EdgeOne Pages"
+      rule: |
+        通过 EdgeOne Pages 集成推送构建产物：
+        - 产物路径：projects/{owner}/{project}/dist/
+        - 部署路径：/{owner}/{project}/{version}/
+        - 访问保护：使用 edgeone-pages.json 中配置的 access_protection
+        推送失败则标记部署失败，记录 error_msg
+
+    - name: "5.生成访问 URL"
+      rule: |
+        生成访问 URL：https://{workspace}.edgeone.app/{owner}/{project}/{version}/
+        同时生成 latest 重定向 URL：https://{workspace}.edgeone.app/{owner}/{project}/latest/
+
+    - name: "6.更新部署记录"
+      rule: |
+        ① 追加部署记录到 deploy/DEPLOY-MANIFEST.yml：
+          - owner/project/version/deployed_at/git_tag/build_mode/url/status/db_name/build_duration
+        ② 更新 PROJECT-INDEX.yml 对应项目的 deploy 字段：
+          - deploy.current_version = {version}
+          - deploy.deploy_url = {url}
+          - deploy.deploy_history 追加本次记录
+        ③ 更新 deploy/access-portal/index.html：
+          - 在对应 owner 分组下追加项目版本条目
+          - 包含 [访问] [差异报告] [PRD快照] 链接
+
+    - name: "7.输出部署结果"
+      rule: |
+        向用户展示部署结果：
+        ┌──────────────────────────────────────────────┐
+        │  ✅ 部署成功                                  │
+        │  访问URL: https://xxx.edgeone.app/{owner}/   │
+        │           {project}/{version}/               │
+        │  IndexedDB: {owner}-{project}-sim（数据隔离）  │
+        │  耗时: {build_duration}s构建 + {deploy_duration}s部署 │
+        │  状态: live                                  │
+        └──────────────────────────────────────────────┘
+        如部署失败：
+        ┌──────────────────────────────────────────────┐
+        │  ❌ 部署失败                                  │
+        │  原因: {error_msg}                           │
+        │  版本已冻结，可执行 /deploy --project=xxx 重试│
+        └──────────────────────────────────────────────┘
+
+  # ============================================
+  # 失败处理
+  # ============================================
+  failure_handling:
+    blocking: false  # 部署失败不阻断 /close
+    retry_command: "/deploy --project={project} [--version={version}]"
+    max_auto_retries: 0  # 不自动重试，需手动 /deploy
+    error_logging: "记录到 DEPLOY-MANIFEST.yml 的 error_msg 字段"
+
+  # ============================================
+  # 输入输出
+  # ============================================
+  inputs:
+    - "stage-8 版本快照产物（dist/ + docs/09-versions/v{version}/）"
+    - "deploy/edgeone-pages.json 部署配置"
+    - "PROJECT-INDEX.yml 项目信息（owner/path/dev_port/db_name）"
+  outputs:
+    - type: "deployment"
+      path: "EdgeOne Pages（/{owner}/{project}/{version}/）"
+      description: "部署的仿真原型，可通过 URL 访问"
+    - type: "manifest-update"
+      path: "deploy/DEPLOY-MANIFEST.yml"
+      description: "部署清单追加记录"
+    - type: "index-update"
+      path: ".codebuddy/knowledge/PROJECT-INDEX.yml"
+      description: "项目 deploy 字段更新"
+    - type: "portal-update"
+      path: "deploy/access-portal/index.html"
+      description: "访问门户聚合页更新"
+
+  # ============================================
+  # /deploy 命令支持
+  # ============================================
+  manual_deploy:
+    description: "手动触发部署（失败重试或部署指定版本）"
+    modes:
+      deploy:
+        command: "/deploy --project={project} [--version={version}]"
+        description: "部署当前版本或指定版本"
+      retry:
+        command: "/deploy --project={project} --retry"
+        description: "重试上次失败的部署"
+      status:
+        command: "/deploy --status [--project={project}]"
+        description: "查看部署状态（全部或指定项目）"
+        output: |
+          从 DEPLOY-MANIFEST.yml 读取部署记录，展示：
+          - 所有项目的当前部署版本和状态
+          - 最近5次部署记录
+          - 失败部署的 error_msg

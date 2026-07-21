@@ -1,0 +1,152 @@
+# Skill: 测试执行器（Test Runner）
+# V5.1.0合并：unit-test-runner + browser-test-runner + whitebox-tester → test-runner
+# 3个测试执行Skill合并为1个，通过layer参数区分测试层级
+# ============================================
+skill:
+  id: "test-runner"
+  name: "test-runner"
+  version: "3.0.0"
+  agents: ["qa-agent"]
+  description: "QA五层测试的执行核心——通过layer参数区分单元测试/浏览器测试/白盒测试三层。测试用例源自BA产物(FN/UC/状态机/BR/业务操作矩阵)和Arch契约(Zod Schema)。"
+
+  triggers:
+    - event: "testing_started"
+      auto: true
+      description: "QA Agent测试阶段启动时自动触发"
+    - event: "sim_code_updated"
+      auto: true
+      description: "sim.ts更新后自动触发回归测试"
+    - event: "defect_fixed"
+      auto: true
+      description: "缺陷修复后自动触发验证测试"
+    - command: "/test"
+      description: "手动触发测试"
+
+  inputs:
+    - name: "sim_services"
+      source: "fd-agent"
+      path: "src/modules/{module}/services/sim.ts"
+      required: true
+      description: "FD Agent产出的仿真服务代码"
+    - name: "adapter"
+      source: "fd-agent"
+      path: "src/modules/{module}/services/adapter.ts"
+      required: true
+      description: "FD Agent产出的适配器代码"
+    - name: "contract_schemas"
+      source: "arch-agent"
+      path: "src/contracts/schemas/{module}/"
+      required: true
+      description: "Arch Agent产出的Zod Schema定义"
+    - name: "business_rules"
+      source: "ba-agent"
+      path: "projects/{project}/docs/01-requirements/business-rules/{module}/"
+      required: true
+      description: "BA Agent产出的业务规则"
+
+  layers:
+    # ---- Layer 1: 单元测试（原unit-test-runner）----
+    unit:
+      description: "sim.ts函数级单元测试+adapter集成测试+Zod Schema校验测试"
+      workflow:
+        - step: "parse_sim_functions"
+          action: "解析sim.ts，提取所有导出函数及其签名"
+        - step: "generate_happy_path_tests"
+          action: "为每个函数生成Happy Path测试用例"
+        - step: "generate_validation_tests"
+          action: "基于Zod Schema生成参数校验测试用例（必填缺失/类型错误/超长/null/undefined）"
+        - step: "generate_business_rule_tests"
+          action: "逐条对照BR，生成业务规则测试用例"
+        - step: "generate_boundary_tests"
+          action: "生成通用边界条件测试用例（特殊字符/XSS/超长字符串/数字溢出）"
+        - step: "generate_adapter_tests"
+          action: "生成adapter集成测试用例（sim/real切换验证）"
+        - step: "execute_tests"
+          action: "执行所有测试用例，收集通过/失败结果"
+        - step: "generate_report"
+          action: "生成结构化测试报告+Bug列表"
+      boundary_injections:
+        - {name: "XSS注入", value: "<script>alert('xss')</script>", expected: "通过Zod校验但被业务逻辑拒绝"}
+        - {name: "SQL注入", value: "'; DROP TABLE users; --", expected: "通过Zod校验但不应影响数据"}
+        - {name: "超长字符串", value: "'a'.repeat(10000)", expected: "Zod .max()校验失败"}
+        - {name: "特殊Unicode", value: "'零宽空格'", expected: "正常处理或校验失败"}
+        - {name: "emoji", value: "'😀🎉🔥'", expected: "正常处理（不应崩溃）"}
+        - {name: "数字溢出", value: "Number.MAX_SAFE_INTEGER + 1", expected: "Zod校验失败"}
+        - {name: "负数输入", value: "-1", expected: "Zod .min()校验失败（若不允许负数）"}
+        - {name: "空字符串", value: "''", expected: "Zod .min(1)校验失败"}
+      pass_criteria:
+        - "Happy Path测试必须100%通过"
+        - "参数校验测试必须100%通过（Zod Schema是契约，不可有例外）"
+        - "业务规则测试必须100%通过（BR是需求，不可有例外）"
+        - "边界条件测试90%通过即可"
+        - "adapter集成测试必须100%通过"
+
+    # ---- Layer 2: 浏览器测试（原browser-test-runner）----
+    browser:
+      description: "Playwright自动化浏览器操作+自动截图+控制台监控+视觉回归"
+      workflow:
+        - step: "generate_playwright_scripts"
+          action: "根据TC文档自动生成测试脚本，覆盖Happy/Ugly/Edge三类"
+        - step: "auto_screenshot"
+          action: "每步截图，失败保存完整页面截图"
+        - step: "console_monitoring"
+          action: "捕获console.error、未处理异常、网络请求失败"
+        - step: "visual_regression"
+          action: "截图与设计稿对比，检测布局偏移与样式丢失"
+      pass_threshold: "95%"
+
+    # ---- Layer 3: 白盒测试（原whitebox-tester）----
+    whitebox:
+      description: "状态覆盖率+路径覆盖率+边界注入+数据流追踪"
+      workflow:
+        - step: "state_coverage"
+          action: "扫描组件AsyncState（loading/error/empty/success/idle）覆盖"
+        - step: "path_coverage"
+          action: "扫描sim.ts分支覆盖"
+        - step: "boundary_injection"
+          action: "强制注入字符串/null/数字/数组边界值"
+        - step: "data_flow_tracing"
+          action: "追踪Store→Adapter→sim→IndexedDB完整路径"
+      pass_threshold: "90%"
+
+  output_format:
+    schema: |
+      {
+        "test_id": "{layer}-{module}-{timestamp}",
+        "test_type": "unit|browser|whitebox",
+        "module": "{module_name}",
+        "agent": "qa-agent",
+        "timestamp": "ISO-8601",
+        "summary": {
+          "total_cases": {总用例数},
+          "passed": {总通过数},
+          "failed": {总失败数},
+          "pass_rate": "{通过率}%"
+        },
+        "failures": [
+          {
+            "case": "{用例名称}",
+            "expected": "{预期行为}",
+            "actual": "{实际行为}",
+            "severity": "high|medium|low",
+            "bug_id": "BUG-{YYYYMMDD}-{NNN}",
+            "related_fn": "{关联FN编号}",
+            "related_br": "{关联BR编号（如有）}"
+          }
+        ]
+      }
+
+  fail_actions:
+    high_severity:
+      condition: "Happy Path/参数校验/业务规则/adapter测试失败"
+      action: "生成Bug→PM路由BA重评→dev→test→accept闭环"
+    medium_severity:
+      condition: "边界条件测试失败"
+      action: "生成Bug→排入修复队列"
+    low_severity:
+      condition: "极端罕见场景测试失败"
+      action: "记录为已知限制，不阻断流水线"
+
+  dependencies:
+    - "configs/workflows/test-flow.yml"
+    - "src/contracts/schemas/（Zod Schema定义）"

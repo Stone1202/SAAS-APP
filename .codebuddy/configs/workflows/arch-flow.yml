@@ -1,0 +1,247 @@
+# ============================================
+# Workflow: arch-flow（架构评审流程 V3.2.0）
+# 版本: v3.2.0
+# 最后更新: 2026-07-20
+# ============================================
+#
+# V3.2.0 升级：非功能需求（NFR）主题识别
+#   1. 新增 ai_brain 推理模块 nfr_topic_identification——AI辅助Arch识别NFR主题
+#   2. 新增步骤0：NFR主题识别（架构评审前置，产出NFR清单回传PRD）
+#   3. 新增 PM红线 C-A8：NFR清单完整性
+#   4. NFR识别覆盖8大主题：高并发/异步/同步/数据一致性/安全/可扩展/可用性/性能
+#   5. NFR清单回传BA→PRD §18 非功能需求章节
+#
+# V3.1.0 升级：Arch大脑注入（架构决策大脑）
+#   1. 新增 ai_brain 段——Arch架构决策大脑
+#   2. 契约缺陷预测：历史契约Bug模式→当前契约缺陷预警
+#   3. 安全模式识别：接口×参数→安全风险点识别
+#   4. 依赖链推理：契约变更→影响波及面推理
+#   5. 大脑记忆导入：BA/UX的brain_sync_export + 上版本Arch大脑记忆
+#   6. 大脑同步输出→FD：实现陷阱预警 + →QA：高风险接口清单
+#
+# V3.0.0升级：C-A5(契约Zod完整性)/C-A6(五维可插拔)/C-A7(单元测试架构)
+# ============================================
+#
+# 流程专家视角：
+#   arch-flow 是 Arch Agent 的守门员流程——在设计完成后、开发开始前，
+#   对技术可行性、依赖关系、跨系统接口进行评审。
+#   v2.0.0 新增：C-A1~C-A4 PM 红线、接口契约终稿（O-05）、
+#   设计→代码衰减控制（O-09）、三段回溯表。
+#
+# 核心原则：
+#   1. Arch 是守门员（gatekeeper），未通过不得流转 FD
+#   2. 架构评审不仅看技术可行性，更要产出机器可校验契约
+#   3. 接口契约从 BA 初稿（自然语言）精化为 Zod Schema
+#   4. 三段回溯表确保需求→设计→架构的可追溯性
+# ============================================
+
+workflow:
+  id: "arch-flow"
+  name: "架构评审流程（V3.2.0 NFR主题识别+Arch架构决策大脑）"
+  version: "3.2.0"
+  trigger_command: "/init（PM 调度 Arch，设计完成后）"
+  owner: "arch-agent"
+  gates_reference: ".codebuddy/knowledge/common/gates-registry.yml#stages.arch"
+  iron_rules_reference: ".codebuddy/knowledge/common/iron-rules-registry.yml#agents.arch_agent"
+  supervisor: "pm-agent"
+  standard: ".codebuddy/knowledge/common/arch/tech-stack.yml"
+  gatekeeper: true
+
+  # ============================================
+  # V3.1.0新增：Arch架构决策大脑
+  # ============================================
+  ai_brain:
+    id: "arch_brain_v1"
+    name: "架构决策大脑"
+    description: |
+      Arch不再是机械对照红线检查——Arch大脑基于历史契约Bug模式、
+      安全知识库和依赖拓扑，推理出当前架构的潜在风险点，
+      提前预警而非事后补救。
+    reasoning_modules:
+      - id: "contract_defect_prediction"
+        name: "契约缺陷预测"
+        description: |
+          基于历史契约Bug模式，AI预判当前契约设计中的潜在缺陷。
+          输入：历史契约Bug模式（QA契约一致性测试失败+FD实现Bug）
+                + 当前Zod契约定义 + BA接口初稿
+          输出：契约风险清单（按接口×风险类型+置信度）
+          示例：「金额字段z.number() → 历史5次浮点精度Bug → 预警：建议改为整数+单位」
+      
+      - id: "security_pattern_recognition"
+        name: "安全模式识别"
+        description: |
+          AI扫描接口契约，基于安全知识库和历史安全漏洞模式，
+          识别潜在安全风险（权限校验缺失/敏感数据泄露/注入风险/未加密传输）。
+      
+      - id: "dependency_chain_reasoning"
+        name: "依赖链推理"
+        description: |
+          当契约变更时，AI推理影响波及面——哪些模块/接口/页面会受影响。
+          输入：契约变更diff + 模块拓扑 + 三段回溯表
+          输出：影响波及图（波及范围+影响级别）
+
+      - id: "nfr_topic_identification"
+        name: "非功能需求主题识别（V3.2.0新增）"
+        description: |
+          AI辅助Arch从需求文档中识别非功能需求（NFR）主题。
+          不是让Arch凭空写NFR——AI扫描FN/UC/BR/状态机/数据实体，
+          基于业务特征推理出8大NFR主题是否存在+严重级别+实现建议。
+          输入：PRD的FN/UC/BR/ENT/状态机 + 系统类型声明 + 领域知识
+          输出：NFR主题清单（8大主题×严重级别×实现建议×关联FN）
+          8大NFR主题：
+            1. 高并发（concurrency）：哪些FN涉及高并发场景？（如直播审核实时推送）
+            2. 异步处理（async）：哪些FN涉及异步任务？（如MPS擦音任务回调）
+            3. 同步等待（sync）：哪些FN需要同步等待外部响应？（如API调用超时处理）
+            4. 数据一致性（consistency）：哪些FN涉及跨系统数据一致性？（如任务状态+录像状态）
+            5. 安全性（security）：哪些FN涉及敏感数据/权限/资金安全？
+            6. 可扩展性（scalability）：哪些FN需要支持未来扩展？（如多MPS模板）
+            7. 可用性（availability）：哪些FN需要高可用保障？（如审核不能停）
+            8. 性能（performance）：哪些FN有明确性能指标？（如看板加载<2s）
+          示例：「FN-AUD-PC-009涉及异步处理(MPS回调)+数据一致性(任务状态+录像状态)+可扩展性(多MPS模板)」
+    
+    memory_import:
+      sources:
+        - "BA大脑brain_sync_export：接口复杂度+新接口数+外部依赖"
+        - "UX大脑brain_sync_export：组件实现难度"
+        - "上版本Arch大脑记忆：契约缺陷预测准确率+安全模式命中率"
+        - "跨版本QA契约一致性测试失败模式"
+    
+    brain_sync_export:
+      to_fd: ["实现陷阱预警（按接口+风险级别）", "安全注意事项清单"]
+      to_qa: ["高风险接口清单（重点测试+测试策略建议）", "契约一致性检查点"]
+
+  # ============================================
+  # 步骤定义
+  # ============================================
+  steps:
+    - id: "0"
+      name: "NFR主题识别（V3.2.0新增：AI辅助Arch识别非功能需求）"
+      agent: "arch-agent"
+      skills: ["arch-tech-stack-keeper"]
+      input: "PRD的FN/UC/BR/ENT/状态机 + 系统类型声明 + 领域知识"
+      output:
+        - "NFR主题清单（8大NFR主题×严重级别×实现建议×关联FN）"
+        - "NFR回传PRD §18 非功能需求章节（Arch识别→BA纳入PRD）"
+      path: "projects/{project}/docs/03-architecture/NFR-{version}.yml"
+      note: |
+        AI辅助Arch识别NFR主题——不是让Arch凭空写NFR，而是AI基于需求内容推理。
+        识别完成后NFR清单回传BA，BA将其纳入PRD §18 非功能需求章节。
+        8大NFR主题：高并发/异步/同步/数据一致性/安全/可扩展/可用性/性能。
+        门禁：G-ARCH-06检查NFR清单产出 + G-REQ-18检查PRD §18 NFR章节存在。
+
+    - id: "1"
+      name: "架构评审（技术可行性 + 依赖 + 性能 + 合规）"
+      agent: "arch-agent"
+      skills: ["arch-tech-stack-keeper", "arch-contract-definer", "arch-scaffold-reviewer"]
+      input: "需求产物 + 设计产物 + 外部接口文档（--api）+ BA 接口契约初稿"
+      output:
+        - "技术可行性结论（通过/有条件通过/驳回）"
+        - "依赖关系图（模块间依赖 + 第三方依赖）"
+        - "跨系统接口契约（Zod Schema 精化版）"
+        - "性能/合规结论"
+        - "NFR实现方案（基于step-0识别的NFR主题，给出技术实现方案）"
+        - "三段回溯表（需求→设计→架构的 FN 级映射）"
+        - "设计→代码衰减控制清单（O-09）"
+      path: "projects/{project}/docs/04-arch/"
+      checkpoint: true  # 人工卡点③（守门员裁决）
+      note: "守门员裁决：通过→移交 FD；驳回→problem_list 路由 BA/UX/Arch 重评"
+
+  # ============================================
+  # PM 红线（C-A1~C-A7，缺则不予放行 FD）
+  # ============================================
+  pm_redlines:
+    - id: "C-A1"
+      name: "route-contract 路由映射"
+      description: "每个页面路由→组件→数据依赖的完整映射，必须可机器解析"
+      format: "YAML"
+      check: "逐路由核对：路径 → 组件名 → useXxxStore → 数据字段"
+      fail_action: "PM 驳回，Arch 补充缺失路由映射"
+    - id: "C-A2"
+      name: "运行骨架契约 + pom 已补"
+      description: "npm run dev 可启动的完整骨架，pom/ 目录包含对应模块文档"
+      check: "实际执行 npm run dev 验证可启动"
+      fail_action: "PM 驳回，Arch 补齐骨架"
+    - id: "C-A3"
+      name: "仿真开关契约"
+      description: "每个接口的 sim/real 切换契约（adapter 模式）"
+      format: "YAML"
+      check: "逐接口核对：接口名 → sim 实现 → real 实现 → 切换条件"
+      fail_action: "PM 驳回，Arch 补充仿真开关契约"
+    - id: "C-A4"
+      name: "三段回溯表"
+      description: "需求 FN → 设计页面 → 架构路由的完整追溯映射"
+      format: "YAML"
+      check: "逐 FN 核对三段是否齐全"
+      fail_action: "PM 驳回，Arch 补充缺失追溯"
+    - id: "C-A5"
+      name: "契约 Zod 完整性（V3.0.0新增）"
+      description: "每个接口必须有 request/response Zod Schema + 错误码枚举"
+      check: "逐接口核对 src/contracts/schemas/ 下是否有对应 Zod 定义"
+      fail_action: "PM 驳回，Arch 补充缺失的 Zod Schema"
+    - id: "C-A6"
+      name: "五维可插拔（V3.0.0新增）"
+      description: "data/transport/stream/asset/auth 五维度都有 sim+real 实现"
+      check: "逐维度核对 src/adapters/sim/ 和 src/adapters/real/ 下是否有对应实现"
+      fail_action: "PM 驳回，Arch 补齐缺失维度的 sim/real 实现"
+    - id: "C-A7"
+      name: "单元测试架构（V3.0.0新增）"
+      description: "tests/ 存在 + 契约一致性测试覆盖全部接口"
+      check: "核对 tests/contract-consistency/ 下是否有全部接口的测试文件"
+      fail_action: "PM 驳回，Arch 补齐缺失的契约一致性测试"
+    - id: "C-A8"
+      name: "NFR清单完整性（V3.2.0新增）"
+      description: "Arch必须产出NFR主题清单（8大NFR主题×严重级别×实现建议×关联FN），并回传BA纳入PRD §18"
+      check: "核对 docs/03-architecture/NFR-*.yml 存在 + PRD §18 非功能需求章节存在"
+      fail_action: "PM 驳回，Arch执行NFR主题识别（AI辅助nfr_topic_identification推理模块）"
+
+  # ============================================
+  # 接口契约终稿（O-05）
+  # ============================================
+  interface_contract:
+    description: "Arch Agent 将 BA 的接口契约初稿（自然语言）精化为 Zod Schema"
+    input: "BA Agent 的接口契约初稿（requirement-flow §6）"
+    output: "projects/{project}/docs/04-arch/contracts/{module}/api-contract.yml"
+    schema:
+      - "接口路径（如 POST /api/auth/login）"
+      - "请求 Zod Schema（入参校验）"
+      - "响应 Zod Schema（出参校验）"
+      - "错误码枚举（如 AUTH_INVALID_CREDENTIALS）"
+      - "sim/real 切换契约"
+
+  # ============================================
+  # 设计→代码衰减控制（O-09）
+  # ============================================
+  decay_control:
+    description: "Arch Agent 在设计→代码转换阶段控制信息衰减，确保设计意图不丢失"
+    checkpoints:
+      - "每个设计页面对应有架构路由映射"
+      - "每个设计组件对应有 Store 数据契约"
+      - "每个交互说明卡对应有 API 接口契约"
+      - "每个多端差异点对应有适配策略"
+    decay_report_path: "projects/{project}/docs/04-arch/decay-reports/DECAY-{stream_id}-{version}.md"
+
+  # ============================================
+  # 交互反馈模板
+  # ============================================
+  feedback_template: |
+    📋 架构评审完成确认
+
+    **评审范围**：{模块列表}
+    **技术可行性**：[通过 / 有条件通过 / 驳回]
+    **产出文件**：
+    - 路由契约：{数量} 条
+    - 接口契约（Zod Schema）：{数量} 个
+    - 仿真开关契约：{数量} 个
+    - 三段回溯表：{数量} 条 FN
+
+    **PM 红线校验**：
+    - [ ] C-A1 route-contract 路由映射
+    - [ ] C-A2 运行骨架契约 + pom 已补
+    - [ ] C-A3 仿真开关契约
+    - [ ] C-A4 三段回溯表
+    - [ ] C-A5 契约Zod完整性（V3.0.0新增）
+    - [ ] C-A6 五维可插拔（V3.0.0新增）
+    - [ ] C-A7 单元测试架构（V3.0.0新增）
+    - [ ] C-A8 NFR清单完整性（V3.2.0新增）
+
+    **请裁决**：通过 / 驳回（原因：xxx）

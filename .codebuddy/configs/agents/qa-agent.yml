@@ -1,0 +1,103 @@
+agent:
+  id: "qa-agent"
+  name: "QA Agent"
+  role: "质量保障"
+  department: "测试部"
+  description: "基于BA产物编写测试用例，执行五层测试"
+  
+  md_file: ".codebuddy/agents/qa-agent.md"
+  
+  skills:
+    - "test-runner"              # V5.1.0合并：unit-test-runner+browser-test-runner+whitebox-tester→test-runner
+    - "bug-tracker"
+
+  # V5.1.0新增：QA质量推理大脑能力声明
+  brain_capability:
+    brain_id: "qa_brain_v1"
+    brain_name: "质量推理大脑"
+    workflow_ref: "test-flow.yml#ai_brain"
+    reasoning_modules: ["bug_hotspot_prediction", "coverage_blind_spot_detection", "regression_set_recommendation", "risk_based_prioritization"]
+    memory_spec: ".codebuddy/knowledge/common/brain-memory-spec.yml"
+    status: "active"
+  
+  triggers:
+    - command: "/init --type=新增|迭代"
+      stages: ["阶段3", "阶段4"]
+      description: "阶段3并行编写用例，阶段4执行测试"
+    - command: "/test"
+      arg: "[--platform=pc,miniapp,app,...]"
+      description: "手动触发测试；指定 --platform 时逐端运行测试"
+    - command: "/init --type=变更"
+      stage: "阶段A4"
+      description: "变更处理的回归测试"
+    - command: "/init --type=修复"
+      stage: "阶段B1,B3"
+      description: "Bug分析和回归验证"
+  
+  input:
+    phase1:  # 编写用例
+      - type: "requirement_doc"
+        source: "BA Agent"
+        description: "BA产物体系(含业务操作矩阵)，从中提取测试用例"
+    phase2:  # 执行测试
+      - type: "simulation_system"
+        source: "FD Agent"
+        description: "可运行的仿真系统"
+      - type: "test_cases"
+        source: "self"
+        description: "阶段1编写的测试用例"
+  
+  output:
+    phase1:
+      - type: "TC"
+        description: "测试用例文档"
+        location: "projects/{project}/docs/04-testing/test-cases/"
+    phase2:
+      - type: "TR"
+        description: "测试报告"
+        location: "projects/{project}/docs/04-testing/test-reports/"
+      - type: "BUG"
+        description: "Bug文档"
+        location: "projects/{project}/docs/04-testing/bugs/"
+  
+  test_case_numbering:
+    format: "TC-{系统缩写}-{终端缩码}-{NNN}"
+    relation: "每个TC必须关联至少一个FN编号（related_fn字段）"
+    example: "TC-OPS-PC-001 关联 FN-OPS-PC-001"
+  
+  test_case_extraction_rules:
+    - source: "关键动作用例说明"
+      rule: "直接转化为标准测试用例"
+      type: "标准用例"
+    - source: "状态机流"
+      rule: "合法转换N个 + 非法转换N个"
+      type: "状态用例"
+    - source: "流程闭环"
+      rule: "正向+逆向+中断"
+      type: "流程用例"
+    - source: "信息流"
+      rule: "输入校验+输出校验+传递校验"
+      type: "数据用例"
+    - source: "时序流"
+      rule: "顺序+并发+超时"
+      type: "时序用例"
+  
+  test_layers:
+    - name: "contract"
+      skill: "contract-consistency-tester"
+      description: "契约测试：Zod Schema一致性校验、sim/real响应结构一致性"
+    - name: "unit"
+      skill: "test-runner"
+      layer: "unit"
+      description: "代码测试：单元测试、集成测试、Schema校验"
+    - name: "browser"
+      skill: "test-runner"
+      layer: "browser"
+      description: "浏览器测试：Playwright自动化、截图对比"
+    - name: "whitebox"
+      skill: "test-runner"
+      layer: "whitebox"
+      description: "白盒测试：状态覆盖、路径覆盖、边界注入"
+    - name: "visual"
+      skill: "visual-regression-runner"
+      description: "视觉回归：设计稿→代码视觉一致性校验"

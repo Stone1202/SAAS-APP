@@ -1,0 +1,15 @@
+skill:
+  id: "arch-scaffold-reviewer"
+  name: "脚手架与分层评审器"
+  version: "1.0.0"
+  agents: ["arch-agent"]
+  triggers: ["/new 阶段2-架构Gate", "/change 阶段A2-架构Gate", "/fix 阶段B2-架构Gate"]
+  description: "架构Gate评审：契约齐备性、分层合规、IndexedDB状态闭环、环境无关"
+  inputs:
+    - "FD Agent 产出的模块代码"
+    - "projects/{project}/docs/04-arch/api-specs.yml"
+    - "projects/{project}/docs/04-arch/db-schema.yml"
+  outputs:
+    - type: "gate_report"
+      description: ".codebuddy/reports/arch-gate-{feature}.md 通过/退回结论与问题清单"
+  dependencies: ["arch-contract-definer", "arch-tech-stack-keeper"]

@@ -1,0 +1,372 @@
+{
+  "title": "AI-SCRM v1.0.1 AC验收报告",
+  "timestamp": "2026-07-20T01:48:28.821Z",
+  "base_url": "http://localhost:5176",
+  "summary": {
+    "total": 60,
+    "passed": 57,
+    "failed": 3,
+    "pass_rate": "95.0%"
+  },
+  "scenarios": {
+    "SC-TNT-001": {
+      "result": "PASS",
+      "pages": [
+        "/tenant/workbench",
+        "/tenant/customers",
+        "/tenant/tags"
+      ]
+    },
+    "SC-TNT-002": {
+      "result": "PASS",
+      "pages": [
+        "/tenant/communication",
+        "/tenant/communication/records",
+        "/tenant/scripts"
+      ]
+    },
+    "SC-TNT-003": {
+      "result": "PASS",
+      "pages": [
+        "/tenant/communication",
+        "/tenant/scripts",
+        "/tenant/analytics/communication"
+      ]
+    },
+    "SC-TNT-004": {
+      "result": "FAIL",
+      "pages": [
+        "/tenant/todos",
+        "/tenant/calendar",
+        "/tenant/customer-360",
+        "/tenant/segmentation"
+      ]
+    },
+    "SC-OPS-001": {
+      "result": "PASS",
+      "pages": [
+        "/ops/workbench",
+        "/ops/tenants",
+        "/ops/version-matrix",
+        "/ops/subscriptions",
+        "/ops/ai-usage",
+        "/ops/revenue"
+      ]
+    }
+  },
+  "items": [
+    {
+      "name": "step1_tnt_tenant_workbench",
+      "ok": true,
+      "detail": "/tenant/workbench → title=\"AI-SCRM 智能SCRM平台\" content=549chars"
+    },
+    {
+      "name": "step1_tnt_tenant_customers",
+      "ok": true,
+      "detail": "/tenant/customers → title=\"AI-SCRM 智能SCRM平台\" content=468chars"
+    },
+    {
+      "name": "step1_tnt_tenant_tags",
+      "ok": true,
+      "detail": "/tenant/tags → title=\"AI-SCRM 智能SCRM平台\" content=238chars"
+    },
+    {
+      "name": "step1_tnt_tenant_communication",
+      "ok": true,
+      "detail": "/tenant/communication → title=\"AI-SCRM 智能SCRM平台\" content=461chars"
+    },
+    {
+      "name": "step1_tnt_tenant_communication_records",
+      "ok": true,
+      "detail": "/tenant/communication/records → title=\"AI-SCRM 智能SCRM平台\" content=517chars"
+    },
+    {
+      "name": "step1_tnt_tenant_scripts",
+      "ok": true,
+      "detail": "/tenant/scripts → title=\"AI-SCRM 智能SCRM平台\" content=492chars"
+    },
+    {
+      "name": "step1_tnt_tenant_todos",
+      "ok": true,
+      "detail": "/tenant/todos → title=\"AI-SCRM 智能SCRM平台\" content=360chars"
+    },
+    {
+      "name": "step1_tnt_tenant_calendar",
+      "ok": false,
+      "detail": "/tenant/calendar → title=\"AI-SCRM 智能SCRM平台\" content=15chars"
+    },
+    {
+      "name": "step1_tnt_tenant_customer-360",
+      "ok": true,
+      "detail": "/tenant/customer-360 → title=\"AI-SCRM 智能SCRM平台\" content=193chars"
+    },
+    {
+      "name": "step1_tnt_tenant_segmentation",
+      "ok": true,
+      "detail": "/tenant/segmentation → title=\"AI-SCRM 智能SCRM平台\" content=155chars"
+    },
+    {
+      "name": "step1_tnt_tenant_analytics_communication",
+      "ok": true,
+      "detail": "/tenant/analytics/communication → title=\"AI-SCRM 智能SCRM平台\" content=335chars"
+    },
+    {
+      "name": "step1_tnt_tenant_analytics_conversion",
+      "ok": true,
+      "detail": "/tenant/analytics/conversion → title=\"AI-SCRM 智能SCRM平台\" content=284chars"
+    },
+    {
+      "name": "step1_tnt_tenant_settings",
+      "ok": true,
+      "detail": "/tenant/settings → title=\"AI-SCRM 智能SCRM平台\" content=150chars"
+    },
+    {
+      "name": "step1_ops_ops_workbench",
+      "ok": true,
+      "detail": "/ops/workbench → title=\"AI-SCRM 智能SCRM平台\" content=285chars"
+    },
+    {
+      "name": "step1_ops_ops_tenants",
+      "ok": true,
+      "detail": "/ops/tenants → title=\"AI-SCRM 智能SCRM平台\" content=342chars"
+    },
+    {
+      "name": "step1_ops_ops_version-matrix",
+      "ok": true,
+      "detail": "/ops/version-matrix → title=\"AI-SCRM 智能SCRM平台\" content=339chars"
+    },
+    {
+      "name": "step1_ops_ops_subscriptions",
+      "ok": true,
+      "detail": "/ops/subscriptions → title=\"AI-SCRM 智能SCRM平台\" content=265chars"
+    },
+    {
+      "name": "step1_ops_ops_ai-usage",
+      "ok": true,
+      "detail": "/ops/ai-usage → title=\"AI-SCRM 智能SCRM平台\" content=219chars"
+    },
+    {
+      "name": "step1_ops_ops_revenue",
+      "ok": true,
+      "detail": "/ops/revenue → title=\"AI-SCRM 智能SCRM平台\" content=330chars"
+    },
+    {
+      "name": "step1_customer_detail",
+      "ok": true,
+      "detail": "/tenant/customers/1 → title=\"AI-SCRM 智能SCRM平台\" content=104chars"
+    },
+    {
+      "name": "step1_order_detail",
+      "ok": true,
+      "detail": "/ops/subscriptions/orders/1 → title=\"AI-SCRM 智能SCRM平台\" content=73chars"
+    },
+    {
+      "name": "step2_sc001_tenant_workbench",
+      "ok": true,
+      "detail": "/tenant/workbench → title=\"AI-SCRM 智能SCRM平台\" content=549chars"
+    },
+    {
+      "name": "step2_sc001_tenant_customers",
+      "ok": true,
+      "detail": "/tenant/customers → title=\"AI-SCRM 智能SCRM平台\" content=468chars"
+    },
+    {
+      "name": "step2_sc001_tenant_tags",
+      "ok": true,
+      "detail": "/tenant/tags → title=\"AI-SCRM 智能SCRM平台\" content=238chars"
+    },
+    {
+      "name": "SC-TNT-001 客户管理全流程闭环",
+      "ok": true,
+      "detail": "/tenant/workbench → /tenant/customers → /tenant/tags"
+    },
+    {
+      "name": "step2_sc002_tenant_communication",
+      "ok": true,
+      "detail": "/tenant/communication → title=\"AI-SCRM 智能SCRM平台\" content=461chars"
+    },
+    {
+      "name": "step2_sc002_tenant_communication_records",
+      "ok": true,
+      "detail": "/tenant/communication/records → title=\"AI-SCRM 智能SCRM平台\" content=517chars"
+    },
+    {
+      "name": "step2_sc002_tenant_scripts",
+      "ok": true,
+      "detail": "/tenant/scripts → title=\"AI-SCRM 智能SCRM平台\" content=492chars"
+    },
+    {
+      "name": "SC-TNT-002 统一沟通全流程闭环",
+      "ok": true,
+      "detail": "/tenant/communication → /tenant/communication/records → /tenant/scripts"
+    },
+    {
+      "name": "step2_sc003_tenant_communication",
+      "ok": true,
+      "detail": "/tenant/communication → title=\"AI-SCRM 智能SCRM平台\" content=461chars"
+    },
+    {
+      "name": "step2_sc003_tenant_scripts",
+      "ok": true,
+      "detail": "/tenant/scripts → title=\"AI-SCRM 智能SCRM平台\" content=492chars"
+    },
+    {
+      "name": "step2_sc003_tenant_analytics_communication",
+      "ok": true,
+      "detail": "/tenant/analytics/communication → title=\"AI-SCRM 智能SCRM平台\" content=335chars"
+    },
+    {
+      "name": "SC-TNT-003 AI沟通辅助全流程闭环",
+      "ok": true,
+      "detail": "/tenant/communication → /tenant/scripts → /tenant/analytics/communication"
+    },
+    {
+      "name": "step2_sc004_tenant_todos",
+      "ok": true,
+      "detail": "/tenant/todos → title=\"AI-SCRM 智能SCRM平台\" content=360chars"
+    },
+    {
+      "name": "step2_sc004_tenant_calendar",
+      "ok": false,
+      "detail": "/tenant/calendar → title=\"AI-SCRM 智能SCRM平台\" content=15chars"
+    },
+    {
+      "name": "step2_sc004_tenant_customer-360",
+      "ok": true,
+      "detail": "/tenant/customer-360 → title=\"AI-SCRM 智能SCRM平台\" content=193chars"
+    },
+    {
+      "name": "step2_sc004_tenant_segmentation",
+      "ok": true,
+      "detail": "/tenant/segmentation → title=\"AI-SCRM 智能SCRM平台\" content=155chars"
+    },
+    {
+      "name": "SC-TNT-004 沟通后AI处理全流程闭环",
+      "ok": false,
+      "detail": "/tenant/todos → /tenant/calendar → /tenant/customer-360 → /tenant/segmentation"
+    },
+    {
+      "name": "step2_sc005_ops_workbench",
+      "ok": true,
+      "detail": "/ops/workbench → title=\"AI-SCRM 智能SCRM平台\" content=285chars"
+    },
+    {
+      "name": "step2_sc005_ops_tenants",
+      "ok": true,
+      "detail": "/ops/tenants → title=\"AI-SCRM 智能SCRM平台\" content=342chars"
+    },
+    {
+      "name": "step2_sc005_ops_version-matrix",
+      "ok": true,
+      "detail": "/ops/version-matrix → title=\"AI-SCRM 智能SCRM平台\" content=339chars"
+    },
+    {
+      "name": "step2_sc005_ops_subscriptions",
+      "ok": true,
+      "detail": "/ops/subscriptions → title=\"AI-SCRM 智能SCRM平台\" content=265chars"
+    },
+    {
+      "name": "step2_sc005_ops_ai-usage",
+      "ok": true,
+      "detail": "/ops/ai-usage → title=\"AI-SCRM 智能SCRM平台\" content=219chars"
+    },
+    {
+      "name": "step2_sc005_ops_revenue",
+      "ok": true,
+      "detail": "/ops/revenue → title=\"AI-SCRM 智能SCRM平台\" content=330chars"
+    },
+    {
+      "name": "SC-OPS-001 SAAS商业全流程闭环",
+      "ok": true,
+      "detail": "/ops/workbench → /ops/tenants → /ops/version-matrix → /ops/subscriptions → /ops/ai-usage → /ops/revenue"
+    },
+    {
+      "name": "UX-侧边栏导航(租户)",
+      "ok": true,
+      "detail": "19 个菜单项"
+    },
+    {
+      "name": "UX-侧边栏导航(运营)",
+      "ok": true,
+      "detail": "12 个菜单项"
+    },
+    {
+      "name": "UX-跨系统导航(租户→运营)",
+      "ok": true,
+      "detail": "AI-SCRM 智能SCRM平台"
+    },
+    {
+      "name": "UX-404页面处理",
+      "ok": true,
+      "detail": "status: 200"
+    },
+    {
+      "name": "step4_newuser_workbench",
+      "ok": true,
+      "detail": "/tenant/workbench → title=\"AI-SCRM 智能SCRM平台\" content=549chars"
+    },
+    {
+      "name": "新用户-客户列表(空状态)",
+      "ok": true,
+      "detail": "已有数据"
+    },
+    {
+      "name": "step4_admin_settings",
+      "ok": true,
+      "detail": "/tenant/settings → title=\"AI-SCRM 智能SCRM平台\" content=150chars"
+    },
+    {
+      "name": "step4_admin_tenants",
+      "ok": true,
+      "detail": "/ops/tenants → title=\"AI-SCRM 智能SCRM平台\" content=342chars"
+    },
+    {
+      "name": "step4_admin_subscriptions",
+      "ok": true,
+      "detail": "/ops/subscriptions → title=\"AI-SCRM 智能SCRM平台\" content=265chars"
+    },
+    {
+      "name": "step4_admin_revenue",
+      "ok": true,
+      "detail": "/ops/revenue → title=\"AI-SCRM 智能SCRM平台\" content=330chars"
+    },
+    {
+      "name": "step4_vip_analytics",
+      "ok": true,
+      "detail": "/tenant/analytics/communication → title=\"AI-SCRM 智能SCRM平台\" content=335chars"
+    },
+    {
+      "name": "step4_vip_conversion",
+      "ok": true,
+      "detail": "/tenant/analytics/conversion → title=\"AI-SCRM 智能SCRM平台\" content=284chars"
+    },
+    {
+      "name": "step4_po_workbench",
+      "ok": true,
+      "detail": "/ops/workbench → title=\"AI-SCRM 智能SCRM平台\" content=285chars"
+    },
+    {
+      "name": "step4_po_version",
+      "ok": true,
+      "detail": "/ops/version-matrix → title=\"AI-SCRM 智能SCRM平台\" content=339chars"
+    },
+    {
+      "name": "step4_po_revenue",
+      "ok": true,
+      "detail": "/ops/revenue → title=\"AI-SCRM 智能SCRM平台\" content=330chars"
+    }
+  ],
+  "screenshots": 50,
+  "bugs": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0
+  },
+  "known_gaps": [
+    "企微授权管理(WX)模块页面尚未实现独立路由（在系统设置内）",
+    "企微客户群管理页面未独立实现",
+    "9个v1.0.1新增Schema未补全（企微3实体/AI处理5实体/AI用量1实体）",
+    "H5移动端适配待Sprint 6实施"
+  ]
+}

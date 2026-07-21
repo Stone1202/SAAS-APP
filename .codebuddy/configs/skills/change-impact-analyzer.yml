@@ -1,0 +1,24 @@
+# Skill: 变更影响分析器（Change Impact Analyzer）
+skill:
+  id: "change-impact-analyzer"
+  name: "change-impact-analyzer"
+  agent: "ux-agent,ba-agent"
+  description: "分析组件、页面、数据字段变更的影响范围，从三个维度（组件级/页面级/数据流）评估"
+  triggers:
+    - command: "/change"
+      stage: "阶段A1"
+      description: "/change 命令的第一步"
+    - event: "prototype_changed"
+    - event: "design_doc_changed"
+  workflow:
+    - name: "组件级影响"
+      rule: "输入组件名→查询component-library/interaction-patterns/UI文档→输出所有引用位置"
+    - name: "页面级影响"
+      rule: "输入页面→查询mapping.json/REQ/TC/src→输出关联文档与代码"
+    - name: "数据流影响"
+      rule: "输入字段→查询信息流/ER/sim.ts→输出上下游"
+    - name: "风险提示"
+      rule: "影响>5页建议评审，影响>10页建议分批"
+  output:
+    - type: "变更影响分析报告"
+      description: "文档影响/代码影响/测试影响/总预估工时/风险提示"

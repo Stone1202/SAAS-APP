@@ -1,0 +1,108 @@
+# ============================================
+# 产品路线图 — AI-SCRM v1.0.0
+# PO Agent 产出（po-planning-flow po-4）
+# ============================================
+
+version: "1.0.0"
+project: "AI-SCRM"
+created: "2026-07-18"
+owner: "po-agent"
+
+vision: |
+  成为大健康/药业/美妆/百货行业首选的SAAS SCRM产品，
+  以AI智能体为企业提供可选的销售智能化升维能力，
+  以传统SCRM保障基础销售管理需求。
+
+roadmap:
+  - phase: "Phase 1: MVP"
+    timeline: "Week 1-8"
+    goal: "双系统核心功能上线，具备SAAS商业化基础"
+    milestones:
+      - id: "M1.1"
+        week: "Week 2"
+        name: "双系统骨架可用"
+        deliverables:
+          - "租户后台可登录、工作台可用"
+          - "运营后台可登录、工作台可用"
+      - id: "M1.2"
+        week: "Week 4"
+        name: "客户+沟通闭环"
+        deliverables:
+          - "客户CRUD+分群+标签"
+          - "统一沟通工作台"
+      - id: "M1.3"
+        week: "Week 6"
+        name: "SOP+待办上线"
+        deliverables:
+          - "SOP编排+自动执行"
+          - "待办+日历视图"
+      - id: "M1.4"
+        week: "Week 8"
+        name: "SAAS商业引擎上线"
+        deliverables:
+          - "租户管理+健康度评分"
+          - "版本矩阵+定价配置"
+          - "订单+营收分析"
+
+  - phase: "Phase 2: AI增强"
+    timeline: "Week 9-12"
+    goal: "AI智能体集成+权限完善+移动端起步"
+    milestones:
+      - id: "M2.1"
+        week: "Week 10"
+        name: "AI智能体上线"
+        deliverables:
+          - "Coze对接（智能回复+自动处理链）"
+          - "AI用量统计+计费"
+          - "数据看板"
+      - id: "M2.2"
+        week: "Week 12"
+        name: "权限+移动端"
+        deliverables:
+          - "三级权限体系（RBAC+数据域+字段）"
+          - "移动H5核心功能"
+
+  - phase: "Phase 3: 规模化"
+    timeline: "v1.1.0（Sprint 7-8）"
+    goal: "移动APP+行业模板深化+API开放"
+    milestones:
+      - id: "M3.1"
+        name: "移动APP核心功能"
+        deliverables:
+          - "原生APP（客户+待办+消息）"
+      - id: "M3.2"
+        name: "行业模板深化"
+        deliverables:
+          - "4行业SOP模板库深化"
+          - "行业数据分析模型"
+      - id: "M3.3"
+        name: "开放平台"
+        deliverables:
+          - "API开放（企业版）"
+          - "Webhook集成"
+
+# ============================================
+# 关键假设与风险
+# ============================================
+assumptions:
+  - "Coze/火山API在Q3-Q4保持稳定可用"
+  - "研发团队有React+TypeScript经验"
+  - "4行业有种子客户参与验证"
+  - "SAAS运营团队Q3组建完成"
+
+risks:
+  - id: "R-001"
+    description: "双系统并行开发资源冲突"
+    probability: "中"
+    impact: "高"
+    mitigation: "Sprint 1-3侧重租户后台，Sprint 4集中运营后台"
+  - id: "R-002"
+    description: "AI智能体效果不达预期"
+    probability: "中"
+    impact: "中"
+    mitigation: "传统SCRM独立可用，AI作为增强层不受阻"
+  - id: "R-003"
+    description: "移动端交付延期"
+    probability: "低"
+    impact: "中"
+    mitigation: "H5先行降低风险，APP预留足够buffer"

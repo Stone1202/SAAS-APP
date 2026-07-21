@@ -1,0 +1,140 @@
+# ============================================
+# UI组件知识库 — 组件变体定义
+# 版本：v3.0.0
+# 最后更新：2026-07-16
+version: "3.0.0"
+# ============================================
+#
+# 参考：Ant Design + Apple HIG + 主流设计系统
+# 核心原则：组件原子化 + 变体完整性 + Design Token引用
+# ============================================
+
+ui_components:
+  # ============================================
+  # 1. 按钮（Button）
+  # ============================================
+  button:
+    variants:
+      - { name: "Primary", bg: "var(--color-primary-500)", text: "White", usage: "主操作" }
+      - { name: "Success", bg: "var(--color-success)", text: "White", usage: "成功操作" }
+      - { name: "Danger", bg: "var(--color-danger)", text: "White", usage: "危险操作/删除" }
+      - { name: "Warning", bg: "var(--color-warning)", text: "White", usage: "警告操作" }
+      - { name: "Outline", bg: "Transparent", text: "var(--color-primary-500)", border: "var(--color-primary-500)", usage: "次要操作" }
+      - { name: "Ghost", bg: "Transparent", text: "var(--color-neutral-700)", usage: "取消/幽灵按钮" }
+    states: ["default", "hover", "active", "disabled", "loading", "error"]
+    sizes:
+      - { name: "sm", height: 32, padding: "8px 16px", font: 14, usage: "标签筛选/话术操作" }
+      - { name: "md", height: 40, padding: "12px 24px", font: 16, usage: "标准操作按钮" }
+      - { name: "lg", height: 48, padding: "16px 32px", font: 16, usage: "页面主操作/发送" }
+      - { name: "xl", height: 56, padding: "20px 40px", font: 18, usage: "驾驶舱导出/海报下载" }
+
+  # ============================================
+  # 2. 输入框（Input）
+  # ============================================
+  input:
+    variants: ["text", "password", "number", "textarea", "search", "select"]
+    states: ["default", "focus", "error", "disabled", "readonly"]
+    rules:
+      - "失焦校验 + 提交全量校验"
+      - "错误提示：输入框下方红色文字"
+      - "必填标识：红色 * 标记"
+      - "内容超长：实时计数 + 超限变红"
+      - "dirty检测：未保存→二次确认"
+
+  # ============================================
+  # 3. 表格（Table）
+  # ============================================
+  table:
+    features: ["表头固定", "分页", "排序", "行hover高亮", "批量选择", "列宽可调"]
+    states: ["加载中(骨架屏)", "空列表(空状态插画)", "筛选无结果", "某行已停用(opacity 0.5)"]
+    rules:
+      - "标准表格：表头固定/分页/排序/行hover高亮"
+      - "行操作：编辑/查看/删除/停用启用 按钮在行右侧"
+      - "批量操作：勾选多行→顶部批量操作栏"
+
+  # ============================================
+  # 4. 卡片（Card）
+  # ============================================
+  card:
+    variants: ["标准卡片", "统计卡片", "话术卡片", "告警行", "评分盘"]
+    states: ["normal", "hover(shadow-md+translateY(-2px))", "selected", "disabled(opacity 0.4)"]
+    rules:
+      - "hover效果：shadow-md + translateY(-2px) + 操作按钮从不透明度0→1"
+      - "圆角：var(--radius-card) = 8px"
+      - "内边距：var(--spacing-16)"
+
+  # ============================================
+  # 5. 弹窗/抽屉（Modal/Drawer）
+  # ============================================
+  modal:
+    types:
+      - { name: "小型确认弹窗", width: 420, usage: "删除确认/误报标记" }
+      - { name: "中型表单弹窗", width: 600, usage: "创建/编辑表单" }
+      - { name: "大型预览弹窗", width: 960, usage: "报表预览/海报预览" }
+    drawer:
+      - { name: "侧边抽屉", width: 480, usage: "详情/编辑" }
+      - { name: "侧边栏面板", width: 360, usage: "企微内嵌面板" }
+    close_behavior: "点蒙层/✕/ESC均可关闭 → dirty检测 → 二次确认"
+    dirty_check: "未保存→「内容未保存，确定放弃？」→ [确认放弃] / [继续编辑]"
+
+  # ============================================
+  # 6. 反馈组件
+  # ============================================
+  feedback:
+    toast:
+      - { type: "success", duration: "3s", usage: "操作成功" }
+      - { type: "warning", duration: "5s", usage: "部分成功/降级提醒" }
+      - { type: "error", duration: "手动关闭", usage: "操作失败/API错误" }
+    notification:
+      usage: "告警到达/日报推送/意向评分变化"
+      behavior: "常驻通知栏，点击跳转"
+    confirm:
+      usage: "删除/放弃编辑/停用"
+    tooltip:
+      usage: "hover提示，跟随鼠标"
+    inline_banner:
+      usage: "页面级提示（不阻断操作），可手动关闭"
+
+  # ============================================
+  # 7. 列表模式
+  # ============================================
+  list_modes:
+    - { mode: "标准表格", rule: "表头固定/分页/排序/行hover高亮", usage: "管理页" }
+    - { mode: "卡片列表", rule: "网格布局/hover上浮阴影/操作按钮右侧", usage: "模板库/历史" }
+    - { mode: "时间轴", rule: "左侧时间线+右侧内容卡片/今天高亮", usage: "生命周期/告警历史" }
+    - { mode: "筛选器", rule: "顶部横向多条件筛选+重置/搜索关键词", usage: "话术库/质检记录" }
+
+  # ============================================
+  # 8. 详情展示模式
+  # ============================================
+  detail_modes:
+    - { mode: "侧边抽屉", rule: "右侧滑出/宽度480px/遮罩半透明", usage: "编辑/详情" }
+    - { mode: "内嵌卡片", rule: "信息分卡片区块展示/可折叠", usage: "驾驶舱/画像" }
+    - { mode: "全屏弹窗", rule: "居中960px宽/滚动内容区/底部固定操作栏", usage: "编辑器/预览" }
+
+  # ============================================
+  # 9. 状态模板（统一）
+  # ============================================
+  state_templates:
+    loading:
+      skeleton: "骨架屏（列表/卡片灰色占位 + shimmer动画）"
+      spinner: "局部spinner（按钮/面板）"
+      fullscreen: "全屏loading（页面首次加载）"
+    empty:
+      no_data: "空状态插画 + 引导按钮"
+      no_result: "「没有匹配{筛选条件}的结果」+ 「清除筛选」按钮"
+      no_permission: "无权限提示"
+    error:
+      api_error: "API失败红色提示 + 重试按钮"
+      network_error: "网络错误提示"
+      timeout: "超时提示"
+      no_permission: "权限不足提示"
+
+  # ============================================
+  # 10. 组件变体完整性规则
+  # ============================================
+  variant_rules:
+    minimum_states: ["default", "hover", "active", "disabled", "loading", "error"]
+    rule: "每个组件必须定义以上6种状态变体，缺一即C-D2红线不通过"
+    atomic_principle: "先定义基础组件，再组装页面；禁止在页面中直接绘制未定义的组件样式"
+    update_principle: "修改基础组件 = 所有引用自动更新"

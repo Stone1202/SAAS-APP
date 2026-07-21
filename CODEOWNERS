@@ -1,0 +1,17 @@
+# CODEOWNERS — 控制各目录的合并审批权
+# 格式：目录路径  @Gitee用户名
+# 新增成员时在此追加 projects/{member}/  @{member}
+
+# === 流程引擎（仅 admin） ===
+.codebuddy/configs/           @jojo180712
+.codebuddy/scripts/           @jojo180712
+.codebuddy/knowledge/common/  @jojo180712
+deploy/                       @jojo180712
+.access-control.yml           @jojo180712
+
+# === 项目代码（各自 owner） ===
+projects/jojo/                @jojo180712
+
+# === 共享知识库（admin 审核） ===
+.codebuddy/knowledge/domains/        @jojo180712
+.codebuddy/knowledge/common/经验库/   @jojo180712

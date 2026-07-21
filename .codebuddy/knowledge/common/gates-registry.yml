@@ -1,0 +1,852 @@
+# ============================================
+# gates-registry.yml — 全流程门禁注册中心
+# 版本：v1.8.0
+# 创建：2026-07-17
+# 定位：每个阶段的产物完整性校验规则单一事实源
+# 引用方：各workflow.yml通过gates_reference引用，project-lifecycle.yml各stage引用
+# 维护：新增阶段/调整产物/修改校验逻辑时只需修改本文件
+# 关联方案：audit-reports/POM门禁治理与铁律统一管理架构方案-2026-07-17.md
+# ============================================
+
+version: "1.8.0"
+last_updated: "2026-07-21"
+
+# V1.8.0新增：G-PO-05(关键链分析) + G-REQ-20(端到端闭环) + G-DES-07(设计上下文)
+# V1.7.0新增：G-LEARN-01~05 独立学习阶段门禁（learn-project V7.0.0场景深度还原）
+# V1.6.0新增：G-REQ-19 状态机中文命名门禁
+# V1.5.0新增：G-REQ-18(NFR章节存在) + G-ARCH-06(NFR识别完成)——非功能需求主题识别
+# V1.4.0新增：G-REQ-17 UC格式完整性门禁——根因修复：防止UC只列表格不写详细说明
+# V1.3.0新增：Brain门禁——每个工作流注入大脑后，门禁检查大脑推理是否执行
+# 新增：G-REQ-16(GREQ-大脑推理) G-DES-06 G-ARCH-05 G-DEV-03 G-TEST-03 G-ACC-03 G-CLOSE-05(GCLOSE-大脑进化)
+
+# ============================================
+# 门禁通用定义
+# ============================================
+gate_definitions:
+  gate_type:
+    hard_gate: "硬门禁——产物缺失则阻止进入下一阶段，PM必须驳回"
+    soft_gate: "软门禁——产物缺失则警告，允许人工确认后继续"
+  check_method:
+    file_exists: "检查文件是否存在"
+    content_pattern: "检查文件内容是否包含指定模式（正则/关键词）"
+    section_exists: "检查文档章节是否存在"
+    count_check: "检查编号数量是否≥N"
+    cross_reference: "交叉引用检查（如FN是否在UC/PG/矩阵中全部出现）"
+  enforcement_rule: "PM在各stage checkpoint时按对应gates逐条校验，任一hard_gate不通过则驳回主导Agent"
+
+# ============================================
+# 各阶段门禁（按POM 8阶段组织）
+# ============================================
+stages:
+
+  # ---- Stage-0 脑暴 ----
+  brainstorm:
+    owner: "bs-agent"
+    workflow: "brainstorm.yml"
+    gates:
+      - id: "G-BS-01"
+        type: "hard_gate"
+        name: "三流草图齐全"
+        check: "content_pattern"
+        target: "confirmed/BR-脑暴文档-确认稿.md"
+        pattern: "业务流|信息流|资金流"
+        on_fail: "阻止确认，BS Agent补充三流草图"
+      - id: "G-BS-02"
+        type: "hard_gate"
+        name: "BO/BG映射"
+        check: "content_pattern"
+        target: "confirmed/BR-脑暴文档-确认稿.md"
+        pattern: "BG-|BO-"
+        on_fail: "阻止确认，BS Agent补充BO/BG映射"
+      - id: "G-BS-03"
+        type: "hard_gate"
+        name: "领域知识清单"
+        check: "content_pattern"
+        target: "confirmed/BR-脑暴文档-确认稿.md"
+        pattern: "领域知识清单"
+        on_fail: "阻止确认，BS Agent补充领域知识清单"
+
+  # ---- Stage-2 需求分析（核心修复）----
+  requirement:
+    owner: "ba-agent"
+    workflow: "requirement-flow.yml"
+    description: |
+      V1.0.0核心修复：原requirement-flow.yml §7只有BA-11"缺一不可"文字铁律，
+      无可执行校验。现固化为14条硬门禁，PM在stage-2 Review时逐条校验。
+    gates:
+      - id: "G-REQ-01"
+        type: "hard_gate"
+        name: "FN功能编号存在"
+        check: "content_pattern"
+        target: "docs/01-requirements/REQ-*.md"
+        pattern: "FN-.*-\\d{3}"
+        min_count: 1
+        on_fail: "阻止进入设计阶段，BA补充FN编号用例"
+      - id: "G-REQ-02"
+        type: "hard_gate"
+        name: "UC用例编号存在"
+        check: "content_pattern"
+        target: "docs/01-requirements/REQ-*.md"
+        pattern: "UC-.*-\\d{3}"
+        min_count: 1
+        on_fail: "阻止进入设计阶段，BA补充UC用例"
+      - id: "G-REQ-03"
+        type: "hard_gate"
+        name: "业务泳道图存在"
+        check: "content_pattern"
+        target: "docs/01-requirements/REQ-*.md"
+        pattern: "swimlane|泳道"
+        on_fail: "阻止进入设计阶段，BA补充业务泳道图"
+      - id: "G-REQ-04"
+        type: "hard_gate"
+        name: "跨系统信息流转图存在"
+        check: "content_pattern"
+        target: "docs/01-requirements/REQ-*.md"
+        pattern: "信息流转|信息流图|cross_system"
+        on_fail: "阻止进入设计阶段，BA补充跨系统信息流转图"
+      - id: "G-REQ-05"
+        type: "hard_gate"
+        name: "状态机+状态过渡操作表存在"
+        check: "content_pattern"
+        target: "docs/01-requirements/REQ-*.md"
+        pattern: "stateDiagram|状态机|状态过渡操作表"
+        on_fail: "阻止进入设计阶段，BA补充状态机+过渡表"
+      - id: "G-REQ-06"
+        type: "hard_gate"
+        name: "业务操作矩阵存在"
+        check: "content_pattern"
+        target: "docs/01-requirements/REQ-*.md"
+        pattern: "业务操作矩阵|operation_matrix"
+        on_fail: "阻止进入设计阶段，BA补充业务操作矩阵"
+      - id: "G-REQ-07"
+        type: "hard_gate"
+        name: "BR业务规则编号存在"
+        check: "content_pattern"
+        target: "docs/01-requirements/REQ-*.md"
+        pattern: "BR-.*-\\d{3}"
+        min_count: 1
+        on_fail: "阻止进入设计阶段，BA补充BR业务规则"
+      - id: "G-REQ-08"
+        type: "hard_gate"
+        name: "ENT数据实体编号存在"
+        check: "content_pattern"
+        target: "docs/01-requirements/REQ-*.md"
+        pattern: "ENT-.*-\\d{3}"
+        min_count: 1
+        on_fail: "阻止进入设计阶段，BA补充ENT编号"
+      - id: "G-REQ-09"
+        type: "hard_gate"
+        name: "CONFIG集中配置清单存在"
+        check: "content_pattern"
+        target: "docs/01-requirements/REQ-*.md"
+        pattern: "CONFIG-.*-\\d{3}"
+        on_fail: "阻止进入设计阶段，BA补充CONFIG清单"
+      - id: "G-REQ-10"
+        type: "hard_gate"
+        name: "METRIC统计指标清单存在"
+        check: "content_pattern"
+        target: "docs/01-requirements/REQ-*.md"
+        pattern: "METRIC-.*-\\d{3}"
+        on_fail: "阻止进入设计阶段，BA补充METRIC清单"
+      - id: "G-REQ-11"
+        type: "hard_gate"
+        name: "系统类型声明存在"
+        check: "content_pattern"
+        target: "docs/01-requirements/REQ-*.md"
+        pattern: "system_declaration|系统类型声明"
+        on_fail: "阻止进入设计阶段，BA补充系统类型声明"
+      - id: "G-REQ-12"
+        type: "hard_gate"
+        name: "五类图齐全"
+        check: "section_exists"
+        target: "docs/01-requirements/REQ-*.md"
+        required_sections:
+          - "业务流程图"
+          - "信息流转图"
+          - "状态机"
+          - "业务时序图"
+          - "三方接口时序图"
+        on_fail: "阻止进入设计阶段，BA补充缺失的图类"
+      - id: "G-REQ-13"
+        type: "hard_gate"
+        name: "BO/BG映射存在"
+        check: "content_pattern"
+        target: "docs/01-requirements/REQ-*.md"
+        pattern: "BG-|BO-"
+        on_fail: "阻止进入设计阶段，BA补充BO/BG映射"
+      - id: "G-REQ-14"
+        type: "hard_gate"
+        name: "验收标准双层矩阵存在"
+        check: "content_pattern"
+        target: "docs/01-requirements/REQ-*.md"
+        pattern: "验收标准|SC-.*-\\d{3}|Given-When-Then|Give-When-Then"
+        on_fail: "阻止进入设计阶段，BA补充验收标准"
+      - id: "G-REQ-15"
+        type: "hard_gate"
+        name: "系统常识完整性检查（V3.3.0新增）"
+        check: "file_exists"
+        target: ".codebuddy/reports/blind-spot-reports/BSR-{project}-*.json"
+        description: |
+          V3.3.0新增——这不是检查PRD内容，而是检查system-common-sense-analyzer是否已执行。
+          AI基于系统类型声明+7层推理模型发现的需求盲区报告必须存在，
+          且BA对每个盲区（严重/重要级别）有明确的「纳入」或「排除」决策记录。
+          PM检查：①盲区报告文件存在 ②严重级盲区有决策记录 ③无「pending」状态的盲区
+        on_fail: "阻止进入设计阶段。PM驳回BA：系统常识盲区尚未分析或决策。BA必须调用system-common-sense-analyzer产出盲区报告，并确认所有盲区的处理决策。"
+      - id: "G-REQ-16"
+        type: "hard_gate"
+        name: "大脑推理完整性（V5.1.0新增）"
+        check: "content_pattern"
+        target: "docs/01-requirements/REQ-*.md"
+        pattern: "brain_memory_import|quality_forecast|history_correlation|brain_sync_export"
+        description: |
+          V5.1.0新增：检查BA大脑推理是否已执行并产出推理记录。
+          需求大脑必须完成：①质量预测推理（FN级风险评分）②历史关联推理（特征指纹匹配）
+          ③大脑记忆导入（加载上版本BA记忆）④大脑同步导出（向UX/Arch/QA输出）
+        on_fail: "阻止进入设计阶段。PM驳回BA：大脑推理未完整执行。BA必须完成brain_memory_import加载+quality_predictor推理+history_correlator推理+brain_sync_export导出。"
+      - id: "G-REQ-17"
+        type: "hard_gate"
+        name: "UC格式完整性（V5.1.1根因修复：每个UC必须包含六段标准格式）"
+        check: "content_pattern"
+        target: "docs/01-requirements/REQ-*.md"
+        description: |
+          V5.1.1根因修复：防止UC只列表格不写详细说明。
+          每个UC必须包含6段标准格式：
+          ① 前置条件 ② 基本流程(分步编号+[手动]/[系统自动]/[事件驱动]标注)
+          ③ 备选流程 ④ 数据范围(R/W) ⑤ 后置条件 ⑥ 关联UC
+          PM检查：逐UC核对六段是否齐全，缺任一段视为PRD不合格。
+          根因：Sprint 3 PRD初版26个UC中仅1个有完整描述，因为门禁只检查UC编号存在(G-REQ-02)不检查UC格式完整性。
+        on_fail: "阻止进入设计阶段。PM驳回BA：UC格式不完整，必须补全六段标准格式（前置条件/基本流程/备选流程/数据范围/后置条件/关联UC）。token优化不可压缩用例说明内容。"
+      - id: "G-REQ-18"
+        type: "hard_gate"
+        name: "NFR非功能需求章节存在（V1.5.0新增：Arch识别→BA纳入PRD）"
+        check: "section_exists"
+        target: "docs/01-requirements/REQ-*.md"
+        required_sections:
+          - "非功能需求"
+        description: |
+          V1.5.0新增：PRD必须包含§18非功能需求章节，内容来源于Arch Agent的NFR主题识别。
+          Arch在架构评审step-0用AI辅助（nfr_topic_identification推理模块）识别8大NFR主题：
+          高并发/异步/同步/数据一致性/安全/可扩展/可用性/性能。
+          识别完成后NFR清单回传BA，BA纳入PRD §18。
+          PM检查：PRD §18 非功能需求章节存在 + 每个NFR主题有严重级别+实现建议+关联FN。
+        on_fail: "阻止进入设计阶段。PM驳回：NFR章节缺失。Arch执行NFR主题识别→回传BA→BA纳入PRD §18。"
+      - id: "G-REQ-19"
+        type: "hard_gate"
+        name: "状态机中文命名（V1.6.0新增：状态机节点必须使用中文状态名）"
+        check: "content_pattern"
+        target: "docs/01-requirements/REQ-*.md"
+        description: |
+          V1.6.0新增：状态机图(stateDiagram)节点必须使用中文状态名，不可使用英文原名。
+          英文enum值保留在数据实体(ENT)定义中，但状态机图和过渡操作表必须用中文。
+          示例：pending→待处理, processing→处理中, completed→已完成, failed→已失败。
+          PM检查：状态机Mermaid代码中不应出现纯英文状态名作为节点。
+        on_fail: "阻止进入设计阶段。PM驳回BA：状态机节点必须使用中文状态名，英文enum值保留在ENT定义中。"
+      - id: "G-REQ-20"
+        type: "hard_gate"
+        name: "端到端闭环校验完成（V1.8.0新增：每个FN做6链闭环检查）"
+        check: "content_pattern"
+        target: "docs/01-requirements/REQ-*.md"
+        pattern: "端到端闭环|e2e_closure|入口链|操作链|状态链|异常链|信息链|统计链"
+        description: |
+          V1.8.0新增：BA必须用AI辅助（e2e_closure_analyzer）对每个FN做6链闭环校验。
+          6链：入口链/操作链/状态链/异常链/信息链/统计链。
+          每个FN的闭环校验结果（含缺口清单+补充建议）必须体现在PRD中。
+          PM检查：PRD中每个FN有闭环校验结果，缺口已补全。
+        on_fail: "阻止进入设计阶段。PM驳回BA：端到端闭环校验未执行。BA必须执行e2e_closure_analyzer+planning_boundary_detector+comprehensive_uc_designer。"
+
+  # ---- Stage-3 设计 ----
+  design:
+    owner: "ux-agent"
+    workflow: "design-flow.yml"
+    gates:
+      - id: "G-DES-01"
+        type: "hard_gate"
+        name: "8章结构完整"
+        check: "section_exists"
+        target: "docs/02-design/DESIGN-*.md"
+        required_sections:
+          - "交互原则"
+          - "信息结构"
+          - "设计系统"
+          - "页面交互"
+          - "弹窗交互"
+          - "一致性检查"
+          - "页面草图"
+          - "交互跳转矩阵"
+        on_fail: "阻止进入架构阶段，UX补充缺失章节"
+      - id: "G-DES-02"
+        type: "hard_gate"
+        name: "UI元素编号体系完整"
+        check: "content_pattern"
+        target: "docs/02-design/DESIGN-*.md"
+        pattern: "PG-.*-B\\d+|PG-.*-BTN\\d+|PG-.*-IPT\\d+|PG-.*-M\\d+"
+        min_count: 10
+        on_fail: "阻止进入架构阶段，UX补充UI编号"
+      - id: "G-DES-03"
+        type: "hard_gate"
+        name: "页面草图覆盖所有页面"
+        check: "content_pattern"
+        target: "docs/02-design/DESIGN-*.md"
+        pattern: "页面草图|wireframe"
+        on_fail: "阻止进入架构阶段，UX补充页面草图"
+      - id: "G-DES-04"
+        type: "hard_gate"
+        name: "交互跳转矩阵存在"
+        check: "content_pattern"
+        target: "docs/02-design/DESIGN-*.md"
+        pattern: "交互跳转矩阵"
+        on_fail: "阻止进入架构阶段，UX补充跳转矩阵"
+      - id: "G-DES-05"
+        type: "hard_gate"
+        name: "PM红线C-D1~D9全部通过"
+        check: "content_pattern"
+        target: "docs/02-design/DESIGN-*.md"
+        pattern: "C-D1.*✅|C-D2.*✅|C-D3.*✅|C-D4.*✅|C-D5.*✅|C-D6.*✅|C-D7.*✅|C-D8.*✅|C-D9.*✅"
+        on_fail: "阻止进入架构阶段，UX修复未通过的红线"
+      - id: "G-DES-06"
+        type: "hard_gate"
+        name: "UX大脑推理完整性（V5.1.0新增）"
+        check: "content_pattern"
+        target: "docs/02-design/DESIGN-*.md"
+        pattern: "brain_memory_import|design_pattern_reasoning|interaction_flaw_detection|brain_sync_export"
+        description: |
+          V5.1.0新增：检查UX体验洞察大脑推理是否已执行。
+          UX大脑必须完成：①设计模式推理②交互缺陷预检③无障碍合规推理④终端适配推理
+          ⑤brain_memory_import加载⑥brain_sync_export导出
+        on_fail: "阻止进入架构阶段。PM驳回UX：大脑推理未完整执行。UX必须完成全部4个推理模块+brain_memory_import+brain_sync_export。"
+      - id: "G-DES-07"
+        type: "hard_gate"
+        name: "设计上下文+趋势+交互优化完成（V1.8.0新增）"
+        check: "content_pattern"
+        target: "docs/02-design/DESIGN-*.md"
+        pattern: "design_context|设计上下文|design_trend|设计趋势|interaction_optimization|交互优化"
+        description: |
+          V1.8.0新增：UX必须用AI辅助执行设计上下文合成（design_context_synthesizer）+
+          设计趋势学习（design_trend_learner）+ 交互体验优化（interaction_experience_optimizer）。
+          设计上下文摘要（1页纸）+ 设计语言推荐 + 尼尔森原则校验报告必须体现在设计文档中。
+          PM检查：设计文档包含设计上下文摘要+趋势推荐+交互优化建议。
+        on_fail: "阻止进入架构阶段。PM驳回UX：设计上下文/趋势/交互优化未执行。UX必须完成design_context_synthesizer+design_trend_learner+interaction_experience_optimizer。"
+
+  # ---- Stage-4 架构 ----
+  arch:
+    owner: "arch-agent"
+    workflow: "arch-flow.yml"
+    gates:
+      - id: "G-ARCH-01"
+        type: "hard_gate"
+        name: "路由映射表存在"
+        check: "content_pattern"
+        target: "docs/03-architecture/ARCH-*.md"
+        pattern: "route-contract|路由映射"
+        on_fail: "阻止进入开发阶段，Arch补充路由映射"
+      - id: "G-ARCH-02"
+        type: "hard_gate"
+        name: "运行骨架可启动"
+        check: "file_exists"
+        target: "projects/{project}/package.json"
+        on_fail: "阻止进入开发阶段，Arch补建运行骨架"
+      - id: "G-ARCH-03"
+        type: "hard_gate"
+        name: "sim/real开关契约"
+        check: "content_pattern"
+        target: "docs/03-architecture/ARCH-*.md"
+        pattern: "sim|real|VITE_MODE"
+        on_fail: "阻止进入开发阶段，Arch补充仿真开关契约"
+      - id: "G-ARCH-04"
+        type: "hard_gate"
+        name: "三段回溯表存在"
+        check: "content_pattern"
+        target: "docs/03-architecture/ARCH-*.md"
+        pattern: "回溯|traceability|需求→设计→架构"
+        on_fail: "阻止进入开发阶段，Arch补充三段回溯表"
+      - id: "G-ARCH-05"
+        type: "hard_gate"
+        name: "Arch大脑推理完整性（V5.1.0新增）"
+        check: "content_pattern"
+        target: "docs/03-architecture/ARCH-*.md"
+        pattern: "brain_memory_import|contract_defect_prediction|security_pattern_recognition|dependency_chain_reasoning|brain_sync_export"
+        description: |
+          V5.1.0新增：检查Arch架构决策大脑推理是否已执行。
+          Arch大脑必须完成：①契约缺陷预测②安全模式识别③依赖链推理
+          ④brain_memory_import加载⑤brain_sync_export导出
+        on_fail: "阻止进入开发阶段。PM驳回Arch：大脑推理未完整执行。Arch必须完成全部3个推理模块+brain_memory_import+brain_sync_export。"
+      - id: "G-ARCH-06"
+        type: "hard_gate"
+        name: "NFR主题识别完成（V1.5.0新增）"
+        check: "file_exists"
+        target: "docs/03-architecture/NFR-*.yml"
+        description: |
+          V1.5.0新增：Arch必须用AI辅助（nfr_topic_identification推理模块）识别NFR主题，
+          产出NFR主题清单（8大NFR主题×严重级别×实现建议×关联FN）。
+          8大NFR主题：高并发/异步/同步/数据一致性/安全/可扩展/可用性/性能。
+          NFR清单回传BA→PRD §18非功能需求章节。
+        on_fail: "阻止进入开发阶段。PM驳回Arch：NFR主题识别未执行。Arch必须执行step-0 NFR主题识别，产出NFR清单并回传BA。"
+
+  # ---- Stage-5 开发 ----
+  dev:
+    owner: "fd-agent"
+    workflow: "dev-flow.yml"
+    gates:
+      - id: "G-DEV-01"
+        type: "hard_gate"
+        name: "npm run dev可启动"
+        check: "file_exists"
+        target: "projects/{project}/package.json"
+        on_fail: "阻止进入测试阶段，FD修复启动问题"
+      - id: "G-DEV-02"
+        type: "hard_gate"
+        name: "compliance-checker通过"
+        check: "content_pattern"
+        target: "docs/04-development/DEV-*.md"
+        pattern: "compliance.*通过|checker.*passed"
+        on_fail: "阻止进入测试阶段，FD修复合规问题"
+      - id: "G-DEV-03"
+        type: "hard_gate"
+        name: "FD大脑推理完整性（V5.1.0新增）"
+        check: "content_pattern"
+        target: "docs/04-development/DEV-*.md"
+        pattern: "brain_memory_import|implementation_trap_prediction|component_reuse_reasoning|compliance_pattern_recognition|brain_sync_export"
+        description: |
+          V5.1.0新增：检查FD实现模式大脑推理是否已执行。
+          FD大脑必须完成：①实现陷阱预测②组件复用推理③合规模式识别④视觉回归风险预测
+          ⑤brain_memory_import加载⑥brain_sync_export导出
+        on_fail: "阻止进入测试阶段。PM驳回FD：大脑推理未完整执行。FD必须完成全部4个推理模块+brain_memory_import+brain_sync_export。"
+
+  # ---- Stage-6 测试 ----
+  test:
+    owner: "qa-agent"
+    workflow: "test-flow.yml"
+    gates:
+      - id: "G-TEST-01"
+        type: "hard_gate"
+        name: "五层测试报告产出"
+        check: "section_exists"
+        target: "docs/05-test/TR-*.md"
+        required_sections:
+          - "契约测试"
+          - "单元测试"
+          - "浏览器测试"
+          - "白盒测试"
+          - "视觉回归"
+        on_fail: "阻止进入验收阶段，QA补充缺失的测试层报告"
+      - id: "G-TEST-02"
+        type: "hard_gate"
+        name: "TC测试用例关联FN"
+        check: "content_pattern"
+        target: "docs/05-test/test-cases/TC-*.md"
+        pattern: "related_fn|关联FN|FN-"
+        on_fail: "阻止进入验收阶段，QA补充TC→FN关联"
+      - id: "G-TEST-03"
+        type: "hard_gate"
+        name: "QA大脑推理完整性（V5.1.0新增）"
+        check: "content_pattern"
+        target: "docs/05-test/TR-*.md"
+        pattern: "brain_memory_import|bug_hotspot_prediction|coverage_blind_spot_detection|risk_based_prioritization|brain_sync_export"
+        description: |
+          V5.1.0新增：检查QA质量推理大脑推理是否已执行。
+          QA大脑必须完成：①Bug热力图预测②覆盖盲区检测③回归测试智能推荐④风险驱动排序
+          ⑤brain_memory_import加载⑥brain_sync_export导出
+        on_fail: "阻止进入验收阶段。PM驳回QA：大脑推理未完整执行。QA必须完成全部4个推理模块+brain_memory_import+brain_sync_export。"
+
+  # ---- Stage-7 验收 ----
+  accept:
+    owner: "ac-agent"
+    workflow: "acceptance-flow.yml"
+    gates:
+      - id: "G-ACC-01"
+        type: "hard_gate"
+        name: "验收报告产出"
+        check: "file_exists"
+        target: "docs/06-acceptance/ACR-*.md"
+        on_fail: "阻止/close，AC补充验收报告"
+      - id: "G-ACC-02"
+        type: "hard_gate"
+        name: "需求覆盖率达标"
+        check: "content_pattern"
+        target: "docs/06-acceptance/ACR-*.md"
+        pattern: "覆盖率.*[8-9]\\d%|覆盖率.*100%"
+        on_fail: "阻止/close，AC补充验收覆盖"
+      - id: "G-ACC-03"
+        type: "hard_gate"
+        name: "AC+PO大脑推理完整性（V5.1.0新增）"
+        check: "content_pattern"
+        target: "docs/06-acceptance/ACR-*.md"
+        pattern: "brain_memory_import|acceptance_defect_prediction|persona_coverage_reasoning|business_value_alignment|brain_sync_export"
+        description: |
+          V5.1.0新增：检查AC+PO验收大脑推理是否已执行。
+          AC大脑必须完成：①验收缺陷模式识别②角色覆盖推理③商业价值对齐推理④回归验收推荐
+          ⑤brain_memory_import加载⑥brain_sync_export导出
+        on_fail: "阻止/close。PM驳回AC/PO：大脑推理未完整执行。AC+PO必须完成全部4个推理模块+brain_memory_import+brain_sync_export。"
+
+  # ---- Stage-8 关闭 ----
+  close:
+    owner: "pm-agent"
+    workflow: "project-lifecycle.yml"
+    gates:
+      - id: "G-CLOSE-01"
+        type: "hard_gate"
+        name: "PBL全闭环"
+        check: "content_pattern"
+        target: "projects/{project}/.codebuddy/journal/problem-ledger.md"
+        pattern: "已闭环"
+        on_fail: "阻止/close，PM处理未闭环PBL"
+      - id: "G-CLOSE-02"
+        type: "hard_gate"
+        name: "8阶段Review报告全产出"
+        check: "file_exists"
+        target: "projects/{project}/.codebuddy/journal/reviews/"
+        min_file_count: 7
+        on_fail: "阻止/close，PM补充缺失的Review报告"
+      - id: "G-CLOSE-03"
+        type: "hard_gate"
+        name: "追溯链通过"
+        check: "file_exists"
+        target: "docs/TRACEABILITY_MATRIX.md"
+        on_fail: "阻止/close，PM补充追溯矩阵"
+      - id: "G-CLOSE-04"
+        type: "hard_gate"
+        name: "版本沉淀完成"
+        check: "file_exists"
+        target: ".codebuddy/knowledge/{project}/版本沉淀/"
+        on_fail: "阻止/close，PM执行版本沉淀"
+      - id: "G-CLOSE-05"
+        type: "hard_gate"
+        name: "大脑进化完成（V5.1.0新增）"
+        check: "content_pattern"
+        target: "docs/09-versions/v{version}/BRAIN-EVOLUTION-REPORT.md"
+        pattern: "brain_memory_exported|weight_adjusted|evolution_summary|cross_agent_causal_chain"
+        description: |
+          V5.1.0新增：检查/close时大脑进化是否已执行。
+          PM必须确保：①各Agent大脑记忆已导出（9个Agent memory snapshots）
+          ②大脑进化引擎已运行（prediction vs actual对比+权重调整）
+          ③跨Agent因果链已提取④大脑进化摘要已产出
+        on_fail: "阻止/close。PM驳回：大脑进化未完成。PM必须执行brain_evolution_trigger，确保所有Agent大脑完成prediction vs actual对比和权重更新。"
+      - id: "G-CLOSE-06"
+        type: "hard_gate"
+        name: "HTML需求文档完整性（V5.1.2升级：含真实截图+UC标注+状态矩阵+五图+NFR）"
+        check: "file_exists"
+        target: "docs/09-versions/v{version}/prd-html/{项目}-{版本}-{Sprint}.html"
+        description: |
+          V5.1.2升级：close时必须生成HTML需求文档（需求文档可读性增强方案-V1.0.0）。
+          V5.1.3命名规范：文件名按 {项目}-{版本}-{Sprint}.html 命名（如SAAS-v2.0.0-S3.html）。
+          文档必须包含：
+          ① 五图规范性输出（业务流程图/泳道图/状态机/业务时序图/三方接口时序图）——文档上部，Mermaid渲染为图片
+          ② 非功能需求章节（§18 NFR，来源于Arch的NFR主题识别）
+          ③ 每个页面的L1锚点截图（带UC编号圆圈标注）
+          ④ 状态变化页面的L2增量截图（弹窗/筛选/置灰等）
+          ⑤ 状态操作矩阵（有状态变化的页面，当前状态×UI元素×可用操作×关联截图×关联UC×关联BR）
+          ⑥ AI元数据注释（<!-- ai:screenshot id page ucs state visible_elements git_commit -->）
+          截图必须是close阶段dev server的真实页面截图（原型截图无验收价值）。
+          生成时机：handoff之后、版本快照之前。
+        on_fail: "阻止/close。PM执行HTML需求文档生成流程：启动dev server→逐页面截图→UC标注→状态矩阵→五图渲染→NFR章节→生成HTML文档。"
+
+  # ============================================
+  # V5.0新增门禁（议题一~七）
+  # ============================================
+
+  # ---- 议题二：脑暴→PO交接（G-BS-HO-01~03） ----
+  brainstorm_to_po_handoff:
+    owner: "bs-agent → po-agent"
+    gates:
+      - id: "G-BS-HO-01"
+        type: "hard_gate"
+        name: "脑暴文档确认稿存在"
+        check: "file_exists"
+        target: "docs/00-brainstorm/{topic}/confirmed/BR-脑暴文档-确认稿.md"
+        on_fail: "阻止PO规划，BS补充脑暴确认稿"
+      - id: "G-BS-HO-02"
+        type: "hard_gate"
+        name: "战略型含战略+商业分析"
+        check: "file_exists"
+        target: "docs/00-brainstorm/{topic}/confirmed/STRATEGY-分析.md + BUSINESS-分析.md"
+        condition: "brainstorm_type=strategic"
+        on_fail: "阻止PO规划，BS补充战略/商业分析"
+      - id: "G-BS-HO-03"
+        type: "hard_gate"
+        name: "领域知识清单存在"
+        check: "file_exists"
+        target: "docs/00-brainstorm/{topic}/confirmed/domain-knowledge-list.yml"
+        on_fail: "阻止PO规划，BS补充领域知识清单（即使为空也要标注）"
+
+  # ---- 议题二/三：PO规划（G-PO-01~04） ----
+  po_planning:
+    owner: "po-agent"
+    workflow: "po-planning-flow.yml"
+    gates:
+      - id: "G-PO-01"
+        type: "hard_gate"
+        name: "四层价值+7要素评估完整"
+        check: "content_pattern"
+        target: "docs/00.5-product/VALUE-ASSESSMENT-{project}-v{version}.yml"
+        pattern: "commercial_value|delivery_value|customer_value|scenario_closure|company_factors"
+        on_fail: "阻止/init，PO补充四层价值+7要素评估"
+      - id: "G-PO-02"
+        type: "hard_gate"
+        name: "Backlog四层价值评分"
+        check: "content_pattern"
+        target: "docs/00.5-product/PROD-BACKLOG-{project}-v{version}.yml"
+        pattern: "value_assessment"
+        on_fail: "阻止/init，PO为每项Backlog补充四层价值评分"
+      - id: "G-PO-03"
+        type: "hard_gate"
+        name: "Sprint拆解计划存在"
+        check: "file_exists"
+        target: "docs/00.5-product/SPRINT-PLAN-{project}-v{version}.yml"
+        on_fail: "阻止/init，PO执行Sprint拆解"
+      - id: "G-PO-04"
+        type: "hard_gate"
+        name: "人确认决策完成"
+        check: "content_pattern"
+        target: ".codebuddy/journal/decisions/decision-log.md"
+        pattern: "po-7.*已决策"
+        on_fail: "阻止/init，PM呈现PO阶段决策清单待人确认"
+      - id: "G-PO-05"
+        type: "hard_gate"
+        name: "问题分解+关键链分析完成（V1.8.0新增）"
+        check: "content_pattern"
+        target: "docs/00.5-product/PROD-ROADMAP-{project}.yml"
+        pattern: "problem_tree|key_chain|多角色轮询"
+        description: |
+          V1.8.0新增：PO必须用AI辅助执行问题分解（problem_decomposer）和关键链分析（key_chain_analyzer），
+          并通过多角色轮询（multi_stakeholder_facilitator）完成5轮讨论收敛。
+          PM检查：路线图文件中包含问题树+6条关键链+多角色轮询纪要。
+        on_fail: "阻止/init，PM驳回PO：问题分解和关键链分析未执行。PO必须完成problem_decomposer+key_chain_analyzer+multi_stakeholder_facilitator。"
+
+  # ---- 议题四/六：Sprint守护（G-SM-01~06） ----
+  sprint_guard:
+    owner: "sm-agent"
+    gates:
+      - id: "G-SM-01"
+        type: "hard_gate"
+        name: "Sprint DoD满足"
+        check: "content_pattern"
+        target: "docs/06-sprint-guard/SPRINT-GUARD-{project}-v{version}-S{n}.md"
+        pattern: "DoD.*true"
+        on_fail: "阻止下一Sprint，SM要求返工"
+      - id: "G-SM-02"
+        type: "hard_gate"
+        name: "增量可演示"
+        check: "content_pattern"
+        target: "docs/06-sprint/SPRINT-REVIEW-{project}-v{version}-S{n}.md"
+        pattern: "AI Demo.*通过"
+        on_fail: "阻止下一Sprint，SM要求修复P0问题"
+      - id: "G-SM-03"
+        type: "hard_gate"
+        name: "下一Sprint依赖解锁"
+        check: "content_pattern"
+        target: "docs/06-sprint-guard/SPRINT-GUARD-{project}-v{version}-S{n}.md"
+        pattern: "依赖.*已就绪"
+        condition: "非最后Sprint"
+        on_fail: "阻止下一Sprint启动"
+      - id: "G-SM-04"
+        type: "hard_gate"
+        name: "运行时验证通过"
+        check: "content_pattern"
+        target: "docs/06-sprint-guard/SPRINT-GUARD-{project}-v{version}-S{n}.md"
+        pattern: "运行时验证.*通过"
+        on_fail: "阻止下一Sprint，SM要求修复"
+      - id: "G-SM-05"
+        type: "hard_gate"
+        name: "阶段Review通过"
+        check: "content_pattern"
+        target: "docs/06-sprint-guard/SPRINT-GUARD-{project}-v{version}-S{n}.md"
+        pattern: "Review.*通过"
+        on_fail: "阻止下一Sprint"
+      - id: "G-SM-06"
+        type: "hard_gate"
+        name: "Scrum事件完成"
+        check: "content_pattern"
+        target: "docs/06-sprint-guard/SPRINT-GUARD-{project}-v{version}-S{n}.md"
+        pattern: "Scrum事件.*4.*执行"
+        on_fail: "阻止下一Sprint，SM补充缺失的Scrum事件"
+
+  # ---- 议题六：版本守护（G-VER-GUARD-01~04） ----
+  version_guard:
+    owner: "pm-agent"
+    gates:
+      - id: "G-VER-GUARD-01"
+        type: "hard_gate"
+        name: "版本范围完整性"
+        check: "content_pattern"
+        target: "docs/07-version-guard/VERSION-GUARD-{project}-v{version}.md"
+        pattern: "Must.*100%|Should.*80%"
+        on_fail: "阻止/close，PM调整范围或延期"
+      - id: "G-VER-GUARD-02"
+        type: "hard_gate"
+        name: "版本质量达标"
+        check: "content_pattern"
+        target: "docs/07-version-guard/VERSION-GUARD-{project}-v{version}.md"
+        pattern: "运行时验证.*通过|五层测试.*通过|验收.*通过"
+        on_fail: "阻止/close，PM要求修复"
+      - id: "G-VER-GUARD-03"
+        type: "hard_gate"
+        name: "三位一体交付物一致性"
+        check: "content_pattern"
+        target: "docs/07-version-guard/VERSION-GUARD-{project}-v{version}.md"
+        pattern: "G-HO-DELIVERY.*通过"
+        on_fail: "阻止/close，PM要求补齐三位一体"
+      - id: "G-VER-GUARD-04"
+        type: "hard_gate"
+        name: "版本沉淀学习完成"
+        check: "content_pattern"
+        target: "docs/07-version-guard/VERSION-GUARD-{project}-v{version}.md"
+        pattern: "沉淀.*完成|质量评分.*60"
+        on_fail: "阻止/close，PM执行版本沉淀"
+
+  # ---- 议题六：项目守护（G-PROJ-GUARD-01~03） ----
+  project_guard:
+    owner: "po-agent"
+    gates:
+      - id: "G-PROJ-GUARD-01"
+        type: "hard_gate"
+        name: "商业目标对齐"
+        check: "content_pattern"
+        target: "docs/08-project-guard/PROJECT-GUARD-{project}.md"
+        pattern: "BO达成率.*80%|BG达成率.*80%"
+        on_fail: "阻止/close，PO评估是否调整路线图"
+      - id: "G-PROJ-GUARD-02"
+        type: "soft_gate"
+        name: "路线图偏离度"
+        check: "content_pattern"
+        target: "docs/08-project-guard/PROJECT-GUARD-{project}.md"
+        pattern: "偏离.*20%"
+        on_fail: "警告，PO记录偏离原因"
+      - id: "G-PROJ-GUARD-03"
+        type: "soft_gate"
+        name: "价值累积正向"
+        check: "content_pattern"
+        target: "docs/08-project-guard/PROJECT-GUARD-{project}.md"
+        pattern: "趋势.*上升|趋势.*持平"
+        on_fail: "警告，PO评估价值下降原因"
+
+  # ---- 议题五：三位一体交付（G-HO-DELIVERY-01~05） ----
+  handoff_delivery:
+    owner: "pm-agent"
+    gates:
+      - id: "G-HO-DELIVERY-01"
+        type: "hard_gate"
+        name: "PRD五图完整性"
+        check: "content_pattern"
+        target: "docs/01-requirements/REQ-*.md"
+        pattern: "flowchart|stateDiagram|sequenceDiagram|信息流转图"
+        on_fail: "阻止handoff，BA补充五图"
+      - id: "G-HO-DELIVERY-02"
+        type: "hard_gate"
+        name: "高保真仿真原型可用性"
+        check: "content_pattern"
+        target: "docs/05-test/demo-reports/"
+        pattern: "dev.*启动|页面.*访问|菜单.*跳转|数据.*保存|流程.*跑通"
+        on_fail: "阻止handoff，FD修复原型"
+      - id: "G-HO-DELIVERY-03"
+        type: "hard_gate"
+        name: "可交互用例卡片完整性"
+        check: "content_pattern"
+        target: "docs/04-dev/cards/"
+        pattern: "UC-.*card|auto_play.*通过"
+        on_fail: "阻止handoff，UX/FD补充用例卡片"
+      - id: "G-HO-DELIVERY-04"
+        type: "hard_gate"
+        name: "三位一体一致性"
+        check: "cross_reference"
+        target: "PRD的FN/UC ↔ 仿真原型页面/操作 ↔ 用例卡片steps"
+        on_fail: "阻止handoff，PM协调三方对齐"
+      - id: "G-HO-DELIVERY-05"
+        type: "hard_gate"
+        name: "Demo报告"
+        check: "file_exists"
+        target: "docs/05-test/demo-reports/DEMO-*.md"
+        on_fail: "阻止handoff，SM补充Demo报告"
+
+  # ---- V4.1.0新增：代码注入自检（G-HO-INJECT-01~03） ----
+  handoff_injection:
+    owner: "fd-agent"
+    description: "G-HO-DELIVERY-03（可交互用例卡片完整性）的前置条件——AI须先将【？】挂载到原型页面"
+    gates:
+      - id: "G-HO-INJECT-01"
+        type: "hard_gate"
+        name: "卡片数据完整性"
+        check: "content_pattern"
+        target: "src/components/useCaseCardData.ts"
+        pattern: "allCards.*sprint{n}Cards|sprint{n}Cards.*\\["
+        on_fail: "阻止进入Stage 3（用户审阅），FD补充缺失卡片数据"
+      - id: "G-HO-INJECT-02"
+        type: "hard_gate"
+        name: "页面标注完整性"
+        check: "content_pattern"
+        target: "src/pages/"
+        pattern: "HelpButton|UseCaseDrawer"
+        on_fail: "阻止进入Stage 3，FD补充缺失页面的【？】标注"
+      - id: "G-HO-INJECT-03"
+        type: "hard_gate"
+        name: "构建零错误"
+        check: "content_pattern"
+        target: "BUILD-OUTPUT"
+        pattern: "error.*0|success"
+        on_fail: "阻止进入Stage 3，FD修复类型错误"
+
+  # ---- 议题七：版本快照+差异报告（G-SNAPSHOT-01 + G-DIFF-01） ----
+  version_snapshot_diff:
+    owner: "pm-agent"
+    gates:
+      - id: "G-SNAPSHOT-01"
+        type: "hard_gate"
+        name: "版本快照完整性"
+        check: "file_exists"
+        target: "docs/09-versions/v{version}/SNAPSHOT.yml + build/ + prd/ + cards/ + demo/"
+        on_fail: "阻止/close，PM执行版本快照"
+      - id: "G-DIFF-01"
+        type: "hard_gate"
+        name: "差异报告生成"
+        check: "file_exists"
+        target: "docs/09-versions/v{version}/DIFF.md"
+        on_fail: "阻止/close，PM执行差异报告（AI+人工补充）"
+
+  # ============================================
+  # 独立学习阶段门禁（V1.7.0 新增——learn-project V7.0.0场景深度还原）
+  # ============================================
+  independent_learning:
+    owner: "ba-agent"
+    workflow: "learn-project.yml"
+    description: |
+      V7.0.0新增：learn-project场景深度还原门禁。
+      校验五大业务产物（场景/流程/信息/状态机/操作矩阵）的深度还原完整性。
+      双态标注合规：所有🟡隐式挖掘必须附≥2处原文依据链。
+    gates:
+      - id: "G-LEARN-01"
+        type: "hard_gate"
+        name: "场景编排图谱完整"
+        check: "content_pattern"
+        target: ".codebuddy/knowledge/{project}/需求文档/{项目}-超级需求文档-PRD-v{version}.md"
+        pattern: "场景编排|sequential|parallel|exclusive|顺序编排|并行编排"
+        on_fail: "阻止交付，BA补充场景编排图谱（Stage 2.6深度能力1）"
+      - id: "G-LEARN-02"
+        type: "hard_gate"
+        name: "🟡隐式挖掘依据链合规"
+        check: "content_pattern"
+        target: ".codebuddy/knowledge/{project}/需求文档/{项目}-超级需求文档-PRD-v{version}.md"
+        pattern: "🟡隐式挖掘·依据"
+        condition: "存在🟡标注时，每条必须附依据链（≥2处原文交叉印证）"
+        on_fail: "阻止交付，BA为无依据🟡标注补依据链或降级移除（Stage 2.6深度能力8审计）"
+      - id: "G-LEARN-03"
+        type: "hard_gate"
+        name: "状态机含隐式状态挖掘"
+        check: "content_pattern"
+        target: ".codebuddy/knowledge/{project}/需求文档/{项目}-超级需求文档-PRD-v{version}.md"
+        pattern: "stateDiagram-v2"
+        condition: "状态机存在时，须含隐式状态挖掘（按钮置灰条件/前置条件推导）或标注'原文无隐式状态线索'"
+        on_fail: "阻止交付，BA执行状态机完整性分析（Stage 2.6深度能力4）"
+      - id: "G-LEARN-04"
+        type: "hard_gate"
+        name: "信息血缘图存在"
+        check: "content_pattern"
+        target: ".codebuddy/knowledge/{project}/需求文档/{项目}-超级需求文档-PRD-v{version}.md"
+        pattern: "信息血缘|信息生命周期|CRUD-L"
+        condition: "信息主体≥2个时必画信息血缘图"
+        on_fail: "阻止交付，BA执行信息流深度追踪（Stage 2.6深度能力5）"
+      - id: "G-LEARN-05"
+        type: "soft_gate"
+        name: "场景闭环验证完成"
+        check: "content_pattern"
+        target: ".codebuddy/knowledge/{project}/学习报告/{项目}-学习报告-v{version}.md"
+        pattern: "场景闭环|不闭环场景|闭环率"
+        on_fail: "警告，BA补充场景闭环验证报告（Stage 2.6深度能力7）"

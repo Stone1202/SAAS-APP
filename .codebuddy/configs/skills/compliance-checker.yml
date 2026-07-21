@@ -1,0 +1,269 @@
+# ============================================
+# Skill: compliance-checker（合规检查器）
+# 所属 Agent: FD Agent（前端开发）
+# 版本: v2.0.0
+# 最后更新: 2026-07-15
+# ============================================
+#
+# FD Agent 专家视角：
+#   合规检查器是 FD Agent 的「出厂质检」关卡——任何代码不通过本检查器，
+#   不得声明"开发完成"、不得流转到 QA。这是编码铁律的机械化落地，
+#   不是可选项而是硬门禁。
+#
+# 触发时机：FD Agent 每次生成/修改代码后自动执行
+# 运行模式：扫描模式（不修改代码，只报告违规）
+# 失败处理：CRITICAL 级别违规 → 停止流水线，FD Agent 必须修复后重新运行
+# ============================================
+
+skill:
+  name: compliance-checker
+  id: "SKL-FD-COMPLIANCE"
+  version: "2.0.0"
+  owner: "fd-agent"
+  category: "quality-gate"
+  description: |
+    FD Agent 的代码合规自动检查器。
+    每次代码生成后自动扫描，逐条对照 11 条编码铁律，生成违规报告。
+    CRITICAL 级别违规会阻断流水线，WARNING 级别仅标注提示。
+  triggers:
+    - event: "code_generated"
+      auto: true
+      description: "FD Agent 生成代码后自动触发"
+    - event: "code_modified"
+      auto: true
+      description: "FD Agent 修改代码后自动触发"
+    - event: "pre_qa_handoff"
+      auto: true
+      description: "开发阶段完成、流转 QA 前的最终全量检查"
+  workflow:
+    - step: "scan_all_modules"
+      action: "全量扫描 src/modules/ 下所有组件和 Store 文件"
+    - step: "check_11_rules"
+      action: "逐条执行 11 条铁律检查（见下方 rules）"
+    - step: "generate_report"
+      action: "输出结构化违规报告（JSON 格式）"
+    - step: "gate_decision"
+      action: "存在 CRITICAL 违规 → 阻断流水线，FD Agent 修复后重跑"
+      condition: "violations[severity=CRITICAL].length > 0 → BLOCK"
+
+  # ============================================
+  # 11 条编码铁律检查规则（FD Agent 专业视角）
+  # 每条规则包含：扫描范围、禁止/必须模式、违规级别、修复指引
+  # ============================================
+  rules:
+    # ---- 铁律1：契约即 Schema（Zod 校验） ----
+    - id: "IRON-01"
+      name: "契约即 Schema"
+      description: "所有接口入参/出参必须用 Zod Schema 校验，禁止 any 类型"
+      severity: "CRITICAL"
+      scan_scope: "src/modules/**/services/sim.ts, src/modules/**/services/real.ts"
+      forbid_patterns:
+        - ':\s*any\b'
+        - 'as\s+any\b'
+        - '@ts-ignore'
+        - '@ts-nocheck'
+      require_patterns:
+        - 'z\.(object|string|number|boolean|array|enum|union|literal)'
+        - '\.safeParse\('
+        - '\.parse\('
+      fix_guidance: "将 any 替换为对应的 Zod Schema 类型，如 z.string()、z.number()"
+
+    # ---- 铁律2：适配器隔离 ----
+    - id: "IRON-02"
+      name: "适配器隔离"
+      description: "组件/Store 禁止直接导入 adapter、sim、simulated-db，必须通过 Store 间接调用"
+      severity: "CRITICAL"
+      scan_scope: "src/modules/**/components/**, src/modules/**/store.ts"
+      forbid_patterns:
+        - 'import.*from.*adapter'
+        - 'import.*from.*sim\.ts'
+        - 'import.*from.*simulated-db'
+        - 'if.*isMock|isSimulation|VITE_SIM'
+      fix_guidance: "组件只能从 useXxxStore() 消费数据和方法，adapter 切换逻辑封装在 Store 内部"
+
+    # ---- 铁律3：仿真即真实 ----
+    - id: "IRON-03"
+      name: "仿真即真实"
+      description: "sim.ts 必须全量复刻 real.ts 的业务逻辑、错误码、延迟和随机错误"
+      severity: "CRITICAL"
+      scan_scope: "src/modules/**/services/sim.ts"
+      require_patterns:
+        - 'import.*delay.*from'
+        - 'import.*randomError.*from'
+        - 'import.*BusinessError.*from'
+        - 'import.*NetworkError.*from'
+        - 'delay\(\d+,\s*\d+\)'
+        - 'randomError\(0\.\d+\)'
+        - 'simulatedDB\.'
+        - '\.safeParse\(|\.parse\('
+      check_against: "real.ts"
+      check_rule: "sim.ts 的每个导出函数必须在 real.ts 中存在对应签名，且错误码枚举值一致"
+
+    # ---- 铁律4：模块文件结构 ----
+    - id: "IRON-04"
+      name: "模块文件结构"
+      description: "每个模块必须包含 services/adapter.ts、services/real.ts、services/sim.ts、store.ts、types.ts"
+      severity: "CRITICAL"
+      scan_scope: "src/modules/*/"
+      require_files:
+        - "services/adapter.ts"
+        - "services/real.ts"
+        - "services/sim.ts"
+        - "store.ts"
+        - "types.ts"
+      fix_guidance: "缺哪个文件补哪个，按模块标准模板生成"
+
+    # ---- 铁律5：IndexedDB 持久化 ----
+    - id: "IRON-05"
+      name: "IndexedDB 持久化"
+      description: "仿真数据必须持久化到 IndexedDB，禁止内存变量存储"
+      severity: "CRITICAL"
+      scan_scope: "src/modules/**/services/sim.ts"
+      require_patterns:
+        - 'simulatedDB\.'
+        - '\.(put|add|get|delete|update|where|toArray)\('
+      forbid_patterns:
+        - '(let|const|var)\s+\w+\s*=\s*\[\]'  # 禁止裸数组作为数据存储
+        - '(let|const|var)\s+\w+\s*=\s*\{\}'  # 禁止裸对象作为数据存储（除非是临时变量）
+      fix_guidance: "使用 simulatedDB.tableName.put(data) 持久化，用 simulatedDB.tableName.toArray() 查询"
+
+    # ---- 铁律6：场景覆盖 ----
+    - id: "IRON-06"
+      name: "场景覆盖"
+      description: "每个模块场景文件至少包含 5 个 manager.register() 调用"
+      severity: "WARNING"
+      scan_scope: "src/simulation/scenarios/*.ts"
+      require_patterns:
+        - 'manager\.register\('
+      min_occurrences: 5
+      fix_guidance: "补齐场景注册，至少覆盖 Happy Path、参数错误、业务错误、边界条件、异常场景"
+
+    # ---- 铁律7：文件结构（与 IRON-04 互补） ----
+    - id: "IRON-07"
+      name: "Store 消费隔离"
+      description: "Store 只能从 adapter 获取数据，不能直接访问 sim/real"
+      severity: "CRITICAL"
+      scan_scope: "src/modules/**/store.ts"
+      require_patterns:
+        - 'import.*from.*adapter'
+      forbid_patterns:
+        - 'import.*from.*sim\.ts'
+        - 'import.*from.*real\.ts'
+        - 'import.*from.*simulated-db'
+      fix_guidance: "Store 只 import adapter，由 adapter 内部决定走 sim 还是 real"
+
+    # ---- 铁律8：组件只从 Store 消费 ----
+    - id: "IRON-08"
+      name: "组件 Store 消费"
+      description: "组件只从 useXxxStore() 消费数据和方法，禁止直接调用 adapter/service"
+      severity: "CRITICAL"
+      scan_scope: "src/modules/**/components/**/*.tsx"
+      require_patterns:
+        - 'use\w+Store\('
+      forbid_patterns:
+        - 'import.*from.*adapter'
+        - 'import.*from.*services/'
+        - 'import.*from.*api/'
+      fix_guidance: "组件内 const { data, action } = useXxxStore()，通过 Store 间接调用"
+
+    # ---- 铁律9：四态覆盖 ----
+    - id: "IRON-09"
+      name: "四态覆盖"
+      description: "所有组件必须覆盖 loading、error、empty、success 四种状态"
+      severity: "CRITICAL"
+      scan_scope: "src/modules/**/components/**/*.tsx"
+      require_patterns:
+        - 'status\s*===\s*[\"\\']loading[\"\\']'
+        - 'status\s*===\s*[\"\\']error[\"\\']'
+      require_any_of:
+        - pattern: 'status\s*===\s*[\"\\']success[\"\\'].*length\s*===\s*0'
+          label: "empty 状态判断"
+        - pattern: '!data\s*\|\||\s*data\.length\s*===\s*0'
+          label: "空数据判断"
+        - pattern: 'EmptyState|Empty|empty'
+          label: "空状态组件引用"
+      require_any_of_success:
+        - pattern: 'status\s*===\s*[\"\\']success[\"\\']'
+          label: "success 状态判断"
+      fix_guidance: |
+        每个组件必须有 4 个 if 分支：
+        1. status === 'loading' → <Skeleton />
+        2. status === 'error' → <ErrorState onRetry={fetch} />
+        3. status === 'success' && (!data || data.length === 0) → <EmptyState />
+        4. status === 'success' && data.length > 0 → 正常渲染
+
+    # ---- 铁律10：生产隔离 ----
+    - id: "IRON-10"
+      name: "生产隔离"
+      description: "生产构建产物中禁止出现仿真相关关键字"
+      severity: "CRITICAL"
+      scan_scope: "dist/**/*.js"
+      scan_mode: "build_artifact"
+      forbid_patterns:
+        - 'dexie'
+        - 'simulation'
+        - 'scenario-manager'
+        - 'simulated-db'
+        - 'simulatedDB'
+      fix_guidance: "检查 adapter.ts 中的环境判断逻辑，确保生产构建时 tree-shaking 移除仿真代码"
+
+    # ---- 铁律11：越界引用 ----
+    - id: "IRON-11"
+      name: "越界引用"
+      description: "模块组件/Store 禁止引用 simulation 目录"
+      severity: "CRITICAL"
+      scan_scope: "src/modules/**/components/**, src/modules/**/store.ts"
+      forbid_patterns:
+        - 'import.*from.*/simulation/'
+        - 'import.*ScenarioManager'
+        - 'import.*simulatedDB'
+      fix_guidance: "仿真层只能被 adapter 引用，组件和 Store 不感知仿真/真实切换"
+
+  # ============================================
+  # 违规级别定义
+  # ============================================
+  severity_levels:
+    CRITICAL:
+      meaning: "违反铁律，不可接受"
+      action: "停止流水线，FD Agent 必须修复后重新运行"
+      gate: "BLOCK"
+    WARNING:
+      meaning: "建议修改，非强制性"
+      action: "标注提示，记录到报告，不阻断流水线"
+      gate: "PASS_WITH_WARNINGS"
+    INFO:
+      meaning: "信息提示，仅供参考"
+      action: "仅记录，不影响流水线"
+      gate: "PASS"
+
+  # ============================================
+  # 输出格式（JSON）
+  # ============================================
+  output_format:
+    schema: |
+      {
+        "check_id": "COMP-{timestamp}",
+        "module": "{module_name}",
+        "agent": "fd-agent",
+        "timestamp": "ISO-8601",
+        "violations": [
+          {
+            "rule_id": "IRON-XX",
+            "rule_name": "{规则名称}",
+            "severity": "CRITICAL|WARNING|INFO",
+            "file": "{文件路径}",
+            "line": {行号},
+            "code": "{违规代码片段}",
+            "suggestion": "{修复建议}"
+          }
+        ],
+        "summary": {
+          "total_rules": 11,
+          "total_checks": {实际检查点数},
+          "passed": {通过数},
+          "critical": {CRITICAL违规数},
+          "warning": {WARNING违规数},
+          "info": {INFO提示数},
+          "gate_result": "PASS|BLOCK|PASS_WITH_WARNINGS"
+        }
+      }

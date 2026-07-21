@@ -1,0 +1,56 @@
+# Skill: Sprint拆解规划器（Sprint Planner）
+# 版本: v1.0.0
+# 所属议题: POM V5.0 议题四
+# ============================================
+skill:
+  id: "sprint-planner"
+  name: "sprint-planner"
+  version: "1.0.0"
+  agents: ["po-agent"]
+  description: "AI辅助PO进行Sprint拆解+依赖分析+DoD生成，引用 sprint-planning-standards.yml"
+
+  triggers:
+    - command: "/brainstorm --brainstorm-type=strategic|planning"
+      stage: "po-6"
+      description: "PO规划阶段6：Sprint拆解"
+    - command: "/close"
+      stage: "下一版本规划"
+      description: "/close后PM询问PO下一版本，PO执行Sprint拆解"
+
+  workflow:
+    - name: "1.加载拆解规范"
+      rule: "读取 common/sprint-planning-standards.yml"
+
+    - name: "2.选择拆解策略"
+      rule: "根据项目特点从5种策略选择（流程闭环/终端/模块/MVP/混合），AI推荐+需人确认（Q5范围确认型）"
+
+    - name: "3.拆解Sprint"
+      rule: "按选中策略将版本Backlog拆为多个Sprint，每Sprint 1-3页面，遵守splitting_constraints"
+
+    - name: "4.生成DoD"
+      rule: "为每Sprint生成DoD 6项（代码可运行+运行时验证+测试+后置条件+人确认+Demo报告）"
+
+    - name: "5.依赖分析"
+      rule: "分析Sprint间依赖（data/component/scenario三类），显式声明dependencies和dependents"
+
+    - name: "6.人确认"
+      rule: "Sprint拆解粒度需人确认（Q5范围确认型，按human-confirm-protocol）"
+
+    - name: "7.输出Sprint计划"
+      rule: "产出 SPRINT-PLAN-{project}-v{version}.yml"
+
+  inputs:
+    - "PROD-BACKLOG（含四层价值评分的Backlog项）"
+    - "VALUE-ASSESSMENT（四层价值评估，影响Sprint排序）"
+    - "PROD-ARCH（产品架构，影响模块拆分）"
+
+  outputs:
+    - type: "sprint-plan"
+      format: "YAML"
+      path: "projects/{project}/docs/00.5-product/SPRINT-PLAN-{project}-v{version}.yml"
+      description: "Sprint拆解计划（含sprint_id/goal/pages/backlog_items/scenarios/DoD/dependencies）"
+
+  dependencies:
+    - "common/sprint-planning-standards.yml"
+    - "common/human-confirm-protocol.yml"
+    - "common/value-assessment-standards.yml"

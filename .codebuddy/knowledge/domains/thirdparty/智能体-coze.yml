@@ -1,0 +1,1195 @@
+# ============================================
+# Coze（扣子）智能体平台 — 领域知识
+# 版本: v2.0.0（SDL V1.0.0 场景驱动学习法升级）
+# 日期: 2026-07-20
+# 分类: thirdparty
+# 领域: 智能体（Coze扣子平台）
+# 来源: 15个来源（官方文档5 + 第三方教程7 + API文档1 + 飞书宣传片补充2）
+# V1.1.0 增量：Coze 3.0 6大新特性（2026-06-01发布）+ 视频教程补充
+# V2.0.0 增量：SDL V1.0.0 领域角色+业务问题+场景地图+跨域衔接+角色视角
+# ============================================
+
+domain:
+  id: "coze-agent"
+  name: "Coze扣子智能体平台"
+  category: "thirdparty"
+  version: "v2.0.0"
+  learning_method: "scenario_driven_v1.0.0"
+  description: |
+    Coze（扣子）是字节跳动旗下的新一代一站式AI智能体开发平台，
+    通过提示词、知识库、插件、工作流、记忆系统等功能模块，
+    支持零代码/低代码搭建具备专业能力的AI智能体。
+    
+    V3.0（2026-06-01发布）重大升级：从"单人AI工具"到"AI团队协作平台"——
+    支持多人多Agent协作、项目空间持久化、本地Agent接入（Claude Code/Codex CLI/OpenClaw）、
+    行业技能商店（5大行业模板）、编程/视频项目、三端全量协同。
+  source_urls:
+    - "https://docs.coze.cn/guides/agent_overview"
+    - "https://docs.coze.cn/guides/agent_plugin"
+    - "https://docs.coze.cn/guides/agent_knowledge"
+    - "https://docs.coze.cn/developer_guides_coze_api_overview"
+    - "https://docs.coze.cn/guides_long_memory"
+    - "https://www.cnblogs.com/cyzj-2002/p/19007934"
+    - "https://blog.csdn.net/HiWangWenBing/article/details/162139375"
+    - "https://www.aitoollab.cn/articles/coze-2-0-complete-tutorial-guide/"
+    - "https://developer.volcengine.com/articles/7629265604783898662"
+    - "https://blog.csdn.net/dfagag/article/details/147766984"
+    - "https://blog.csdn.net/miheaii_com/article/details/161677299"
+    - "https://news.qq.com/rain/a/20260601A061L200"
+    - "https://bytedance.larkoffice.com/docx/MU2gdBhluo1aCJx9g5Sc1vwWnte"
+    - "https://www.coze.cn/overview"
+    - "https://docs.feishu.cn/article/wiki/QiOVw63k2ivPsPkqfuPcIqeXnZb"
+  platforms:
+    - { name: "扣子编程", url: "https://www.coze.cn", description: "全代码AI应用开发平台（浏览器内编码）" }
+    - { name: "扣子 Studio", url: "https://www.coze.cn", description: "低代码/零代码智能体/工作流/应用搭建" }
+    - { name: "扣子桌面端", url: "https://www.coze.cn", description: "V3.0 新增 Mac/Windows 桌面端，支持本地Agent接入" }
+    - { name: "扣子移动端", url: "https://www.coze.cn", description: "iOS/Android App，三端协同" }
+
+# ════════════════════════════════════════════
+# SDL V2.0.0 新增区块A：领域角色
+# ════════════════════════════════════════════
+domain_roles:
+  - id: "R-CZ-001"
+    name: "SCRM平台开发者(集成方)"
+    description: "将Coze智能体能力集成到SCRM产品中的开发团队。负责API对接、工作流设计、知识库配置、前端Chat SDK嵌入。"
+    key_concerns: ["API稳定性和限流", "OAuth认证流程", "工作流参数传递规范", "长期记忆数据隔离"]
+  - id: "R-CZ-002"
+    name: "业务运营人员"
+    description: "SCRM租户中的运营角色，使用Coze工作流配置业务规则、管理话术库、查看AI辅助效果数据。"
+    key_concerns: ["工作流可视化配置", "话术效果分析", "知识库内容更新", "无需编码即可调整策略"]
+  - id: "R-CZ-003"
+    name: "终端用户"
+    description: "SCRM的一线使用者（销售/客服），通过SCRM前端接收AI推荐话术、商品推荐、情绪提醒。"
+    key_concerns: ["推荐准确度", "响应速度", "不打断工作流", "移动端可用"]
+  - id: "R-CZ-004"
+    name: "Coze平台"
+    description: "字节跳动Coze平台，提供智能体引擎、工作流引擎、知识库、记忆系统、API网关等基础设施。"
+    key_concerns: ["平台稳定性", "模型能力迭代", "安全合规", "成本控制"]
+
+# ════════════════════════════════════════════
+# SDL V2.0.0 新增区块B：核心业务问题
+# ════════════════════════════════════════════
+business_problems:
+  - id: "BP-CZ-001"
+    problem: "SCRM系统缺乏智能对话能力，客服效率低"
+    pain_point: >
+      传统SCRM的客服功能依赖人工查找知识库、手动复制话术、凭经验判断客户意图。
+      高峰期客服响应慢、话术不一致、客户满意度低。新员工培训周期长（2-4周），
+      上手慢导致服务质量波动。
+    value: >
+      Coze智能体嵌入SCRM后：客户消息→自动意图识别→知识库检索匹配话术→
+      LLM生成个性化回复→实时推荐给客服。响应时间从分钟级降至秒级，
+      话术一致性100%，新员工上手周期压缩至2天。
+    evidence: "Coze官方：知识库FAQ格式准确率可达97%，工作流支持15+节点类型编排"
+    priority: "P0"
+    scrm_relevance: "核心——AI辅助是SCRM产品的核心差异化竞争力"
+
+  - id: "BP-CZ-002"
+    problem: "业务规则变更频繁，硬编码维护成本高"
+    pain_point: >
+      SCRM中客户意向分级、话术匹配、商品推荐等业务规则频繁调整。
+      传统方式需要开发人员修改代码→测试→发布，周期1-2周。
+      运营人员无法自主调整策略，业务响应速度慢。
+    value: >
+      Coze工作流提供可视化低代码编排：运营人员拖拽节点+配置参数即可
+      调整业务规则（意图分类/话术匹配/商品推荐逻辑）。
+      规则变更从1-2周压缩至1小时，无需开发介入。
+    evidence: "Coze工作流支持：LLM/代码/插件/分支/循环/数据库等15+节点类型，拖拽编排"
+    priority: "P0"
+    scrm_relevance: "核心——低代码工作流降低SCRM运维成本，提升业务敏捷性"
+
+  - id: "BP-CZ-003"
+    problem: "企业知识分散在文档中，无法被AI有效利用"
+    pain_point: >
+      产品知识、话术库、FAQ、行业知识散落在Word/PDF/Excel/飞书文档中。
+      员工查找耗时、信息过时、版本混乱。新员工入职需要翻阅大量文档。
+    value: >
+      Coze知识库支持文本/表格/图片三种类型，全文+语义+混合检索。
+      将企业知识上传后，智能体可实时检索并生成准确回答。
+      RAG（检索增强生成）确保回答基于最新知识，避免大模型幻觉。
+    evidence: "Coze知识库：支持多数据源（飞书/Notion/网页），FAQ格式准确率97%"
+    priority: "P1"
+    scrm_relevance: "重要——知识库是SCRM AI辅助的基础设施"
+
+  - id: "BP-CZ-004"
+    problem: "客户意图识别依赖人工经验，分类不准确"
+    pain_point: >
+      一线员工凭经验判断客户意图（想买/比价/顾虑/投诉），主观性强、标准不统一。
+      新人判断准确率低，高价值商机被误判为低意向而流失。
+      缺乏系统化的意图分类标准和历史数据积累。
+    value: >
+      Coze LLM节点可实现标准化意图识别：输入客户消息→输出结构化意图标签+
+      置信度评分。结合知识库中的意图分类标准，准确率可达90%+。
+      历史对话数据可沉淀为训练样本，持续优化识别模型。
+    evidence: "Coze工作流：LLM节点+IF选择器+代码节点组合实现多级意图路由"
+    priority: "P1"
+    scrm_relevance: "重要——意图识别是AI辅助的第一步，决定后续所有推荐的质量"
+
+  - id: "BP-CZ-005"
+    problem: "多渠道客户触达需要统一智能调度"
+    pain_point: >
+      SCRM涉及企微消息、外呼语音、短信等多个客户触达渠道。
+      各渠道独立运作，缺乏统一的智能调度层。
+      什么客户在什么时机用什么渠道触达——全靠人工判断，效率低且效果差。
+    value: >
+      Coze工作流作为统一智能调度层：
+      接收客户事件→查询客户画像（长期记忆）→判定触达策略（渠道+时机+内容）→
+      调用对应渠道API（企微消息/外呼/短信）→记录触达结果→回流画像。
+      实现多渠道智能协同，触达策略数据驱动优化。
+    evidence: "Coze工作流+插件体系：可通过自定义插件对接企微API、外呼API、短信API"
+    priority: "P2"
+    scrm_relevance: "增强——统一调度提升全渠道触达效率"
+
+# ════════════════════════════════════════════
+# SDL V2.0.0 新增区块C：场景地图
+# ════════════════════════════════════════════
+scenario_maps:
+  - scene_id: "SC-CZ-001"
+    scene_name: "智能客服对话（Coze Chat API集成SCRM）"
+    problem_ref: "BP-CZ-001"
+    trigger: "客户通过企业微信发送消息，SCRM将消息路由至Coze智能体处理"
+    participant_roles: ["客户", "SCRM后端", "Coze Chat API", "Coze智能体", "SCRM前端(员工端)"]
+    api_chain:
+      - seq: 1
+        api: "企微回调 → SCRM接收客户消息"
+      - seq: 2
+        api: "SCRM后端 POST /v3/chat — 调用Coze智能体（bot_id+user_id+query+conversation_id）"
+      - seq: 3
+        api: "Coze智能体：意图识别→知识库检索→LLM生成回复"
+      - seq: 4
+        api: "Coze返回 messages[] + conversation_id → SCRM后端"
+      - seq: 5
+        api: "SCRM前端展示AI推荐话术给员工，员工确认/修改后发送"
+    closure: "客户问题得到AI辅助回复，对话记录和conversation_id保存用于多轮对话"
+
+  - scene_id: "SC-CZ-002"
+    scene_name: "客户意图识别与路由（工作流+大模型节点）"
+    problem_ref: "BP-CZ-004"
+    trigger: "SCRM需要实时分析客户消息意图，路由到不同处理分支"
+    participant_roles: ["SCRM后端", "Coze Workflow API", "Coze工作流引擎", "SCRM前端"]
+    api_chain:
+      - seq: 1
+        api: "SCRM后端 POST /v3/workflow/run — 触发意图识别工作流（parameters: customer_id+message_content）"
+      - seq: 2
+        api: "Coze工作流：LLM节点→意图分类（想买/比价/顾虑/投诉/闲聊）"
+      - seq: 3
+        api: "Coze工作流：IF选择器→按意图路由至对应处理分支"
+      - seq: 4
+        api: "Coze工作流：知识库检索节点→匹配对应话术/商品/FAQ"
+      - seq: 5
+        api: "Coze工作流：LLM节点→组装个性化推荐内容"
+      - seq: 6
+        api: "Coze返回 output_data → SCRM后端 → SCRM前端展示"
+    closure: "客户意图被准确识别，对应推荐内容展示给员工"
+
+  - scene_id: "SC-CZ-003"
+    scene_name: "知识库问答（RAG检索+LLM生成）"
+    problem_ref: "BP-CZ-003"
+    trigger: "员工需要快速查询产品知识/话术/FAQ，通过SCRM搜索框输入问题"
+    participant_roles: ["员工", "SCRM前端", "Coze Chat API", "Coze知识库", "Coze LLM"]
+    api_chain:
+      - seq: 1
+        api: "SCRM前端：员工输入查询问题"
+      - seq: 2
+        api: "SCRM后端 POST /v3/chat — 调用配置了知识库的Coze智能体"
+      - seq: 3
+        api: "Coze知识库：RAG检索（全文/语义/混合）→返回top_k相关片段"
+      - seq: 4
+        api: "Coze LLM：基于检索片段+提示词生成结构化回答（含来源引用）"
+      - seq: 5
+        api: "Coze返回 messages[] → SCRM前端展示答案+来源文档链接"
+    closure: "员工获得基于最新知识库的准确回答，支持溯源到原始文档"
+
+  - scene_id: "SC-CZ-004"
+    scene_name: "多Agent协作（Agent Team处理复杂客户问题）"
+    problem_ref: "BP-CZ-001"
+    trigger: "客户问题涉及多个专业领域（如售前咨询+技术问题+售后），需要多Agent协同处理"
+    participant_roles: ["SCRM后端", "Coze Agent Team", "销售Agent", "客服Agent", "运营Agent"]
+    api_chain:
+      - seq: 1
+        api: "SCRM后端 POST /v3/workflow/run — 触发Agent Team协作工作流"
+      - seq: 2
+        api: "Coze Agent Team：销售Agent→话术推荐+商品匹配"
+      - seq: 3
+        api: "Coze Agent Team：客服Agent→FAQ+售后处理方案"
+      - seq: 4
+        api: "Coze Agent Team：运营Agent→画像更新+跟进任务生成"
+      - seq: 5
+        api: "Coze Agent Team汇总输出 → SCRM后端 → SCRM前端多面板展示"
+    closure: "多Agent协同输出综合方案，员工获得全方位AI辅助"
+
+# ════════════════════════════════════════════
+# SDL V2.0.0 新增区块D：跨域衔接
+# ════════════════════════════════════════════
+cross_domain_bridges:
+  connections:
+    - target_domain: "企业微信（WeChat Work）"
+      connection_type: "intelligence_layer"
+      description: >
+        Coze作为企微客户沟通的AI大脑：
+        1. 企微回调客户消息→SCRM→Coze工作流→意图识别+话术推荐→返回SCRM→企微展示
+        2. Coze知识库存储话术库+FAQ，供企微沟通中实时检索
+        3. Coze长期记忆存储客户画像，跨企微会话上下文传递
+        4. Coze触发器→定时生成企微群发内容+跟进提醒
+      key: "企微消息 → Coze AI处理 → 智能回复"
+      scenario_refs: ["SC-CZ-001", "SC-CZ-002"]
+
+    - target_domain: "火山引擎智能外呼"
+      connection_type: "intelligence_driver"
+      description: >
+        Coze AI驱动外呼话术和策略：
+        1. Coze工作流→基于客户画像生成个性化外呼话术
+        2. Coze意图识别→增强外呼对话中的实时意图判定
+        3. Coze知识库→外呼话术剧本的存储和版本管理
+        4. Coze长期记忆→外呼结果回流客户画像→驱动下一轮外呼策略
+        5. Coze多Agent→销售Agent设计话术+运营Agent分析效果
+      key: "Coze AI → 外呼话术生成 → 外呼执行 → 结果回流Coze画像"
+      scenario_refs: ["SC-CZ-002", "SC-CZ-004"]
+
+    - target_domain: "微信公众平台/微信账号"
+      connection_type: "identity_context"
+      description: >
+        Coze长期记忆需要用户身份上下文：
+        1. 微信openid/unionid作为Coze user_id，实现跨渠道用户记忆统一
+        2. Coze变量节点注入微信用户标签（性别/地区/关注来源）
+        3. Coze工作流结合微信用户画像做个性化推荐
+      key: "微信用户身份 → Coze user_id → 跨渠道统一记忆"
+      scenario_refs: ["SC-CZ-001"]
+
+# ════════════════════════════════════════════
+# SDL V2.0.0 新增区块E：角色视角
+# ════════════════════════════════════════════
+role_perspectives:
+  - role_name: "开发者视角（API集成）"
+    scenarios: ["SC-CZ-001", "SC-CZ-002", "SC-CZ-004"]
+    perspective: >
+      关注API稳定性、限流策略、认证流程、错误处理。
+      需要明确Chat API与Workflow API的适用场景差异：
+      Chat适合实时对话（流式/非流式），Workflow适合批量处理+复杂编排。
+      OAuth 2.0生产环境认证、PAT调试认证的切换机制。
+      QPS/RPM限制（免费版Chat 20QPS/Workflow 50QPS）和升级路径。
+      Webhook回调的幂等处理和补偿拉取机制。
+    key_concerns: ["API版本兼容", "限流退避策略", "OAuth Token刷新", "错误码处理"]
+
+  - role_name: "运营视角（工作流配置）"
+    scenarios: ["SC-CZ-002", "SC-CZ-003"]
+    perspective: >
+      关注工作流可视化配置的易用性、知识库内容管理效率。
+      需要能自主调整业务规则（意图分类标准/话术匹配逻辑/商品推荐权重）
+      而无需开发介入。话术A/B测试能力——同一场景配置多版话术，
+      数据驱动迭代。知识库内容更新后能实时生效。
+    key_concerns: ["零代码配置", "话术效果分析", "知识库版本管理", "变更即时生效"]
+
+  - role_name: "客户视角（对话体验）"
+    scenarios: ["SC-CZ-001", "SC-CZ-003"]
+    perspective: >
+      关注AI回复的准确度、自然度和响应速度。
+      期望AI理解上下文（不重复问已提供的信息）、
+      回答准确有据（可溯源到知识库文档）、
+      语气自然不生硬（符合人设风格）。
+      不满意AI回答时能无缝转人工。
+    key_concerns: ["回复准确度", "上下文理解", "转人工顺畅", "不机械重复"]
+
+# ============================================
+# Part 1: 业务泳道图（架构六层+SCRM映射）
+# ============================================
+swimlane:
+  architecture_layers:
+    - layer: "编排层（编排能力）"
+      roles: ["智能体开发者", "产品经理"]
+      actions:
+        - "定义人设与提示词（角色+技能+限制）"
+        - "选择模型（豆包/DeepSeek/方舟/Claude/GPT等）"
+        - "选择编排模式（单Agent / 多Agent）"
+        - "调参（Temperature/Token上限）"
+    - layer: "搭建层（技能+知识+记忆）"
+      roles: ["智能体开发者", "领域专家"]
+      actions:
+        - "绑定插件（内置商店 / 自定义插件）"
+        - "设计工作流（拖拽节点+连线）"
+        - "配置触发器（定时 / 事件）"
+        - "上传知识库（文档/表格/图片）"
+        - "设置变量+数据库+长期记忆"
+    - layer: "体验层（对话体验）"
+      roles: ["智能体开发者", "UX设计师"]
+      actions:
+        - "设置开场白+问题建议+快捷指令"
+        - "配置语音（语种/音色/语音通话）"
+        - "设计卡片（自定义消息格式）"
+        - "设定角色形象（拟人化）"
+    - layer: "设计层（卡片+UI）"
+      roles: ["UX设计师"]
+      actions:
+        - "自定义消息卡片格式"
+        - "配置背景图片"
+    - layer: "发布层（多渠道发布）"
+      roles: ["开发者", "运维"]
+      actions:
+        - "发布到扣子商店/模板库"
+        - "发布到社交应用（豆包/飞书/微信/抖音）"
+        - "发布为HTTP API服务"
+        - "Chat SDK集成（JS/Python/Java）"
+        - "第三方渠道入驻"
+    - layer: "运营层（运维+分析）"
+      roles: ["运营", "数据分析师"]
+      actions:
+        - "对话调试（查看执行细节）"
+        - "数据分析（用户量/意图/消息记录）"
+        - "限流监控（QPS/RPM）"
+
+  scrm_mapping_table:
+    - { capability: "人设+提示词", scrm_mapping: "销售助手人设、话术风格定义" }
+    - { capability: "知识库", scrm_mapping: "商品知识库、FAQ、话术库、行业知识" }
+    - { capability: "工作流", scrm_mapping: "沟通中实时辅助流程（话术推荐→情绪监控→商品匹配）" }
+    - { capability: "长期记忆", scrm_mapping: "客户画像记忆、历史沟通上下文" }
+    - { capability: "数据库", scrm_mapping: "客户数据、跟进记录、交易数据" }
+    - { capability: "变量", scrm_mapping: "当前客户ID、会话上下文" }
+    - { capability: "插件", scrm_mapping: "企微消息、CRM系统API、短信/电话" }
+    - { capability: "触发器", scrm_mapping: "定时跟进提醒、待办自动生成" }
+    - { capability: "API/SDK", scrm_mapping: "嵌入SCRM前端页面、后端调用工作流" }
+    - { capability: "多Agent", scrm_mapping: "销售+客服+主管多角色协同" }
+    - { capability: "数据分析", scrm_mapping: "销售漏斗、话术效果、客户转化分析" }
+
+# ============================================
+# Part 2: 业务流程（Coze智能体搭建+SCRM使用流程）
+# ============================================
+business_flows:
+  # 流程A: 创建智能体的标准流程
+  flow_agent_creation:
+    name: "Coze智能体标准搭建流程"
+    happy_path: |
+      flowchart TD
+        A[创建智能体→名称+图标] --> B[编排层：写人设提示词]
+        B --> C[选模型：豆包/DeepSeek等]
+        C --> D{需要外部能力?}
+        D -->|是| E[添加插件/工作流/触发器]
+        D -->|否| F[配置记忆：变量+数据库+长期记忆]
+        E --> F
+        F --> G[配置对话体验：开场白+语音+快捷指令]
+        G --> H[预览调试→测试多轮对话]
+        H --> I{满意?}
+        I -->|否| J[优化提示词/知识/工作流]
+        J --> H
+        I -->|是| K[选择发布渠道]
+        K --> L[上线运营+数据分析]
+    
+    exceptions:
+      - "插件无合适选项 → 创建自定义插件（定义API+参数）"
+      - "知识库检索不准 → 调整切片策略+检索模式（全文/语义/混合）"
+      - "回复不符合预期 → 优化提示词+增加Few-Shot示例"
+      - "触发限流 → 升级套餐/优化调用频率"
+    
+    branches:
+      - { name: "单Agent模式", desc: "适合简单任务，一个Agent处理所有" }
+      - { name: "多Agent模式", desc: "复杂任务拆解为多个Agent协同（如调研员→写手→审校员→美工）" }
+      - { name: "工作流模式", desc: "按步骤自动执行，无需对话触发" }
+
+  # 流程B: SCRM中沟通AI辅助的Coze使用流程
+  flow_scrm_ai_assist:
+    name: "SCRM沟通AI辅助—Coze工作流"
+    description: |
+      一条客户沟通中，Coze工作流串联AI实时辅助能力
+    flow: |
+      flowchart TD
+        A[客户消息到达] --> B[变量：绑定客户ID+消息内容]
+        B --> C[意图识别节点：客户意图分析]
+        C --> D{意图类型}
+        D -->|想买| E[商品推荐：知识库检索匹配商品]
+        D -->|比价| F[话术推荐：对比话术+卖点强化]
+        D -->|顾虑| G[话术推荐：打消顾虑话术]
+        D -->|投诉| H[情绪预警：标记负面+通知主管]
+        E --> I[代码节点：组装推荐话术+商品卡片]
+        F --> I
+        G --> I
+        H --> J[IF节点：情绪分>阈值→通知主管]
+        I --> K[输出节点：返回推荐话术+商品]
+        J --> L[输出节点：返回预警+升级处理]
+        K --> M[数据库：记录推荐结果]
+        L --> N[数据库：记录情绪事件]
+        M --> O[沟通结束后：大模型节点→总结+画像更新]
+        N --> O
+        O --> P[长期记忆：更新客户画像]
+        P --> Q[触发器：生成跟进任务]
+
+  # 流程C: Coze API集成流程
+  flow_api_integration:
+    name: "SCRM调用Coze API标准流程"
+    flow: |
+      flowchart TD
+        A[SCRM后端] --> B{认证方式}
+        B -->|开发调试| C[PAT个人令牌 Bearer pat_xxx]
+        B -->|生产环境| D[OAuth 2.0 三腿认证]
+        C --> E[POST /v3/chat]
+        D --> E
+        E --> F[Coze智能体处理]
+        F --> G[返回对话结果]
+        F --> H[POST /v3/workflow/run]
+        H --> I[工作流异步执行]
+        I --> J[GET /v3/workflow/result]
+        J --> G
+        G --> K[SCRM前端展示]
+
+# ============================================
+# Part 3: 业务信息流（Coze平台内部数据流+SCRM集成数据流）
+# ============================================
+information_flow:
+  internal_data_flow:
+    description: "Coze智能体内部数据流转"
+    entities:
+      - name: "用户输入（文本/语音/图片）"
+        producer: "终端用户（SCRM租户员工端）"
+        consumer: "Coze智能体（LLM节点）"
+        key_fields: ["user_id", "message_content", "session_id", "channel_type"]
+      - name: "知识库检索片段"
+        producer: "Coze知识库检索节点"
+        consumer: "LLM大模型节点（作为上下文）"
+        key_fields: ["chunk_text", "similarity_score", "source_doc", "chunk_index"]
+      - name: "长期记忆"
+        producer: "Coze长期记忆引擎"
+        consumer: "LLM节点 / 工作流节点"
+        key_fields: ["memory_type", "memory_content", "user_uid", "channel_id", "created_at"]
+      - name: "变量数据"
+        producer: "用户输入 / 上游节点"
+        consumer: "下游节点"
+        key_fields: ["variable_name", "variable_value", "variable_type"]
+      - name: "数据库记录"
+        producer: "Coze数据库写入节点"
+        consumer: "Coze数据库查询节点"
+        key_fields: ["table_name", "record_id", "fields", "user_uid"]
+      - name: "工作流输出"
+        producer: "Coze工作流结束节点"
+        consumer: "Chat API响应 / 外部系统"
+        key_fields: ["workflow_id", "output_data", "status", "execution_time"]
+    cross_system:
+      - from: "SCRM前端（员工端）"
+        to: "Coze Chat API"
+        data: "客户消息+客户ID+会话上下文"
+      - from: "Coze Chat API"
+        to: "SCRM前端（员工端）"
+        data: "话术推荐+商品推荐+情绪状态"
+      - from: "SCRM后端"
+        to: "Coze Workflow API"
+        data: "客户数据+订单数据+跟进历史"
+      - from: "Coze Workflow API"
+        to: "SCRM后端"
+        data: "沟通总结+画像标签+跟进任务"
+
+# ============================================
+# Part 4: 业务操作矩阵（角色×能力×操作）
+# ============================================
+operation_matrix:
+  roles:
+    - "智能体创建者（开发/PM）"
+    - "SCRM租户员工（销售/客服）"
+    - "SCRM租户管理员"
+    - "Coze平台（系统自动）"
+  states:
+    - "智能体开发中"
+    - "智能体已发布"
+    - "会话进行中"
+    - "会话已结束"
+    - "沟通后待处理"
+  matrix:
+    - { role: "智能体创建者", state: "智能体开发中", actions: ["编写人设提示词", "配置知识库", "绑定插件", "设计工作流", "调试对话"], target_state: "智能体已发布" }
+    - { role: "智能体创建者", state: "智能体已发布", actions: ["查看数据分析", "优化配置", "更新知识库", "版本回退"], target_state: "智能体已发布" }
+    - { role: "SCRM租户员工", state: "会话进行中", actions: ["输入客户消息", "接收AI推荐话术", "查看情绪提醒", "选择推荐商品"], target_state: "会话进行中" }
+    - { role: "SCRM租户员工", state: "会话进行中", actions: ["结束当前会话"], target_state: "会话已结束" }
+    - { role: "Coze平台", state: "会话已结束", actions: ["自动生成沟通总结", "提取客户标签", "更新长期记忆+画像", "生成跟进任务"], target_state: "沟通后待处理" }
+    - { role: "SCRM租户员工", state: "沟通后待处理", actions: ["查看沟通总结+评分", "确认/修改自动画像标签", "认领跟进任务", "设置下次沟通时间"], target_state: "会话已结束" }
+
+# ============================================
+# Part 5: 业务规则（Coze使用规则+SCRM集成约束）
+# ============================================
+business_rules:
+  - id: "BR-COZE-001"
+    name: "模型Functioncall约束"
+    description: "使用插件或工作流时，所选模型必须支持Functioncall能力。豆包·角色扮演·Pro模型不支持Functioncall，需使用豆包·工具调用模型"
+    trigger_condition: "智能体绑定插件或工作流"
+    behavior: "检查模型是否支持Functioncall，不支持的模型→提示切换"
+    source: "Coze官方文档-插件使用"
+
+  - id: "BR-COZE-002"
+    name: "OAuth插件授权约束"
+    description: "OAuth类插件必须完成授权才能调用，工作流中的OAuth插件支持共享授权模式"
+    trigger_condition: "添加OAuth类型插件"
+    behavior: "提示未授权→用户完成授权→插件可用"
+    source: "Coze官方文档-插件"
+
+  - id: "BR-COZE-003"
+    name: "长期记忆与工作流绑定约束"
+    description: "如果智能体绑定了涉及长期记忆的工作流，必须同时开启智能体的长期记忆功能"
+    trigger_condition: "工作流中含长期记忆节点"
+    behavior: "强制开启智能体长期记忆开关；建议关闭Prompt中调用避免重复触发"
+    source: "Coze官方文档-长期记忆"
+
+  - id: "BR-COZE-004"
+    name: "API限流约束"
+    description: "个人免费版Chat API 20QPS/300RPM，工作流API 50QPS。超出后返回429限流错误"
+    trigger_condition: "API调用频率超过套餐限制"
+    behavior: "返回429错误码+retry_after字段→调用方应实现重试+退避策略"
+    source: "Coze官方文档-API介绍"
+
+  - id: "BR-COZE-005"
+    name: "请求体大小限制"
+    description: "工作流API请求体最大20MB，其他API最大15MB"
+    trigger_condition: "请求体大小超过限制"
+    behavior: "返回413错误→调用方应拆分数据或压缩"
+    source: "Coze官方文档-API介绍"
+
+  - id: "BR-COZE-006"
+    name: "知识库检索策略选择规则"
+    description: "全文检索适合专有名词/ID查询，语义检索适合自然语言查询，混合检索综合两者"
+    trigger_condition: "配置知识库召回策略"
+    behavior: "根据使用场景选择：ID查询→全文；自然语言→语义；不确定→混合"
+    source: "Coze官方文档-知识库"
+
+  - id: "BR-COZE-007"
+    name: "记忆隔离规则"
+    description: "长期记忆在用户间完全隔离，按'用户UID+渠道ID'编码。开发者无法查看用户记忆"
+    trigger_condition: "用户对话产生长期记忆"
+    behavior: "记忆自动隔离存储，每个用户只能访问自己的记忆"
+    source: "Coze官方文档-长期记忆"
+
+  - id: "BR-COZE-008"
+    name: "SCRM工作流参数传递规则"
+    description: "SCRM调用Coze工作流时必须传递：customer_id（客户UID）、employee_id（员工UID）、message_content（消息内容）、conversation_id（会话ID）"
+    trigger_condition: "SCRM后端调用Coze工作流API"
+    behavior: "必填参数检查→缺少任一→返回参数缺失错误"
+    source: "SCRM集成设计需求"
+
+# ============================================
+# Part 6: 业务动作（Coze平台能力动作定义）
+# ============================================
+business_actions:
+  # 智能体生命周期动作
+  - id: "ACT-COZE-001"
+    name: "创建智能体"
+    scene: "智能体搭建"
+    trigger_role: "智能体创建者"
+    input_params: ["agent_name", "agent_description", "agent_avatar"]
+    output_result: "agent_id"
+    pre_conditions: ["已登录Coze账号", "已有可用空间"]
+    post_state: "智能体处于开发中状态"
+    async: false
+
+  - id: "ACT-COZE-002"
+    name: "发布智能体"
+    scene: "智能体发布"
+    trigger_role: "智能体创建者"
+    input_params: ["agent_id", "publish_channels[]", "publish_config"]
+    output_result: "publish_status + channel_urls"
+    pre_conditions: ["智能体已通过调试", "所有必填配置已完成"]
+    post_state: "智能体处于已发布状态（各渠道可访问）"
+    async: true
+
+  - id: "ACT-COZE-003"
+    name: "对话请求"
+    scene: "实时对话"
+    trigger_role: "终端用户"
+    input_params: ["bot_id", "user_id", "query", "stream", "chat_history", "conversation_id"]
+    output_result: "messages[] + conversation_id"
+    pre_conditions: ["智能体已发布", "用户有访问权限"]
+    post_state: "会话继续/结束"
+    related_api: "POST /v3/chat"
+    async: false
+
+  - id: "ACT-COZE-004"
+    name: "执行工作流"
+    scene: "工作流调用"
+    trigger_role: "外部系统/触发器"
+    input_params: ["workflow_id", "parameters", "is_async"]
+    output_result: "execute_id + output_data"
+    pre_conditions: ["工作流已发布", "调用方有API权限"]
+    post_state: "工作流执行完成"
+    related_api: "POST /v3/workflow/run"
+    async: true
+
+  - id: "ACT-COZE-005"
+    name: "查询知识库"
+    scene: "知识检索"
+    trigger_role: "工作流知识库节点"
+    input_params: ["query_text", "knowledge_id", "top_k", "min_score"]
+    output_result: "chunks[]（含文本+评分+来源）"
+    pre_conditions: ["知识库已创建+有数据"]
+    post_state: "检索结果传入下游LLM节点"
+
+# ============================================
+# Part 7: 业务状态机（Coze智能体生命周期）
+# ============================================
+state_machine:
+  entity: "Coze智能体"
+  states:
+    - "DRAFT（草稿）"
+    - "DEBUGGING（调试中）"
+    - "PUBLISHED（已发布）"
+    - "DEPRECATED（已废弃）"
+  transitions:
+    - { from: "DRAFT", trigger: "开始预览调试", to: "DEBUGGING", operator: "智能体创建者", precondition: "基础配置完成", post_action: "启动调试面板" }
+    - { from: "DEBUGGING", trigger: "修改配置", to: "DRAFT", operator: "智能体创建者", precondition: "无", post_action: "返回编辑模式" }
+    - { from: "DEBUGGING", trigger: "点击发布", to: "PUBLISHED", operator: "智能体创建者", precondition: "调试测试通过、配置完整", post_action: "部署到各渠道、生成API端点" }
+    - { from: "PUBLISHED", trigger: "版本回退", to: "DEBUGGING", operator: "智能体创建者", precondition: "有历史版本", post_action: "回退到指定版本" }
+    - { from: "PUBLISHED", trigger: "废弃/下线", to: "DEPRECATED", operator: "管理员", precondition: "无活跃用户依赖", post_action: "停止服务、释放资源" }
+  
+  mermaid: |
+    stateDiagram-v2
+      [*] --> DRAFT: 创建智能体
+      DRAFT --> DEBUGGING: 预览调试
+      DEBUGGING --> DRAFT: 修改配置
+      DEBUGGING --> PUBLISHED: 发布
+      PUBLISHED --> DEBUGGING: 版本回退
+      PUBLISHED --> DEPRECATED: 下线
+      DEPRECATED --> [*]
+
+# ============================================
+# Part 8: 解决方案概括
+# ============================================
+solution:
+  product_name: "Coze扣子"
+  product_type: "AI智能体开发平台（PaaS/SaaS）→ V3.0 升级为AI团队协作平台"
+  provider: "字节跳动"
+  latest_version: "3.0（2026-06-01发布）"
+  
+  capability_summary:
+    core_components:
+      - { name: "Agent Team（V3.0升级）", description: "一人多Agent + 多人多Agent协同，项目空间内协作产出自动归档", complexity: "中" }
+      - { name: "智能体引擎", description: "提示词工程+模型编排（单/多Agent模式），支持本地Agent接入", complexity: "低（零代码）" }
+      - { name: "工作流引擎", description: "15+节点类型（LLM/代码/插件/分支/循环/数据库/知识库等），可视化拖拽编排", complexity: "中" }
+      - { name: "知识库", description: "文本/表格/图片三种类型，全文+语义+混合检索，支持多数据源", complexity: "低" }
+      - { name: "记忆系统", description: "变量（键值对）+数据库（结构化NL2SQL）+长期记忆（自动画像提取）", complexity: "低-中" }
+      - { name: "技能商店（V3.0新增）", description: "5大行业模板（自媒体/法律/金融/医疗/科研）一键创建专家Agent", complexity: "低" }
+      - { name: "插件生态", description: "内置插件商店+自定义插件（API封装），Functioncall机制调用", complexity: "中" }
+      - { name: "项目空间（V3.0新增）", description: "独立工作区，Agent产出自动归档，支持Agent/编程/视频三种项目类型", complexity: "低" }
+      - { name: "发布集成", description: "HTTP API(OAuth2.0+PAT)+Chat SDK(JS/Python/Java)+多渠道（飞书/微信/豆包/抖音）+桌面端+移动端", complexity: "中-高" }
+      - { name: "编程项目（V3.0新增）", description: "对话式编程，接入Claude Code/Codex CLI/OpenClaw本地Agent", complexity: "高" }
+      - { name: "视频项目（V3.0新增）", description: "Seedance 2.0视频全流程生成，支持导出剪映工程文件", complexity: "中" }
+
+  integration_steps:
+    scrm_integration:
+      - "1. 创建SCRM项目空间（V3.0），配置目标+成员+Agent团队"
+      - "2. 创建销售助手Agent + 客服Agent + 运营Agent（V3.0 Agent Team）"
+      - "3. 基于行业模板快速搭建（金融/医疗/自媒体等）（V3.0技能商店）"
+      - "4. 设计「沟通中实时辅助」工作流（意图识别→话术推荐→情绪监控→商品推荐）"
+      - "5. 设计「沟通后自动处理」工作流（总结→画像更新→跟进生成）"
+      - "6. 配置长期记忆（客户档案）+数据库（跟进记录）+变量（会话上下文）"
+      - "7. 发布智能体为API服务，获取API端点"
+      - "8. SCRM后端通过POST /v3/workflow/run调用工作流"
+      - "9. SCRM前端通过Chat SDK嵌入智能体对话界面"
+      - "10. 移动端/桌面端/网页端三端协同（V3.0），销售外出手机继续处理"
+      - "11. 配置触发器实现定时跟进提醒"
+      - "12. 通过数据分析看板优化话术和推荐效果"
+
+  common_issues:
+    - { issue: "插件无法调用", solution: "检查模型是否支持Functioncall、提示词是否明确调用意图、OAuth是否授权" }
+    - { issue: "知识库检索不准", solution: "调整检索策略（混合检索）、提高最小匹配度、优化文档分片（每片500-1000字）" }
+    - { issue: "长期记忆不记录", solution: "多对话1-2轮触发，或在对话中明确说「记住XXX」「必须记住」" }
+    - { issue: "多Agent中间输出截断", solution: "超过2000字时开启「摘要模式」压缩传递" }
+    - { issue: "API触发限流", solution: "实现exponential backoff重试策略、升级套餐增加QPS" }
+    - { issue: "工作流变量作用域混乱", solution: "用变量聚合节点合并分支/循环输出，注意全局vs局部作用域" }
+    - { issue: "V3.0 远程调用本地Agent（手机端）", solution: "确保电脑在线且运行扣子桌面端，关机/休眠不可用。长期在线建议使用云端Agent" }
+    - { issue: "V3.0 多人协作数据可见性", solution: "项目空间内Agent产出对成员可见，敏感数据建议单独建项目空间" }
+    - { issue: "V3.0 视频导出剪映工程文件", solution: "部分特效可能丢失，需在剪映中手动补充" }
+
+# ============================================
+# Part 8.5: Coze 3.0 新特性专题（V1.1.0 增量）
+# ============================================
+coze_3_0_features:
+  release_date: "2026-06-01"
+  core_theme: "从「单人AI工具」到「AI团队协作平台」"
+  key_changes:
+    - id: "3.0-F01"
+      name: "多人多Agent协作（Agent Team）"
+      description: |
+        支持组建Agent团队，多个Agent围绕统一目标分工协作。
+        两种模式：
+        - 一人+多Agent：一个用户调度调研/文案/运营/设计等多Agent
+        - 多人+多Agent：真实团队（主编/编辑）+ AI Agent在同一项目空间协作
+        所有Agent产出自动沉淀为项目资产，不再"聊完即丢"。
+      scrm_implication: "SCRM可构建「销售Agent+客服Agent+运营Agent」团队协同服务同一客户"
+    
+    - id: "3.0-F02"
+      name: "项目空间（Project Space）"
+      description: |
+        独立工作区：拥有自己的目标、成员、Agent和文件。
+        不同项目互不干扰，各有独立知识库和对话历史。
+        Agent产出自动归档，无需手动整理。
+        创建类型：Agent项目 / 编程项目 / 视频项目。
+      scrm_implication: "每个SCRM租户或客户可建立独立项目空间，知识库和Agent隔离"
+    
+    - id: "3.0-F03"
+      name: "技能商店（Skill Store）+ 行业技能包"
+      description: |
+        内置5大行业模板，一键创建专家级Agent，无需编写提示词：
+        | 行业 | 核心能力 |
+        | 自媒体 | 选题/脚本/标题生成/账号分析 |
+        | 法律 | 合同生成/类案检索/风险标注 |
+        | 金融 | 财报分析/行业报告/A股分析 |
+        | 医疗 | 诊断辅助/文献检索/报告解读 |
+        | 科研 | 论文综述/实验设计/数据分析 |
+        以法律模板为例：自带法律知识库+合同审查+风险提示技能。
+      scrm_implication: "可基于行业模板快速搭建垂直行业SCRM智能体（金融/医疗/法律等）"
+    
+    - id: "3.0-F04"
+      name: "本地Agent接入"
+      description: |
+        支持一键接入外部Agent工具：
+        - Claude Code：代码生成和调试
+        - Codex CLI：OpenAI命令行编程工具
+        - OpenClaw：开源Agent框架
+        需安装桌面端并授权访问本地文件。
+        接入后与扣子原生Agent同处项目空间协同。
+      scrm_implication: "可接入企业已有的本地Agent/CLI工具与SCRM智能体协同"
+    
+    - id: "3.0-F05"
+      name: "编程项目 & 视频项目"
+      description: |
+        编程项目：对话式编程开发，Agent自动分析代码、生成模块、调试bug
+        视频项目：搭载Seedance 2.0，支持视频全流程生成+导出剪映工程文件
+        手机端可远程调用电脑上的Agent（需电脑在线+运行桌面端）
+      scrm_implication: "视频项目可用于营销视频批量生成；编程项目可加速SCRM定制开发"
+    
+    - id: "3.0-F06"
+      name: "三端全量协同"
+      description: |
+        网页端（coze.cn）+ 桌面端（Mac/Windows首次推出）+ 手机端（iOS/Android）
+        实时同步，无缝切换。桌面端可连接本地文件，手机端远程调度处理。
+        无需守在电脑前等待结果。
+      scrm_implication: "销售外出时手机端即可使用AI辅助，回办公室电脑端继续处理复杂任务"
+    
+    - id: "3.0-F07"
+      name: "云端Agent（长期在线）"
+      description: |
+        云端Agent长期在线、零配置，无需手动维护。
+        多人协作时Agent产出对成员可见。
+        如需长期在线服务建议使用云端Agent而非本地Agent（需高阶会员）。
+      scrm_implication: "SCRM客服Agent可部署为云端Agent，7×24小时在线服务"
+
+# ============================================
+# Part 9: 主题清单
+# ============================================
+themes:
+  - id: "T001"
+    name: "智能体编排水箱（Agent Core）"
+    description: "智能体核心概念：人设与提示词工程、模型选择与参数调优、单/多Agent编排模式"
+    content_ratio: "15%"
+    related_nodes: ["提示词优化", "模型选择", "Agent模式"]
+    sub_themes: ["人设编写最佳实践", "提示词结构（角色+技能+限制）", "豆包/DeepSeek/方舟模型对比", "Temperature调优", "单Agent vs 多Agent选型"]
+    scrm_relevance: "核心——定义销售助手角色和话术风格"
+
+  - id: "T002"
+    name: "工作流引擎（Workflow）"
+    description: "可视化流程编排：15+节点类型，变量传递，同步/异步执行模式"
+    content_ratio: "25%"
+    related_nodes: ["LLM节点", "代码节点", "IF选择器", "意图识别", "循环/批处理", "变量聚合", "数据库节点", "知识库检索/写入"]
+    sub_themes: ["节点串行/并行编排", "变量作用域（全局/局部/持久层）", "异步任务模式", "子工作流复用", "Chatflow vs Workflow"]
+    scrm_relevance: "核心——容纳「沟通中+沟通后」全部业务逻辑编排"
+
+  - id: "T003"
+    name: "知识库（Knowledge Base）"
+    description: "文本/表格/图片三种知识类型，RAG检索增强生成，多数据源接入"
+    content_ratio: "10%"
+    related_apis: 0
+    sub_themes: ["文档切片策略", "全文/语义/混合检索", "召回参数调优（top_k/min_score）", "FAQ格式最佳实践（97%准确率）", "多数据源（飞书/Notion/网页）"]
+    scrm_relevance: "核心——存储话术库、产品知识库、FAQ、合同模板"
+
+  - id: "T004"
+    name: "插件系统（Plugin）"
+    description: "内置插件商店+自定义插件开发，Functioncall调用机制，OAuth授权"
+    content_ratio: "8%"
+    sub_themes: ["内置插件（资讯/出行/办公/图片理解/多模态）", "自定义插件（API工具封装）", "参数配置（默认值+可见性）", "OAuth共享授权模式", "卡片数据绑定"]
+    scrm_relevance: "重要——企微消息插件、外部CRM API封装"
+
+  - id: "T005"
+    name: "记忆系统（Memory）"
+    description: "变量（键值对）+数据库（结构化NL2SQL）+长期记忆（自动画像提取），三层递进"
+    content_ratio: "15%"
+    sub_themes: ["变量类型（系统/用户）", "数据库单用户vs多用户模式", "长期记忆触发机制", "记忆召回（Prompt/工作流）", "记忆隔离（UID+渠道ID）"]
+    scrm_relevance: "核心——客户画像记忆、跟进记录、偏好标签"
+
+  - id: "T006"
+    name: "触发器与自动化（Trigger）"
+    description: "定时触发（Cron）+事件触发+API主动触发，实现自动化执行"
+    content_ratio: "5%"
+    sub_themes: ["Cron表达式配置", "定时新闻推送", "定时报表生成"]
+    scrm_relevance: "重要——定时跟进提醒、日报/周报自动生成"
+
+  - id: "T007"
+    name: "发布与API集成（Publish & API）"
+    description: "HTTP API（OAuth2.0+PAT）+Chat SDK三端+6大渠道发布"
+    content_ratio: "12%"
+    related_apis: 5
+    sub_themes: ["API端点（/v3/chat + /v3/workflow/run + /v3/files/upload）", "认证方式（PAT调试/OAuth生产）", "Chat SDK（JS/Python/Java）", "发布渠道（豆包/飞书/微信/抖音/扣子商店/Web）", "QPS/RPM限制"]
+    scrm_relevance: "核心——SCRM通过API/SDK集成Coze智能体能力"
+
+  - id: "T008"
+    name: "多智能体协同（Multi-Agent）"
+    description: "V1.1.0更新：Coze 3.0 升级为「Agent Team」模式——支持一人多Agent + 多人多Agent协同，项目空间内协作产出自动归档"
+    content_ratio: "10%"
+    sub_themes: ["一人+多Agent模式（调度调研/文案/运营/设计等）", "多人+多Agent模式（真实团队+AI Agent协作）", "项目空间产出自动归档", "本地Agent接入（Claude Code/Codex CLI/OpenClaw）", "云端Agent长期在线"]
+    scrm_relevance: "核心提升——SCRM构建销售+客服+运营Agent团队协同服务"
+
+  - id: "T010"
+    name: "Coze 3.0 平台新能力（V1.1.0 新增）"
+    description: "V3.0六大新特性：项目空间、技能商店、本地Agent接入、编程/视频项目、三端协同、云端Agent"
+    content_ratio: "10%"
+    sub_themes: ["项目空间（独立工作区+产出归档）", "技能商店（5大行业模板一键创建）", "本地Agent接入（Claude Code/Codex CLI/OpenClaw）", "编程项目（对话式开发）", "视频项目（Seedance 2.0+导出剪映）", "三端协同（网页/桌面/手机）"]
+    scrm_relevance: "关键——项目空间实现租户隔离、技能商店加速行业化部署、三端协同支持移动办公"
+
+  - id: "T009"
+    name: "对话体验与企业级特性（UX+Enterprise）"
+    description: "开场白/语音/卡片/角色形象+企业级安全/隔离/数据分析"
+    content_ratio: "5%"
+    sub_themes: ["开场白+问题建议+快捷指令", "语音输入/通话", "卡片消息", "企业版权限管理", "数据安全与隔离"]
+    scrm_relevance: "辅助——提升销售助手使用体验"
+
+# ============================================
+# Part 10: 场景清单（SCRM业务场景×Coze能力映射）
+# ============================================
+scenes:
+  - id: "SC-001"
+    name: "售前咨询—话术推荐与知识问答"
+    theme_id: "T001+T002+T003"
+    description: "销售与客户沟通中，基于客户问题自动匹配最佳回复话术，结合知识库回答产品/服务问题"
+    related_nodes: ["意图识别节点→知识库检索→LLM节点组装话术"]
+    flow_sketch: |
+      flowchart LR
+        A[客户提问] --> B[意图识别: 咨询类型]
+        B --> C[知识库检索: 匹配话术+FAQ]
+        C --> D[LLM: 结合人设生成个性化话术]
+        D --> E[返回推荐话术给销售]
+    depends_on: []
+    depended_by: ["SC-002", "SC-003", "SC-004"]
+
+  - id: "SC-002"
+    name: "客户意向识别与分级"
+    theme_id: "T001+T002+T005"
+    description: "识别客户交易意向类型和强度，分级处理。高意向→商品推荐，低意向→培育话术"
+    related_nodes: ["意图识别节点→IF选择器→变量存储意向等级"]
+    flow_sketch: |
+      flowchart TD
+        A[客户消息] --> B[意图识别: 意向类型]
+        B --> C{意向等级}
+        C -->|高意向| D[商品推荐SC-003]
+        C -->|中意向| E[培育话术]
+        C -->|无意向| F[礼貌结束+标记跟进]
+        D --> G[数据库: 记录意向+等级]
+        E --> G
+        F --> G
+
+  - id: "SC-003"
+    name: "智能商品推荐"
+    theme_id: "T002+T003+T005"
+    description: "基于客户意向+历史偏好+画像，推荐最匹配的商品/服务"
+    related_nodes: ["知识库检索（商品库）→LLM排序→数据库记录推荐"]
+    flow_sketch: |
+      flowchart TD
+        A[客户意向: 想买] --> B[数据库查询: 客户画像+历史]
+        B --> C[知识库检索: 商品库 按标签匹配]
+        C --> D[LLM: 结合画像排序Top3]
+        D --> E[输出: 商品卡片+推荐理由]
+
+  - id: "SC-004"
+    name: "情绪监控与预警"
+    theme_id: "T001+T002"
+    description: "实时分析客户消息情绪，负面波动触发预警，严重投诉通知主管介入"
+    related_nodes: ["LLM情绪分析→代码节点打分→IF选择器阈值判断"]
+    flow_sketch: |
+      flowchart TD
+        A[客户消息] --> B[LLM: 情绪分析+打分0-10]
+        B --> C{情绪阈值}
+        C -->|<3分 负面| D[标记red→通知主管]
+        C -->|3-5分 警惕| E[标记yellow→敏感话术推荐]
+        C -->|>5分 正常| F[标记green→正常回复]
+    priority: "high"
+
+  - id: "SC-005"
+    name: "沟通后自动总结"
+    theme_id: "T001+T002+T005"
+    description: "一条沟通结束后，自动生成结构化总结：聊了什么/决定了什么/做得好/可改进"
+    related_nodes: ["LLM节点（输入全对话）→结构化输出→数据库存储"]
+    flow_sketch: |
+      flowchart TD
+        A[会话结束信号] --> B[加载完整对话记录]
+        B --> C[LLM: 结构化总结]
+        C --> D[输出: 摘要+关键决策+好评点+改进点]
+        D --> E[数据库: 存储沟通总结]
+
+  - id: "SC-006"
+    name: "客户画像自动更新"
+    theme_id: "T001+T002+T005"
+    description: "从对话中自动提取客户标签（偏好/需求/决策风格/预算），更新画像标签"
+    related_nodes: ["LLM标签提取→长期记忆写入→数据库更新"]
+    flow_sketch: |
+      flowchart TD
+        A[对话记录] --> B[LLM: 提取客户标签]
+        B --> C[长期记忆: 写入/更新画像]
+        C --> D[数据库: 标签表更新]
+
+  - id: "SC-007"
+    name: "自动跟进任务生成"
+    theme_id: "T002+T005+T006"
+    description: "基于客户意向和沟通结果，自动生成跟进待办并排程"
+    related_nodes: ["LLM任务提取→数据库写入→触发器排程"]
+    flow_sketch: |
+      flowchart TD
+        A[沟通总结+意向] --> B[LLM: 分析跟进需求]
+        B --> C[生成: 任务标题+优先级+建议时间]
+        C --> D[数据库: 写入待办表]
+        D --> E[触发器: 到期提醒]
+
+  - id: "SC-008"
+    name: "SCRM集成—多渠道消息收发"
+    theme_id: "T004+T007"
+    description: "SCRM前端通过Chat SDK嵌入Coze智能体，后端通过API触发工作流"
+    related_nodes: ["Chat SDK前端对话→Workflow API后端调用"]
+    flow_sketch: |
+      flowchart TD
+        A[SCRM前端] -->|Chat SDK| B[Coze智能体]
+        B --> C[Coze工作流引擎]
+        C --> D[SCRM后端]
+        D -->|Workflow API| C
+        C -->|回调| D
+
+  - id: "SC-009"
+    name: "Coze 3.0 — 多Agent团队协作服务（V1.1.0新增）"
+    theme_id: "T008+T010"
+    description: "利用Coze 3.0 Agent Team能力，组建销售Agent+客服Agent+运营Agent团队，在项目空间内协同服务客户"
+    related_nodes: ["项目空间→Agent Team→多人多Agent→技能商店模板"]
+    flow_sketch: |
+      flowchart TD
+        A[客户消息到达] --> B[项目空间：客户项目]
+        B --> C[销售Agent: 话术推荐+商品匹配]
+        B --> D[客服Agent: FAQ+售后处理]
+        B --> E[运营Agent: 画像更新+任务跟进]
+        C --> F[Agent Team汇总]
+        D --> F
+        E --> F
+        F --> G[SCRM员工端展示]
+    priority: "high"
+
+  - id: "SC-010"
+    name: "Coze 3.0 — 行业技能包快速部署（V1.1.0新增）"
+    theme_id: "T010"
+    description: "基于Coze 3.0技能商店5大行业模板，快速搭建垂直行业SCRM智能体（金融/法律/医疗/自媒体/科研）"
+    related_nodes: ["技能商店→行业模板→一键创建→定制知识库→发布"]
+    flow_sketch: |
+      flowchart TD
+        A[选择行业模板] --> B[自带知识库+技能加载]
+        B --> C[补充企业私有数据]
+        C --> D[配置SCRM集成API]
+        D --> E[发布为API服务]
+        E --> F[SCRM调用行业专家Agent]
+    priority: "medium"
+
+# ============================================
+# Part 11: 接口串联（Coze API完整清单）
+# ============================================
+api_chain:
+  category: "HTTP REST API"
+  base_url: "https://api.coze.cn"
+  auth_methods:
+    - { type: "PAT（个人访问令牌）", header: "Authorization: Bearer pat_xxxxx", env: "开发/调试" }
+    - { type: "OAuth 2.0（三腿认证）", header: "Authorization: Bearer {access_token}", env: "生产环境" }
+  apis:
+    - id: "API-COZE-001"
+      name: "发起对话"
+      endpoint: "POST /v3/chat"
+      description: "向指定智能体发起对话，支持流式/非流式响应"
+      input_params_inference:
+        - { field: "bot_id", type: "string", required: true, description: "智能体ID" }
+        - { field: "user_id", type: "string", required: true, description: "用户唯一标识" }
+        - { field: "query", type: "string", required: true, description: "用户消息内容" }
+        - { field: "stream", type: "boolean", required: false, description: "是否流式返回" }
+        - { field: "chat_history", type: "array", required: false, description: "历史对话记录" }
+        - { field: "conversation_id", type: "string", required: false, description: "会话ID（多轮对话时传入）" }
+      limits: { qps_free: 20, qps_pro: 100, qps_enterprise: 500 }
+
+    - id: "API-COZE-002"
+      name: "执行工作流"
+      endpoint: "POST /v3/workflow/run"
+      description: "同步/异步执行已发布的工作流"
+      input_params_inference:
+        - { field: "workflow_id", type: "string", required: true, description: "工作流ID" }
+        - { field: "parameters", type: "object", required: true, description: "工作流输入参数（对应开始节点定义）" }
+        - { field: "is_async", type: "boolean", required: false, description: "是否异步执行（默认false）" }
+      limits: { qps_free: 50, qps_pro: 100, qps_enterprise: 500, max_body: "20MB" }
+
+    - id: "API-COZE-003"
+      name: "执行工作流（流式）"
+      endpoint: "POST /v3/workflow/stream_run"
+      description: "流式执行工作流，实时返回中间结果"
+      limits: { qps_free: 50, qps_pro: 100, qps_enterprise: 500 }
+
+    - id: "API-COZE-004"
+      name: "查询工作流异步结果"
+      endpoint: "GET /v3/workflow/result"
+      description: "查询异步执行的工作流结果"
+      input_params_inference:
+        - { field: "execute_id", type: "string", required: true, description: "执行ID（来自异步调用的返回值）" }
+      limits: { qps_free: 50, qps_pro: 100, qps_enterprise: 500 }
+
+    - id: "API-COZE-005"
+      name: "上传文件"
+      endpoint: "POST /v3/files/upload"
+      description: "上传文件供智能体/工作流使用"
+      limits: { qps_free: 10, qps_pro: 10, qps_enterprise: 20 }
+
+  scrm_integration_sequence: |
+    sequenceDiagram
+      participant E as SCRM员工端
+      participant B as SCRM后端
+      participant C as Coze API
+      participant W as Coze工作流
+      participant D as Coze数据库
+
+      E->>B: 客户消息到达
+      B->>C: POST /v3/workflow/run (workflow_id+parameters)
+      C->>W: 触发工作流
+      W->>W: 意图识别节点
+      W->>D: 查询客户画像+历史
+      W->>W: 知识库检索(话术+商品)
+      W->>W: LLM节点(组装推荐)
+      W-->>C: 输出结果
+      C-->>B: 返回话术+商品+情绪
+      B-->>E: 展示AI推荐
+      
+      Note over E,D: --- 沟通结束后 ---
+      
+      B->>C: POST /v3/workflow/run (总结工作流)
+      C->>W: 触发后续工作流
+      W->>W: LLM(沟通总结+标签提取)
+      W->>D: 更新画像+写入跟进
+      W-->>C: 总结+任务
+      C-->>B: 返回总结
+      B-->>E: 展示沟通总结+跟进提醒
+
+  scrm_key_parameters:
+    required_for_scrm:
+      - { param: "customer_id", description: "客户唯一标识（对应Coze user_id）", semantic_role: "PRIMARY_KEY" }
+      - { param: "employee_id", description: "租户员工唯一标识", semantic_role: "REFERENCE" }
+      - { param: "conversation_id", description: "会话唯一标识（多轮对话追踪）", semantic_role: "IDEMPOTENT_KEY" }
+      - { param: "message_content", description: "最新一条消息内容", semantic_role: "BUSINESS_PARAM" }
+      - { param: "message_history", description: "完整会话历史（用于总结）", semantic_role: "BUSINESS_PARAM" }
+      - { param: "context_tags", description: "上下文标签（产品线/业务类型等）", semantic_role: "QUERY_FILTER" }
+
+# ============================================
+# Part 12: API参数字典（Coze平台API关键参数详解）
+# ============================================
+api_param_dictionary:
+  # Coze Chat API核心参数
+  chat_params:
+    request:
+      - { field: "bot_id", type: "string", required: true, semantic_role: "PRIMARY_KEY", source_type: "config", description: "智能体ID，发布后从Coze控制台获取" }
+      - { field: "user_id", type: "string", required: true, semantic_role: "PRIMARY_KEY", source_type: "user_input", description: "终端用户唯一ID，SCRM中传客户ID" }
+      - { field: "query", type: "string", required: true, semantic_role: "BUSINESS_PARAM", source_type: "user_input", description: "用户消息文本" }
+      - { field: "stream", type: "boolean", required: false, semantic_role: "BUSINESS_PARAM", source_type: "config", description: "默认false。SCRM建议false（非流式）方便处理" }
+      - { field: "chat_history", type: "array<message>", required: false, semantic_role: "BUSINESS_PARAM", source_type: "system_generated", description: "历史消息列表，多轮对话时传" }
+      - { field: "conversation_id", type: "string", required: false, semantic_role: "IDEMPOTENT_KEY", source_type: "upstream_api", description: "由首次chat返回，后续传此ID维持会话" }
+    response:
+      - { field: "messages", type: "array<message>", semantic_role: "RESPONSE_META", description: "回复消息列表（含type/content/role）" }
+      - { field: "conversation_id", type: "string", semantic_role: "IDEMPOTENT_KEY", description: "会话ID，保存用于后续调用" }
+      - { field: "code", type: "integer", semantic_role: "RESPONSE_META", description: "状态码，0表示成功" }
+      - { field: "msg", type: "string", semantic_role: "RESPONSE_META", description: "状态消息" }
+
+  # Coze Workflow API核心参数
+  workflow_params:
+    request:
+      - { field: "workflow_id", type: "string", required: true, semantic_role: "PRIMARY_KEY", source_type: "config", description: "工作流ID" }
+      - { field: "parameters", type: "object", required: true, semantic_role: "BUSINESS_PARAM", source_type: "user_input", description: "输入参数对象，key对应工作流开始节点变量名" }
+      - { field: "is_async", type: "boolean", required: false, semantic_role: "BUSINESS_PARAM", source_type: "config", description: "SCRM建议true，异步执行避免超时" }
+    response_async:
+      - { field: "execute_id", type: "string", semantic_role: "IDEMPOTENT_KEY", description: "异步执行ID，用于后续查询结果" }
+      - { field: "code", type: "integer", semantic_role: "RESPONSE_META", description: "0=成功触发" }
+    error_codes:
+      - { code: "429", message: "限流", handling: "实现exponential backoff重试" }
+      - { code: "401", message: "认证失败", handling: "检查PAT/OAuth token有效性" }
+      - { code: "400", message: "参数错误", handling: "检查必填参数是否完整" }
+      - { code: "413", message: "请求体过大", handling: "压缩数据或分批发送" }
+
+# ============================================
+# Part 13: SCRM参数流转图
+# ============================================
+param_flow:
+  scrm_communication_flow:
+    description: "SCRM一条沟通中Coze工作流内参数流转"
+    flow: |
+      flowchart LR
+        subgraph 输入
+          A1[customer_id]
+          A2[message_content]
+          A3[conversation_id]
+        end
+        subgraph 意图识别
+          B1[customer_id → user_id]
+          B2[message_content → query]
+        end
+        subgraph 知识检索
+          C1[intent_label]
+          C2[customer_tags]
+        end
+        subgraph LLM推荐
+          D1[matched_script]
+          D2[matched_product]
+          D3[sentiment_score]
+        end
+        subgraph 输出
+          E1[recommend_script]
+          E2[product_card]
+          E3[sentiment_alert]
+        end
+        A1 --> B1
+        A2 --> B2
+        B1 --> C2
+        B2 --> C1
+        C1 --> D1
+        C1 --> D2
+        C2 --> D1
+        D1 --> E1
+        D2 --> E2
+        D3 --> E3
+    
+    cross_session_flow: |
+      flowchart TD
+        subgraph Session1
+          S1[customer_id+对话] --> S1E[沟通总结+标签]
+        end
+        subgraph Memory
+          S1E --> M1[长期记忆: 更新画像]
+          S1E --> M2[数据库: 跟进任务]
+        end
+        subgraph Session2
+          M1 --> S2A[加载客户画像]
+          M2 --> S2B[检查待跟进任务]
+          S2A --> S2C[个性化开场白+上下文话术]
+        end
+  
+  param_source_trace:
+    - { param: "customer_id", chain: "SCRM前端 → SCRM后端 → Coze /v3/workflow/run parameters", flow_depth: 3 }
+    - { param: "message_content", chain: "用户输入 → SCRM前端 → SCRM后端 → Coze API → 工作流开始节点 → 意图识别/LLM节点", flow_depth: 5 }
+    - { param: "conversation_id", chain: "Coze /v3/chat 返回 → SCRM后端存储 → 下次调用时传回", flow_depth: 2 }
+    - { param: "sentiment_score", chain: "LLM情绪分析节点 → 代码节点打分 → IF选择器 → 预警输出 → SCRM前端", flow_depth: 5 }
+    - { param: "matched_product", chain: "知识库检索 → LLM排序 → 输出节点 → SCRM前端", flow_depth: 4 }
+
+# ============================================
+# 元数据
+# ============================================
+meta:
+  learn_date: "2026-07-18"
+  learn_version: "1.1.0"
+  version_history:
+    - { version: "v1.0.0", date: "2026-07-18", change: "首次学习：Coze 2.x 核心能力（9大主题×8大场景×5项API）", sources: 10 }
+    - { version: "v1.1.0", date: "2026-07-18", change: "增量学习：Coze 3.0 6大新特性+行业技能商店+Agent Team+项目空间+视频补充", sources: 5 }
+  source_count: 15
+  source_distribution:
+    official_docs: 7
+    third_party_tutorials: 6
+    api_docs: 1
+    video_supplement: 1
+  coverage_assessment:
+    overall: "90%"
+    strength: "智能体搭建、工作流节点、记忆系统、API集成、Coze 3.0 新特性覆盖全面"
+    gap: "自定义插件开发细节、多Agent深层通信协议、数据安全审计日志未深入、视频教程内容为二次整理非原始视频"
+  next_learn:
+    - "Coze 3.0 Agent Team 深层协作协议（Agent间如何通信和数据传递）"
+    - "Coze自定义插件开发完整流程（如果需要自定义企微/SCRM插件）"
+    - "Coze数据安全与合规文档（等保/审计日志）"
+    - "视频教程原始内容学习（需通过agent-browser访问飞书文档嵌入视频或B站官方教程）"

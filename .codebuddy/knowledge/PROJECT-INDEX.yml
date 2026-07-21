@@ -1,0 +1,51 @@
+# PROJECT-INDEX.yml — POM V5.0 全局项目注册表
+# V2.0.0 — 多人多项目部署运营方案升级
+# 维护者：PM Agent | 每次 /init 和 /close 时更新
+# V2.0.0变更：新增 members 注册表 + projects 加 owner/deploy/db_name/dev_port 字段
+
+version: "2.0.0"
+active_project: "AI-SCRM"
+current_stream: ""
+last_activity: "2026-07-21T15:00+08:00"
+
+# ============================================
+# 成员注册表（V2.0.0新增）
+# ============================================
+members:
+  - id: "jojo"
+    name: "Jojo"
+    role: "admin"
+    git_name: "jojo"
+    active_project: "AI-SCRM"
+
+  # 示例：新增成员时在此追加
+  # - id: "zhangsan"
+  #   name: "张三"
+  #   role: "member"
+  #   git_name: "zhangsan"
+  #   active_project: "erp-portal"
+
+# ============================================
+# 项目注册表
+# ============================================
+projects:
+  - id: "AI-SCRM"
+    name: "AI-SCRM 智能SCRM平台"
+    owner: "jojo"                          # V2.0.0新增：归属成员
+    path: "projects/jojo/AI-SCRM"          # V2.0.0新增：完整路径
+    status: "active"
+    stage: "acceptance"
+    domain: "SAAS/SCRM"
+    industries: ["大健康", "药业", "美妆", "百货"]
+    po_planning_completed: true
+    dev_port: 3333                         # V2.0.0新增：开发态端口
+    db_name: "jojo-ai-scrm-sim"            # V2.0.0新增：IndexedDB数据库名
+    deploy:                                # V2.0.0新增：部署信息
+      current_version: "v1.0.0"
+      deploy_url: "https://ai-scrm-dpzzl2eobkr6.edgeone.dev"
+      deploy_history:
+        - { version: "v1.0.0", status: "success", deployed_at: "2026-07-21T15:45+08:00" }
+    streams:
+      - { id: "STR-001", version: "v1.0.0", type: "新增", priority: "P0", stage: "acceptance", po_version: "v2.0.0", desc: "AI-SCRM全面重构：双系统+AI沟通辅助闭环" }
+
+  # SAAS项目已于2026-07-20完全删除（代码+文档），待learn-project全量重新学习后重新注册
