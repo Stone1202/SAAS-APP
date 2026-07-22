@@ -147,7 +147,7 @@ modes:
   learn-project:
     entry_command: "/learn-project"
     workflow: "learn-project"
-    description: "项目学习V6.1.0：10种来源→深度抓取+AI自动识别业务系统与终端+全量/增量学习策略+忠实提取→专家Review→PRD+学习报告。移除领域知识加载（项目学习目的是理解现有文档以便后续迭代评估影响面）。未指定--module时全量学习覆盖已有知识库，指定--module时增量学习。产出 knowledge/{project}/需求文档/"
+    description: "项目学习V7.0.0：场景深度还原引擎——双态标注(显式照录+隐式挖掘还原)+五大业务产物深度还原(场景/流程/信息/状态机/操作矩阵)+8项深度能力+依据链审计。10种来源→深度抓取+AI自动识别业务系统与终端+全量/增量学习策略+忠实提取→专家Review→PRD+学习报告。未指定--module时全量学习覆盖已有知识库，指定--module时增量学习。产出 knowledge/{project}/需求文档/"
   rebuild:
     entry_command: "/rebuild"
     workflow: "learn-project"
@@ -335,7 +335,7 @@ commands:
   # ---------- 特殊入口（非需求流生命周期） ----------
   learn-project:
     command: "/learn-project"
-    description: "【独立流程·项目学习V6.1.0】以忠实还原为第一原则，将项目资料全面深入解析为结构化PRD。V6.1.0优化：①移除领域知识加载（项目学习目的是理解现有文档以便后续迭代评估影响面）；②新增Stage1.2 AI自动识别业务系统与终端（从源文档自动识别系统缩写PREFIX和终端缩码，无需用户输入）；③新增--module可选参数（指定模块/流程时增量学习，未指定时全量学习覆盖已有知识库）。10种来源：local-dir/file/http-url/website/video/audio/image/pdf/api-endpoint/paste。支持--cookie/--auth/--transcript/--module。产出到 knowledge/{project}/需求文档/ + 学习报告/。"
+    description: "【独立流程·项目学习V7.0.0】以忠实还原为第一原则，将项目资料全面深入解析为结构化PRD。V7.0.0核心：场景深度还原引擎——双态标注(显式照录+隐式挖掘还原)+五大业务产物深度还原+8项深度能力+依据链审计。V6.1.0优化：①移除领域知识加载（项目学习目的是理解现有文档以便后续迭代评估影响面）；②新增Stage1.2 AI自动识别业务系统与终端（从源文档自动识别系统缩写PREFIX和终端缩码，无需用户输入）；③新增--module可选参数（指定模块/流程时增量学习，未指定时全量学习覆盖已有知识库）。10种来源：local-dir/file/http-url/website/video/audio/image/pdf/api-endpoint/paste。支持--cookie/--auth/--transcript/--module。产出到 knowledge/{project}/需求文档/ + 学习报告/。"
     lifecycle: "special"
     pm_controlled: false
     workflow: "learn-project"
@@ -356,7 +356,7 @@ commands:
 
   learn-domain:
     command: "/learn-domain"
-    description: "【独立流程·领域知识学习V3.4.0】V3.4.0反爬策略全面升级：7层容错机制（HTTP错误容错URL变体/JS渲染降级/嵌入式内容处理/速率控制/URL智能推断/多源互补/质量评估）。与learn-project方法论统一，来源从3种扩展到10种。新增thirdparty分类（第三方API文档学习）。API学习技能公共化（引用common/api-learner.yml）。11步智能流程：来源处理(10种)→领域匹配预检→AI主题→AI场景→业务产物(7部分)→API学习技能(条件触发)→业务分析建模(7项)→接口参数级校验→专家Review(11项)→用户确认+强化深入学习(6选项)。支持--focus/--deep-params/--cookie/--auth、增量学习、版本管理、多领域拆分。--category=thirdparty时跳过领域匹配预检。产物13部分。产出三库。"
+    description: "【独立流程·领域知识学习V4.0.0】V4.0.0核心：场景驱动学习法（SDL）——商业问题先行→场景主动构建→跨域衔接→角色视角。V3.4.0反爬策略全面升级：7层容错机制（HTTP错误容错URL变体/JS渲染降级/嵌入式内容处理/速率控制/URL智能推断/多源互补/质量评估）。与learn-project方法论统一，来源从3种扩展到10种。新增thirdparty分类（第三方API文档学习）。API学习技能公共化（引用common/api-learner.yml）。11步智能流程：来源处理(10种)→领域匹配预检→AI主题→AI场景→业务产物(7部分)→API学习技能(条件触发)→业务分析建模(7项)→接口参数级校验→专家Review(11项)→用户确认+强化深入学习(6选项)。支持--focus/--deep-params/--cookie/--auth、增量学习、版本管理、多领域拆分。--category=thirdparty时跳过领域匹配预检。产物13部分。产出三库。"
     lifecycle: "special"
     pm_controlled: false
     workflow: "learn-domain"
@@ -374,7 +374,7 @@ commands:
 
   learn-domain-check:
     command: "/learn-domain-check"
-    description: "【独立流程·领域知识巡检V3.4.0】巡检所有已学习领域知识，检测源网页是否有变更。有变更的领域触发增量学习（minor+1版本）。V3.4.0支持反爬策略。支持 --auto-update 自动更新模式。可通过 automations 定时触发（如每月1日）。引用 learn-domain.yml v3.4.0。"
+    description: "【独立流程·领域知识巡检V4.0.0】巡检所有已学习领域知识，检测源网页是否有变更。有变更的领域触发增量学习（minor+1版本）。V4.0.0支持场景驱动学习法(SDL)与反爬策略。支持 --auto-update 自动更新模式。可通过 automations 定时触发（如每月1日）。引用 learn-domain.yml v4.0.0。"
     lifecycle: "special"
     pm_controlled: false
     workflow: "learn-domain"
@@ -460,7 +460,8 @@ commands:
     required_args: ["--name", "--git", "--project"]
     optional_args: ["--role"]
 
-  - command: "/review-process-improvements"
+  review-process-improvements:
+    command: "/review-process-improvements"
     description: "【流程改进审核V1.0.0】管理员定期审查各项目/close后积累的流程改进建议，审核_pending经验，生成流程升级方案。闭环：成员/close→_pending建议→管理员审核→流程升级。"
     lifecycle: "管理员操作"
     pm_controlled: true

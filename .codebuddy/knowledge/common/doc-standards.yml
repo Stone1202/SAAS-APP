@@ -228,6 +228,34 @@ doc_standard:
         V3.2.0新增CONFIG和METRIC章节。requirement-flow §6 目录契约须据本开关选模式。AI-SCRM 已裁定 single_document=true。
       naming: "AI-SCRM-超级需求文档-PRD-{version}.md"
 
+  # ============================================
+  # 项目文档目录组织标准（V5.7.0新增）
+  # 所有项目文档按 项目→版本→Sprint 组织
+  # ============================================
+  document_organization_standard:
+    description: "所有项目文档按 项目→版本→Sprint 组织"
+    directory_structure: |
+      projects/{project}/docs/
+      ├── 00-brainstorm/{topic}/confirmed/
+      ├── 01-requirements/{域编号}-{域名}-PRD-v{version}.md
+      ├── 02-design/设计文档-{module}-v{version}.md
+      ├── 03-architecture/架构设计-{module}-v{version}.md
+      ├── 04-development/
+      ├── 05-test/测试报告-{module}-v{version}.md
+      ├── 06-acceptance/验收报告-{module}-v{version}.md
+      ├── 07-handoff/handoff报告-{module}-v{version}.md
+      ├── 08-close/版本关闭报告-v{version}.md
+      └── 09-versions/v{version}/（版本快照）
+    naming_rules:
+      prd: "{域编号}-{域名}-PRD-v{版本}.md"
+      design: "设计文档-{module}-v{版本}.md"
+      architecture: "架构设计-{module}-v{版本}.md"
+      test: "测试报告-{module}-v{版本}.md"
+      acceptance: "验收报告-{module}-v{版本}.md"
+      handoff: "handoff报告-{module}-v{版本}.md"
+      close: "版本关闭报告-v{版本}.md"
+    version_management: "所有文档必须有版本号，版本号与Sprint版本一致"
+
   # HTML需求文档命名规范（V5.1.3新增）
   html_document_naming:
     rule: "close阶段生成的HTML需求文档按 {项目}-{版本}-{Sprint}.html 命名"
@@ -403,16 +431,160 @@ doc_standard:
   use_case_template_v2:
     # ④a：fields 必须含「所属页面」
     mandatory_fields_add: [所属页面(PG-{PREFIX}-{系统缩写}-{终端缩码})]
-    # ④b：逐原子操作拆分，禁止吞并
+    # ④b：逐原子操作拆分，禁止吞并（V3.4.0新增，V3.6.0强化为铁律级约束）
     subfunction_split:
       enabled: true
+      iron_rule: "BA-28: 每个页面的每个操作必须有独立UC，禁止吞并。违反此规则的PRD视为不合格。"
       forbid_merging: "禁止把『客户库管理（导入/查询/分层/标签）』写成单个用例；父 FN 仅作聚合标题"
       required_sub_uc_per_page:
-        list_operations: [搜索, 列表排序, 筛选, 分页, 查看, 导出]
+        list_operations: [搜索, 列表排序, 筛选, 分页, 查看, 导出, 列头自定义排序]
         write_operations: [新增, 编辑, 删除, 导入, 禁用, 启用, 拉黑]
         batch_operations: [批量启用, 批量禁用, 批量删除, 批量打标签, 批量分配]
-        row_operations: [行内查看, 行内编辑, 行内删除, 行内禁用启用]
-      naming: "子功能 UC 继承父 FN 序号段，如 FN-ACRM-002 下 UC-ACRM-002-01 搜索、…-14 分层打标签"
+        row_operations: [行内查看, 行内编辑, 行内删除, 行内禁用启用, 行内跳转详情]
+        form_operations: [表单新建, 表单编辑, 表单审批提交, 表单引用数据选择, 表单校验规则]
+        navigation_operations: [页面跳转, Tab切换, 弹窗打开/关闭, 返回]
+      naming: "子功能 UC 继承父 FN 序号段，如 FN-AUDIT-001 下 UC-AUDIT-001-01 搜索、…-14 分层打标签"
+      completeness_check: "每个页面必须覆盖list+write+row三类操作（batch/form/navigation按页面实际有则必拆）"
+
+    # ④b-2：完整操作类型分类标准（V5.6.0新增——场景分析阶段输出）
+    operation_type_catalog:
+      description: |
+        V5.6.0新增——作为专业业务产品经理，在场景分析阶段（§2/§2.5）就必须识别每个场景涉及哪些操作类型。
+        操作类型不是用例设计时才考虑，而是场景分析时就要输出"场景×操作类型矩阵"。
+        用例设计（§5）基于场景分析的操作类型矩阵来编写UC，确保不遗漏。
+      operation_categories:
+        list_operations:
+          name: "列表操作"
+          types: [关键词搜索, 高级搜索(多条件组合), 列表排序, 列头自定义排序, 筛选, 分页(翻页+每页条数), 查看列表, 导出, 刷新, 列表数据加载]
+          must_have: "所有管理列表页面必含：搜索+排序+分页+查看（至少4种）"
+        write_operations:
+          name: "写入操作"
+          types: [新增, 编辑, 删除, 导入, 禁用, 启用, 拉黑, 复制, 批量导入]
+          must_have: "有CRUD的页面必含：新增+编辑+删除（至少3种）"
+        row_operations:
+          name: "行内操作"
+          types: [行内查看详情, 行内编辑, 行内删除, 行内禁用启用, 行内跳转详情, 行内复制, 行内审核]
+          must_have: "有列表的页面必含：行内查看（至少1种）"
+        form_operations:
+          name: "表单操作"
+          types: [表单新建, 表单编辑, 表单审批提交, 表单引用数据选择, 表单校验规则, 表单字段联动, 表单草稿保存, 表单文件上传, 表单富文本编辑]
+          must_have: "有表单的页面必含：表单新建或编辑+引用数据选择+校验规则（至少3种）"
+          required_fields: "表单UC必须含：字段清单(名|类型|必填|引用源|校验|默认值)+引用关系+提交流程+校验规则"
+        batch_operations:
+          name: "批量操作"
+          types: [批量启用, 批量禁用, 批量删除, 批量打标签, 批量分配, 批量导出, 全选取消全选]
+          must_have: "有批量选择框的页面必含（无批量选择框则无）"
+        navigation_operations:
+          name: "导航操作"
+          types: [页面跳转, Tab切换, 弹窗打开关闭, 返回上一页, 面包屑导航, 侧边栏菜单切换]
+          must_have: "所有页面必含：页面跳转或Tab切换（至少1种）"
+        state_operations:
+          name: "状态操作"
+          types: [状态切换(启用↔禁用), 审核操作(通过/驳回), 发布下架, 锁定解锁, 归档]
+          must_have: "有状态机的实体必含"
+        interaction_operations:
+          name: "交互操作"
+          types: [拖拽排序, 树形展开折叠, 搜索建议联想, 实时预览, 图表交互(缩放/筛选/下钻), 富文本编辑]
+          must_have: "按页面实际功能有则必拆"
+        data_operations:
+          name: "数据操作"
+          types: [数据导入导出, 数据同步, 数据清空重置, 数据备份, 数据迁移]
+          must_have: "有数据管理需求的页面必含"
+        communication_operations:
+          name: "通信操作"
+          types: [发送通知, 发送消息, 分享, 邀请, 举报投诉]
+          must_have: "有通信需求的页面必含"
+      total_types: 69
+      output_standard: "场景分析阶段必须输出'场景×操作类型矩阵'，作为用例设计的输入"
+
+    # ④b-3：场景操作类型矩阵输出标准（V5.6.0新增）
+    scene_operation_matrix:
+      description: |
+        V5.6.0新增——场景分析阶段（§2/§2.5）必须输出的操作类型矩阵。
+        在用例设计之前，BA必须为每个场景/页面识别涉及哪些操作类型。
+        矩阵格式：场景×操作类型→是否有该操作。
+      output_format: |
+        ## 场景×操作类型矩阵
+        | 场景/页面 | 列表操作 | 写入操作 | 行内操作 | 表单操作 | 批量操作 | 导航操作 | 状态操作 | 交互操作 | 数据操作 | 通信操作 |
+        |-----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|
+        | 租户审查开关 | 搜索/排序/分页/查看 | — | 进入中控 | — | — | 跳转 | 开关切换 | — | — | — |
+        | 中控室审查Tab | 搜索/排序/刷新/查看 | — | 记录/断流/忽略 | — | — | Tab切换 | 处置状态 | 擦音模式切换 | — | 告警推送 |
+        | 敏感词库管理 | 搜索/筛选/排序/分页/查看 | 新增/编辑/禁用/导入 | 编辑/禁用 | 新建/编辑+引用分类+校验 | 批量禁用/删除 | 弹窗/Tab切换 | 启用禁用 | — | 同步腾讯云 | — |
+        | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... |
+      rule: "矩阵中标记'有'的操作必须在§5用例设计中编写独立UC，标记'—'的可跳过"
+
+    # ④b-4：用例追溯链标准（V5.6.0新增——单一事实源）
+    use_case_traceability:
+      description: |
+        V5.6.0新增——用例是全流程的单一事实源。
+        需求分析得出的用例→设计依据用例全面设计→架构与开发依据用例实现→测试依据用例编写场景→验收依据用例逐个验收。
+        任何环节遗漏用例→返工成本巨大。
+      traceability_chain:
+        requirement: "场景分析→操作类型矩阵→用例设计（UC编号）"
+        design: "设计阶段→每个UC必须有对应的交互设计（不能空连接）"
+        development: "开发阶段→每个UC必须有对应的代码实现（不能空函数）"
+        test: "测试阶段→每个UC必须有对应的测试场景（不能缺测试）"
+        acceptance: "验收阶段→每个UC必须有对应的验收结果（不能跳过）"
+      empty_action_rule: |
+        ★空连接禁止铁律（BA-34）：
+        原型中每个操作按钮必须有对应的交互实现。禁止以下情况：
+        1. 按钮点击无反应（空连接/空函数）
+        2. 按钮点击只弹Toast"功能开发中"
+        3. 表单提交无校验/无保存
+        4. 列表搜索无筛选效果
+        5. 操作按钮无对应UC（用例缺失）
+        违反→设计/开发/测试/验收环节全部返工。
+
+    # ④c：表单操作标准（V3.6.0新增——表单引用数据规则）
+    form_operation_standard:
+      description: |
+        V3.6.0新增——表单操作（新建/编辑/审批流）必须包含引用数据规则。
+        表单提交类操作的UC必须描述：引用了哪些其他模块的数据、引用方式、校验规则。
+      required_fields:
+        - "引用数据源：表单中引用了哪些其他模块的数据（如新增敏感词时引用分类枚举）"
+        - "引用方式：下拉选择/弹窗选择/自动填充/手动输入"
+        - "校验规则：必填/格式/范围/唯一性/关联校验"
+        - "提交类型：直接保存/审批流提交/草稿保存"
+      form_uc_template: |
+        表单UC必须包含：
+        1. 表单字段清单（字段名|类型|必填|引用源|校验规则|默认值）
+        2. 引用数据关系（引用了哪个模块的哪个实体|引用方式|级联规则）
+        3. 提交流程（直接保存→成功/审批流提交→进入审批流程）
+        4. 校验规则（前端校验+后端校验+关联校验）
+
+    # ④d：HTML文档截图+用例汇总标准（V3.6.0新增）
+    html_document_standard:
+      description: |
+        V3.6.0新增——HTML需求文档必须包含页面截图+用例汇总表格+每个用例详细描述。
+        每个管理页面截一张图，图下方是该页面所有用例的汇总表格，然后是每个用例的详细描述。
+      required_sections:
+        - "页面截图：每个管理页面截一张实现后的真实截图（原型截图无验收价值，必须实现后截图）"
+        - "用例汇总表格：该页面涉及的所有UC汇总（UC编号|用例名称|操作类型|关联FN|优先级）"
+        - "用例详细描述：每个UC的完整六段（前置条件/基本流程/备选流程/数据范围/后置条件/关联UC）"
+      screenshot_strategy:
+        L1_page_anchor: "页面锚点截图（1张/页，带UC编号标注圆圈，覆盖搜索/排序/筛选等通用UC）"
+        L2_state_increment: "状态增量截图（弹窗打开/筛选结果/按钮置灰等显著视觉变化）"
+        L3_uc_closeup: "UC特写（按需，hover态/tooltip）"
+      page_structure: |
+        每个页面的HTML结构：
+        ## {页面名称}（PG-XXX-PC-001）
+        ### 页面截图
+        [截图图片]
+        ### 用例汇总
+        | UC编号 | 用例名称 | 操作类型 | 关联FN | 优先级 |
+        |--------|----------|----------|--------|--------|
+        | UC-001-01 | 搜索 | 列表操作 | FN-001 | P0 |
+        | UC-001-02 | 列表排序 | 列表操作 | FN-001 | P1 |
+        | ... | ... | ... | ... | ... |
+        ### 用例详细描述
+        #### UC-001-01 搜索
+        [完整六段用例描述]
+        #### UC-001-02 列表排序
+        [完整六段用例描述]
+      naming_standard:
+        html_file: "{项目缩写}-PRD-{版本}.html"
+        deploy_path: "dist/{项目缩写}-PRD-{版本}.html"
+        edgeone_path: "https://{域名}/{项目缩写}-PRD-{版本}.html"
 
   # 用例标准模板 V3（V3.4.0新增：研发友好版——让研发拿到用例就知道怎么开发）
   use_case_template_v3:
@@ -958,4 +1130,18 @@ doc_standard:
         脑暴阶段产出的 confirmed/ 二分文档为 BA 需求分析唯一权威输入；
         其 BO/BG 映射为本文档编号追溯链（UC→FN→PG→MD→SC→BG→BO）链首；
         其铁律 B-02 三流草图为本文档 swimlane/cross_system_info_flow/state_machine 起点。
+
+  # ============================================
+  # 用例描述术语一致性标准（V5.7.0新增）
+  # 用例描述必须术语一致、无歧义、专业
+  # ============================================
+  terminology_standard:
+    description: "用例描述必须术语一致、无歧义、专业"
+    rules:
+      - "禁止歧义表述：禁止使用'适当处理''相关数据''一些操作'等模糊表述"
+      - "禁止口语化：禁止使用'搞一下''处理掉''弄好'等非专业用语"
+      - "术语一致性：同一概念在不同UC中必须使用相同术语"
+      - "步骤编号规范：基本流程分步编号格式为'数字.[标注]描述'，如'1.[手动]运营进入页面'"
+    forbidden_words: ["适当处理", "相关数据", "一些操作", "搞一下", "处理掉", "弄好", "等等", "之类"]
+    required_format: "步骤编号: [手动/系统自动/事件驱动] 操作描述"
 

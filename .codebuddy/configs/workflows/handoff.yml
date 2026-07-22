@@ -172,41 +172,69 @@ workflow:
         ⚠️ 铁律：此阶段为AI强制执行阶段，不可跳过、不可推给用户。
         用户无法审阅不存在的【？】按钮——必须先注入再让用户审阅。
 
-        2a. 生成/更新卡片数据文件：
+        2a. 全量扫描操作清单（V2.3.0★铁律——handoff-spec.yml强制）：
+        - 扫描所有原型页面的所有可交互操作，按10大类覆盖检查：
+          ① 列表操作：搜索/排序/筛选/分页/列头排序/查看/导出
+          ② 写入操作：新增/编辑/删除/导入/禁用/启用
+          ③ 行内操作：查看/编辑/删除/禁用/跳转
+          ④ 表单操作：新建/编辑/审批/引用数据/校验
+          ⑤ 批量操作：批量删除/批量启用/批量导出/批量分配
+          ⑥ 导航操作：菜单跳转/面包屑/标签页切换/返回
+          ⑦ 状态操作：状态切换/流程提交/撤回/锁定
+          ⑧ 交互操作：展开折叠/拖拽排序/右键菜单/快捷键
+          ⑨ 数据操作：导入/导出/同步/刷新/重置
+          ⑩ 通信操作：发送/通知/消息/分享/转发
+        - 每个操作必须有独立用例卡（InlineHelpMark），遗漏任何操作→handoff未完成，不允许进入/close
+        - 页面级用例卡展示该页面全部UC概览，每个操作按钮旁必须有按钮级用例卡InlineHelpMark
+        - 输出操作扫描清单（扫描结果），含：页面路径×操作类型×操作元素×关联UC编号×是否已有卡片
+
+        2b. 生成/更新卡片数据文件：
         - 目标文件：src/components/useCaseCardData.ts
         - 操作：将本Sprint/版本的所有卡片数据写入 sprint{n}Cards 数组
         - 每个卡片含：ucId/fnId/ucName/ucLevel/pageName/priority/automationType/
           bgId/bgName/preconditions/steps/alternatives/postconditions/dataScope/
           relatedBR/relatedSC/scName/accepted
+        - 每个卡片必须包含trace_to追溯字段（V2.3.0★铁律——追溯链贯穿到操作）：
+          trace_to:
+            flowchart_node: "对应业务流程图的节点ID（如node_001）"
+            state_transition: "对应状态机的状态过渡（如 pending→approved, 操作=approve）"
+            matrix_cell: "对应业务操作矩阵的单元格坐标（如 行=角色, 列=状态×操作）"
+            operation_type: "操作类型分类（list/write/inline/form/batch/navigate/state/interactive/data/communication 10大类之一）"
         - 如文件已存在：追加新Sprint数组，不覆盖已有Sprint数据
-        - 如文件不存在：创建文件 + 定义UseCaseCard类型 + 写入首个Sprint数组
-        - 操作类型（operationType）须覆盖：search/sort/navigate/save/filter/confirm
+        - 如文件不存在：创建文件 + 定义UseCaseCard类型(含trace_to子类型) + 写入首个Sprint数组
+        - 操作类型（operationType）须覆盖：search/sort/navigate/save/filter/confirm（按需扩展到10大类）
         - 更新所有查询函数（getCardsByFn/getPageCardByFn等）的allCards()来源
 
-        2b. 生成/更新【？】按钮组件：
+        2c. 生成/更新【？】按钮组件：
         - 目标文件：src/components/HelpButton.tsx + src/components/UseCaseDrawer.tsx
         - 如文件已存在：检查是否需要新增OperationType的图标/颜色/标签映射
         - 如文件不存在：创建完整组件（HelpButton接收fnId+ucId参数，
-          UseCaseDrawer右侧滑出抽屉，宽度420px）
+          UseCaseDrawer右侧滑出抽屉，宽度420px，含trace_to追溯信息展示区）
 
-        2c. 在每个原型页面挂载【？】：
-        - 遍历本Sprint所有FN的pageName，找到对应页面文件
+        2d. 在每个原型页面挂载【？】：
+        - 遍历全量扫描清单（2a），为每个操作元素挂载HelpButton
         - 每个页面添加：
           ① 页面标题右侧 → HelpButton（page级，传入fnId）
           ② 搜索框旁 → HelpButton（search操作，传入fnId+ucId）
           ③ 筛选组件旁 → HelpButton（filter操作，传入fnId+ucId）
           ④ 排序表头旁 → HelpButton（sort操作，传入fnId+ucId）
           ⑤ 操作按钮旁 → HelpButton（save/confirm/navigate操作，传入fnId+ucId）
-          ⑥ 页面底部挂载 UseCaseDrawer 组件（接收当前页面的fnId列表）
+          ⑥ 行内操作按钮旁 → HelpButton（inline操作，传入fnId+ucId）
+          ⑦ 表单字段旁 → HelpButton（form操作，传入fnId+ucId，field级标注）
+          ⑧ 批量操作按钮旁 → HelpButton（batch操作，传入fnId+ucId）
+          ⑨ 页面底部挂载 UseCaseDrawer 组件（接收当前页面的fnId列表）
         - 页面级【？】与操作级【？】通过ucLevel:'page' vs 'operation'区分展示
+        - 每个挂载的HelpButton须能通过卡片数据追溯到对应的flowchart_node/state_transition/matrix_cell
 
-        2d. 注入后自检验证（V4.1.0新增——G-HO-INJECT-01~03）：
+        2e. 注入后自检验证（V4.1.0新增——G-HO-INJECT-01~03 + V2.3.0全量扫描校验）：
         - G-HO-INJECT-01：useCaseCardData.ts 中 allCards() 包含本Sprint所有卡片
         - G-HO-INJECT-02：每个FN对应的页面文件中存在 HelpButton import
         - G-HO-INJECT-03：执行 npm run build 或 npx tsc --noEmit 不引入新类型错误
+        - V2.3.0全量扫描校验：2a扫描清单中的每个操作是否都有对应用例卡（遗漏→阻断）
+        - V2.3.0追溯字段校验：每个卡片是否都包含trace_to的4个子字段（缺失→阻断）
         - 自检不通过 → 立即修复 → 重新自检 → 直到通过才进入第三步
-      output: "更新后的useCaseCardData.ts + HelpButton.tsx + UseCaseDrawer.tsx + 所有标注页面"
-      note: "【关键】此阶段是G-HO-DELIVERY-03（可交互用例卡片完整性）的前提——没有注入就没有卡片可交互"
+      output: "操作扫描清单 + 更新后的useCaseCardData.ts + HelpButton.tsx + UseCaseDrawer.tsx + 所有标注页面"
+      note: "【关键】此阶段是G-HO-DELIVERY-03（可交互用例卡片完整性）的前提——没有注入就没有卡片可交互；V2.3.0铁律——全量扫描+trace_to追溯链贯穿到操作级"
 
     # ========== 第三步：用户审阅交互卡（V4.1.0：原第二步重命名，前提是代码已注入） ==========
     - id: "3"

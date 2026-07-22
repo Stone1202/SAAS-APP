@@ -341,8 +341,36 @@ stages:
           Level 2用例须包含规则约束+配置项矩阵。Level 1用例标准六段即可。
         on_fail: "阻止进入架构评审。PM驳回BA：用例维度不完整，须确认dimension_checklist已通过Layer1.3+§2.5补盲。"
         iron_rule: "BA-34"
-
-  # ---- 公共流程：需求理解+影响分析+融合分析（V3.5.0新增）----
+      - id: "G-REQ-27"
+        type: "hard_gate"
+        name: "用例操作级拆分完整性（V5.5.0新增）"
+        check: "content_pattern"
+        target: "PRD UC清单"
+        pattern: "UC-.*-(搜索|排序|筛选|分页|新增|编辑|删除|禁用|启用)"
+        description: |
+          V5.5.0新增——用例操作级拆分门禁（BA-31铁律）。
+          每个管理页面必须覆盖list+write+row三类操作级UC：
+          1. list_operations: 搜索/排序/筛选/分页/列头排序/查看/导出
+          2. write_operations: 新增/编辑/删除/导入/禁用/启用
+          3. row_operations: 行内查看/编辑/删除/禁用/跳转
+          4. form_operations: 新建/编辑/审批/引用数据/校验规则（表单页面必含）
+          5. batch_operations: 批量启用/禁用/删除/分配（有批量操作则必含）
+          父FN仅作聚合标题，不替代操作级UC。
+        on_fail: "阻止进入设计阶段。PM驳回BA：用例未拆分到操作级，须按subfunction_split标准逐个拆分。"
+        iron_rule: "BA-31"
+      - id: "G-REQ-28"
+        type: "hard_gate"
+        name: "场景操作类型矩阵完整性（V5.6.0新增）"
+        check: "content_pattern"
+        target: "PRD场景分析章节"
+        pattern: "操作类型矩阵|operation_type|场景.*操作"
+        description: |
+          V5.6.0新增——场景操作类型矩阵门禁（BA-35铁律）。
+          场景分析阶段（§2/§2.5）必须输出"场景×操作类型矩阵"。
+          矩阵中标记"有"的操作必须在§5用例设计中编写独立UC。
+          禁止跳过场景分析直接写用例。
+        on_fail: "阻止进入用例设计。PM驳回BA：场景分析未输出操作类型矩阵。"
+        iron_rule: "BA-35"
   impact_fusion:
     owner: "ba-agent"
     workflow: "demand-impact-fusion-flow.yml"
@@ -943,6 +971,14 @@ stages:
         target: "BUILD-OUTPUT"
         pattern: "error.*0|success"
         on_fail: "阻止进入Stage 3，FD修复类型错误"
+      - id: "G-HO-INJECT-04"
+        type: "hard_gate"
+        name: "空连接禁止（V5.6.0新增）"
+        check: "manual_review"
+        target: "原型所有操作按钮"
+        description: "V5.6.0新增——空连接禁止门禁（BA-34铁律）。原型中每个操作按钮必须有对应的交互实现+对应UC。禁止：空连接/空函数/Toast功能开发中/表单无校验/搜索无效果/操作无UC。QA/验收时逐个检查所有操作按钮。"
+        on_fail: "阻止/close，补做缺失的交互实现+缺失的UC"
+        iron_rule: "BA-34"
 
   # ---- 议题七：版本快照+差异报告（G-SNAPSHOT-01 + G-DIFF-01） ----
   version_snapshot_diff:

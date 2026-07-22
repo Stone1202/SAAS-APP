@@ -120,34 +120,56 @@ workflow:
             /change有--api时，Layer2维度5（接口契约）强化分析。
 
         - id: "A2"
-          name: "需求文档更新"
+          name: "需求文档更新（V5.6.0强化：用例追溯链）"
           agent: "ba-agent"
           skills: ["doc-splitter", "doc-processor"]
-          input: "影响分析报告 + A0加载的知识库PRD"
+          input: "影响分析报告 + A0加载的知识库PRD + ★§3业务流程图/状态机/操作矩阵/信息流（V5.6.0新增）"
           output: "更新后的需求文档（版本升级）"
-          note: "增量更新受影响章节，非全量重写。同时更新知识库PRD。"
+          note: |
+            增量更新受影响章节，非全量重写。同时更新知识库PRD。
+            ★V5.6.0强化（BA-31/34/35铁律）：
+            1. 用例更新必须基于业务流程图/状态机/操作矩阵/信息流，不能凭空修改
+            2. 每个更新/新增的UC必须包含trace_to追溯字段（flowchart_node/state_transition/matrix_cell/operation_type）
+            3. 变更影响触发场景操作类型矩阵更新（BA-35）
+            4. 操作级拆分（BA-31）：变更涉及的页面必须覆盖list+write+row+form操作
+            5. 禁止空连接（BA-34）：变更涉及的每个操作必须有对应UC
 
         - id: "A3"
-          name: "设计文档更新"
+          name: "设计文档更新（V5.6.0强化：UC追溯）"
           agent: "ux-agent"
           skills: ["design-contract-aligner"]
           input: "更新后的需求文档"
           output: "更新的各端设计文档"
-          note: "保持设计与需求的一致性"
+          note: |
+            保持设计与需求的一致性。
+            ★V5.6.0强化（BA-34铁律）：
+            1. 每个UC必须有对应的交互设计（不能空连接/不能Toast"功能开发中"）
+            2. 设计review时逐个检查：PRD中每个UC是否有对应的设计元素
+            3. 空连接禁止：按钮点击无反应/表单无校验/搜索无效果→设计不合格
 
         - id: "A4"
-          name: "测试用例同步更新"
+          name: "测试用例同步更新（V5.6.0强化：UC追溯）"
           agent: "qa-agent"
           input: "更新后的需求文档"
           output: "更新的测试用例文档"
+          note: |
+            ★V5.6.0强化（用例追溯链）：
+            1. 每个UC必须有对应的测试场景（不能缺测试）
+            2. 测试用例编号关联UC编号（TC-{系统}-{终端}-{NNN} related_uc字段）
+            3. 变更影响的UC必须全部有测试覆盖
 
         - id: "A5"
-          name: "代码更新"
+          name: "代码更新（V5.6.0强化：UC追溯）"
           agent: "fd-agent"
           skills: ["sim-code-generator", "component-builder", "multi-platform-code-generator"]
           input: "更新后的需求文档 + 设计文档"
           auto_check: "compliance-checker"
           output: "更新的各端仿真代码"
+          note: |
+            ★V5.6.0强化（BA-34铁律）：
+            1. 每个UC必须有对应的代码实现（不能空函数/不能占位符）
+            2. compliance-checker检查：PRD中每个UC是否有对应代码
+            3. 空连接禁止：按钮无onClick/表单无submit/搜索无filter→代码不合格
 
         - id: "A6"
           name: "原型标注更新"
@@ -158,11 +180,16 @@ workflow:
           note: "V3.0.0：交互说明卡在A9/handoff阶段集中处理，此处仅更新原型标注"
 
         - id: "A7"
-          name: "回归测试"
+          name: "回归测试（V5.6.0强化：UC追溯）"
           agent: "qa-agent"
           skills: ["test-runner"]
           input: "更新后的代码 + 测试用例"
           output: "回归测试报告（含逐端与跨端一致性）"
+          note: |
+            ★V5.6.0强化（用例追溯链）：
+            1. 回归测试必须覆盖所有变更影响的UC
+            2. 测试报告中标注每个UC的测试结果（通过/失败/未覆盖）
+            3. 未覆盖的UC→测试不合格
           on_fail: |
             V3.0.0新增：测试不通过时触发defect-reflow回流：
             → PM读取回归测试报告中的失败项
@@ -171,11 +198,17 @@ workflow:
             → 循环直到回归测试全部通过
 
         - id: "A8"
-          name: "验收确认"
+          name: "验收确认（V5.6.0强化：UC追溯）"
           agent: "ac-agent"
           skills: ["requirement-checker", "business-flow-tester"]
           input: "回归测试报告 + 更新后的需求文档"
           output: "变更验收确认"
+          note: |
+            ★V5.6.0强化（用例追溯链）：
+            1. 验收时逐个检查每个UC是否有对应验收结果（不能跳过）
+            2. 验收报告标注每个UC的验收状态（通过/不通过/待验收）
+            3. 空连接检查（BA-34）：原型中每个操作按钮是否有交互实现
+            4. UC追溯完整性：需求→设计→开发→测试→验收全链路覆盖
           on_fail: |
             V3.0.0新增：验收不通过时触发defect-reflow回流：
             → PM读取验收报告中的不通过项
@@ -263,28 +296,44 @@ workflow:
             - Bug涉及的状态机是否在PRD中有完整定义
 
         - id: "B2"
-          name: "需求文档补充（条件执行）"
+          name: "需求文档补充（条件执行，V5.6.0强化：用例追溯链）"
           agent: "ba-agent"
           trigger_when: "B1判断为需求缺陷"
           skills: ["doc-processor"]
-          input: "Bug分析报告中的需求缺陷描述 + B0加载的知识库PRD"
+          input: "Bug分析报告中的需求缺陷描述 + B0加载的知识库PRD + ★§3业务流程图/状态机/操作矩阵（V5.6.0新增）"
           output: "补充后的需求文档"
           condition: "仅当 Bug 根因为需求缺陷时执行"
+          note: |
+            ★V5.6.0强化（BA-31/34/35铁律）：
+            1. 需求修复必须基于业务流程图/状态机/操作矩阵，不能凭空修
+            2. Bug涉及的状态机状态/操作矩阵单元格→定位受影响的UC→修复UC
+            3. 修复后的UC必须包含trace_to追溯字段
+            4. 空连接禁止（BA-34）：Bug涉及的每个操作必须有对应UC
 
         - id: "B3"
-          name: "修复实施"
+          name: "修复实施（V5.6.0强化：UC追溯）"
           agent: "fd-agent"
           skills: ["sim-code-generator", "component-builder", "multi-platform-code-generator"]
           input: "Bug分析报告 + 修复方案"
           auto_check: "compliance-checker"
           output: "修复代码 + 新增单元测试（防止回归）"
+          note: |
+            ★V5.6.0强化（BA-34铁律）：
+            1. 每个Bug涉及的UC必须有对应的代码修复（不能空函数）
+            2. compliance-checker检查：Bug涉及的UC是否有对应代码
+            3. 空连接禁止：修复后每个操作按钮必须有交互实现
 
         - id: "B4"
-          name: "回归验证"
+          name: "回归验证（V5.6.0强化：UC追溯）"
           agent: "qa-agent"
           skills: ["test-runner"]
           input: "修复代码 + 新增测试用例"
           output: "回归测试报告"
+          note: |
+            ★V5.6.0强化（用例追溯链）：
+            1. 回归测试必须覆盖Bug涉及的所有UC
+            2. 测试报告中标注每个UC的测试结果（通过/失败/未覆盖）
+            3. 未覆盖的UC→测试不合格
           on_fail: |
             V3.0.0新增：回归验证不通过时触发defect-reflow回流：
             → PM读取回归测试报告中的失败项
@@ -293,10 +342,15 @@ workflow:
             → 循环直到回归验证全部通过
 
         - id: "B5"
-          name: "验收关闭"
+          name: "验收关闭（V5.6.0强化：UC追溯）"
           agent: "ac-agent"
           input: "回归测试报告"
           output: "Bug状态更新为closed"
+          note: |
+            ★V5.6.0强化（用例追溯链）：
+            1. 验收时逐个检查Bug涉及的UC是否有对应验收结果
+            2. 空连接检查（BA-34）：修复后每个操作按钮是否有交互实现
+            3. UC追溯完整性：需求→设计→开发→测试→验收全链路覆盖
           on_fail: |
             V3.0.0新增：验收不通过时触发defect-reflow回流：
             → PM读取验收报告中的不通过项

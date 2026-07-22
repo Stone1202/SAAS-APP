@@ -226,6 +226,34 @@ agents:
         workflow_check: "requirement-flow.yml §6.5 + gates-registry G-REQ-21"
         note: "V5.4.0新增：解决BA独自分析无法发现行业经验驱动盲区的问题（如防刷机制/定时任务宕机/迭代影响旧指标等）。"
       - id: "BA-31"
+        rule: "用例操作级拆分铁律（V5.5.0新增）：每个页面的每个操作必须有独立UC，禁止吞并。列表操作（搜索/排序/筛选/分页/列头自定义排序/查看/导出）+写入操作（新增/编辑/删除/导入/禁用/启用）+行内操作（行内查看/编辑/删除/禁用启用/跳转详情）+表单操作（新建/编辑/审批提交/引用数据选择/校验规则）+批量操作（批量启用/禁用/删除/分配）+导航操作（跳转/Tab切换/弹窗）必须逐个拆分。父FN仅作聚合标题。违反此规则的PRD视为不合格"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-REQ-22 + doc-standards.yml subfunction_split"
+      - id: "BA-32"
+        rule: "表单操作引用数据规则（V5.5.0新增）：表单提交类操作（新建/编辑/审批流）的UC必须包含：①表单字段清单（字段名|类型|必填|引用源|校验规则|默认值）②引用数据关系（引用哪个模块哪个实体|引用方式|级联规则）③提交流程（直接保存/审批流/草稿）④校验规则（前端+后端+关联校验）。禁止只写'填写表单→提交'而不描述引用和校验"
+        enforcement: "hard"
+        workflow_check: "doc-standards.yml form_operation_standard"
+      - id: "BA-33"
+        rule: "HTML需求文档截图+用例汇总（V5.5.0新增）：HTML需求文档每个管理页面必须包含①页面截图（实现后真实截图，原型截图无验收价值）②用例汇总表格（该页面所有UC：编号|名称|操作类型|关联FN|优先级）③每个UC详细描述（完整六段）。截图策略L1页面锚点+L2状态增量+L3 UC特写"
+        enforcement: "hard"
+        workflow_check: "doc-standards.yml html_document_standard"
+      - id: "BA-34"
+        rule: "空连接禁止铁律（V5.6.0新增）：原型中每个操作按钮必须有对应的交互实现+对应UC。禁止：①按钮点击无反应（空连接/空函数）②按钮只弹Toast'功能开发中'③表单提交无校验/无保存④列表搜索无筛选效果⑤操作按钮无对应UC。违反→设计/开发/测试/验收全环节返工。用例是全流程单一事实源——需求分析得出的用例→设计依据用例全面设计→开发依据用例实现→测试依据用例编写场景→验收依据用例逐个验收"
+        enforcement: "hard"
+        workflow_check: "doc-standards.yml use_case_traceability + gates-registry G-HO-INJECT-04"
+      - id: "BA-35"
+        rule: "场景操作类型矩阵必输出（V5.6.0新增）：场景分析阶段（§2/§2.5，用例设计之前）必须输出'场景×操作类型矩阵'——为每个场景/页面识别涉及哪些操作类型（列表10种/写入9种/行内7种/表单9种/批量7种/导航6种/状态5种/交互6种/数据5种/通信5种共10大类69种）。矩阵中标记'有'的操作必须在§5用例设计中编写独立UC。禁止跳过场景分析直接写用例"
+        enforcement: "hard"
+        workflow_check: "doc-standards.yml scene_operation_matrix + requirement-flow §2/§2.5"
+      - id: "BA-36"
+        rule: "用例描述质量铁律（V5.7.0新增）：①禁止歧义表述（'适当处理''相关数据'等）②禁止口语化（'搞一下''处理掉'等）③术语一致性（同一概念用相同术语）④步骤编号规范（数字.[标注]描述）"
+        enforcement: "hard"
+        workflow_check: "doc-standards.yml terminology_standard"
+      - id: "BA-37"
+        rule: "用例描述专业性铁律（V5.7.0新增）：用例必须使用专业业务术语，禁止口语化。每个UC的六段描述必须清晰、准确、无歧义。PRD Review时检查术语一致性"
+        enforcement: "hard"
+        workflow_check: "doc-standards.yml terminology_standard"
+      - id: "BA-31"
         rule: "三阶段分析不可跳过（V3.4.0新增）：需求分析必须按阶段1业务还原(§3)→阶段2系统划分(§3.5)→阶段3终端划分(§3.8)顺序执行。禁止跳过业务还原直接做系统划分，禁止跳过系统划分直接定终端。业务系统划分是分析结果不是前提——必须先还原真实业务(角色/部门/关键动作)，闭环验证通过后才划分系统，系统闭环验证通过后才定终端。"
         enforcement: "hard"
         workflow_check: "requirement-flow.yml §3/§3.5/§3.8 + gates-registry G-REQ-22/G-REQ-23/G-REQ-24/G-REQ-25"
@@ -616,10 +644,10 @@ agents:
 # 铁律统计
 # ============================================
 statistics:
-  total_rules: 98
+  total_rules: 104
   by_agent:
     BS: 10
-    BA: 29
+    BA: 34
     PM: 9
     UX: 10
     FD: 13

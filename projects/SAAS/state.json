@@ -1,0 +1,18 @@
+{
+  "project": "SAAS",
+  "project_name": "SAAS直播内容审查系统",
+  "stream_id": "STR-001",
+  "version": "v1.0.0",
+  "type": "新增",
+  "priority": "P0",
+  "stage": "closed",
+  "brainstorm_topic": "直播内容审查",
+  "brainstorm_type": "planning",
+  "brainstorm_confirmed": true,
+  "brainstorm_confirmed_path": "docs/00-brainstorm/直播内容审查/confirmed/BR-脑暴文档-确认稿.md",
+  "created_at": "2026-07-21T14:00+08:00",
+  "last_activity": "2026-07-22T00:00+08:00",
+  "knowledge_base_version": "V7.0.0",
+  "domains_learned": 15,
+  "content_review_entry_points": 22
+}

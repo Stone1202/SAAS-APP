@@ -1,6 +1,6 @@
 # ============================================
 # Workflow: demand-impact-fusion-flow（需求理解+影响分析+融合分析公共流程）
-# 版本: v1.0.0
+# 版本: v1.1.0
 # 创建日期: 2026-07-22
 # ============================================
 #
@@ -27,7 +27,7 @@
 
 workflow:
   id: "demand-impact-fusion-flow"
-  name: "需求理解+影响分析+融合分析公共流程（V1.0.0）"
+  name: "需求理解+影响分析+融合分析公共流程（V1.1.0）"
   version: "1.1.0"
   trigger_commands: ["/init", "/change", "/fix"]
   owner: "ba-agent"

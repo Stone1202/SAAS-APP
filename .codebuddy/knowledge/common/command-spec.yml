@@ -276,7 +276,9 @@ missing_arg_prompt:
 command: "/feedback"
 category: "核心生命周期"
 pm_controlled: true
-workflow: "project-lifecycle.yml v5.3.0" --project=X [--type=Y] [--msg=反馈内容]   （--type 可省略，自动选当前进行中需求流）"
+workflow: "project-lifecycle.yml v5.3.0"
+
+usage: "/feedback --project=X [--type=Y] [--msg=反馈内容]   （--type 可省略，自动选当前进行中需求流）"
 
 parameters:
   - name: "--project"
@@ -668,7 +670,7 @@ missing_arg_prompt:
 command: "/change"
 category: "核心生命周期"
 pm_controlled: true
-workflow: "change-request.yml v3.0.0"
+workflow: "change-request.yml v3.1.0"
 
 usage: "/change --project=X --desc=变更概述 [--module=模块] [--file=变更文档] [--api=接口文档] [--source=来源] [--platform=pc,app] [--priority=P0|P1|P2|P3]"
 
@@ -734,7 +736,7 @@ missing_arg_prompt:
 command: "/fix"
 category: "核心生命周期"
 pm_controlled: true
-workflow: "change-request.yml v3.0.0"
+workflow: "change-request.yml v3.1.0"
 
 usage: "/fix --project=X --desc=Bug概述 [--module=模块] [--file=Bug详细文档] [--platform=pc] [--bug-id=xxx] [--priority=P0|P1|P2|P3]"
 
@@ -782,25 +784,6 @@ parameters:
     description: "Bug优先级"
     enum: ["P0", "P1", "P2", "P3"]
     smart_hint: "P0紧急/P1高/P2中/P3低，默认P1"
-
-missing_arg_prompt:
-  "--project": "请提供项目名称（例如：--project=AI-SCRM）。"
-  "--desc": "请提供Bug描述。"
-```
-
-  - name: "--desc"
-    type: "string"
-    required: true
-    description: "Bug描述（自然语言）"
-    smart_hint: "描述Bug现象和复现步骤"
-
-  - name: "--priority"
-    type: "enum"
-    required: false
-    default: "P0"
-    description: "优先级"
-    enum: ["P0", "P1", "P2", "P3"]
-    smart_hint: "P0紧急/P1高/P2中/P3低，Bug修复默认P0"
 
 missing_arg_prompt:
   "--project": "请提供项目名称（例如：--project=AI-SCRM）。"
@@ -891,25 +874,34 @@ category: "管理员专用"
 pm_controlled: true
 workflow: "member-manager.yml V1.0.0"
 
-usage: "/register-member --project=项目名 --prefix=编号前缀 --member=成员Gitee用户名 [--member=成员2]"
-example: "/register-member --project=crm-portal --prefix=CRM --member=zhangsan"
+usage: "/register-member --name=姓名 --git=Gitee用户名 --project=项目名 [--role=admin|member]"
+example: "/register-member --name=李四 --git=lisi --project=crm-portal"
 
 parameters:
+  - name: "--name"
+    type: "string"
+    required: true
+    description: "成员真实姓名（如'李四'）"
+    smart_hint: "成员的真实姓名，用于展示和记录"
+
+  - name: "--git"
+    type: "string"
+    required: true
+    description: "成员Gitee用户名（如'lisi'），用于CODEOWNERS和权限分配"
+    smart_hint: "成员的Gitee用户名，须与.gitconfig中的user.name一致"
+
   - name: "--project"
     type: "string"
     required: true
     description: "项目名（如'crm-portal'），自动创建项目骨架"
 
-  - name: "--prefix"
-    type: "string"
-    required: true
-    description: "项目编号前缀（如'CRM'），用于FN/UC/PG等所有编号"
-
-  - name: "--member"
-    type: "string"
-    required: true
-    description: "被授权的成员Gitee用户名（如'zhangsan'），可多次指定授权多人"
-    smart_hint: "成员需已在 .access-control.yml 中注册"
+  - name: "--role"
+    type: "enum"
+    required: false
+    default: "member"
+    description: "成员角色"
+    enum: ["admin", "member"]
+    smart_hint: "admin=管理员/member=普通成员，默认member"
 
 auto_actions:
   - "更新 .access-control.yml 添加成员"
@@ -921,9 +913,9 @@ auto_actions:
   - "更新 deploy/edgeone-pages.json 添加部署路由"
 
 missing_arg_prompt:
+  "--name": "请提供成员姓名（例如：--name=李四）。"
+  "--git": "请提供成员Gitee用户名（例如：--git=lisi）。"
   "--project": "请提供项目名（例如：--project=crm-portal）。"
-  "--prefix": "请提供项目编号前缀（例如：--prefix=CRM）。"
-  "--member": "请提供被授权成员的Gitee用户名（例如：--member=zhangsan）。"
 ```
 
 ---

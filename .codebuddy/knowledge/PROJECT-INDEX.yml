@@ -3,9 +3,9 @@
 # 维护者：PM Agent | 每次 /init 和 /close 时更新
 
 version: "2.1.0"
-active_project: "AI-SCRM"
-current_stream: ""
-last_activity: "2026-07-21T16:50+08:00"
+active_project: "SAAS"
+current_stream: "STR-001"
+last_activity: "2026-07-22T00:00+08:00"
 
 # ============================================
 # 成员注册表
@@ -15,7 +15,7 @@ members:
     name: "Jojo"
     role: "admin"
     git_name: "jojo"
-    accessible_projects: ["AI-SCRM"]
+    accessible_projects: ["AI-SCRM", "SAAS"]
 
   # 示例：新增成员时在此追加
   # - id: "zhangsan"
@@ -47,3 +47,19 @@ projects:
         - { version: "v1.0.0", status: "success", deployed_at: "2026-07-21T15:45+08:00" }
     streams:
       - { id: "STR-ACRM-001", version: "v1.0.0", type: "新增", priority: "P0", stage: "acceptance", po_version: "v2.0.0", desc: "AI-SCRM全面重构：双系统+AI沟通辅助闭环" }
+
+  - id: "SAAS"
+    name: "SAAS直播内容审查系统"
+    path: "projects/SAAS"
+    project_prefix: "SAAS"
+    members: ["jojo"]
+    status: "active"
+    stage: "requirement"
+    domain: "SAAS"
+    industries: ["通用"]
+    brainstorm_topic: "直播内容审查"
+    brainstorm_type: "planning"
+    brainstorm_confirmed: true
+    knowledge_base_version: "V7.0.0"
+    streams:
+      - { id: "STR-001", version: "v1.0.0", type: "新增", priority: "P0", stage: "closed", desc: "直播内容审查：实时擦音+回放擦音+平台管控+租户个性化" }
