@@ -9,15 +9,15 @@
 
 ## 检查结论
 
-**⚠️ 有条件通过** — 架构整体质量良好，遗留1项MAJOR问题需决策，其余已修复。
+**✅ 通过** — 所有问题已修复，路由已严格对齐 PRD §17。
 
 | 维度 | 状态 | 通过项/总项 |
 |------|------|------------|
-| D1 路由三重一致性 | ⚠️ MAJOR | 5/6 |
+| D1 路由三重一致性 | ✅ PASS | 6/6 |
 | D2 业务系统边界隔离 | ✅ PASS | 4/4 |
 | D3 FN/ENT/PG 全覆盖 | ✅ PASS | 3/3 |
-| D4 DIR树与源码一致性 | ✅ PASS | 11/11 |
-| D5 版本引用一致性 | ✅ 已修复 | 3/3 |
+| D4 DIR树与源码一致性 | ✅ PASS | 12/12 |
+| D5 版本引用一致性 | ✅ PASS | 4/4 |
 
 ---
 
@@ -33,27 +33,25 @@
 | FN 全覆盖验证表 | ✅ 架构 §2.3 提供完整映射 |
 | 页面入口功能对齐 | ✅ 每个 FN 可路由可达 |
 
-### ⚠️ D1-01：3条路由与PRD §17路径不完全一致
+### ✅ D1-01：已修复 — 路由严格对齐 PRD §17（2026-07-22 二次评审）
 
-| FN | PRD §17 | 架构实际 |
-|----|---------|----------|
-| FN-AUDIT-PC-001 | `/admin/tenant`（弹窗） | `/admin/audit-switch`（独立页） |
-| FN-AUDIT-PC-002/003 | `/tenant/live/:streamId/violations` + `/tenant/live-control?tab=audit` | `/tenant/live-control/:streamId` |
-| FN-AUDIT-PC-004 | `/tenant/live/:streamId/replay` | `/tenant/replay/:streamId` |
+| FN | PRD §17 | 修复后路由 | 变更 |
+|----|---------|-----------|------|
+| FN-AUDIT-PC-001 | `/admin/tenant`（弹窗） | `/admin/tenant` | `audit-switch` → `tenant` |
+| FN-AUDIT-PC-002/003 | `/tenant/live/:streamId/violations` + `/tenant/live-control?tab=audit` | `/tenant/live/:streamId/violations` + `/tenant/live-control?tab=audit` | 拆分为二，`live-control` 使用 query 参数 |
+| FN-AUDIT-PC-004 | `/tenant/live/:streamId/replay` | `/tenant/live/:streamId/replay` | `/replay/:streamId` → `/live/:streamId/replay` |
 
-**评估**：差异源于架构合理化（弹窗→独立页、多入口合并、路径简化），功能语义一致。**建议**：更新 PRD §17 反映架构决策，或架构调整为严格对齐。不阻塞开发，但需在 close 前解决。
-
-**反模式匹配**：AP-01「路由前缀混用」→ 未命中（前缀正确，仅路径结构精简）
+**修复内容**：router.ts 7条路由 + TenantDashboardEntry 导航 + ReplayDetailAudit 参数名 + LiveControlAuditPanel query参数读取 + 新增 ViolationsPanel.vue + 架构文档同步更新。**PRD §17 为路由单一事实源。**
 
 ### D2-FN 覆盖详情
 
 | FN | 路由 | PG | 状态 |
 |----|------|----|------|
 | FN-AUDIT-INFRA-001 | 无独立路由（嵌入 SimAdapter） | 共享基础设施 | ✅ |
-| FN-AUDIT-PC-001 | `/admin/audit-switch` | PG-AUDIT-PC-001 | ✅ |
-| FN-AUDIT-PC-002 | `/tenant/live-control/:streamId` | PG-AUDIT-PC-002（嵌入） | ✅ |
-| FN-AUDIT-PC-003 | `/tenant/live-control/:streamId` | PG-AUDIT-PC-002（嵌入） | ✅ |
-| FN-AUDIT-PC-004 | `/tenant/replay/:streamId` | PG-AUDIT-PC-003 | ✅ |
+| FN-AUDIT-PC-001 | `/admin/tenant` | PG-AUDIT-PC-001 | ✅ |
+| FN-AUDIT-PC-002 | `/tenant/live/:streamId/violations` + `/tenant/live-control?tab=audit` | PG-AUDIT-PC-004 + PG-AUDIT-PC-002 | ✅ |
+| FN-AUDIT-PC-003 | `/tenant/live/:streamId/violations` | PG-AUDIT-PC-004（嵌入） | ✅ |
+| FN-AUDIT-PC-004 | `/tenant/live/:streamId/replay` | PG-AUDIT-PC-003 | ✅ |
 | FN-AUDIT-APP-001 | `/h5/live/:roomId` | PG-AUDIT-APP-001 | ✅ |
 
 ---
@@ -147,7 +145,7 @@
 | C-A8 | NFR清单完整性 | ✅ |
 | C-A9 | Mock后端完整性 | ✅ |
 | C-A10 | 跨端验收脚手架 | ❓ 待确认 |
-| C-A11 | 路由对齐PRD §17 | ⚠️ 见D1-01 |
+| C-A11 | 路由对齐PRD §17 | ✅ 严格对齐 |
 | C-A12 | 业务系统隔离 | ✅ |
 | C-A13 | 反向三文档一致性检查 | ✅ 本报告 |
 
@@ -160,7 +158,7 @@
 | D5-01 | 🔴 BLOCKER | state.json 设计版本 v1.0.1→v1.0.0 | ✅ 已修复 |
 | D5-02 | 🟢 MINOR | 架构文档 C-A1~C-A10→C-A1~C-A13 | ✅ 已修复 |
 | D4-01 | 🟢 MINOR | DIR树补 contracts/index.ts | ✅ 已修复 |
-| D1-01 | 🟡 MAJOR | 路由与PRD §17路径不完全一致 | 📋 待决策 |
+| D1-01 | 🟡 MAJOR | 路由与PRD §17路径不完全一致 | ✅ 已修复（严格对齐） |
 
 ---
 
@@ -168,7 +166,7 @@
 
 | 行动 | 负责人 | 时机 |
 |------|--------|------|
-| D1-01 决策：更新PRD或调整路由 | PM + Arch | close前 |
+| D1-01 路由严格对齐 | PM + Arch | ✅ 已完成（2026-07-22） |
 | C-A2/A7/A10 实测验证 | FD | stage-5 启动前 |
 | 设计文档内部标题统一为 V1.0.0 | UX | 下一迭代 |
 

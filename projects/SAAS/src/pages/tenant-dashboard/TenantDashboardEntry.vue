@@ -97,28 +97,29 @@ const liveSessions = ref<LiveSession[]>([
   { id: 'LIVE-004', title: '知识付费公开课', anchor: '教育博士', status: '已结束', viewers: 3456 },
 ]);
 
-/** 路由映射说明（PRD §17 对齐） */
+/** 路由映射说明（PRD §17 严格对齐） */
 const routeMapping = ref([
-  { route: '/admin/audit-switch', fn: 'FN-AUDIT-PC-001', terminal: 'PC-运营后台', desc: '租户审查开关管理 → 二次确认弹窗' },
-  { route: '/tenant/dashboard', fn: '—（入口页）', terminal: 'PC-租户后台', desc: '模拟直播列表 →「更多」菜单入口' },
-  { route: '/tenant/live-control/:streamId', fn: 'FN-AUDIT-PC-002/003', terminal: 'PC-租户后台', desc: '直播中控台 →「内容审查」Tab → 侧滑面板' },
-  { route: '/tenant/replay/:streamId', fn: 'FN-AUDIT-PC-004', terminal: 'PC-租户后台', desc: '回放详情页 → 擦音处理' },
-  { route: '/h5/live/:roomId', fn: 'FN-AUDIT-APP-001', terminal: 'H5-观众端', desc: '观众直播间 → 审查效果覆盖层' },
+  { route: '/admin/tenant', fn: 'FN-AUDIT-PC-001', terminal: 'PC-运营后台', desc: '租户管理列表 →「内容审查开关」→ 二次确认弹窗（PRD §17 行1）' },
+  { route: '/tenant/dashboard', fn: '—（仿真入口）', terminal: 'PC-租户后台', desc: '仿真：模拟直播列表 →「更多」菜单 +「中控台」按钮' },
+  { route: '/tenant/live-control?tab=audit', fn: 'FN-AUDIT-PC-002/003', terminal: 'PC-租户后台', desc: '直播中控台 →「内容审查」Tab → 侧滑面板（PRD §17 行3）' },
+  { route: '/tenant/live/:streamId/violations', fn: 'FN-AUDIT-PC-002/003', terminal: 'PC-租户后台', desc: '历史违规列表面板 + 处置操作 + 擦音模式（PRD §17 行2+行5）' },
+  { route: '/tenant/live/:streamId/replay', fn: 'FN-AUDIT-PC-004', terminal: 'PC-租户后台', desc: '回放详情页 → 擦音处理（PRD §17 行4）' },
+  { route: '/h5/live/:roomId', fn: 'FN-AUDIT-APP-001', terminal: 'H5-观众端', desc: '观众直播间 → 审查效果覆盖层（PRD §17 行6）' },
 ]);
 
-/** 跳转到直播中控 → 审核面板 */
+/** 跳转到直播中控 →「内容审查」Tab */
 function goLiveControl(id: string) {
-  router.push(`/tenant/live-control/${id}`);
+  router.push(`/tenant/live-control?tab=audit&streamId=${id}`);
 }
 
-/** 跳转到历史违规列表（复用直播中控面板） */
+/** 跳转到历史违规列表 */
 function goViolations(id: string) {
-  router.push(`/tenant/live-control/${id}`);
+  router.push(`/tenant/live/${id}/violations`);
 }
 
 /** 跳转到回放详情 */
 function goReplay(id: string) {
-  router.push(`/tenant/replay/${id}`);
+  router.push(`/tenant/live/${id}/replay`);
 }
 </script>
 

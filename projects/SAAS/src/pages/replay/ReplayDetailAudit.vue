@@ -14,8 +14,8 @@
 import { useRoute } from 'vue-router';
 
 const route = useRoute();
-const liveId = route.params.liveId as string;
+const streamId = route.params.streamId as string;
 
-// FD: 根据 liveId 加载回放文件和擦音任务状态
-// 使用 useReplayService().startReplayMute(liveId)
+// FD: 根据 streamId 加载回放文件和擦音任务状态
+// 使用 useReplayService().startReplayMute(streamId)
 </script>

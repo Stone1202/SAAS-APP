@@ -12,11 +12,14 @@
 </template>
 
 <script setup lang="ts">
+import { useRoute } from 'vue-router';
 import { useAuditStore } from '../../stores/audit-store';
 import { mockViolationGenerator } from '../../adapters/sim/data-adapter';
 import { onMounted, onUnmounted } from 'vue';
 
+const route = useRoute();
 const store = useAuditStore();
+const streamId = (route.query.streamId as string) || 'LIVE-001';
 
 onMounted(() => {
   // FD: 页面加载时启动模拟数据生成器
