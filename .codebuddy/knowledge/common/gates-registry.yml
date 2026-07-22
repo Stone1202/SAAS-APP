@@ -325,6 +325,23 @@ stages:
           架构师从终端泳道图提取：需要几套前端代码+几个base path+跨端API+Mock后端接口。
         on_fail: "阻止进入架构评审。PM驳回BA：终端划分产物不完整。BA必须完成终端泳道图+系统×终端矩阵+跨端流转路径。"
 
+      - id: "G-REQ-26"
+        type: "hard_gate"
+        name: "复杂用例颗粒度完整性（V3.5.0新增，V3.5.2增强为分析过程驱动）"
+        check: "content_pattern"
+        target: "PRD UC清单 + dimension_checklist"
+        pattern: "Level 3用例至少涉及3+维度，维度来自Layer1.3+§2.5补盲"
+        description: |
+          V3.5.2增强——维度在分析过程中识别（非文档阶段才思考）：
+          1. Layer1.3 AI多视角维度识别 → dimension_checklist_v1
+          2. §2.5 专家补盲 → 验证+补充 → dimension_checklist_final
+          3. §3/§3.5/§3.8 三阶段增量更新
+          4. §5 用例设计基于dimension_checklist_final结构化输出
+          检查：Level 3用例至少涉及3+维度，且维度来源可追溯（Layer1.3识别 or §2.5补盲）。
+          Level 2用例须包含规则约束+配置项矩阵。Level 1用例标准六段即可。
+        on_fail: "阻止进入架构评审。PM驳回BA：用例维度不完整，须确认dimension_checklist已通过Layer1.3+§2.5补盲。"
+        iron_rule: "BA-34"
+
   # ---- 公共流程：需求理解+影响分析+融合分析（V3.5.0新增）----
   impact_fusion:
     owner: "ba-agent"

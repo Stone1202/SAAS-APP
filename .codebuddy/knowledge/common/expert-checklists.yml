@@ -538,6 +538,70 @@ scene_level_checklists:
     审查对象：需求描述+旅行地图+初步场景清单（宏观）
     审查目标：发现遗漏的场景/流程/维度
     补充方式：补充场景清单（不是补充用例），用例设计时自然包含
+    V1.1.0增强：新增dimension_checks段——各专家在场景级检查时同步检查
+    AI预判的用例维度清单（dimension_checklist_v1）是否遗漏维度。
+
+  # ============================================
+  # 维度检查项（V1.1.0新增——融入各专家场景级检查，不新增独立环节）
+  # ============================================
+  # 作用：各专家在§2.5审查时，除了检查场景盲区，同步检查
+  #       AI在Layer1.3预判的用例维度清单是否遗漏了本专家领域的维度
+  # 检查方式：
+  #   ✅AI已识别 → 确认（专家验证AI的预判正确）
+  #   ⚠️AI遗漏 → 补充（专家发现AI没识别的维度→追加到维度清单）
+  #   ⬜不适用 → 记录原因
+  # 补盲结果反馈AI学习（版本沉淀时统计准确率）
+  dimension_checks:
+    data_scene:
+      expert: "数据专家"
+      checks:
+        - { id: "DT-D01", check: "有没有涉及金额/积分/数量计算？→ 算法公式维度", severity: "P0" }
+        - { id: "DT-D02", check: "有没有涉及小数舍入/取整？→ 精度兜底维度", severity: "P0" }
+        - { id: "DT-D03", check: "最后用减法还是乘法？有没有精度累积误差风险？→ 精度兜底维度", severity: "P0" }
+
+    architecture_scene:
+      expert: "架构专家"
+      checks:
+        - { id: "AR-D01", check: "有没有状态变化影响计算起点？→ 状态依赖维度", severity: "P0" }
+        - { id: "AR-D03", check: "有没有跨系统数据流影响？→ 跨模块影响维度", severity: "P0" }
+        - { id: "AR-D04", check: "当前版本有什么限制？未来需要扩展？→ 边界前瞻维度", severity: "P1" }
+
+    finance_scene:
+      expert: "财务专家"
+      checks:
+        - { id: "FN-D01", check: "有没有多层金额扣减？→ 金额计算链维度", severity: "P0" }
+        - { id: "FN-D02", check: "运费/手续费参与计算吗？→ 金额计算链维度", severity: "P0" }
+        - { id: "FN-D03", check: "优惠怎么分摊？→ 金额计算链维度", severity: "P0" }
+        - { id: "FN-D04", check: "有没有多角色按比例/固定金额分配？→ 多角色分配维度", severity: "P0" }
+
+    qa_scene:
+      expert: "QA专家"
+      checks:
+        - { id: "QA-D01", check: "有退款/取消/回滚吗？→ 逆向流程维度", severity: "P0" }
+        - { id: "QA-D02", check: "整单退vs部分退算法差异？→ 逆向流程维度", severity: "P0" }
+        - { id: "QA-D03", check: "最后一个退款用减法还是乘法？→ 精度兜底维度", severity: "P0" }
+        - { id: "QA-D04", check: "本期不做的功能标注了吗？→ 边界前瞻维度", severity: "P1" }
+
+    security_scene:
+      expert: "安全专家"
+      checks:
+        - { id: "SE-D01", check: "有额度/次数/每日上限？→ 上限控制维度", severity: "P0" }
+        - { id: "SE-D02", check: "超出上限怎么处理？判断时机？→ 上限控制维度", severity: "P0" }
+
+    operations_scene:
+      expert: "运维专家"
+      checks:
+        - { id: "OP-D01", check: "有定时提醒/过期预警？→ 提醒触发维度", severity: "P1" }
+        - { id: "OP-D02", check: "触发条件？提醒频率？→ 提醒触发维度", severity: "P1" }
+        - { id: "OP-D03", check: "有时间相关计算？规则切换怎么生效？→ 时效计算维度", severity: "P0" }
+
+    ecommerce_scene_dims:
+      expert: "电商交易专家（维度检查）"
+      checks:
+        - { id: "EC-D01", check: "有消耗优先级？先进先出？→ 消耗策略维度", severity: "P0" }
+        - { id: "EC-D02", check: "部分使用/部分过期怎么处理？→ 消耗策略维度", severity: "P0" }
+        - { id: "EC-D03", check: "有参数配置？取值范围？互斥规则？→ 规则约束维度", severity: "P1" }
+        - { id: "EC-D04", check: "有3+配置项可组合？→ 配置项矩阵维度", severity: "P1" }
 
   ecommerce_scene:
     expert: "电商交易专家"

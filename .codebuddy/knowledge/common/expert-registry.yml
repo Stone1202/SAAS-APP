@@ -13,7 +13,7 @@
 #   测试阶段：QA盲区专家（测试覆盖扫盲）
 # ============================================
 
-version: "1.0.0"
+version: "1.1.0"
 created: "2026-07-22"
 description: |
   脑暴流程、PO规划流程、BA分析流程中所有专家的统一配置。
@@ -398,3 +398,152 @@ freeze_mechanism:
     stage1: "场景清单（冻结后作为阶段2输入）"
     stage2: "系统边界+系统间接口清单（冻结后作为阶段3输入）"
     stage3: "终端清单+跨端流转路径（冻结后作为架构输入）"
+
+# ============================================
+# 14维度×专家映射表（V1.1.0新增）
+# ============================================
+# 定位：用例细节颗粒度14维度与领域专家的映射关系
+# 作用：
+#   1. AI在Layer1多视角维度识别时，查此表模拟对应专家视角
+#   2. §2.5多专家盲区审查时，各专家按此表检查对应维度是否遗漏
+#   3. 版本沉淀时，统计AI预判准确率→AI学习进化
+# 核心原则：AI不是真的专家，但AI可以模拟专家视角（基于知识库+经验库+Bug模式）
+#           AI预判初期准确率可能50-60%，专家补盲兜底，版本迭代AI逐步进化
+dimension_expert_mapping:
+  description: |
+    14维度×专家映射表。每个维度标注：
+    - primary_experts: 主要负责的专家类型（AI模拟+§2.5补盲）
+    - ai_simulation_sources: AI模拟专家视角的知识来源
+    - checklist_question: §2.5专家补盲时的检查问题
+    - keyword_hints: AI关键词识别提示
+
+  mappings:
+    # ===== B. 计算与精度类 =====
+    - dimension: "算法公式区"
+      id: 3
+      primary_experts: ["data", "finance"]
+      ai_simulation_sources:
+        - "domains/中的行业标准计算公式"
+        - "经验库/精度Bug记录"
+      checklist_question: "有没有金额/积分/数量计算？公式是什么？"
+      keyword_hints: ["计算", "公式", "抵扣", "分佣", "积分", "金额"]
+
+    - dimension: "精度兜底区"
+      id: 13
+      primary_experts: ["data", "finance"]
+      ai_simulation_sources:
+        - "经验库/精度Bug记录（积分精度/金额精度）"
+        - "版本沉淀/历史精度Bug"
+      checklist_question: "舍入规则是什么？最后用减法还是乘法？有没有精度累积误差风险？"
+      keyword_hints: ["小数", "舍入", "取整", "精度", "四舍五入", "保留两位"]
+
+    - dimension: "金额计算链区"
+      id: 11
+      primary_experts: ["finance", "ecommerce"]
+      ai_simulation_sources:
+        - "domains/中的金额流转标准"
+        - "domains/payment/中的支付分账规则"
+      checklist_question: "有没有多层金额扣减？运费/手续费扣不扣？优惠怎么分摊？"
+      keyword_hints: ["优惠", "运费", "手续费", "实付", "到账", "分摊", "扣减"]
+
+    - dimension: "多角色分配区"
+      id: 12
+      primary_experts: ["ecommerce", "finance"]
+      ai_simulation_sources:
+        - "domains/中的分佣/分成规则"
+        - "经验库/分佣Bug记录"
+      checklist_question: "多个角色按比例分配？比例之和=100%？分配模式有几种？"
+      keyword_hints: ["分佣", "分成", "比例", "代理", "店长", "租户", "供应商"]
+
+    # ===== C. 状态与时效类 =====
+    - dimension: "状态依赖区"
+      id: 7
+      primary_experts: ["architecture"]
+      ai_simulation_sources:
+        - "状态机知识库"
+        - "历史状态Bug（冻结/解冻/审核）"
+      checklist_question: "有状态变化影响计算起点？冻结期间算不算？解冻后从哪开始算？"
+      keyword_hints: ["冻结", "解冻", "审核", "待激活", "生效", "状态变化"]
+
+    - dimension: "时效计算区"
+      id: 8
+      primary_experts: ["ecommerce", "operations"]
+      ai_simulation_sources:
+        - "domains/中的有效期/过期规则"
+        - "domains/member/中的会员有效期"
+      checklist_question: "有时间相关计算？规则切换怎么生效？退回按最新还是旧规则？"
+      keyword_hints: ["有效期", "过期", "失效", "到期", "切换", "生效"]
+
+    - dimension: "消耗策略区"
+      id: 9
+      primary_experts: ["ecommerce", "architecture"]
+      ai_simulation_sources:
+        - "domains/中的库存/积分消耗规则"
+        - "经验库/消耗策略Bug"
+      checklist_question: "消耗优先级？先进先出？部分使用怎么处理？部分过期怎么处理？"
+      keyword_hints: ["消耗", "扣减", "使用", "先进先出", "优先", "部分使用"]
+
+    - dimension: "上限控制区"
+      id: 10
+      primary_experts: ["security", "architecture"]
+      ai_simulation_sources:
+        - "经验库/上限Bug记录"
+        - "安全风控知识"
+      checklist_question: "有额度/次数/每日上限？超出怎么处理？判断时机？哪些不受限？"
+      keyword_hints: ["上限", "限额", "次数", "每天", "每月", "超出", "封顶"]
+
+    # ===== D. 流程与影响类 =====
+    - dimension: "逆向流程区"
+      id: 11
+      primary_experts: ["qa", "ecommerce"]
+      ai_simulation_sources:
+        - "经验库/退款Bug记录"
+        - "domains/aftersale/中的退款规则"
+      checklist_question: "有退款/取消/回滚？整单退vs部分退算法差异？最后一个用减法？"
+      keyword_hints: ["退款", "退货", "取消", "回滚", "退还", "撤销", "售后"]
+
+    - dimension: "跨模块影响"
+      id: 12
+      primary_experts: ["architecture", "data"]
+      ai_simulation_sources:
+        - "影响分析10维扫描结果"
+        - "项目topology"
+      checklist_question: "影响哪些其他模块？数据流/状态/规则影响？联动行为？"
+      keyword_hints: ["分佣", "库存", "积分", "订单", "财务", "通知", "跨模块"]
+
+    - dimension: "边界前瞻区"
+      id: 13
+      primary_experts: ["architecture", "qa"]
+      ai_simulation_sources:
+        - "历史版本的经验教训"
+        - "经验库/技术债记录"
+      checklist_question: "当前版本有什么限制？未来需要扩展？本期不做的功能标注了吗？"
+      keyword_hints: ["本期不做", "暂不支持", "后续", "未来", "预留", "限制"]
+
+    - dimension: "提醒触发区"
+      id: 14
+      primary_experts: ["operations", "ecommerce"]
+      ai_simulation_sources:
+        - "domains/中的通知/提醒规则"
+        - "domains/marketing/中的营销提醒"
+      checklist_question: "有定时提醒？触发条件？提醒内容？频率？"
+      keyword_hints: ["提醒", "通知", "预警", "即将过期", "定时", "每月", "推送"]
+
+    # ===== A. 规则与配置类 =====
+    - dimension: "规则约束区"
+      id: 1
+      primary_experts: ["ecommerce"]
+      ai_simulation_sources:
+        - "domains/中的BR/规则标准"
+        - "领域知识业务规则"
+      checklist_question: "有参数配置？取值范围？枚举值？互斥规则？"
+      keyword_hints: ["配置", "设置", "规则", "参数", "枚举", "开关", "限制"]
+
+    - dimension: "配置项矩阵"
+      id: 2
+      primary_experts: ["ecommerce"]
+      ai_simulation_sources:
+        - "domains/中的配置规则"
+        - "领域知识配置项"
+      checklist_question: "有3+配置项可组合？每种组合的行为描述了？"
+      keyword_hints: ["组合", "矩阵", "开关", "选项", "搭配", "多种"]

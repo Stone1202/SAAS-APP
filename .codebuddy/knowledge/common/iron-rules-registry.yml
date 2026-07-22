@@ -239,6 +239,12 @@ agents:
         rule: "冻结机制（V3.4.0新增）：每阶段扫盲完成后PM展示冻结内容→用户确认→冻结→冻结内容传入下一阶段。用户有补充则退回重新分析→重新展示→重新确认。冻结内容：阶段1=场景清单，阶段2=系统边界+系统间接口清单，阶段3=终端清单+跨端流转路径。冻结后下一阶段基于冻结内容分析，不得随意变更。"
         enforcement: "hard"
         workflow_check: "requirement-flow.yml §3/§3.5/§3.8 checkpoint"
+
+      - id: "BA-34"
+        rule: "用例颗粒度分级（V3.5.0新增，V3.5.1增强为14维度按需选择，V3.5.2增强为分析过程驱动）：14维度在分析过程中识别而非文档阶段才思考——Layer1.3 AI多视角维度识别（模拟专家视角基于知识库+经验库+Bug模式）→§2.5专家补盲（验证AI预判+补充遗漏）→§3/§3.5/§3.8三阶段增量更新→§5用例设计时基于已识别维度结构化输出。Level 2+用例按维度选择规则描述涉及的维度。Level 3用例至少涉及3+维度。维度选择规则详见doc-standards.yml use_case_granularity_standard。AI预判准确率在版本沉淀时统计→反馈AI学习进化。"
+        enforcement: "hard"
+        applies_to: "ba-agent"
+        workflow_check: "demand-impact-fusion-flow.yml L1.3 + requirement-flow.yml §2.5+§5 + gates-registry G-REQ-26"
         note: "V3.4.0新增：解决阶段间信息传递随意变更导致下游返工的问题。"
 
   # ============================================
