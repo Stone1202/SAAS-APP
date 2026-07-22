@@ -5,7 +5,7 @@
 version: "2.1.0"
 active_project: "SAAS"
 current_stream: "STR-SAAS-001"
-last_activity: "2026-07-22T00:00+08:00"
+last_activity: "2026-07-22T14:30+08:00"
 
 # ============================================
 # 成员注册表
@@ -54,11 +54,11 @@ projects:
     project_prefix: "SAAS"
     members: ["jojo"]
     status: "active"
-    stage: "requirement"
+    stage: "arch"
     domain: "SAAS"
     industries: ["通用"]
     brainstorm_topic: "直播内容审查"
     brainstorm_type: "planning"
     brainstorm_confirmed: true
     streams:
-      - { id: "STR-SAAS-001", version: "v1.0.0", type: "新增", priority: "P0", stage: "requirement", desc: "直播内容审查——实时擦音/静音+回放擦音/静音效果模拟（三终端）" }
+      - { id: "STR-SAAS-001", version: "v1.0.0", type: "新增", priority: "P0", stage: "arch", desc: "直播内容审查——实时擦音/静音+回放擦音/静音效果模拟（三终端）" }

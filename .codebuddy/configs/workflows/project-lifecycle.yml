@@ -446,7 +446,7 @@
         brain_sync_export:
           to_fd: ["实现陷阱预警（按接口）", "安全注意事项"]
           to_qa: ["高风险接口清单（重点测试）", "契约一致性检查点"]
-      pm_redlines:  # C-A1~C-A7
+      pm_redlines:  # C-A1~C-A13（V5.5.0 扩展为 13 条）
         - id: "C-A1"
           name: "route-contract 路由映射"
           description: "每个页面路由→组件→数据依赖的完整映射，必须可机器解析"
@@ -468,7 +468,51 @@
         - id: "C-A7"
           name: "单元测试架构（V3.0.0新增）"
           description: "tests/ 存在 + 契约一致性测试覆盖全部接口"
-      completion_criteria: "架构评审通过，技术可行性/依赖/性能结论明确，PM 红线全部通过 + **V5.1.0：Arch大脑推理完成+brain_sync_export传递**"
+        - id: "C-A8"
+          name: "NFR清单完整性（V3.2.0新增）"
+          description: "Arch必须产出NFR主题清单并回传BA纳入PRD §18"
+        - id: "C-A9"
+          name: "Mock后端完整性（V3.3.0新增）"
+          description: "mock-server/ 基于Zod Schema生成Mock路由+状态机引擎+auth路由"
+        - id: "C-A10"
+          name: "跨端验收脚手架（V3.3.0新增）"
+          description: "e2e-acceptance/ 验收场景脚本+共享数据上下文+配置"
+        - id: "C-A11"
+          name: "架构路由对齐PRD §17路由规划（V5.5.0新增·设计驱动架构）"
+          description: >
+            【架构师铁律】架构 router.ts 路由必须严格对齐 PRD §17「三终端路由/入口复用」，
+            以PRD为单一事实源，Arch不得自创路由方案。
+            每业务系统使用独立路由前缀（/admin/ | /tenant/ | /h5/），
+            禁止用功能描述名代替业务系统前缀，
+            禁止两业务系统路由前缀混用（如 /tenant 路径实际是运营后台功能）。
+            检查方法：逐条对比 router.ts meta（path/terminal/system/fn）与 PRD §17 路由表，
+            路径前缀、参数名、terminal标签全部一致。
+            参考：AP-01「路由前缀混用」反模式。
+        - id: "C-A12"
+          name: "业务系统终端边界隔离（V5.5.0新增·设计驱动架构）"
+          description: >
+            【架构师铁律】架构层面必须实现业务系统×终端物理隔离，杜绝跨系统组件混放：
+            ① components/ 按业务系统分目录（operator/ | tenant/ | viewer/），禁止跨系统混放组件
+            ② pages/ 每个页面归属单一业务系统终端，页面级 meta.terminal 声明
+            ③ router/ 每条路由 meta.system 声明归属业务系统
+            ④ stores/ 若共享Store必须声明 scope（system_scope: [operator, tenant] etc.）
+            检查方法：遍历所有组件/页面/路由/Store，逐一确认 terminal+system 归属，
+            任一组件归属不明确或跨系统混放即为阻断。
+            参考：AP-02「业务系统组件混放」反模式。
+        - id: "C-A13"
+          name: "设计→需求→架构反向三文档一致性检查（V5.5.0新增·设计驱动架构）"
+          description: >
+            【架构师铁律】架构产出后必须执行反向三文档一致性检查
+            （详见 checklists/design-prd-reverse-match.yml V2.0.0，5维度可执行）：
+            ① PRD §17 路由表 → 架构 §2.3 路由表 → router.ts 三方路径完全一致
+            ② PRD FN 列表 → 架构 FN 全覆盖（每个FN有路由映射或明确标注无独立路由）
+            ③ PRD ENT → 架构 contracts/schemas 实体全覆盖
+            ④ 设计 PG → 架构 pages 页面全覆盖
+            ⑤ 架构 DIR 树与实际 src/ 文件存在性完全一致
+            ⑥ 文档间版本引用正确（设计版本号、PRD文件路径）
+            反向检查不可跳过（max_retry=3），未通过则架构视为不合格。
+            参考：AP-03~AP-05 全部反模式。
+      completion_criteria: "架构评审通过，技术可行性/依赖/性能结论明确，PM 红线 C-A1~C-A13 全部通过 + 反向三文档一致性检查通过（V5.5.0 design-prd-reverse-match.yml）+ **V5.1.0：Arch大脑推理完成+brain_sync_export传递**"
       problem_sources: ["技术风险", "跨系统接口冲突", "依赖死锁", "红线缺项"]
       feedback_routing: "架构不通过 → PM 路由 Arch 重评；若因需求/设计引起 → PM 路由上游"
 

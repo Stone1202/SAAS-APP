@@ -8,9 +8,12 @@
 # 关联方案：audit-reports/POM门禁治理与铁律统一管理架构方案-2026-07-17.md
 # ============================================
 
-version: "1.9.0"
+version: "1.10.0"
 last_updated: "2026-07-22"
 
+# V1.10.0新增（V5.5.0设计驱动架构）：
+#   - G-ARCH-07~09：反向三文档一致性检查3条硬门禁（路由对齐+业务系统隔离+反向检查）
+#   - C-A11~C-A13 对应门禁，架构不能乱来，必须依据设计和需求文档进行架构
 # V1.9.0新增（回流+handoff强制约束补丁）：
 #   - G-REFLOW-01~04：回流启动/经停审视/到达BA/需求重跑 4条硬门禁
 #   - G-HO-WRITEBACK-01：handoff回传强制重跑门禁
@@ -573,6 +576,48 @@ stages:
           8大NFR主题：高并发/异步/同步/数据一致性/安全/可扩展/可用性/性能。
           NFR清单回传BA→PRD §18非功能需求章节。
         on_fail: "阻止进入开发阶段。PM驳回Arch：NFR主题识别未执行。Arch必须执行step-0 NFR主题识别，产出NFR清单并回传BA。"
+      - id: "G-ARCH-07"
+        type: "hard_gate"
+        name: "架构路由对齐PRD §17路由规划（V5.5.0新增·设计驱动架构）"
+        check: "content_pattern"
+        target: "src/router/index.ts"
+        pattern: "FN-AUDIT-|PRD §17"
+        description: |
+          V5.5.0新增【架构师铁律】——架构路由必须以PRD §17为单一事实源：
+          ① router.ts中每条路由的path必须遵循业务系统前缀（/admin/ | /tenant/ | /h5/）
+          ② router.ts中meta.terminal必须与实际业务系统一致
+          ③ router.ts中meta.fn必须覆盖PRD全部FN
+          ④ 禁止用功能描述名替代业务系统前缀（反模式AP-01）
+          ⑤ 路由器代码必须包含「PRD §17」引用注释作为单一事实源声明
+        on_fail: "PM驳回Arch：路由与PRD §17不一致。Arch必须逐条对比PRD §17路由表与router.ts，修正所有路径前缀、参数名、terminal标签的不一致。参考ap-01反模式。"
+      - id: "G-ARCH-08"
+        type: "hard_gate"
+        name: "业务系统终端边界隔离（V5.5.0新增·设计驱动架构）"
+        check: "dir_structure"
+        target: "src/components/"
+        expected_structure: |
+          src/components/audit/
+            ├── operator/   ← PC-运营后台专属（/admin/前缀）
+            ├── tenant/     ← PC-租户后台专属（/tenant/前缀）
+            └── viewer/     ← H5观众端专属（/h5/前缀）
+        description: |
+          V5.5.0新增【架构师铁律】——业务系统×终端必须物理隔离：
+          ① components/按业务系统分目录，禁止跨系统组件混放
+          ② 跨系统共享组件必须在shared/目录
+          ③ pages/每个页面归属单一终端
+          ④ router/每条路由meta.system声明归属
+        on_fail: "PM驳回Arch：业务系统组件混放。Arch必须按operator/tenant/viewer拆分components/目录，每个子目录只放单一业务系统的组件。参考ap-02反模式。"
+      - id: "G-ARCH-09"
+        type: "hard_gate"
+        name: "反向三文档一致性检查完成（V5.5.0新增·设计驱动架构）"
+        check: "file_exists"
+        target: "docs/04-architecture/*/REVERSE-MATCH-REPORT.md"
+        description: |
+          V5.5.0新增【架构师铁律】——架构产出后必须执行反向三文档一致性检查。
+          产出REVERSE-MATCH-REPORT.md（5维度：路由三重一致性+业务系统边界+FN/ENT/PG覆盖+DIR树+版本引用）。
+          反向检查不可跳过（max_retry=3），未通过则架构视为不合格。
+          详见 checklists/design-prd-reverse-match.yml V2.0.0。
+        on_fail: "PM驳回Arch：反向三文档一致性检查未执行。Arch必须按照design-prd-reverse-match.yml执行5维度检查，产出REVERSE-MATCH-REPORT.md，修复全部不一致项（最多3次重试）。"
 
   # ---- Stage-5 开发 ----
   dev:

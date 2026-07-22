@@ -70,5 +70,5 @@ redlines:
 # ✅ RL-09 无版本记录表         → doc-standards.yml
 # ✅ RL-10 无脑暴记录           → stage-0→stage-2 输入链
 # ✅ 设计红线 C-D1~C-D4         → stage-3 pm_redlines
-# ✅ 架构红线 C-A1~C-A4         → stage-4 pm_redlines
+# ✅ 架构红线 C-A1~C-A13        → stage-4 pm_redlines（V5.5.0扩展为13条）
 # ✅ 开发红线 C-F1~C-F5         → stage-5 pm_redlines

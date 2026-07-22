@@ -1,189 +1,192 @@
-# ============================================================
-# 设计→需求反向匹配清单 V1.0.0
-# ============================================================
-# 用途：设计输出完成后，反向与PRD进行全维度匹配检查
-# 触发：设计文档V1.0.0输出后、联合评审前
-# 执行方：UX设计师主导 + BA参与需求侧校验
-# 原则：
-#   1. 设计不能凭空创建业务流程（超设计检测）
-#   2. 设计不能忽视需求文档（漏设计检测）
-#   3. 每个设计元素必须有PRD来源可追溯
-#   4. 每个PRD要求必须有设计对应实现
-# ============================================================
+# ============================================
+# 反向三文档一致性检查清单
+# ============================================
+# 用途：架构产出后，从设计文档反向检查 PRD 与架构的一致性
+# 触发阶段：project-lifecycle stage-4（架构阶段）completion_criteria
+# 执行者：Arch Agent → PM审核
+# 版本：V2.0.0（可执行化）
+# 最后更新：2026-07-22
+# ============================================
+version: "2.0.0"
 
-version: "1.0.0"
-last_updated: "2026-07-22"
-category: design-quality
+# ──────────────────────────────────────────
+# 核心原则（架构师铁律）
+# ──────────────────────────────────────────
+principles:
+  - id: "P1"
+    text: "架构路由以PRD §17为单一事实源，不得自创路由方案"
+  - id: "P2"
+    text: "业务系统×终端物理隔离，一个目录只放一个业务系统的代码"
+  - id: "P3"
+    text: "架构文档与实际代码完全一致，文档DIR树即代码目录树"
+  - id: "P4"
+    text: "每个PRD FN必须有架构层的路由映射或明确的'无独立路由'标注"
 
-# ---- 元信息 ----
-meta:
-  name: "设计→需求反向匹配清单"
-  id: "DESIGN-PRD-REVERSE-MATCH"
-  trigger_condition: "设计文档V1.0.0输出后，联合评审之前"
-  executor: "UX设计师（主导）+ BA（需求侧校验）"
-  output: "反向匹配报告（追加到设计内部走查报告中）"
+# ──────────────────────────────────────────
+# 检查步骤（Arch必须逐项执行）
+# ──────────────────────────────────────────
+checks:
+  # --- 维度1：路由路径三重一致性 ---
+  dimension_1_routing:
+    name: "路由路径三重一致性（PRD §17 ↔ 架构 §2.3 ↔ router.ts）"
+    category: "P0阻断"
+    steps:
+      - id: "R-01"
+        action: "提取 PRD §17「三终端路由/入口复用」全部路由定义（路径、FN、终端、说明）"
+        source: "PRD文档"
+      - id: "R-02"
+        action: "提取架构文档 §2.3「路由规划」全部路由定义（路径、FN、终端、页面）"
+        source: "架构文档"
+      - id: "R-03"
+        action: "提取 src/router/index.ts 中全部 routes 定义（path、name、meta.terminal、meta.fn）"
+        source: "实际代码"
+      - id: "R-04"
+        action: "逐条比对：PRD路由 ↔ 架构路由 ↔ router.ts路由"
+        check_matrix:
+          - check: "路径前缀是否遵循 /admin/ /tenant/ /h5/ 规则"
+            severity: "blocker"
+          - check: "参数名是否一致（如 streamId vs liveId）"
+            severity: "blocker"
+          - check: "meta.terminal 是否与实际业务系统一致"
+            severity: "blocker"
+          - check: "meta.fn 是否覆盖PRD全部FN"
+            severity: "blocker"
+      - id: "R-05"
+        action: "输出「路由三重一致性矩阵」，标记不一致项"
 
-# ---- 五维闭环检查 ----
-five_dimension_closure:
+  # --- 维度2：业务系统终端边界 ---
+  dimension_2_system_boundary:
+    name: "业务系统终端边界隔离"
+    category: "P0阻断"
+    steps:
+      - id: "B-01"
+        action: "列出 PRD 中声明的全部业务系统×终端组合（如 PC-运营后台、PC-租户后台、H5-观众端）"
+      - id: "B-02"
+        action: "检查 components/ 目录：每个子目录是否明确归属单一业务系统"
+        sub_checks:
+          - "components/audit/operator/ 是否仅含运营后台组件"
+          - "components/audit/tenant/ 是否仅含租户后台组件"
+          - "components/audit/viewer/ 是否仅含观众端组件"
+          - "跨业务系统共享组件是否在 shared/ 目录"
+      - id: "B-03"
+        action: "检查 pages/ 目录：每个页面是否正确归属到对应终端目录"
+        sub_checks:
+          - "每个页面的终端归属是否与 router meta.terminal 一致"
+          - "是否有页面内容引用其他业务系统的组件（跨系统引用检查）"
+      - id: "B-04"
+        action: "检查 stores/：共享Store是否声明 system_scope"
+        sub_checks:
+          - "audit-store.ts 的 system_scope 是否正确"
+      - id: "B-05"
+        action: "输出「业务系统终端边界矩阵」，标记混放/归属不清项"
 
-  # —— 维度1：流程闭环 ——
-  flow_closure:
-    description: "设计中的每个业务流程是否在PRD中定义完整，且端到端无断裂"
-    checks:
-      - id: FLOW-01
-        check: "设计的所有页面跳转路径，是否均在PRD的泳道图/流程图中定义？"
-        method: "提取设计§8跳转矩阵中的所有路径 → 对比PRD五图中的业务流程图和信息流转图"
-        severity: P0
-      - id: FLOW-02
-        check: "设计的所有弹窗/抽屉/模态框，是否在PRD对应FN的基本流程或备选流程中有明确触发步骤？"
-        method: "提取设计§5弹窗交互中的所有M元素 → 逐一对比PRD对应FN的步骤编号"
-        severity: P0
-      - id: FLOW-03
-        check: "PRD中定义的每个备选流程（异常分支/降级路径），设计是否有对应的异常UI状态？"
-        method: "遍历PRD每个FN的备选流程编号 → 在设计文档中检索是否提及对应状态"
-        severity: P1
-      - id: FLOW-04
-        check: "PRD中定义的跨终端联动（如运营开启→租户生效→观众端变化），设计是否完整覆盖？"
-        method: "提取PRD中[事件驱动]标注的步骤 → 检查设计§8.3跨终端跳转矩阵是否覆盖"
-        severity: P1
+  # --- 维度3：FN/ENT/PG 全覆盖 ---
+  dimension_3_coverage:
+    name: "PRD FN/ENT/PG ↔ 架构 完整覆盖"
+    category: "P0阻断"
+    steps:
+      - id: "C-01"
+        action: "提取 PRD 全部 FN 编号列表（如 FN-AUDIT-INFRA-001 ~ FN-AUDIT-APP-001）"
+      - id: "C-02"
+        action: "检查每个 FN 在架构中是否有路由映射或明确标注'无独立路由'"
+        check_matrix:
+          - check: "FN-AUDIT-INFRA-001 → 架构标注'共享基础设施，无独立路由'"
+          - check: "FN-AUDIT-PC-001 → 映射到明确路由路径"
+          - check: "FN-AUDIT-PC-002 → 映射到明确路由路径"
+          - check: "FN-AUDIT-PC-003 → 架构标注'嵌入PG-AUDIT-PC-002，无独立路由'"
+          - check: "FN-AUDIT-PC-004 → 映射到明确路由路径"
+          - check: "FN-AUDIT-APP-001 → 映射到明确路由路径"
+      - id: "C-03"
+        action: "提取 PRD 全部 ENT 编号，检查 contracts/schemas/ 是否全覆盖"
+      - id: "C-04"
+        action: "提取设计文档全部 PG 编号，检查 pages/ 是否全覆盖"
+      - id: "C-05"
+        action: "输出「FN/ENT/PG 覆盖矩阵」，标记缺失项"
 
-  # —— 维度2：数据闭环 ——
-  data_closure:
-    description: "设计中的信息展示是否与PRD的ENT/CONFIG数据定义一致"
-    checks:
-      - id: DATA-01
-        check: "设计的每个页面/弹窗中展示的信息字段，是否在PRD对应UC的数据范围(R/W)中有定义？"
-        method: "提取设计每个B（区块）和M（弹窗）中的字段清单 → 对比PRD UC的「数据范围」和ENT定义"
-        severity: P0
-      - id: DATA-02
-        check: "设计中涉及的CONFIG可配置项（阈值/开关/参数），是否在PRD §CONFIG清单中注册？"
-        method: "提取设计中所有可变参数（超时时间/概率/阈值/默认值） → 对比PRD CONFIG编号"
-        severity: P1
-      - id: DATA-03
-        check: "PRD ENT中定义的每个实体字段，是否在设计页面/弹窗中有明确的展示或操作位置？"
-        method: "反向遍历PRD每个ENT的字段列表 → 在设计文档中检查每个字段是否有UI载体"
-        severity: P1
+  # --- 维度4：架构文档DIR树与实际代码一致性 ---
+  dimension_4_dir_consistency:
+    name: "架构文档DIR树 ↔ 实际代码文件 完全一致"
+    category: "P1高"
+    steps:
+      - id: "D-01"
+        action: "提取架构文档 §8「项目目录结构」的全部文件路径清单"
+      - id: "D-02"
+        action: "使用工具遍历 src/ 实际文件，生成实际文件清单"
+      - id: "D-03"
+        action: "逐文件比对：文档声明文件 vs 实际存在文件"
+        check_matrix:
+          - check: "文档声明但代码不存在的文件（虚增）→ 从文档删除或待实现"
+            severity: "high"
+          - check: "代码存在但文档未声明的文件（遗漏）→ 补充到文档"
+            severity: "medium"
+          - check: "文档声明文件路径与实际代码路径不一致"
+            severity: "high"
+      - id: "D-04"
+        action: "输出「DIR树一致性差异报告」"
 
-  # —— 维度3：状态闭环 ——
-  state_closure:
-    description: "设计中的UI状态变化是否覆盖PRD状态机的所有状态和过渡"
-    checks:
-      - id: STATE-01
-        check: "PRD状态机的每个状态节点，设计是否有对应的UI视觉表现？"
-        method: "列出PRD状态机所有状态 → 在设计文档中检索每个状态是否有对应UI样式/文案/操作变更"
-        severity: P0
-      - id: STATE-02
-        check: "PRD状态过渡操作表中的每个触发操作，设计是否有对应的交互元素？"
-        method: "列出状态过渡操作表 → 检查每个触发操作是否有对应按钮/动作/自动触发"
-        severity: P0
-      - id: STATE-03
-        check: "BR中对状态变更的约束规则（如某状态下哪些按钮可用/不可用），设计是否体现？"
-        method: "提取BR中涉及状态判断的规则 → 在设计文档中检查对应UI状态（置灰/隐藏/提示）"
-        severity: P1
+  # --- 维度5：文档间版本引用一致性 ---
+  dimension_5_version_refs:
+    name: "文档间版本引用一致性"
+    category: "P2中"
+    steps:
+      - id: "V-01"
+        action: "提取架构文档头部的「关联设计」「关联PRD」引用"
+      - id: "V-02"
+        action: "验证引用的设计文档文件名确实存在"
+      - id: "V-03"
+        action: "验证引用的PRD文档路径确实存在"
+      - id: "V-04"
+        action: "验证 pom/state.json 中的 design_doc 版本号与实际一致"
+      - id: "V-05"
+        action: "输出「版本引用一致性报告」"
 
-  # —— 维度4：体验闭环 ——
-  experience_closure:
-    description: "设计的体验覆盖是否完整（正常流/异常流/边界/空/加载/错误）"
-    checks:
-      - id: EXP-01
-        check: "设计的每个页面/弹窗是否覆盖了六态（正常/空/加载/错误/边界/极致）？"
-        method: "按PG/M逐项检查：正常态/空态/加载态/错误态/边界态/极致态"
-        severity: P1
-      - id: EXP-02
-        check: "BR中定义的交互反馈规则（如XX秒超时自动XX/XX%概率XX），设计是否有对应的视觉反馈？"
-        method: "检索BR中包含时间阈值/概率/回退行为的规则 → 检查设计是否有对应UI状态"
-        severity: P1
-      - id: EXP-03
-        check: "跨终端状态同步的延迟/失败场景，设计是否有对应的过渡UI？"
-        method: "检查设计§8.3跨终端联动 → 是否有同步中/同步失败/延迟的UI处理"
-        severity: P2
+# ──────────────────────────────────────────
+# 反向检查执行协议
+# ──────────────────────────────────────────
+execution_protocol:
+  trigger: "stage-4 架构阶段完成，Arch提交审查前"
+  executor: "Arch Agent 自动执行 + PM审核确认"
+  tool_chain:
+    - "读取 PRD §17 路由段"
+    - "读取 架构 §2.3 路由段"
+    - "读取 src/router/index.ts"
+    - "遍历 src/components/** src/pages/** src/contracts/**"
+    - "生成反向一致性报告"
+  output: "REVERSE-MATCH-REPORT.md（存放于 docs/04-architecture/v{版本}/）"
+  pass_criteria: "全部5维度通过 + PM红线 C-A8/C-A9/C-A10 全部绿灯"
+  max_retry: 3
+  on_failure: "架构退回Arch修正 → 重新执行反向检查 → 直到全部通过或3次后PM决策"
 
-  # —— 维度5：覆盖度双向检测 ——
-  coverage_bidirectional:
-    description: "设计→PRD和PRD→设计双向覆盖度检查"
-    checks:
-      - id: COV-01_OVER_DESIGN
-        check: "设计中有哪些UI元素/功能在PRD中找不到对应需求？（超设计检测）"
-        method: "遍历设计所有B/M/BTN/IPT → 逐一在PRD中查找需求来源 → 标记无来源项"
-        severity: P0
-        action: "标记为超设计 → UX与BA确认：①是BA遗漏需补PRD ②是UX合理设计优化需BA确认后纳入PRD ③是冗余需删除"
-      - id: COV-02_MISSING_DESIGN
-        check: "PRD中有哪些FN/UC步骤在设计中没有对应实现？（漏设计检测）"
-        method: "遍历PRD所有FN的所有步骤 → 在设计文档中检索对应UI元素 → 标记无对应项"
-        severity: P0
-        action: "标记为漏设计 → 每个漏设计项确定：①设计遗漏需补设计 ②纯后端逻辑不需要UI ③已在其他模块覆盖"
-      - id: COV-03_BR_COVERAGE
-        check: "PRD中每条BR规则在设计文档中是否有对应体现？"
-        method: "遍历PRD所有BR → 在设计文档中检索BR编号或规则内容 → 标记无对应项"
-        severity: P1
-        action: "标记为BR未覆盖 → 确定设计是否需要体现该BR（纯后端规则可豁免）"
-
-# ---- 执行流程 ----
-execution_flow:
-  step1_extract_design_elements:
-    description: "从设计文档中自动提取所有UI元素清单"
-    output: "UI元素清单（PG×N + B×N + M×N + BTN×N + IPT×N）"
-    method: "解析设计文档§2信息结构 → 生成结构化元素列表"
-
-  step2_extract_prd_elements:
-    description: "从PRD中自动提取所有需求元素清单"
-    output: "需求元素清单（FN×N + UC×N + BR×N + ENT×N + CONFIG×N + 状态机状态×N）"
-    method: "解析PRD目录和编号体系统 → 生成结构化需求列表"
-
-  step3_bidirectional_mapping:
-    description: "双向映射：设计元素→PRD来源 + PRD步骤→设计对应"
-    output: "双向映射表"
-    method: "AI辅助自动化映射 + BA/UX人工校验"
-
-  step4_gap_analysis:
-    description: "基于双向映射表产出差距清单（超设计/漏设计/BR未覆盖）"
-    output: "差距清单"
-    method: "对比映射表 → 标记NoSource（超设计）和NoTarget（漏设计）"
-
-  step5_five_dimension_check:
-    description: "按五维闭环逐项检查并评分"
-    output: "五维闭环检查结果"
-    method: "按5维×3-4项=17项逐项检查 → 每项标记合格/不合格"
-
-  step6_reverse_match_report:
-    description: "汇总生成反向匹配报告"
-    output: "REVERSE-MATCH-REPORT追加到设计内部走查报告"
-    method: "合并Step3-5结果 → 形成结构化报告"
-
-# ---- 质量门禁 ----
-gates:
-  - id: G-REVMATCH-01
-    description: "无P0超设计（设计元素全部可追溯到PRD或已与BA确认）"
-    severity: HARD_BLOCK
-  
-  - id: G-REVMATCH-02
-    description: "无P0漏设计（PRD所有FN步骤已覆盖或已标记豁免理由）"
-    severity: HARD_BLOCK
-  
-  - id: G-REVMATCH-03
-    description: "状态机所有状态节点有对应UI状态"
-    severity: HARD_BLOCK
-  
-  - id: G-REVMATCH-04
-    description: "流程闭环100%（所有PRD备选流程有对应异常UI）"
-    severity: SOFT_BLOCK
-
-  - id: G-REVMATCH-05
-    description: "BR覆盖率≥90%（纯后端规则可豁免）"
-    severity: SOFT_BLOCK
-
-# ---- 输出模板 ----
-report_template:
-  sections:
-    - title: "一、双向映射表"
-      content: "逐UC的设计↔PRD映射表，含溯源链"
-    - title: "二、超设计清单"
-      content: "列出所有设计有但PRD无的UI元素，每条标注确认结论"
-    - title: "三、漏设计清单"
-      content: "列出所有PRD有但设计无的步骤，每条标注确认结论"
-    - title: "四、五维闭环检查"
-      content: "5维度17项逐项检查结果，附评分"
-    - title: "五、BR覆盖矩阵"
-      content: "逐BR的覆盖状态表"
-    - title: "六、反向匹配结论"
-      content: "通过/有条件通过/不通过 + 修复清单"
+# ──────────────────────────────────────────
+# 常见反模式（历史错误 — 永不复发）
+# ──────────────────────────────────────────
+anti_patterns:
+  - id: "AP-01"
+    name: "路由前缀混用"
+    example: "/tenant 路径 meta.terminal=pc-operator（路径名暗示租户，实际是运营后台）"
+    root_cause: "Arch直接用页面功能描述做路径，未按PRD定义的业务系统前缀组织"
+    fix: "严格使用PRD §17定义的前缀：/admin/ /tenant/ /h5/"
+    
+  - id: "AP-02"
+    name: "业务系统组件混放"
+    example: "components/audit/ 下同时放运营后台、租户后台、观众端组件"
+    root_cause: "未进行业务系统×终端目录分拆"
+    fix: "按 operator/ tenant/ viewer/ 分子目录"
+    
+  - id: "AP-03"
+    name: "文档DIR树与代码不一致"
+    example: "架构文档声明 mock-generator.ts 和 replay-service.ts，但实际未实现"
+    root_cause: "文档基于设计稿编写而非基于实际代码"
+    fix: "架构文档DIR树必须基于实际代码文件生成，严禁凭想象编写"
+    
+  - id: "AP-04"
+    name: "三文档路由三分天下"
+    example: "PRD路由路径 A / 架构路由路径 B / router.ts 路径 C — 全不同"
+    root_cause: "Arch未以PRD §17为单一事实源，自由设计路由"
+    fix: "PRD §17是唯一路由标准，架构只能补充映射不能修改"
+    
+  - id: "AP-05"
+    name: "文档版本引用过期"
+    example: "架构文档引用设计文档 v1.0.1，实际文件为 v1.0.0"
+    root_cause: "版本号更新未同步修改引用"
+    fix: "每次版本变更后执行维度5版本引用一致性检查"

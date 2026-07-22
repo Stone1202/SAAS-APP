@@ -1,7 +1,13 @@
 # ============================================
 # iron-rules-registry.yml — 全流程铁律注册中心
-# 版本：v1.9.0
+# 版本：v1.10.0
 # 创建：2026-07-17
+# V1.10.0新增：ARCH-12~14 设计驱动架构铁律（V5.5.0）
+#   架构不能乱来，必须依据设计和需求文档进行架构
+#   ARCH-12：路由以PRD为单一事实源
+#   ARCH-13：业务系统终端物理隔离
+#   ARCH-14：反向三文档一致性检查不可跳过
+#   铁律总数：ARCH 11→14（全铁律总数 98→101）
 # 定位：所有Agent铁律的单一事实源，统一编号统一管理
 # 引用方：各agent.md声明"遵守iron-rules-registry.yml"，各workflow.yml引用对应Agent的铁律段
 # 维护：新增/修改/废弃铁律时只需修改本文件
@@ -503,6 +509,21 @@ agents:
         enforcement: "hard"
         workflow_check: "gates-registry G-ARCH-06 + G-REQ-18"
         note: "V5.1.2新增：解决PRD只有功能需求没有非功能需求的系统性缺陷。Arch参与需求阶段（架构评审前置），识别NFR主题回传BA。"
+      - id: "ARCH-12"
+        rule: "设计驱动架构——路由以PRD为单一事实源（V5.5.0新增）：Arch生成的路由必须严格对齐PRD §17「三终端路由/入口复用」。每业务系统使用独立路由前缀（/admin/ | /tenant/ | /h5/），禁止用功能描述名代替业务系统前缀，禁止两业务系统路由前缀混用。Arch不是凭空设计路由——Arch是翻译PRD路由为代码。"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-ARCH-07 + arch-flow pm_redlines C-A11"
+        note: "V5.5.0新增【架构师铁律】：解决Arch自由设计路由导致三文档路由三分天下的根因。PRD §17是路由单一事实源，Arch只能补充映射不能修改。参考反模式AP-01。"
+      - id: "ARCH-13"
+        rule: "设计驱动架构——业务系统终端物理隔离（V5.5.0新增）：components/按业务系统分目录（operator/ | tenant/ | viewer/），pages/每个页面归属单一终端，router/每条路由声明meta.system，stores/共享Store声明system_scope。禁止跨业务系统组件混放——这是一个之前犯过的错误，永远不再复发。"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-ARCH-08 + arch-flow pm_redlines C-A12"
+        note: "V5.5.0新增【架构师铁律】：解决业务系统组件混放根因。参考反模式AP-02。"
+      - id: "ARCH-14"
+        rule: "设计驱动架构——反向三文档一致性检查不可跳过（V5.5.0新增）：架构产出后必须执行反向三文档一致性检查（checklists/design-prd-reverse-match.yml V2.0.0，5维度可执行），产出REVERSE-MATCH-REPORT.md。检查覆盖：路由三重一致性+业务系统边界+FN/ENT/PG覆盖+DIR树一致性+版本引用一致性。max_retry=3，未通过则架构视为不合格，PM绝不放行。"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-ARCH-09 + arch-flow pm_redlines C-A13"
+        note: "V5.5.0新增【架构师铁律】：解决架构文档与PRD/设计/实际代码全不一致的根因。一行运行时验证>一百条纸面规则。参考反模式AP-03/04/05。"
 
   # ============================================
   # QA Agent（质量保障）— 补全（原仅1条）
