@@ -1,0 +1,21 @@
+{
+  "name": "saas-e2e-acceptance",
+  "version": "1.0.0",
+  "description": "SAAS项目跨端端到端验收框架（Playwright + uni-app CDP）",
+  "type": "module",
+  "scripts": {
+    "check-env": "bash scripts/check-env.sh",
+    "connect-app": "node --loader ts-node/esm src/utils/connect-app.ts",
+    "test:SC-001": "node --loader ts-node/esm src/scenarios/SC-E2E-001-跨端下单闭环.ts",
+    "test:SC-002": "node --loader ts-node/esm src/scenarios/SC-E2E-002-扫码绑定门店.ts",
+    "test:all": "for f in src/scenarios/*.ts; do echo \"=== 运行 $f ===\"; node --loader ts-node/esm \"$f\"; done"
+  },
+  "dependencies": {
+    "playwright": "^1.45.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.0"
+  }
+}
