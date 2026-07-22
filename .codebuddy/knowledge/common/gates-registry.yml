@@ -8,9 +8,13 @@
 # 关联方案：audit-reports/POM门禁治理与铁律统一管理架构方案-2026-07-17.md
 # ============================================
 
-version: "1.8.0"
-last_updated: "2026-07-21"
+version: "1.9.0"
+last_updated: "2026-07-22"
 
+# V1.9.0新增（回流+handoff强制约束补丁）：
+#   - G-REFLOW-01~04：回流启动/经停审视/到达BA/需求重跑 4条硬门禁
+#   - G-HO-WRITEBACK-01：handoff回传强制重跑门禁
+#   - G-CLOSE-01增强：增加transit_records路径完整性校验+reflow_adjustment标记校验
 # V1.8.0新增：G-PO-05(关键链分析) + G-REQ-20(端到端闭环) + G-DES-07(设计上下文)
 # V1.7.0新增：G-LEARN-01~05 独立学习阶段门禁（learn-project V7.0.0场景深度还原）
 # V1.6.0新增：G-REQ-19 状态机中文命名门禁
@@ -673,11 +677,20 @@ stages:
     gates:
       - id: "G-CLOSE-01"
         type: "hard_gate"
-        name: "PBL全闭环"
+        name: "PBL全闭环+回流路径完整性（V1.9.0增强）"
         check: "content_pattern"
         target: "projects/{project}/.codebuddy/journal/problem-ledger.md"
         pattern: "已闭环"
-        on_fail: "阻止/close，PM处理未闭环PBL"
+        description: |
+          V1.9.0增强——不仅检查PBL条目标记"已闭环"，还增加回流路径完整性校验：
+          1. 每个PBL条目必须包含 transit_records 字段（经停各阶段的审视记录）
+          2. 每个transit_record必须包含 agent / stage / judgment / timestamp
+          3. 回流到BA的PBL必须包含 reflow_adjustment 字段（BA调整摘要）
+          4. handoff回传的PBL必须包含 writeback_rerun 字段（增量重跑标记）
+          5. 跨版本/跨Sprint传递的PBL必须有 transfer_mark（传递原因+目标版本/Sprint）
+          核心原则：如果PBL只有"已闭环"标记但没有transit_records，
+          说明Agent可能跳过了回流路径直接标记——这是不允许的。
+        on_fail: "阻止/close，PM要求补充：①缺失的transit_records ②缺失的reflow_adjustment标记 ③缺失的writeback_rerun标记。每条PBL必须有完整的回流路径记录。"
       - id: "G-CLOSE-02"
         type: "hard_gate"
         name: "8阶段Review报告全产出"
@@ -727,6 +740,103 @@ stages:
           截图必须是close阶段dev server的真实页面截图（原型截图无验收价值）。
           生成时机：handoff之后、版本快照之前。
         on_fail: "阻止/close。PM执行HTML需求文档生成流程：启动dev server→逐页面截图→UC标注→状态矩阵→五图渲染→NFR章节→生成HTML文档。"
+
+  # ============================================
+  # V1.9.0新增：回流强制约束段（G-REFLOW-01~04）
+  # 解决：反馈回流路由到BA重跑需求分析的过程缺乏硬门禁约束
+  # 原则：所有反馈必须按路由表依次经停→汇聚到BA→BA重跑→留痕→闭环
+  # 触发场景：QA Bug/AC不通过/design/test/dev反馈/用户补充/Review不通过
+  # ============================================
+  defect_reflow:
+    description: "反馈回流强制约束——确保所有反馈必须路由到BA并重跑需求分析"
+    owner: "PM（版本级路由）+ SM（Sprint级路由）+ BA（接收后重跑）"
+    workflow: "defect-reflow.yml"
+    gates:
+      - id: "G-REFLOW-01"
+        type: "hard_gate"
+        name: "回流启动强制门禁"
+        description: |
+          任何"不通过"类型的反馈（QA测试不通过/AC验收不通过/Review结论不通过/用户补充驳回）
+          必须触发defect-reflow流程，不可直接跳过回流去改代码或补验收。
+          触发时必须在PBL（problem-ledger.md）中创建/更新条目，包含：
+          - source_stage: 反馈来源阶段
+          - source_agent: 反馈来源Agent
+          - feedback_type: bug / acceptance_fail / review_fail / supplement / reject
+          - transit_path: 经停路径（从反馈来源到BA的完整路由表）
+          - transit_complete: false（初始值，等待各经停阶段审视）
+        check: "content_pattern"
+        target: "projects/{project}/.codebuddy/journal/problem-ledger.md"
+        pattern: "reflow_entry|回流条目|source_stage.*{stage}"
+        on_fail: "阻止当前action（改代码/补验收/标记完成/推进下一阶段）。PM强制要求先创建PBL回流条目，按路由表启动defect-reflow。不可篡改为直接修复。"
+        iron_rule: "QA-07 + AC-07"
+
+      - id: "G-REFLOW-02"
+        type: "hard_gate"
+        name: "经停审视完整性门禁"
+        description: |
+          回流路径上每个中间阶段（从反馈来源到BA之间的所有阶段）都必须产出 transit_review 记录。
+          transit_review 必须包含：
+          - stage: 经停阶段名（test/dev/arch/design）
+          - agent: 执行审视的Agent
+          - judgment: affected（需要调整）/ not_affected（未受影响）/ skip_with_reason（跳过+原因）
+          - reason: 审视理由（一行说明为什么受影响/不受影响/跳过）
+          - suggested_action: affected时的建议方案
+          - timestamp: 审视时间（ISO 8601）
+          如果某中间阶段超时（30分钟）未产出transit_review，SM/PM主动催促。
+        check: "content_completeness"
+        target: "projects/{project}/.codebuddy/journal/problem-ledger.md"
+        required_fields:
+          - "transit_records[{stage}].judgment"
+          - "transit_records[{stage}].reason"
+          - "transit_records[{stage}].timestamp"
+          - "transit_records[{stage}].agent"
+        on_fail: "回流阻塞于{stage}——SM/PM要求{agent}补充遍历结论（affected/not_affected/skip_with_reason+reason）后再推进到下一经停阶段。"
+        iron_rule: "PM-10"
+
+      - id: "G-REFLOW-03"
+        type: "hard_gate"
+        name: "回流到达BA门禁"
+        description: |
+          BA在接收回流并重跑需求分析之前，必须确认：
+          1. 所有中间阶段的transit_review已齐备（judgment + reason + timestamp 完整）
+          2. 非经停阶段已被正确跳过（标记 skip_with_reason + 跳过的原因）
+          3. 反馈源信息完整（source_stage + feedback_type + 具体问题描述）
+          4. 领域知识库/经验库已加载（复用Tier2加载策略）
+          确认后BA才能开始 §0.5a 需求深度分析回流模式，产出回流全景图
+        check: "content_completeness"
+        target: "projects/{project}/.codebuddy/journal/problem-ledger.md"
+        required_fields:
+          - "transit_complete: true"
+          - "ba_received_at"
+          - "ba_summary: 待BA处理后填写"
+        on_fail: "BA不可开始重跑需求分析——PM必须确认所有transit_review已到位（每个中间阶段都有judgment+reason+timestamp），SM可协助推动。"
+        iron_rule: "BA-38 + PM-10"
+
+      - id: "G-REFLOW-04"
+        type: "hard_gate"
+        name: "需求重跑完成门禁"
+        description: |
+          BA回流后重跑需求分析的产物必须包含回流调整标记，确认不是空跑（只标记不产出）。
+          要求 PBL 条目中必须填写：
+          1. reflow_adjustment: 描述本次调整的具体内容（FN/UC/BR/ENT/CONFIG/METRIC的变更摘要）
+          2. affected_artifacts: 列出受影响的具体产物编号（如 FN-SHP-PC-001, BR-SHP-005）
+          3. rerun_scope: full（全量重走后续流程）/ incremental（仅受影响部分重走）
+          4. transit_summary: 各经停阶段审视结论的汇总（关键结论合并）
+          5. ba_completed_at: BA处理完成时间
+          6. prd_section_updated: PRD中被更新的章节编号列表
+          BA重跑完成后，PBL标记 transit_complete:true + state:adjusted
+          然后按 rerun_scope 从需求分析开始重走后续流程
+        check: "content_completeness"
+        target: "projects/{project}/.codebuddy/journal/problem-ledger.md"
+        required_fields:
+          - "reflow_adjustment"
+          - "affected_artifacts"
+          - "rerun_scope"
+          - "transit_summary"
+          - "ba_completed_at"
+          - "prd_section_updated"
+        on_fail: "BA重跑需求分析无效（空跑）——PM拦截。/close时也会拦截（G-CLOSE-01增强）。BA必须补充reflow_adjustment+affected_artifacts+rerun_scope+transit_summary。"
+        iron_rule: "BA-38"
 
   # ============================================
   # V5.0新增门禁（议题一~七）
@@ -979,6 +1089,39 @@ stages:
         description: "V5.6.0新增——空连接禁止门禁（BA-34铁律）。原型中每个操作按钮必须有对应的交互实现+对应UC。禁止：空连接/空函数/Toast功能开发中/表单无校验/搜索无效果/操作无UC。QA/验收时逐个检查所有操作按钮。"
         on_fail: "阻止/close，补做缺失的交互实现+缺失的UC"
         iron_rule: "BA-34"
+
+  # ---- V1.9.0新增：handoff回传强制重跑（G-HO-WRITEBACK-01） ----
+  handoff_writeback:
+    owner: "PM + BA"
+    description: |
+      V1.9.0新增——handoff用户审阅阶段检测到变更（新增FN/补充异常流/修改描述）后，
+      BA必须执行增量重跑需求分析并在PRD留痕。防止handoff只记变更不改PRD。
+    workflow: "handoff.yml"
+    gates:
+      - id: "G-HO-WRITEBACK-01"
+        type: "hard_gate"
+        name: "handoff回传强制重跑门禁"
+        description: |
+          handoff Stage3 用户审阅交互卡时编辑了内容（新增用例/补充异常流/修改描述）后，
+          必须在 PBL 中创建 writeback 条目，BA 执行增量重跑需求分析。
+          PBL 条目必须包含：
+          1. writeback_rerun: true（增量重跑标记）
+          2. writeback_type: new_fn / supplement_exception / modify_description
+          3. affected_fn_list: 受影响的FN编号列表
+          4. ba_incremental_rerun_done: true（BA增量重跑完成标记）
+          5. prd_section_updated: PRD中被更新的章节编号
+          6. handoff_cycle: 当前循环次数（handoff循环重跑直到无变更）
+          原则：handoff检测到任何变更→BA必须增量重跑→PRD必须反映变更。
+          不可只标记done不改PRD。
+        check: "content_completeness"
+        target: "projects/{project}/.codebuddy/journal/problem-ledger.md"
+        required_fields:
+          - "writeback_rerun"
+          - "ba_incremental_rerun_done"
+          - "affected_fn_list"
+          - "prd_section_updated"
+        on_fail: "handoff回传变更后BA未执行增量重跑——PM拦截。BA必须根据handoff编辑内容执行增量需求分析，更新PRD对应章节。handoff循环重复直到无变更。"
+        iron_rule: "PM-11"
 
   # ---- 议题七：版本快照+差异报告（G-SNAPSHOT-01 + G-DIFF-01） ----
   version_snapshot_diff:

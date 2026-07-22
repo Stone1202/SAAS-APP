@@ -465,3 +465,22 @@ workflow:
     undo: |
       如需解锁（新版本迭代）：将 locked 改回 false
       → UseCaseDrawer 恢复编辑能力
+
+  # ============================================
+  # V4.1.1新增：hardoff回传强制重跑门禁引用（硬约束补丁）
+  # 解决：handoff阶段用户编辑后BA可跳过增量重跑直接标记done
+  # ============================================
+  writeback_gate:
+    description: |
+      V4.1.1新增——handoff回传硬约束门禁。
+      handoff Stage3用户审阅后检测到变更（新增FN/补充异常流/修改描述），
+      BA必须执行增量重跑需求分析（gate G-HO-WRITEBACK-01）。
+      不可只标记done不改PRD。
+    gate: "G-HO-WRITEBACK-01"
+    check: |
+      每次handoff循环迭代中，检测到变更后：
+      1. BA必须产出增量重跑记录（writeback_rerun=true + affected_fn_list + prd_section_updated）
+      2. PBL中必须包含writeback条目（ba_incremental_rerun_done标记）
+      3. 循环迭代直到Stage3无变更
+    on_fail: "handoff回传后BA未执行增量重跑——PM拦截，BA必须根据handoff编辑内容增量重跑需求分析"
+    iron_rule: "PM-11"

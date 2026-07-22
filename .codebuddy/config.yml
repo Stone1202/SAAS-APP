@@ -133,6 +133,7 @@ projects:
     range: [4000, 4099]          # 端口池范围
     allocation: "auto"           # auto（自动分配空闲端口）| manual（手动指定）
     reserved:                    # 已分配端口（ensure-project.sh 自动维护）
+      - { project: "SAAS", port: 4000 }
       - { project: "AI-SCRM", port: 3333 }
 
   # V1.0.0新增：访问控制配置引用

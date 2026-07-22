@@ -1,0 +1,189 @@
+# ============================================================
+# 设计→需求反向匹配清单 V1.0.0
+# ============================================================
+# 用途：设计输出完成后，反向与PRD进行全维度匹配检查
+# 触发：设计文档V1.0.0输出后、联合评审前
+# 执行方：UX设计师主导 + BA参与需求侧校验
+# 原则：
+#   1. 设计不能凭空创建业务流程（超设计检测）
+#   2. 设计不能忽视需求文档（漏设计检测）
+#   3. 每个设计元素必须有PRD来源可追溯
+#   4. 每个PRD要求必须有设计对应实现
+# ============================================================
+
+version: "1.0.0"
+last_updated: "2026-07-22"
+category: design-quality
+
+# ---- 元信息 ----
+meta:
+  name: "设计→需求反向匹配清单"
+  id: "DESIGN-PRD-REVERSE-MATCH"
+  trigger_condition: "设计文档V1.0.0输出后，联合评审之前"
+  executor: "UX设计师（主导）+ BA（需求侧校验）"
+  output: "反向匹配报告（追加到设计内部走查报告中）"
+
+# ---- 五维闭环检查 ----
+five_dimension_closure:
+
+  # —— 维度1：流程闭环 ——
+  flow_closure:
+    description: "设计中的每个业务流程是否在PRD中定义完整，且端到端无断裂"
+    checks:
+      - id: FLOW-01
+        check: "设计的所有页面跳转路径，是否均在PRD的泳道图/流程图中定义？"
+        method: "提取设计§8跳转矩阵中的所有路径 → 对比PRD五图中的业务流程图和信息流转图"
+        severity: P0
+      - id: FLOW-02
+        check: "设计的所有弹窗/抽屉/模态框，是否在PRD对应FN的基本流程或备选流程中有明确触发步骤？"
+        method: "提取设计§5弹窗交互中的所有M元素 → 逐一对比PRD对应FN的步骤编号"
+        severity: P0
+      - id: FLOW-03
+        check: "PRD中定义的每个备选流程（异常分支/降级路径），设计是否有对应的异常UI状态？"
+        method: "遍历PRD每个FN的备选流程编号 → 在设计文档中检索是否提及对应状态"
+        severity: P1
+      - id: FLOW-04
+        check: "PRD中定义的跨终端联动（如运营开启→租户生效→观众端变化），设计是否完整覆盖？"
+        method: "提取PRD中[事件驱动]标注的步骤 → 检查设计§8.3跨终端跳转矩阵是否覆盖"
+        severity: P1
+
+  # —— 维度2：数据闭环 ——
+  data_closure:
+    description: "设计中的信息展示是否与PRD的ENT/CONFIG数据定义一致"
+    checks:
+      - id: DATA-01
+        check: "设计的每个页面/弹窗中展示的信息字段，是否在PRD对应UC的数据范围(R/W)中有定义？"
+        method: "提取设计每个B（区块）和M（弹窗）中的字段清单 → 对比PRD UC的「数据范围」和ENT定义"
+        severity: P0
+      - id: DATA-02
+        check: "设计中涉及的CONFIG可配置项（阈值/开关/参数），是否在PRD §CONFIG清单中注册？"
+        method: "提取设计中所有可变参数（超时时间/概率/阈值/默认值） → 对比PRD CONFIG编号"
+        severity: P1
+      - id: DATA-03
+        check: "PRD ENT中定义的每个实体字段，是否在设计页面/弹窗中有明确的展示或操作位置？"
+        method: "反向遍历PRD每个ENT的字段列表 → 在设计文档中检查每个字段是否有UI载体"
+        severity: P1
+
+  # —— 维度3：状态闭环 ——
+  state_closure:
+    description: "设计中的UI状态变化是否覆盖PRD状态机的所有状态和过渡"
+    checks:
+      - id: STATE-01
+        check: "PRD状态机的每个状态节点，设计是否有对应的UI视觉表现？"
+        method: "列出PRD状态机所有状态 → 在设计文档中检索每个状态是否有对应UI样式/文案/操作变更"
+        severity: P0
+      - id: STATE-02
+        check: "PRD状态过渡操作表中的每个触发操作，设计是否有对应的交互元素？"
+        method: "列出状态过渡操作表 → 检查每个触发操作是否有对应按钮/动作/自动触发"
+        severity: P0
+      - id: STATE-03
+        check: "BR中对状态变更的约束规则（如某状态下哪些按钮可用/不可用），设计是否体现？"
+        method: "提取BR中涉及状态判断的规则 → 在设计文档中检查对应UI状态（置灰/隐藏/提示）"
+        severity: P1
+
+  # —— 维度4：体验闭环 ——
+  experience_closure:
+    description: "设计的体验覆盖是否完整（正常流/异常流/边界/空/加载/错误）"
+    checks:
+      - id: EXP-01
+        check: "设计的每个页面/弹窗是否覆盖了六态（正常/空/加载/错误/边界/极致）？"
+        method: "按PG/M逐项检查：正常态/空态/加载态/错误态/边界态/极致态"
+        severity: P1
+      - id: EXP-02
+        check: "BR中定义的交互反馈规则（如XX秒超时自动XX/XX%概率XX），设计是否有对应的视觉反馈？"
+        method: "检索BR中包含时间阈值/概率/回退行为的规则 → 检查设计是否有对应UI状态"
+        severity: P1
+      - id: EXP-03
+        check: "跨终端状态同步的延迟/失败场景，设计是否有对应的过渡UI？"
+        method: "检查设计§8.3跨终端联动 → 是否有同步中/同步失败/延迟的UI处理"
+        severity: P2
+
+  # —— 维度5：覆盖度双向检测 ——
+  coverage_bidirectional:
+    description: "设计→PRD和PRD→设计双向覆盖度检查"
+    checks:
+      - id: COV-01_OVER_DESIGN
+        check: "设计中有哪些UI元素/功能在PRD中找不到对应需求？（超设计检测）"
+        method: "遍历设计所有B/M/BTN/IPT → 逐一在PRD中查找需求来源 → 标记无来源项"
+        severity: P0
+        action: "标记为超设计 → UX与BA确认：①是BA遗漏需补PRD ②是UX合理设计优化需BA确认后纳入PRD ③是冗余需删除"
+      - id: COV-02_MISSING_DESIGN
+        check: "PRD中有哪些FN/UC步骤在设计中没有对应实现？（漏设计检测）"
+        method: "遍历PRD所有FN的所有步骤 → 在设计文档中检索对应UI元素 → 标记无对应项"
+        severity: P0
+        action: "标记为漏设计 → 每个漏设计项确定：①设计遗漏需补设计 ②纯后端逻辑不需要UI ③已在其他模块覆盖"
+      - id: COV-03_BR_COVERAGE
+        check: "PRD中每条BR规则在设计文档中是否有对应体现？"
+        method: "遍历PRD所有BR → 在设计文档中检索BR编号或规则内容 → 标记无对应项"
+        severity: P1
+        action: "标记为BR未覆盖 → 确定设计是否需要体现该BR（纯后端规则可豁免）"
+
+# ---- 执行流程 ----
+execution_flow:
+  step1_extract_design_elements:
+    description: "从设计文档中自动提取所有UI元素清单"
+    output: "UI元素清单（PG×N + B×N + M×N + BTN×N + IPT×N）"
+    method: "解析设计文档§2信息结构 → 生成结构化元素列表"
+
+  step2_extract_prd_elements:
+    description: "从PRD中自动提取所有需求元素清单"
+    output: "需求元素清单（FN×N + UC×N + BR×N + ENT×N + CONFIG×N + 状态机状态×N）"
+    method: "解析PRD目录和编号体系统 → 生成结构化需求列表"
+
+  step3_bidirectional_mapping:
+    description: "双向映射：设计元素→PRD来源 + PRD步骤→设计对应"
+    output: "双向映射表"
+    method: "AI辅助自动化映射 + BA/UX人工校验"
+
+  step4_gap_analysis:
+    description: "基于双向映射表产出差距清单（超设计/漏设计/BR未覆盖）"
+    output: "差距清单"
+    method: "对比映射表 → 标记NoSource（超设计）和NoTarget（漏设计）"
+
+  step5_five_dimension_check:
+    description: "按五维闭环逐项检查并评分"
+    output: "五维闭环检查结果"
+    method: "按5维×3-4项=17项逐项检查 → 每项标记合格/不合格"
+
+  step6_reverse_match_report:
+    description: "汇总生成反向匹配报告"
+    output: "REVERSE-MATCH-REPORT追加到设计内部走查报告"
+    method: "合并Step3-5结果 → 形成结构化报告"
+
+# ---- 质量门禁 ----
+gates:
+  - id: G-REVMATCH-01
+    description: "无P0超设计（设计元素全部可追溯到PRD或已与BA确认）"
+    severity: HARD_BLOCK
+  
+  - id: G-REVMATCH-02
+    description: "无P0漏设计（PRD所有FN步骤已覆盖或已标记豁免理由）"
+    severity: HARD_BLOCK
+  
+  - id: G-REVMATCH-03
+    description: "状态机所有状态节点有对应UI状态"
+    severity: HARD_BLOCK
+  
+  - id: G-REVMATCH-04
+    description: "流程闭环100%（所有PRD备选流程有对应异常UI）"
+    severity: SOFT_BLOCK
+
+  - id: G-REVMATCH-05
+    description: "BR覆盖率≥90%（纯后端规则可豁免）"
+    severity: SOFT_BLOCK
+
+# ---- 输出模板 ----
+report_template:
+  sections:
+    - title: "一、双向映射表"
+      content: "逐UC的设计↔PRD映射表，含溯源链"
+    - title: "二、超设计清单"
+      content: "列出所有设计有但PRD无的UI元素，每条标注确认结论"
+    - title: "三、漏设计清单"
+      content: "列出所有PRD有但设计无的步骤，每条标注确认结论"
+    - title: "四、五维闭环检查"
+      content: "5维度17项逐项检查结果，附评分"
+    - title: "五、BR覆盖矩阵"
+      content: "逐BR的覆盖状态表"
+    - title: "六、反向匹配结论"
+      content: "通过/有条件通过/不通过 + 修复清单"

@@ -1,7 +1,12 @@
 # ============================================
-# Workflow: project-lifecycle（需求流生命周期总控 V5.3.0）
-# 版本: v5.3.0
-# 最后更新: 2026-07-21
+# Workflow: project-lifecycle（需求流生命周期总控 V5.3.3）
+# 版本: v5.3.3
+# 最后更新: 2026-07-22
+#
+# V5.3.3变更（回流+handoff硬约束补丁）：
+#   - 新增 reflow_hard_enforcement 段：引用gates-registry G-REFLOW-01~04强制门禁
+#   - 新增 handoff_writeback_enforcement 段：引用gates-registry G-HO-WRITEBACK-01强制门禁
+#   - G-CLOSE-01增强已由gates-registry V1.9.0完成
 # ============================================
 #
 # 版本变更历史详见：.codebuddy/knowledge/common/governance-docs/流程版本变更总账.md
@@ -30,8 +35,8 @@
 
   workflow:
   id: "project-lifecycle"
-  name: "需求流生命周期总控（PM 大脑编排层 V5.3.0）"
-  version: "5.3.0"
+  name: "需求流生命周期总控（PM 大脑编排层 V5.3.3）"
+  version: "5.3.3"
   trigger_command: "/init"
   owner: "pm-agent"
   type: "orchestrator"  # V5.1.0：编排器 → 大脑编排器（orchestrate brains, not just tasks）
@@ -542,7 +547,7 @@
           to_ba: ["需求覆盖缺口建议", "测试过程中发现的需求不明确项"]
       completion_criteria: "五层测试报告产出，失败项归 Bug + **V5.1.0：QA大脑推理完成+brain_sync_export传递**"
       problem_sources: ["bugs/open/ 下所有 failed 项"]
-      feedback_routing: "测试问题 → PM 路由 BA（需求分析）重评，据 defect-reflow 生成 type=修复 重走 dev→test→accept"
+      feedback_routing: "测试问题 → PM 路由 BA（需求分析）重评，据 defect-reflow 生成 type=修复 重走 dev→test→accept。【V5.3.3硬约束】QA必须创建PBL回流条目(触发G-REFLOW-01)，不可跳过回流直接修复。最多3次循环→SM升级到PM。"
 
     - id: "stage-7"
       name: "验收（V5.1.0：AC大脑+PO大脑激活，V4.1.0新增PO商业价值验收）"
@@ -583,7 +588,7 @@
             to_next_version: ["Backlog调整建议", "路线图修正建议"]
       completion_criteria: "验收报告产出（含PO商业价值验收），需求覆盖率达标 + **V5.1.0：AC+PO大脑推理完成+brain_sync_export传递**"
       problem_sources: ["bugs/ 下验收不通过项", "PO商业价值验收不通过项"]
-      feedback_routing: "验收问题 → PM 路由 BA（需求分析），复用缺陷回流闭环；PO商业价值不通过 → PM 路由 PO（产品方向调整）"
+      feedback_routing: "验收问题 → PM 路由 BA（需求分析），复用缺陷回流闭环；PO商业价值不通过 → PM 路由 PO（产品方向调整）。【V5.3.3硬约束】AC必须创建PBL回流条目(触发G-REFLOW-01)，不可跳过回流直接补验收。最多3次循环→SM升级到PM。"
 
     - id: "stage-7.5"
       name: "交付标注与回传闭环（V4.1.1新增，移到close前）"
@@ -748,6 +753,55 @@
     precondition: "反馈回流必须在专家Review完成后触发，不可跳过Review"
     transit_rule: "每经过一个中间阶段，该阶段Agent审视是否需本阶段调整（需要→调整/不需要→标注'经由'）"
     cross_version: "未闭环反馈标记'跨版本传递'，下一版本/init自动加载"
+
+  # ============================================
+  # V5.3.3新增：回流硬约束强制执行（硬约束补丁）
+  # 解决：回流路由器/transit_review/BA重跑/handoff回传等环节缺乏硬门禁约束
+  # 原则：所有反馈必须按路由表依次经停→汇聚BA→BA重跑→留痕→闭环
+  # ============================================
+  reflow_hard_enforcement:
+    description: |
+      V5.3.3新增——反馈回流硬约束强制执行。
+      之前：回流机制是"描述性流程"，Agent可跳过回流直接改代码/补验收/标记done。
+      现在：新增G-REFLOW-01~04四条硬门禁（gates-registry.yml V1.9.0），
+           贯穿回流全流程，不可跳过。
+    enforced_gates:
+      - id: "G-REFLOW-01"
+        trigger_stages: ["stage-6(测试)", "stage-7(验收)", "Review检查点"]
+        description: "任何不通过反馈必须创建PBL回流条目，不可跳过回流直接改代码或补验收"
+        pm_duty: "PM在收到QA/AC/Review的不通过报告后，立即检查PBL中是否有对应的reflow_entry，缺失则阻止当前action"
+      - id: "G-REFLOW-02"
+        trigger_stages: ["各经停阶段"]
+        description: "回流路径上每个中间阶段必须产出transit_review（judgment+reason+timestamp），不可跳过"
+        pm_duty: "PM跟踪所有中间阶段的transit_review产出，超时30分钟→主动催促"
+      - id: "G-REFLOW-03"
+        trigger_stages: ["BA重跑需求分析前"]
+        description: "BA接收回流前必须确认所有transit_review已齐备，不可跳过经停阶段直接到BA"
+        pm_duty: "PM确认transit_complete=true后才允许BA开始重跑"
+      - id: "G-REFLOW-04"
+        trigger_stages: ["BA重跑完成后"]
+        description: "BA调整后必须产出reflow_adjustment+affected_artifacts+rerun_scope+transit_summary，不可空跑只标记done"
+        pm_duty: "PM检查BA的REQ产物中是否有reflow_adjustment标记，缺失则阻止推进"
+      - id: "G-CLOSE-01"
+        trigger_stages: ["stage-8(/close)"]
+        description: "V1.9.0增强：不仅检查PBL标记'已闭环'，还检查transit_records完整性+reflow_adjustment标记"
+        pm_duty: "/close时逐条PBL检查transit_records和reflow_adjustment，缺失则阻止/close"
+
+  # ============================================
+  # V5.3.3新增：handoff回传硬约束强制执行
+  # 解决：handoff用户编辑后BA可跳过增量重跑直接标记done
+  # ============================================
+  handoff_writeback_enforcement:
+    description: |
+      V5.3.3新增——handoff回传硬约束强制执行。
+      之前：handoff检测到变更后，BA可跳过增量重跑需求分析直接标记done。
+      现在：G-HO-WRITEBACK-01硬门禁（gates-registry.yml V1.9.0），handoff循环迭代直到无变更。
+    enforced_gate:
+      id: "G-HO-WRITEBACK-01"
+      trigger_stage: "stage-7.5(handoff)"
+      description: "handoff Stage3用户审阅后检测到变更，BA必须执行增量重跑（writeback_rerun=true+affected_fn_list+prd_section_updated），不可只标记done不改PRD"
+      pm_duty: "PM在handoff循环中检查每次writeback的ba_incremental_rerun_done标记和PRD更新，缺失则阻止/handoff完成，要求BA增量重跑"
+      loop_protection: "无限循环直到Stage3无变更——每次循环输出handoff_cycle编号"
 
   # ============================================
   # 指令与生命周期节点
@@ -1016,15 +1070,15 @@
       collab: ["ux-agent", "fd-agent"]
       file: "change-request.yml"
       methodology: "影响分析先行，文档为真理源"
-    - flow: "缺陷回流"
+    - flow: "缺陷回流（V5.3.3硬约束增强）"
       owner: "pm-agent"
       file: "defect-reflow.yml"
-      methodology: "问题→归属版本→生成 type=修复→重走闭环"
-    - flow: "交付标注"
+      methodology: "问题→归属版本→生成type=修复→重走闭环。V4.1.1新增硬门禁(G-REFLOW-01~04)：回流启动→经停审视→BA汇聚→BA重跑，不可跳过任何步骤。V5.3.3项目级强制执行。"
+    - flow: "交付标注（V5.3.3硬约束增强）"
       owner: "ux-agent"
       collab: ["fd-agent"]
       file: "handoff.yml"
-      methodology: "V3.0.0：4级标注(page/button/metric/field) + 三步流程(校验→编辑→回传) + 编号方案B扩展 + 循环校验直到无变更"
+      methodology: "V3.0.0：4级标注(page/button/metric/field)+三步流程(校验→编辑→回传)+编号方案B扩展+循环校验直到无变更。V4.1.1新增G-HO-WRITEBACK-01硬门禁：检测变更→BA增量重跑→PRD留痕，不可跳过。V5.3.3项目级强制执行。"
 
   # ============================================
   # 全局深度检查触发机制（V4.2.0新增）

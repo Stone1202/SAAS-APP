@@ -1,0 +1,201 @@
+# PROD-BACKLOG — SAAS直播内容审查 V1.0.0 Backlog
+# PO产品规划：需求Backlog
+# 日期: 2026-07-22 | PO Agent
+
+project: "SAAS"
+version: "v1.0.0"
+total_items: 9
+
+# ============================================
+# Backlog项列表
+# ============================================
+items:
+
+  # ---- 运营后台(PC) ----
+  
+  - id: "BL-AUDIT-001"
+    fn: "FN-AUDIT-PC-001"
+    name: "租户审查开关管理"
+    terminal: "运营后台(PC)"
+    priority: "P0"
+    sprint: 1
+    story_points: 3
+    description: |
+      平台运营在运营后台管理租户的直播内容审查开关：
+      1. 展示租户列表（名称/行业/推流域名/审查开关/状态/今日违规数）
+      2. 点击开关开启/关闭某租户的审查
+      3. 确认弹窗（展示推流域名+影响说明）
+      4. 开启后该租户直播直播中控显示内容审查Tab
+      5. 关闭时提示"6类不可降级类仍由腾讯云强制执行"
+    implementation: "code_development"
+    dependencies: []
+    acceptance:
+      - "租户列表展示完整"
+      - "开关操作有确认弹窗"
+      - "开启后直播中控Tab显示"
+
+  # ---- 租户后台(PC) - 直播中控 ----
+  
+  - id: "BL-AUDIT-002"
+    fn: "FN-AUDIT-PC-002"
+    name: "直播中控内容审查Tab-模拟回调+实时告警"
+    terminal: "租户后台(PC)"
+    priority: "P0"
+    sprint: 1
+    story_points: 5
+    description: |
+      直播中控内容审查Tab，模拟接收腾讯云回调数据并展示：
+      1. 模拟回调数据生成（定时器模拟违规事件，含hit_flag/score/label/suggestion/asr_text等字段）
+      2. 顶部提示区：实时告警（红/黄/蓝三级）+当前违规数+审查状态
+      3. 违规列表区：时间/类型/内容片段/级别/处置建议/处置依据/状态
+      4. 点击违规记录查看详情（完整违规数据+模拟回调JSON+证据文件）
+      5. WebSocket模拟实时推送（前端定时器模拟）
+    implementation: "code_development"
+    dependencies: ["BL-AUDIT-001"]
+    acceptance:
+      - "模拟违规事件定时触发"
+      - "告警三级颜色正确（红/黄/蓝）"
+      - "违规列表展示完整字段"
+      - "详情弹窗展示回调JSON"
+
+  - id: "BL-AUDIT-003"
+    fn: "FN-AUDIT-PC-003"
+    name: "直播中控违规处置操作"
+    terminal: "租户后台(PC)"
+    priority: "P0"
+    sprint: 1
+    story_points: 3
+    description: |
+      运营在直播中控执行违规处置：
+      1. 记录：记录违规事件，不打断直播，填写处置备注
+      2. 断流：切断推流，终止直播，填写处置理由（模拟断流效果）
+      3. 忽略：标记非违规，填写忽略理由
+      4. 处置超时（30秒未操作）→系统自动记录+告警升级
+      5. 处置结果更新违规记录状态+记录处置日志
+    implementation: "code_development"
+    dependencies: ["BL-AUDIT-002"]
+    acceptance:
+      - "三种处置操作可执行"
+      - "处置后状态更新"
+      - "30秒超时自动记录"
+
+  - id: "BL-AUDIT-004"
+    fn: "FN-AUDIT-PC-003"
+    name: "直播中控擦音模式切换"
+    terminal: "租户后台(PC)"
+    priority: "P0"
+    sprint: 1
+    story_points: 2
+    description: |
+      运营在场次信息栏切换擦音模式，影响观众APP的擦音效果：
+      1. 静音模式：检测到违规→音频直接静音（无声音）
+      2. 擦音模式：检测到违规→敏感词部分用嘀声替换
+      3. 模式切换通过localStorage同步到观众APP
+    implementation: "code_development"
+    dependencies: ["BL-AUDIT-003"]
+    acceptance:
+      - "两种模式可切换"
+      - "切换后观众端效果同步"
+
+  - id: "BL-AUDIT-005"
+    fn: "FN-AUDIT-PC-004"
+    name: "回放擦音效果模拟"
+    terminal: "租户后台(PC)"
+    priority: "P1"
+    sprint: 1
+    story_points: 3
+    description: |
+      模拟回放擦音处理流程：
+      1. 模拟回放文件生成（直播结束后自动触发）
+      2. 触发回放擦音任务（模拟AMS API调用）
+      3. 擦音处理中状态展示（加载动画）
+      4. 擦音完成→展示擦音前后对比（静音/擦音效果）
+      5. 开放回放观看（展示擦音后版本）
+    implementation: "code_development"
+    dependencies: ["BL-AUDIT-003"]
+    acceptance:
+      - "回放擦音流程完整展示"
+      - "擦音前后效果对比可感知"
+
+  # ---- 观众端(H5 375px) ----
+  
+  - id: "BL-AUDIT-006"
+    fn: "FN-AUDIT-APP-001"
+    name: "观众端直播模拟+静音效果"
+    terminal: "观众端(H5 375px)"
+    priority: "P0"
+    sprint: 1
+    story_points: 5
+    description: |
+      观众端模拟直播过程，展示静音擦音效果：
+      1. 观众进入直播间（直播画面+主播信息+弹幕+操作栏）
+      2. 模拟直播过程（定时器模拟主播说话）
+      3. 遇到敏感词时（静音模式）：🔇图标+进度条+画面变暗，持续2-5秒后恢复
+      4. 模拟敏感词检测（前端定时器触发，模拟腾讯云回调）
+      5. 静音效果可视化（音频波形消失→静默→恢复）
+    implementation: "code_development"
+    dependencies: ["BL-AUDIT-004"]
+    acceptance:
+      - "直播画面正常展示"
+      - "敏感词检测时静音效果可见"
+      - "静音持续2-5秒后恢复"
+
+  - id: "BL-AUDIT-007"
+    fn: "FN-AUDIT-APP-001"
+    name: "观众端直播模拟+擦音效果"
+    terminal: "观众端(H5 375px)"
+    priority: "P0"
+    sprint: 1
+    story_points: 3
+    description: |
+      观众端展示擦音（嘀声）效果：
+      1. 擦音模式：🎧图标+声波动画+"嘀———"，持续2-5秒后恢复
+      2. 敏感词部分用1000Hz嘀声替换，其他声音正常
+      3. 擦音效果可视化（音频波形变为嘀声波形→恢复）
+    implementation: "code_development"
+    dependencies: ["BL-AUDIT-006"]
+    acceptance:
+      - "擦音效果可见（嘀声+声波动画）"
+      - "擦音持续2-5秒后恢复"
+
+  - id: "BL-AUDIT-009"
+    fn: "FN-AUDIT-APP-002"
+    name: "观众端断流结束提示+中控无数据场景"
+    terminal: "观众端(H5 375px)"
+    priority: "P1"
+    sprint: 1
+    story_points: 2
+    description: |
+      1. 主播被断流处置时，观众APP显示"直播已结束，该直播因内容违规已被终止"
+      2. 30%概率模拟"直播中控尚未收到此违规回调"场景（回调丢失提示）
+      3. 中控无数据时提示"⚠直播中控尚未收到此违规回调"（橙色警告样式）
+      4. 断流后音频停止，直播画面变为结束覆盖层
+    implementation: "code_development"
+    dependencies: ["BL-AUDIT-006"]
+    acceptance:
+      - "断流时结束提示正确"
+      - "中控无数据场景模拟"
+
+  # ---- 模拟数据层 ----
+  
+  - id: "BL-AUDIT-010"
+    fn: "FN-AUDIT-INFRA-001"
+    name: "模拟回调数据生成器"
+    terminal: "共享(模拟层)"
+    priority: "P0"
+    sprint: 1
+    story_points: 3
+    description: |
+      前端Mock数据生成器，模拟腾讯云回调事件：
+      1. 定时器生成模拟违规事件（含hit_flag/score/label/sub_label/suggestion/asr_text/duration/seq/stream_id）
+      2. 模拟违规类型：涉黄/涉暴/违禁词/广告法（随机）
+      3. 模拟置信度：0-100随机（影响告警级别）
+      4. 模擦音信息：audio_muted/mute_duration/mute_start_time
+      5. 模拟证据URL（COS存储路径）
+      6. 直播中控和观众端共享同一数据源
+    implementation: "code_development"
+    dependencies: []
+    acceptance:
+      - "模拟数据字段完整"
+      - "定时器可控制触发频率"
+      - "直播中控和观众端数据同步"

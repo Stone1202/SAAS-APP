@@ -1,6 +1,6 @@
 # ============================================
 # iron-rules-registry.yml — 全流程铁律注册中心
-# 版本：v1.8.0
+# 版本：v1.9.0
 # 创建：2026-07-17
 # 定位：所有Agent铁律的单一事实源，统一编号统一管理
 # 引用方：各agent.md声明"遵守iron-rules-registry.yml"，各workflow.yml引用对应Agent的铁律段
@@ -8,9 +8,15 @@
 # 关联方案：audit-reports/POM门禁治理与铁律统一管理架构方案-2026-07-17.md
 # ============================================
 
-version: "1.8.0"
-last_updated: "2026-07-21"
+version: "1.9.0"
+last_updated: "2026-07-22"
 
+# V1.9.0新增（回流+handoff强制约束铁律补丁）：
+#   - QA-07：回流强制触发——QA发现Bug必须触发defect-reflow
+#   - AC-07：回流强制触发——AC验收不通过必须触发defect-reflow
+#   - BA-38：回流调整留痕——BA收到回流后调整REQ产物必须有reflow_adjustment
+#   - PM-10：回流路由不可跳过——PM必须确保反馈按路由表依次经停汇聚到BA
+#   - PM-11：handoff回传强制重跑——PM必须确保handoff变更后BA执行增量重跑
 # V1.8.0新增：PO-08(问题分解+关键链) + BA-29(端到端闭环) + UX-10(设计上下文+趋势+交互)
 # V1.7.0新增：LP-01~05 learn-project场景深度还原铁律
 # V1.6.0新增：PO-07 实现方式识别+小版本迭代铁律
@@ -274,6 +280,11 @@ agents:
         applies_to: "ba-agent"
         workflow_check: "demand-impact-fusion-flow.yml L1.3 + requirement-flow.yml §2.5+§5 + gates-registry G-REQ-26"
         note: "V3.4.0新增：解决阶段间信息传递随意变更导致下游返工的问题。"
+      - id: "BA-38"
+        rule: "回流调整留痕（V1.9.0新增）：BA收到defect-reflow反馈后，重跑需求分析的产物必须包含回流调整标记——①reflow_adjustment（调整摘要，FN/UC/BR/ENT/CONFIG/METRIC的具体变更内容）②affected_artifacts（受影响产物编号列表）③rerun_scope（full全量/incremental增量重走范围）④transit_summary（各经停阶段审视结论汇总）。禁止空跑——收到回流后不可只标记'已处理'而不产出实际调整内容。不可跳过回流直接改代码。PRD文档中须体现回流调整标识。"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-REFLOW-03 + G-REFLOW-04"
+        note: "V1.9.0新增：解决回流到BA后Agent跳过重跑需求分析直接标记done的问题。BA是回流最终决策者——必须基于各经停审视结论重新分析并调整REQ产物。"
 
   # ============================================
   # PM Agent（项目管理）
@@ -318,6 +329,18 @@ agents:
         rule: "大脑编排（V5.1.0新增）：PM负责全生命周期大脑编排——确保每个Stage的ai_brain被激活+brain_sync_chain脑力协同链运转+brain_memory_persistence记忆持久化+brain_evolution_trigger(/close时触发全Agent大脑进化)。大脑编排是PM第六项职责，缺失则/close阻塞。"
         enforcement: "hard"
         workflow_check: "gates-registry G-CLOSE-05"
+      - id: "PM-10"
+        rule: "回流路由不可跳过（V1.9.0新增）：PM必须确保所有反馈（QA Bug/AC不通过/Review不通过/用户补充驳回）按路由表（defect-reflow.yml feedback_routing_table）依次经停各中间阶段并汇聚到BA。不可跳过中间阶段直接到BA，也不可由PM绕过BA自行决定是否调整需求。PM是回流路由的守门员——每次/close前检查PBL中所有回流条目的transit_records是否完整（每个stage的judgment+reason+timestamp）。缺失任一经停记录→阻止/close。"
+        enforcement: "hard"
+        applies_to: "pm-agent"
+        workflow_check: "gates-registry G-REFLOW-02 + G-REFLOW-03 + defect-reflow.yml"
+        note: "V1.9.0新增：解决PM跳过回流直接让FD改代码或让BA不重跑需求的核心缺陷。PM必须监督反馈按路由表执行——这是PM第七项职责。"
+      - id: "PM-11"
+        rule: "handoff回传强制重跑（V1.9.0新增）：PM必须确保handoff用户审阅阶段检测到任何变更（新增FN/补充异常流/修改描述）后，BA执行增量重跑需求分析并在PRD留痕（writeback_rerun=true + ba_incremental_rerun_done=true + affected_fn_list + prd_section_updated）。不可只标记done不改PRD。handoff循环无限迭代直到无变更。"
+        enforcement: "hard"
+        applies_to: "pm-agent"
+        workflow_check: "gates-registry G-HO-WRITEBACK-01 + handoff.yml"
+        note: "V1.9.0新增：解决handoff回传后PM跳过BA增量重跑直接记录done的缺陷。这是PM第八项职责。"
 
   # ============================================
   # UX Agent（设计师）
@@ -512,6 +535,12 @@ agents:
         rule: "大脑推理完整性（V5.1.0新增）：QA大脑必须执行bug_hotspot_prediction(Bug热力图预测)+coverage_blind_spot_detection(覆盖盲区检测)+regression_set_recommendation(回归测试推荐)+risk_based_prioritization(风险驱动排序)+brain_memory_import+brain_sync_export，不可跳过任一步骤"
         enforcement: "hard"
         workflow_check: "gates-registry G-TEST-03"
+      - id: "QA-07"
+        rule: "回流强制触发（V1.9.0新增）：QA在任何测试层级（契约/单元/集成/E2E/验收）发现Bug后，必须触发defect-reflow流程——在PBL中创建回流条目（source_stage:test + feedback_type:bug + transit_path完整经停路由），不可跳过回流直接要求FD修复或自己改代码。Bug修复后QA必须重新执行回归测试（不缩范围），不通过再次回流，直到通过为止。最多3次Sprint级循环——3次后由SM升级到PM版本级处理。每次回流QA须产出transit_review（judgment:affected/not_affected + reason + timestamp）。"
+        enforcement: "hard"
+        applies_to: "qa-agent"
+        workflow_check: "gates-registry G-REFLOW-01 + defect-reflow.yml"
+        note: "V1.9.0新增：解决QA发现Bug后Agent跳过回流直接修复标记done的核心缺陷。QA是回流的第一个触发者——Bug发现不可绕过完整的defect-reflow流程。"
 
   # ============================================
   # AC Agent（验收交付）— 补全（原0条）
@@ -544,6 +573,12 @@ agents:
         rule: "大脑推理完整性（V5.1.0新增）：AC+PO大脑必须执行acceptance_defect_prediction(验收缺陷模式识别)+persona_coverage_reasoning(角色覆盖推理)+business_value_alignment(商业价值对齐推理)+regression_acceptance_recommender(回归验收推荐)+brain_memory_import+brain_sync_export，不可跳过任一步骤"
         enforcement: "hard"
         workflow_check: "gates-registry G-ACC-03"
+      - id: "AC-07"
+        rule: "回流强制触发（V1.9.0新增）：AC验收发现任何不通过项（空连接/功能缺漏/与PRD不一致/UI不一致/测试证据缺失）时，必须触发defect-reflow流程——在PBL中创建回流条目（source_stage:accept + feedback_type:acceptance_fail + transit_path:accept→test→dev→arch→design→requirement），不可跳过回流直接补验收或补开发。验收不通过项修复后必须重新全量验收（不缩范围）。最多3次回流——3次后SM升级到PM版本级处理。"
+        enforcement: "hard"
+        applies_to: "ac-agent"
+        workflow_check: "gates-registry G-REFLOW-01 + defect-reflow.yml"
+        note: "V1.9.0新增：解决AC发现不通过后Agent跳过回流直接补验收标记done的根本缺陷。AC是回流的第二触发者——验收失败不可绕过完整的defect-reflow流程。"
 
   # ============================================
   # PO Agent（产品负责人）— 补全（原0条）
@@ -644,22 +679,22 @@ agents:
 # 铁律统计
 # ============================================
 statistics:
-  total_rules: 104
+  total_rules: 109
   by_agent:
     BS: 10
-    BA: 34
-    PM: 9
+    BA: 35
+    PM: 11
     UX: 10
     FD: 13
     ARCH: 11
-    QA: 6
-    AC: 6
+    QA: 7
+    AC: 7
     PO: 8
     DOC: 3
     SM: 5
     LEARN: 5
   by_enforcement:
-    hard: 94
+    hard: 99
     soft: 4
 
 # ============================================

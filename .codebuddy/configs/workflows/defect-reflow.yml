@@ -11,6 +11,9 @@
 #   4. 脑力共识追踪：跨Agent对根因的判断一致性→大脑协同质量指标
 #   5. 大脑进化增量：每次回流闭环产出一个brain-evolution-delta
 #
+# V4.1.1 硬约束补丁（2026-07-22）：
+#   1. 新增 gates_registry 引用G-REFLOW-01~04强制门禁
+#
 # V4.0.0 核心升级（对齐POM V5.0三级把关+Sprint循环）：
 #   1. 分层回流：Sprint级回流（SM调度，Sprint内闭环）+ 版本级回流（PM调度，版本级闭环）
 #   2. AI智能分析：回流触发时AI自动分析根因/影响范围/阶段归属/修复方案/历史模式
@@ -38,8 +41,8 @@
 
 workflow:
   id: "defect-reflow"
-  name: "反馈回流引擎（大脑进化闭环，V4.1.0）"
-  version: "4.1.0"
+  name: "反馈回流引擎（大脑进化闭环，V4.1.1）"
+  version: "4.1.1"
   owner: "pm-agent（版本级） / sm-agent（Sprint级）"
   type: "automation"
   brain_evolution_engine: ".codebuddy/knowledge/common/brain-evolution-engine.yml"  # V4.1.0新增
@@ -438,6 +441,36 @@ workflow:
       5. V4.0.0：Sprint级Review（SM主持）触发Sprint级回流；版本级Review（PM编排）触发版本级回流
     report_path: "projects/{project}/.codebuddy/journal/reviews/"
     naming: "REV-{STAGE}-{version}.md（版本级）/ REV-{STAGE}-{version}-S{n}.md（Sprint级）"
+
+  # ============================================
+  # V4.1.1新增：强制门禁引用（硬约束补丁）
+  # 解决：回流机制之前只有文字描述，无强制校验，Agent可跳过回流直接改代码
+  # ============================================
+  gates_reference:
+    description: |
+      V4.1.1新增——硬约束门禁引用，将回流从"建议性流程"升级为"强制性流程"。
+      每个回流步骤都有对应的硬门禁校验，不可跳过。
+    gates:
+      - step: "回流启动"
+        gate: "G-REFLOW-01（回流启动强制门禁）"
+        check: "任何不通过反馈必须创建PBL回流条目。不可跳过回流直接改代码/补验收。"
+        on_fail: "阻止当前action，PM强制要求创建PBL回流条目"
+      - step: "依次经停"
+        gate: "G-REFLOW-02（经停审视完整性门禁）"
+        check: "每经停阶段必须产出transit_review（judgment+reason+timestamp）。不可跳过中间阶段。"
+        on_fail: "回流阻塞于该stage，SM/PM要求该Agent补充审视结论"
+      - step: "汇聚BA"
+        gate: "G-REFLOW-03（回流到达BA门禁）"
+        check: "BA接收回流前必须确认所有transit_review已齐备。不可跳过经停阶段直接到BA。"
+        on_fail: "BA不可开始重跑，PM确认所有transit_review到位"
+      - step: "BA重跑"
+        gate: "G-REFLOW-04（需求重跑完成门禁）"
+        check: "BA调整后必须产出reflow_adjustment+affected_artifacts+rerun_scope+transit_summary。不可空跑只标记done。"
+        on_fail: "BA重跑无效，PM拦截要求补充调整内容"
+      - step: "闭环验证"
+        gate: "G-CLOSE-01（PBL全闭环+回流路径完整性，V1.9.0增强）"
+        check: "/close时检查所有PBL的transit_records完整性+reflow_adjustment标记"
+        on_fail: "阻止/close，要求补充缺失记录"
 
   # ============================================
   # V4.0.0引用

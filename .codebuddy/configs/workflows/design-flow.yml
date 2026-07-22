@@ -1,8 +1,15 @@
 # ============================================
-# Workflow: design-flow（设计流程 V3.4.0）
-# 版本: v3.4.0
-# 最后更新: 2026-07-21
+# Workflow: design-flow（设计流程 V3.5.0）
+# 版本: v3.5.0
+# 最后更新: 2026-07-22
 # ============================================
+#
+# V3.5.0 升级：新增设计→需求反向匹配机制（Step 9）
+#   1. 设计输出后必须反向与PRD进行五维闭环检查
+#   2. 双向覆盖检测：超设计（设计有PRD无）+ 漏设计（PRD有设计无）
+#   3. 新增checklist引用：design-prd-reverse-match.yml
+#   4. 新增PM红线：C-D10 设计→需求反向匹配通过
+#   5. 核心原则：设计不能凭空创建业务流程，也不能忽视需求文档
 #
 # V3.4.0 升级：UX AI大脑深度增强——设计上下文合成+设计趋势学习+交互体验优化
 #   1. 新增reasoning_modules：design_context_synthesizer/design_trend_learner/interaction_experience_optimizer
@@ -61,8 +68,8 @@
 
 workflow:
   id: "design-flow"
-  name: "设计流程（V3.3.0 UX体验洞察大脑 + 7步法+1步联合评审 + 页面草图 + UI编号 + 交互跳转矩阵）"
-  version: "3.4.0"
+  name: "设计流程（V3.5.0 UX体验洞察大脑 + 7步法+联合评审+反向匹配 + 页面草图 + UI编号 + 交互跳转矩阵）"
+  version: "3.5.0"
 taxonomy_ref: ".codebuddy/knowledge/common/flow-standards/uc-taxonomy.yml"
   trigger_command: "/init（PM调度UX，需求分析完成后）"
   owner: "ux-agent"
@@ -74,6 +81,7 @@ taxonomy_ref: ".codebuddy/knowledge/common/flow-standards/uc-taxonomy.yml"
   ux_guidelines: ".codebuddy/knowledge/common/ux/ux-guidelines.yml"    # V3.0.0: UX交互规范(尼尔森+HIG)
   output_standard: ".codebuddy/knowledge/common/ux/design-output-standards.yml"  # V2.0.0: 设计文档输出规范(9章结构+UC追溯+UI编号+草图+跳转矩阵)
   review_standard: ".codebuddy/knowledge/common/ux/design-review-criteria.yml"   # V3.1.0: 设计交互评审准则(3维度评估+结论标准)
+  reverse_match_checklist: ".codebuddy/configs/checklists/design-prd-reverse-match.yml"  # V3.5.0: 设计→需求反向匹配清单（5维闭环+双向覆盖）
 
   # ============================================
   # 角色定义（3标准+1可选）
@@ -468,6 +476,45 @@ taxonomy_ref: ".codebuddy/knowledge/common/flow-standards/uc-taxonomy.yml"
         - 维度2 模态框使用（交互+BA）：模态框vs页面选择/使用频率/嵌套深度/与业务流程关系
         - 维度3 交互一致性+流程一致性（交互+UI+BA）：交互统一/视觉统一/流程对齐/跨终端一致
         评审结论3级：通过(严重=0且中等=0)/有条件通过(严重=0且中等≤3)/不通过(严重≥1或中等>3)
+
+    # ---- Step 9: 设计→需求反向匹配（V3.5.0 新增）----
+    - id: "9"
+      name: "设计→需求反向匹配（V3.5.0新增：五维闭环检查 + 双向覆盖检测）"
+      agent: "ux-agent + ba-agent"
+      role: "UX设计师（主导）+ BA（需求侧校验）"
+      input: "Step7交互文档（全9章） + PRD（FN/UC/BR/ENT/CONFIG/状态机/五图） + Step8联合评审报告"
+      trigger: "Step8联合评审完成后（有条件通过或以上），PM红线检查前"
+      standard: ".codebuddy/configs/checklists/design-prd-reverse-match.yml"
+      description: |
+        设计输出后，必须反向与需求进行系统匹配——检查流程、数据、状态、体验的闭环，
+        以及是否存在设计有但需求没有（超设计）、需求有但设计没有（漏设计）的情况。
+        **核心原则**：
+        1. 设计不能凭空创建业务流程（超设计检测——每个UI元素必须可追溯到PRD需求来源）
+        2. 设计不能忽视需求文档（漏设计检测——PRD中每个FN步骤必须有设计对应）
+        3. 流程闭环：设计的所有页面跳转/弹窗触发/跨终端联动在PRD中定义完整，端到端无断裂
+        4. 数据闭环：设计展示的信息字段与PRD ENT/CONFIG数据定义一致
+        5. 状态闭环：设计UI状态变化覆盖PRD状态机的所有状态和过渡
+        6. 体验闭环：设计覆盖正常/异常/边界/空/加载/错误六态
+      output:
+        - "反向匹配报告（追加到设计内部走查报告）"
+      checkpoint: false  # 自动流转，不卡点（问题由PM在红线检查中集中审核）
+      methodology: |
+        执行6步：
+        ① 提取设计元素清单（所有PG/B/M/BTN/IPT元素，从§2信息结构自动提取）
+        ② 提取PRD元素清单（所有FN/UC/BR/ENT/CONFIG/状态机状态节点）
+        ③ 双向映射（设计元素→PRD来源 + PRD步骤→设计对应）
+        ④ 差距分析（标记NoSource=超设计 / NoTarget=漏设计 / BR未覆盖）
+        ⑤ 五维闭环检查（流程/数据/状态/体验/双向覆盖，17项逐项检查）
+        ⑥ 生成反向匹配报告（超设计清单+漏设计清单+五维检查结果+修复建议）
+        超设计处理原则：
+        - 是BA遗漏需补PRD → BA补充PRD后重新匹配
+        - 是UX合理设计优化 → BA确认后纳入PRD（补充章节）
+        - 是UX冗余设计 → 从设计方案中删除
+        漏设计处理原则：
+        - 设计遗漏 → 补充设计
+        - 纯后端逻辑不需要UI → 标注豁免理由
+        - 已在其他模块覆盖 → 标注覆盖位置
+
   pm_redlines:
     - id: "C-D1"
       name: "信息结构完整性（V3.0.0升级）"
@@ -515,6 +562,12 @@ taxonomy_ref: ".codebuddy/knowledge/common/flow-standards/uc-taxonomy.yml"
       check: "①联合评审报告已产出 ②3维度评估完整（多模块跳转/模态框/一致性） ③评审结论为通过或有条件通过 ④有条件通过的改进事项已闭环"
       fail_action: "PM驳回，UX按评审报告修改后重新联合评审"
       prerequisite: "C-D1~C-D8全部通过后执行C-D9"
+    - id: "C-D10"
+      name: "设计→需求反向匹配通过（V3.5.0新增）"
+      description: "设计文档必须经过反向匹配检查：无P0超设计、无P0漏设计、状态机全状态覆盖、流程闭环100%"
+      check: "①反向匹配报告已产出 ②无未处理的P0超设计项 ③无未处理的P0漏设计项 ④状态机所有状态有对应UI状态 ⑤BR覆盖率≥90% ⑥五维闭环17项无FAIL"
+      fail_action: "PM驳回，设计团队根据反向匹配报告修复后，重新执行Step 9反向匹配"
+      prerequisite: "C-D1~C-D9全部通过后执行C-D10"
 
   # ============================================
   # 视觉回归基线
@@ -573,6 +626,10 @@ taxonomy_ref: ".codebuddy/knowledge/common/flow-standards/uc-taxonomy.yml"
     - [ ] C-D4 多端归属显式
     - [ ] C-D5 Design Tokens完整性（V3.0.0新增）
     - [ ] C-D6 交互一致性检查清单（V3.0.0新增）
+    - [ ] C-D7 页面草图完整性（V3.1.0新增）
+    - [ ] C-D8 UI编号+交互跳转矩阵完整性（V3.1.0新增）
+    - [ ] C-D9 联合评审通过（V3.1.0新增，C-D1~D8全部通过后执行）
+    - [ ] C-D10 设计→需求反向匹配通过（V3.5.0新增，无P0超设计/漏设计，状态闭环100%）
 
     **视觉设计需求**：{涉及/不涉及}（如涉及，附视觉设计范围定义）
 
