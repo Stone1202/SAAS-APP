@@ -1,8 +1,15 @@
 # ============================================
 # Workflow: change-request（变更请求 / Bug修复）
-# 版本: v3.0.0
-# 最后更新: 2026-07-21
+# 版本: v3.1.0
+# 最后更新: 2026-07-22
 # ============================================
+#
+# V3.1.0升级（2026-07-22）：
+#   1. A1影响分析重构为引用公共流程demand-impact-fusion-flow.yml三层架构
+#      （Layer1需求理解+Layer2影响分析含2轮收窄+Layer3融合分析精简版）
+#   2. B1需求缺陷判定时引用公共流程lite模式（L1精简+L2精简）
+#   3. A1深度模式：standard(默认6维) | full(有--file时10维全扫描)
+#   4. 保证/change与/init影响分析一致性（同一公共流程，不同深度模式）
 #
 # V3.0.0升级（2026-07-21）：
 #   1. 新增A0/B0知识库加载（与/init对齐，加载已学PRD+版本沉淀+经验库）
@@ -25,7 +32,7 @@
 workflow:
   id: "change-request"
   name: "变更请求 / Bug修复"
-  version: "3.0.0"
+  version: "3.1.0"
   trigger_commands: ["/change", "/fix"]
   owner: "pm-agent"
   supervisor: "pm-agent"
@@ -75,28 +82,42 @@ workflow:
           note: "A0是V3.0.0核心新增——/change不再只依赖projects/目录文档，而是加载知识库完整PRD"
 
         - id: "A1"
-          name: "影响分析（增强：基于知识库PRD）"
+          name: "需求理解+影响分析+融合分析（V3.1.0：引用公共流程）"
           agents: ["ba-agent", "ux-agent"]
-          skills: ["change-impact-analyzer", "doc-processor"]
+          skills: ["change-impact-analyzer", "doc-processor", "req-impact-analyzer"]
+          workflow_ref: "demand-impact-fusion-flow.yml"
+          workflow_version: "V1.0.0"
           input: |
             变更描述(--desc) + 详细变更文档(--file，如有) + 接口文档(--api，如有)
             + 来源内容(--source，如有)
-            + A0加载的知识库PRD + 现有设计文档 + 多端差异矩阵
+            + A0加载的知识库上下文（PRD+版本沉淀+经验库+领域知识）
+            → 传入 demand-impact-fusion-flow.yml 执行三层分析
           output:
-            - "影响分析报告（含适用端 / 跨端风险）"
-            - "受影响模块清单 + 影响级别"
+            - "Layer1: 需求深度分析报告 + 知识库映射表"
+            - "Layer2: 影响报告（含适用端/跨端风险/收窄日志/冻结范围）"
+            - "Layer3: 融合分析报告（精简版，不触发版本规划判断）"
+          depth_mode: "standard（默认）| full（有--file时升级）"
           methodology: |
-            影响分析报告模板：
-            1. 变更概述（变更内容 + 变更原因 + 变更来源--desc/--file/--api/--source）
-            2. 受影响模块（模块名 + 影响级别 + 适用端）— 基于--module过滤（如指定）
-            3. 受影响文档（需求文档章节 + 设计文档章节 + 测试用例 + 代码）
-            4. 跨端影响（逐端分析 + 跨端一致性风险）— 基于--platform过滤（如指定）
-            5. 建议变更方案
+            V3.1.0重构：A1从原来的5项文字模板升级为引用公共流程三层架构。
+            详见 demand-impact-fusion-flow.yml：
             
-            输入来源深度判断：
-            - 只有--desc → 轻量影响分析（基于描述关键词匹配模块）
-            - 有--file → 完整影响分析（读取文档全量分析8维）
-            - 有--api → 接口影响分析（重点分析契约/参数影响）
+            Layer1 需求理解（6维深度分析+知识库映射）
+              → 理解变更需求"是什么"
+            
+            Layer2 影响分析（5层知识库全量检索+10维影响扫描+2轮收窄）
+              → 分析变更"影响了什么"
+              → standard模式6维扫描（模块+ENT+SM+BR+接口+跨端）
+              → 有--file时升级full模式10维全扫描
+              → 执行第1轮收窄（影响范围+版本匹配，用户一次性反馈）
+            
+            Layer3 融合分析（三维业务融合度+综合评分+AI预测，精简版）
+              → 评估变更"如何融合"
+              → 精简版：不触发版本规划判断（变更已在版本内）
+              → 仍执行三维业务融合度+AI预测（history_correlator+quality_predictor）
+            
+            /change有--module时，Layer2收窄空间小但仍执行收窄机制。
+            /change有--platform时，Layer2维度9（跨端影响）强化分析。
+            /change有--api时，Layer2维度5（接口契约）强化分析。
 
         - id: "A2"
           name: "需求文档更新"
@@ -225,10 +246,15 @@ workflow:
           output:
             - "Bug分析报告（含需求缺陷判断）"
             - "修复方案建议"
+            - "需求缺陷时：影响分析报告（引用公共流程lite模式）"
           methodology: |
             分析 Bug 根因：
             1. 是代码实现Bug？→ 直接修复（跳过B2）
             2. 是需求描述不清？→ 先补需求文档再修复（执行B2）
+               → 判定为需求缺陷时，引用 demand-impact-fusion-flow.yml lite模式：
+                 Layer1精简（维度1语义提取+维度4隐含需求）
+                 Layer2精简（维度1模块拓扑+维度5接口契约，仍执行收窄）
+                 Layer3跳过（Bug修复不需要版本规划判断）
             3. 是设计遗漏？→ 先补设计再修复
             
             基于知识库PRD核查：
@@ -381,7 +407,7 @@ workflow:
       都能获得一致的质量保障。
     alignment_matrix:
       知识库加载: "/change A0 = /fix B0 = /init stage-00"
-      影响分析: "/change A1 = /fix B1（/fix精简版） ≈ /init §0.5b"
+      影响分析: "/change A1 = /fix B1（需求缺陷时lite模式） = /init §0.5 → 统一引用 demand-impact-fusion-flow.yml（V3.1.0公共流程）"
       文档更新: "/change A2-A4 = /fix B2（条件） ≈ /init stage-2 BA产出"
       代码更新: "/change A5 = /fix B3 = /init stage-5 FD"
       回归测试: "/change A7 = /fix B4 = /init stage-6 QA"

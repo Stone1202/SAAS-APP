@@ -1,8 +1,15 @@
 # ============================================
-# 技术栈基线（单一事实源）V3.0.0
+# 技术栈基线（单一事实源）V3.1.0
 # 由 Arch Agent 维护，FD Agent 依据本文件落地
-version: "3.0.0"
+version: "3.1.0"
 # ============================================
+# V3.1.0 核心升级：Mock后端 + 跨端验收 + 状态机契约
+#   1. Mock后端：独立Express服务，基于Zod Schema自动生成Mock响应+状态机引擎
+#   2. 跨端验收：Playwright多上下文(原型)+CDP(真实系统)，跨端数据流转验证
+#   3. 状态机契约：contracts层定义状态机，Mock后端执行校验，前端读取规则做UI禁用
+#   4. real模式通过VITE_API_BASE_URL区分Mock后端和真实后端（不增加模式复杂度）
+#   5. API契约分层：实体Schema(schemas/) + API契约(api/) + 状态机(state-machine/) + 错误码(errors.ts)
+#
 # V3.0.0 核心升级：可插拔架构（sim/real 零修改切换）
 #   1. 契约驱动：Zod Schema 定义接口，sim 和 real 共用契约
 #   2. 五维可插拔：data/transport/stream/asset/auth 独立切换
@@ -84,21 +91,44 @@ tech_stack:
       - "sim 和 real 禁止返回不同结构的响应"
 
   # ============================================
-  # 契约驱动
+  # 契约驱动（V3.1.0：三层契约——实体Schema + API契约 + 状态机）
   # ============================================
   contract_driven:
     principle: "先 Zod Schema 后代码"
-    location: "src/contracts/schemas/"
-    registry: "src/contracts/registry.ts"
+    # 第1层：实体Schema（已有）
+    entity_schemas:
+      location: "src/contracts/schemas/"
+      description: "业务实体定义（Customer/Order/Product等），sim和real共用"
+    # 第2层：API契约（V3.1.0新增）
+    api_contracts:
+      location: "src/contracts/api/"
+      description: "每个接口的request/response Zod Schema + 错误码枚举"
+      structure:
+        - "请求Schema（入参校验+类型推导）"
+        - "响应Schema（出参校验+类型推导）"
+        - "错误码枚举（如 ORDER_NOT_FOUND）"
+        - "sim/real切换契约（接口级别的模式声明）"
+      registry: "src/contracts/registry.ts（API路由注册表：路径→请求Schema→响应Schema映射）"
+    # 第3层：状态机契约（V3.1.0新增）
+    state_machine_contracts:
+      location: "src/contracts/state-machine/"
+      description: "业务实体的状态流转定义，Mock后端执行校验，前端读取规则做UI禁用"
+      structure:
+        - "初始状态"
+        - "状态列表（每个状态定义：允许的操作→目标状态）"
+        - "状态流转校验函数（Mock后端调用，非法流转返回错误）"
+      example: "order-state.ts: pending→pay→paid→ship→shipped→confirm→completed"
     types_gen: "由 Zod Schema 推导 TypeScript 类型"
-    runtime_check: "运行时 Zod 校验，sim/real 响应不符契约立即报错"
+    runtime_check: "运行时 Zod 校验，sim/real/Mock后端 响应不符契约立即报错"
 
   # ============================================
   # 环境变量
   # ============================================
   env_vars:
     VITE_MODE: "sim|real（核心切换）"
-    VITE_API_BASE: "API 基础路径"
+    VITE_API_BASE: "API 基础路径（sim模式不用，real模式指向Mock后端或真实后端）"
+    VITE_API_BASE_URL: "real模式的API地址（V3.1.0新增：Mock后端=http://localhost:3001/api 或 真实后端=https://api.example.com/api）"
+    VITE_MOCK_SERVER_PORT: "Mock后端端口（V3.1.0新增：默认3001）"
     VITE_WS_URL: "WebSocket 地址"
     VITE_STREAM_SERVER: "流媒体服务地址"
     VITE_CDN_BASE: "CDN 基础路径"
@@ -159,3 +189,56 @@ tech_stack:
     location: "backend-examples/"
     fastapi: "backend-examples/fastapi/（FastAPI 示例）"
     guide: "backend-examples/README.md（对接指南）"
+
+  # ============================================
+  # Mock后端（V3.1.0新增——跨端数据流转的核心）
+  # ============================================
+  mock_server:
+    principle: "基于Zod Schema自动生成Mock响应+状态机引擎校验状态流转"
+    location: "mock-server/"
+    description: |
+      独立Express服务，real模式的数据来源。
+      sim模式不需要（用IndexedDB），real模式通过VITE_API_BASE_URL指向Mock后端或真实后端。
+      后台Web原型和APP原型(H5)都连同一个Mock后端 → 跨端数据流转天然打通。
+    architecture:
+      server: "mock-server/server.ts（Express/Fastify HTTP服务）"
+      zod_mock: "mock-server/zod-mock.ts（根据Response Schema自动生成Mock数据，用@anatine/zod-mock）"
+      store: "mock-server/store.ts（内存数据库+JSON文件持久化，重启不丢失）"
+      state_machine_engine: "mock-server/state-machine-engine.ts（基于contracts/state-machine/校验状态流转合法性）"
+      auth: "mock-server/routes/auth.ts（登录接口返回JWT token，测试环境固定验证码）"
+      routes: "mock-server/routes/（基于contracts/registry.ts自动生成CRUD路由+状态流转路由）"
+    data_flow: |
+      后台Web原型(VITE_MODE=real) → POST /api/products → Mock后端存储
+      APP原型H5(VITE_MODE=real) → GET /api/products → Mock后端返回 → 看到商品
+      两个前端连同一个Mock后端 → 跨端数据流转验证
+    port: 3001
+    scripts:
+      mock: "node mock-server/server.ts（启动Mock后端）"
+      dev_real_mock: "concurrently 'vite --mode real' 'node mock-server/server.ts'（同时启动前端+Mock后端）"
+
+  # ============================================
+  # 跨端验收（V3.1.0新增——原型阶段和真实系统阶段统一验收框架）
+  # ============================================
+  e2e_acceptance:
+    principle: "一个验收场景(SC-E2E)，两个阶段复用——原型阶段跑Mock后端，真实系统阶段跑真实后端"
+    location: "e2e-acceptance/"
+    description: |
+      原型验收：Playwright多上下文（后台Context+APP Context）+ 共享Mock后端 → 验证跨端数据流转
+      真实系统验收：Playwright(后台) + CDP(APP WebView) + 后端直查 → 验证真实跨端流转
+      两个阶段共享：验收场景设计(SC-E2E) + 断言逻辑 + 测试数据 + 选择器模板
+    prototype_mode:
+      tech: "Playwright多上下文（browser.newContext × 2）"
+      backend: "后台Context: Playwright launch → 操控后台Web原型"
+      app: "APP Context: Playwright launch + 设备模拟(devices['iPhone 14']) → 操控APP H5原型"
+      data_flow: "两端都连Mock后端 → 跨端数据天然流转"
+      reuse_rate: "验收场景/断言/数据 100%复用到真实系统"
+    real_system_mode:
+      tech: "Playwright(后台) + 原生WebSocket CDP(APP) + API直查"
+      backend: "后台: Playwright launch → 操控真实后台Web"
+      app: "APP: ws库直连uni-app APP的WebView CDP → 操控APP页面"
+      data_flow: "两端连真实后端 → 后端直查兜底验证"
+      guide: "common/qa/e2e-acceptance-guide.md（真实系统验收技术方案）"
+    shared:
+      scenarios: "e2e-acceptance/src/scenarios/（验收场景脚本，两阶段共享）"
+      shared_data: "e2e-acceptance/src/contexts/shared-data.ts（跨端共享数据上下文）"
+      config: "e2e-acceptance/src/config.ts（环境配置，切换原型/真实系统只改URL和连接方式）"

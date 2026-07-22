@@ -225,6 +225,21 @@ agents:
         enforcement: "hard"
         workflow_check: "requirement-flow.yml §6.5 + gates-registry G-REQ-21"
         note: "V5.4.0新增：解决BA独自分析无法发现行业经验驱动盲区的问题（如防刷机制/定时任务宕机/迭代影响旧指标等）。"
+      - id: "BA-31"
+        rule: "三阶段分析不可跳过（V3.4.0新增）：需求分析必须按阶段1业务还原(§3)→阶段2系统划分(§3.5)→阶段3终端划分(§3.8)顺序执行。禁止跳过业务还原直接做系统划分，禁止跳过系统划分直接定终端。业务系统划分是分析结果不是前提——必须先还原真实业务(角色/部门/关键动作)，闭环验证通过后才划分系统，系统闭环验证通过后才定终端。"
+        enforcement: "hard"
+        workflow_check: "requirement-flow.yml §3/§3.5/§3.8 + gates-registry G-REQ-22/G-REQ-23/G-REQ-24/G-REQ-25"
+        note: "V3.4.0新增：解决系统划分和终端划分作为'前提'而非'分析结果'的问题。"
+      - id: "BA-32"
+        rule: "闭环验证不可跳过（V3.4.0新增）：阶段1必须通过业务闭环验证（7要素：角色人/销售方式/支付方式/谁支付/谁收款/如何结算/结算给谁）+行业对标验证；阶段2必须通过系统闭环验证（9要素：商品创建/展示/下单/支付/发货/查看/售后/处理/系统归属）。未通过闭环验证不得进入下一阶段。业务闭环验证人/钱/货的完整链路，系统闭环验证每个业务环节都有系统归属。"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-REQ-22(业务闭环) + G-REQ-23(系统闭环)"
+        note: "V3.4.0新增：解决业务流程和系统覆盖有断点却不自知的问题。"
+      - id: "BA-33"
+        rule: "冻结机制（V3.4.0新增）：每阶段扫盲完成后PM展示冻结内容→用户确认→冻结→冻结内容传入下一阶段。用户有补充则退回重新分析→重新展示→重新确认。冻结内容：阶段1=场景清单，阶段2=系统边界+系统间接口清单，阶段3=终端清单+跨端流转路径。冻结后下一阶段基于冻结内容分析，不得随意变更。"
+        enforcement: "hard"
+        workflow_check: "requirement-flow.yml §3/§3.5/§3.8 checkpoint"
+        note: "V3.4.0新增：解决阶段间信息传递随意变更导致下游返工的问题。"
 
   # ============================================
   # PM Agent（项目管理）
@@ -651,3 +666,48 @@ global_rules:
     applies_to: "全Agent"
     workflow_check: "common/human-confirm-protocol.yml"
     referenced_by: "redlines.yml RL-SUP-03"
+
+# ============================================
+# V3.5.0影响分析公共流程铁律（demand-impact-fusion-flow.yml）
+# ============================================
+impact_analysis_rules:
+  description: |
+    V3.5.0新增——需求理解+影响分析+融合分析公共流程的铁律。
+    跨requirement-flow和change-request，/init和/change共用。
+    详见 demand-impact-fusion-flow.yml iron_rules 段。
+  rules:
+    - id: "IMPACT-01"
+      rule: "知识库5层全量检索：影响分析必须5层知识库全量检索（PRD+版本沉淀逐版本+项目经验+通用经验+领域知识），禁止只扫描当前PRD不扫描版本沉淀。当前成员对应的project下所有已close版本必须全部扫描。"
+      enforcement: "hard"
+      applies_to: "ba-agent"
+      workflow_check: "demand-impact-fusion-flow.yml Layer2 knowledge_retrieval + gates-registry G-IMPACT-01"
+
+    - id: "IMPACT-02"
+      rule: "2轮收窄机制：影响分析必须执行收窄机制（第1轮影响范围+版本匹配一起呈现；第2轮版本规划决策仅L/XL触发）。禁止AI一次性给定影响范围不与用户交互。S/M综合评分可只走第1轮。"
+      enforcement: "hard"
+      applies_to: "ba-agent"
+      workflow_check: "demand-impact-fusion-flow.yml Layer2 round_1_narrowing + Layer3 round_2_planning"
+
+    - id: "IMPACT-03"
+      rule: "收窄排除留痕：收窄排除项必须记录排除原因+风险标记（后续版本处理标记），禁止无原因排除、禁止无风险标记排除。排除原因记录到impact-narrowing-log，后续版本自动加载排除项的风险标记。"
+      enforcement: "hard"
+      applies_to: "ba-agent"
+      workflow_check: "demand-impact-fusion-flow.yml Layer2 narrowing_log + gates-registry G-IMPACT-03"
+
+    - id: "IMPACT-04"
+      rule: "三维业务融合度：融合分析必须执行三维业务融合度评估（流程衔接度+角色权限交叉度+数据流交叉度），禁止只做技术影响面评分不做业务融合度。三维融合度判定业务关系（增强现有/新增功能域/需求冲突/混合），直接影响版本规划决策。"
+      enforcement: "hard"
+      applies_to: "ba-agent"
+      workflow_check: "demand-impact-fusion-flow.yml Layer3 business_fusion_3d + gates-registry G-IMPACT-04"
+
+    - id: "IMPACT-05"
+      rule: "版本规划判断：综合评分XL必须触发第2轮版本规划判断，禁止XL不拆分直接单版本（用户可选择不拆分但必须标记风险）。综合评分L须询问用户是否拆分。综合评分S/M可跳过第2轮直接单版本。"
+      enforcement: "hard"
+      applies_to: "ba-agent, pm-agent"
+      workflow_check: "demand-impact-fusion-flow.yml Layer3 round_2_planning + gates-registry G-IMPACT-05"
+
+    - id: "IMPACT-06"
+      rule: "需求理解前置：需求理解(Layer1)是影响分析(Layer2)和融合分析(Layer3)的前置，禁止跳过需求理解直接做影响分析。Layer1的知识库映射是Layer2影响扫描的输入基础——先知道'对应已有什么'才能准确判断'影响了什么'。"
+      enforcement: "hard"
+      applies_to: "ba-agent"
+      workflow_check: "demand-impact-fusion-flow.yml Layer1 → Layer2 → Layer3 顺序"

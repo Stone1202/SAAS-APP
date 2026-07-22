@@ -414,6 +414,119 @@ doc_standard:
         row_operations: [行内查看, 行内编辑, 行内删除, 行内禁用启用]
       naming: "子功能 UC 继承父 FN 序号段，如 FN-ACRM-002 下 UC-ACRM-002-01 搜索、…-14 分层打标签"
 
+  # 用例标准模板 V3（V3.4.0新增：研发友好版——让研发拿到用例就知道怎么开发）
+  use_case_template_v3:
+    description: |
+      V3.4.0新增——研发友好用例模板。在v2基础上增加研发直接需要的字段：
+      页面路由、组件名、入口路径、接口标注、状态机关联、终端信息。
+      目标：研发人员拿到用例后，不需要翻接口文档、不需要找页面归属、不需要猜入口。
+    new_fields:
+      - name: "页面路由"
+        desc: "具体路由路径（如 /subPackages/Mall/pages/category/index），来自终端泳道图"
+        required: true
+      - name: "组件名"
+        desc: "前端组件名（如 ProductCategory），来自设计文档PG编号"
+        required: true
+      - name: "入口路径"
+        desc: "从哪进入此页面（表格：序号|入口|来源页面|触发操作），如 首页商城Tab→商品分类页"
+        required: true
+      - name: "接口标注"
+        desc: "基本流程每步标注调用的API（如 GET /api/app/spu/listOfStore），研发不用翻接口文档"
+        required: true
+      - name: "状态机关联"
+        desc: "此用例触发的状态流转（如 订单: pending→paid），无状态变更标注'无'"
+        required: true
+      - name: "终端信息"
+        desc: "运行终端（PC/APP/H5/MP等），一目了然"
+        required: true
+    enhanced_sections:
+      basic_flow:
+        rule: "基本流程表格增加'调用接口/路由'列：步骤|类型[手动]/[系统自动]/[事件驱动]|操作|调用接口/路由|说明"
+        example: |
+          | 步骤 | 类型 | 操作 | 调用接口/路由 | 说明 |
+          | 1 | [系统自动] | 加载商品分类树 | GET /api/app/category/tree | 进入页面时自动触发 |
+          | 2 | [系统自动] | 加载门店商品列表 | GET /api/app/spu/listOfStore | 按分类加载 |
+          | 3 | [手动] | 浏览商品列表 | — | 用户上下滚动 |
+          | 4 | [手动] | 点击商品卡片 | — | 选择商品 |
+          | 5 | [系统自动] | 跳转商品详情页 | navigateTo: goods-detail | 携带spuId |
+      alternative_flow:
+        rule: "备选流程表格增加'关联UC'列：分支|触发条件|处理方式|关联UC"
+      data_scope:
+        rule: "数据范围表格增加'接口'列：数据实体|操作(R/W)|接口|说明"
+
+  # 三阶段闭环验证标准（V3.4.0新增）
+  closure_verification:
+    description: |
+      V3.4.0新增——三阶段分析中每阶段的闭环验证标准。
+      阶段1业务闭环：验证业务流程完整性（人/钱/货的闭环）。
+      阶段2系统闭环：验证系统覆盖完整性（每个业务环节都有系统归属）。
+    stage1_business_closure:
+      name: "业务闭环验证（7要素）"
+      elements:
+        - "涉及哪些角色人？（客户/店员/店长/客服/财务/供应商...）"
+        - "什么方式销售？（直销/分销/直播带货/团购/拼团...）"
+        - "什么方式支付？（在线支付/货到付款/分期/余额...）"
+        - "谁支付？（客户/代付人/企业账户...）"
+        - "谁收款？（平台/商家/供应商...）"
+        - "如何结算？（T+1/周结/月结/分账...）"
+        - "结算给谁？（商家/供应商/分销商/平台抽佣...）"
+      rule: "从'角色人'出发，沿'销售→支付→收款→结算'链路走一遍，每个环节都有明确的角色和方式，没有断点。"
+
+    stage2_system_closure:
+      name: "系统闭环验证（9要素）"
+      elements:
+        - "商品怎么创建？（在哪个系统创建？）"
+        - "创建后如何展示？（在哪个系统展示？展示规则？）"
+        - "客户在什么系统下单？（商城系统？直播系统？）"
+        - "如何下单？（下单流程在哪个系统？）"
+        - "下单后怎么支付？（交易系统？第三方支付？）"
+        - "支付后如何发货？（订单系统通知？物流系统执行？）"
+        - "客户如何看到？（APP查询？消息推送？）"
+        - "如何售后？在哪里售后？（独立售后系统？订单系统内？）"
+        - "售后如何处理？在哪个系统处理？（售后系统处理？退款到交易系统？）"
+      rule: "从'商品创建'出发，沿'展示→下单→支付→发货→收货→售后'链路走一遍，每个环节都有明确的系统归属，没有系统间的断点。"
+
+  # 三阶段泳道图规范（V3.4.0新增）
+  three_stage_swimlane:
+    description: |
+      V3.4.0新增——三阶段分析产出三种视角的泳道图，分开独立，不是演进。
+      阶段1：角色视角（已有swimlane_diagram）
+      阶段2：系统视角（新增）
+      阶段3：终端视角（新增）
+    stage1_role_swimlane:
+      reference: "swimlane_diagram（已有，按角色/部门分泳道）"
+      purpose: "还原真实业务全貌——谁做什么？业务怎么跑？"
+
+    stage2_system_swimlane:
+      name: "系统视角泳道图"
+      required: true
+      dimensions: [业务系统, 系统间配合动作, 输入数据, 输出数据, 第三方接口]
+      rule: |
+        泳道=业务系统（如商城系统/订单系统/交易系统/物流系统）。
+        系统内操作用实线箭头，系统间数据传递用双线箭头(==>)。
+        第三方接口调用用虚线箭标(-.->)标注接口路径。
+        人类一眼看出：有几个系统、系统间怎么配合、哪些涉及第三方。
+      mermaid_example: |
+        subgraph 商城系统 → subgraph 订单系统 → subgraph 交易系统
+        C ==商品数据==> F （跨系统数据传递）
+        I -.->|POST /api/pay| 易宝支付 （第三方接口）
+
+    stage3_terminal_swimlane:
+      name: "终端视角泳道图"
+      required: true
+      dimensions: [终端, 终端内操作, 跨端数据传递, 跨端触发动作]
+      rule: |
+        泳道=终端（如PC后台/APP/H5/小程序）。
+        终端内操作用实线箭头，跨端数据传递用双线箭头(==>)。
+        不同终端用不同颜色区分（PC=蓝色，APP=橙色，H5=绿色）。
+        人类一眼看出：涉及几个终端、跨端流转在哪、每端做什么。
+        架构师从此图提取：需要几套前端代码+几个base path+跨端API。
+      mermaid_example: |
+        subgraph PC后台 → subgraph APP
+        C ==商品同步==> D （跨端数据传递）
+        style PC后台 fill:#e1f5fe,stroke:#0288d1
+        style APP fill:#fff3e0,stroke:#f57c00
+
   # 页面级用例（铁律⑧，v2 新增）
   page_level_usecase:
     mandatory: true

@@ -27,8 +27,9 @@
 
 workflow:
   id: "test-flow"
-  name: "测试流程（V3.1.0 QA质量推理大脑）"
-  version: "3.1.0"
+  name: "测试流程（V3.2.0 跨端验收+测试扫盲+QA质量推理大脑）"
+  version: "3.2.0"
+  expert_registry: ".codebuddy/knowledge/common/expert-registry.yml#ba_analysis.test_stage"  # V3.2.0新增：测试阶段扫盲专家
   trigger_command: "/init（PM 调度 QA，开发完成后）"
   owner: "qa-agent"
   gates_reference: ".codebuddy/knowledge/common/gates-registry.yml#stages.test"
@@ -178,6 +179,44 @@ workflow:
         - "多端逐端对比"
       pass_threshold: "95% 相似度"
       report_path: ".codebuddy/reports/visual-regression/"
+
+    # ============================================
+    # 第6层：跨端验收测试（V3.2.0新增）
+    # ============================================
+    - layer: 5
+      name: "跨端验收测试（V3.2.0新增）"
+      description: |
+        V3.2.0新增——从终端泳道图提取跨端场景，验证跨端数据流转。
+        原型阶段：Playwright多上下文 + Mock后端 → 验证跨端数据流转。
+        真实系统阶段：Playwright(后台) + CDP(APP) + 后端直查 → 验证真实跨端流转。
+        两个阶段共享：验收场景(SC-E2E) + 断言逻辑 + 测试数据。
+      scope:
+        - "从终端泳道图提取跨端流转路径（哪些操作跨端，跨端数据传递点）"
+        - "从SC场景级E2E提取跨端验收用例（含终端标注的SC）"
+        - "原型阶段：Playwright多上下文(后台Context+APP Context) + Mock后端数据流转验证"
+        - "真实系统阶段：Playwright(后台Web) + 原生WebSocket CDP(APP WebView) + 后端API直查兜底"
+        - "跨端数据一致性断言（同一数据实体在不同端的呈现一致）"
+      pass_threshold: "100%（跨端场景必须全部通过）"
+      guide: ".codebuddy/knowledge/common/qa/e2e-acceptance-guide.md"
+      scaffold: "projects/{project}/e2e-acceptance/"
+
+  # ============================================
+  # 测试阶段扫盲（V3.2.0新增）
+  # ============================================
+  test_blindspot_scan:
+    description: |
+      V3.2.0新增——测试阶段扫盲，聚焦测试覆盖完整性。
+      专家组合：QA/数据/安全专家（来自expert-registry.yml#ba_analysis.test_stage）
+      盲区焦点：异常分支/状态异常/数据一致性/边界值
+    trigger: "跨端验收场景设计完成后"
+    experts: ["qa", "data", "security"]
+    blindspots:
+      - "异常分支（跨端操作的异常路径？支付失败/网络断开/超时？）"
+      - "状态异常（状态机的非法流转？并发状态变更？）"
+      - "数据一致性（跨端数据不一致的检测？）"
+      - "边界值（极端数据量/并发/网络？）"
+    output: "补充的测试场景 + 异常路径清单"
+    freeze: "测试场景清单冻结 → 作为测试执行依据"
 
   # ============================================
   # Bug 管理

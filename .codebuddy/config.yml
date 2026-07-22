@@ -59,11 +59,13 @@ configs:
   doc_standard: ".codebuddy/knowledge/common/doc-standards.yml"
   command_spec: ".codebuddy/knowledge/common/command-spec.yml"
   metrics_standards: ".codebuddy/knowledge/common/metrics-standards.yml"  # V3.3.0新增
+  expert_registry: ".codebuddy/knowledge/common/expert-registry.yml"  # V3.4.0新增：专家统一配置（18盲区+7系统划分×3流程）
   api_learner: ".codebuddy/knowledge/common/api-learner.yml"  # V3.4.0新增
   governance_audit: ".codebuddy/knowledge/common/governance-audit.yml"  # V3.4.0新增
   system_blueprints: ".codebuddy/knowledge/common/system-blueprints.yml"  # V3.5.0新增：AI系统常识推理框架
   brain_memory_spec: ".codebuddy/knowledge/common/brain-memory-spec.yml"  # V3.6.0新增：大脑记忆规范
   brain_evolution_engine: ".codebuddy/knowledge/common/brain-evolution-engine.yml"  # V3.6.0新增：大脑进化引擎
+  demand_impact_fusion_flow: ".codebuddy/configs/workflows/demand-impact-fusion-flow.yml"  # V3.5.0新增：需求理解+影响分析+融合分析公共流程（/init和/change共用）
   deploy_config: "deploy/edgeone-pages.json"  # V1.0.0新增：部署配置
   deploy_manifest: "deploy/DEPLOY-MANIFEST.yml"  # V1.0.0新增：部署清单
   access_portal: "deploy/access-portal/index.html"  # V1.0.0新增：访问门户
@@ -98,9 +100,15 @@ projects:
     # 源码分层（五维可插拔架构）
     src: "projects/{project}/src/"
     contracts: "projects/{project}/src/contracts/schemas/"
+    contracts_api: "projects/{project}/src/contracts/api/"                    # V3.1.0新增：API契约(request/response Zod)
+    contracts_state_machine: "projects/{project}/src/contracts/state-machine/" # V3.1.0新增：状态机契约
     adapters_sim: "projects/{project}/src/adapters/sim/repositories/"
     adapters_real: "projects/{project}/src/adapters/real/repositories/"
     services: "projects/{project}/src/services/"
+    # Mock后端（V3.1.0新增——跨端数据流转核心）
+    mock_server: "projects/{project}/mock-server/"
+    # 跨端验收（V3.1.0新增——原型阶段和真实系统阶段统一验收框架）
+    e2e_acceptance: "projects/{project}/e2e-acceptance/"
     # 后端示例与测试
     backend_examples: "projects/{project}/backend-examples/"
     tests: "projects/{project}/tests/"
@@ -166,7 +174,7 @@ agents:
 
   ba-agent:
     yml_file: .codebuddy/configs/agents/ba-agent.yml
-    skills: [state-enumerator, req-impact-analyzer, doc-processor, doc-splitter, instruction-card-generator, api-learner, faithful-analysis, feedback-processor, system-common-sense-analyzer]
+    skills: [state-enumerator, req-impact-analyzer, change-impact-analyzer, doc-processor, doc-splitter, instruction-card-generator, api-learner, faithful-analysis, feedback-processor, system-common-sense-analyzer]
     description: "业务分析师 - 需求分析，按 PM 方法论产出 REQ 产物体系（含业务泳道图/业务操作矩阵/跨系统信息流）。V3.3.0新增AI增强系统常识推理。"
 
   pm-agent:
@@ -206,8 +214,8 @@ agents:
 
   arch-agent:
     yml_file: .codebuddy/configs/agents/arch-agent.yml
-    skills: [arch-tech-stack-keeper, arch-contract-definer, arch-scaffold-reviewer, api-learner]
-    description: "高保真前端开发架构师 - 定技术栈/契约/分层规范，做架构评审（守门员）"
+    skills: [arch-tech-stack-keeper, arch-contract-definer, arch-scaffold-reviewer, api-learner, mock-server-generator, e2e-scaffold-generator]
+    description: "高保真前端开发架构师 - 定技术栈/三层契约/五维可插拔/Mock后端/跨端验收脚手架，做架构评审（守门员）V3.3.0"
 
 # ============================================
 # 命令注册（4 核心生命周期指令 + 高级调试指令 + 特殊入口）

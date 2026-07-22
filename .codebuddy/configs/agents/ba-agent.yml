@@ -12,6 +12,7 @@ agent:
     - "doc-processor"              # V5.1.0合并：doc-linker→doc-processor
     - "doc-splitter"
     - "req-impact-analyzer"
+    - "change-impact-analyzer"  # V3.5.0新增：影响分析公共流程Layer2组件域影响扫描
     - "system-common-sense-analyzer"  # V3.3.0新增：AI驱动的系统常识补全分析器
     - "instruction-card-generator"    # V5.1.0同步：与config.yml对齐
     - "api-learner"                   # V5.1.0同步：与config.yml对齐

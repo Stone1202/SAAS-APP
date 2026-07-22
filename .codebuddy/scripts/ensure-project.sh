@@ -132,9 +132,13 @@ def ensure_file(rel_path, content):
 # ============================================
 base = f"projects/{proj}"
 for d in ["docs", "pom", "src", "src/adapters/sim", "src/adapters/real", "src/stores",
-          "src/components", "src/pages", "src/contracts", "src/services",
+          "src/components", "src/pages", "src/contracts", "src/contracts/schemas",
+          "src/contracts/api", "src/contracts/state-machine",
+          "src/services",
           "tests", "tests/contract-consistency", "tests/unit",
           "backend-examples", "backend-examples/fastapi",
+          "mock-server", "mock-server/routes",
+          "e2e-acceptance", "e2e-acceptance/src/contexts", "e2e-acceptance/src/scenarios", "e2e-acceptance/src/utils",
           "docs/06-sprint-guard", "docs/07-version-guard", "docs/08-project-guard",
           "docs/09-versions", ".codebuddy/journal", ".codebuddy/journal/reviews"]:
     ensure_dir(f"{base}/{d}")
@@ -150,31 +154,41 @@ ensure_file(f"{base}/package.json", json.dumps({
     "name": proj.lower().replace("-", "_"), "version": "0.1.0", "private": True, "type": "module",
     "scripts": {
         "dev": "vite --mode development", "dev:real": "vite --mode real",
+        "mock": "node mock-server/server.ts",
+        "dev:mock": "concurrently \"vite --mode real\" \"node mock-server/server.ts\"",
         "build": "vite build --mode production", "build:sim": "vite build --mode sim",
         "preview": "vite preview", "test": "vitest", "test:run": "vitest run",
         "test:contract": "vitest run tests/contract-consistency/", "test:unit": "vitest run tests/unit/",
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {"react": "^18.3.0", "react-dom": "^18.3.0", "react-router-dom": "^6.26.0",
-                     "zustand": "^4.5.0", "antd": "^5.20.0", "zod": "^3.23.0", "idb": "^8.0.0"},
+                     "zustand": "^4.5.0", "antd": "^5.20.0", "zod": "^3.23.0", "idb": "^8.0.0",
+                     "express": "^4.19.0", "@anatine/zod-mock": "^3.13.0", "cors": "^2.8.5"},
     "devDependencies": {"@types/react": "^18.3.0", "@types/react-dom": "^18.3.0",
                         "@vitejs/plugin-react": "^4.3.0", "typescript": "^5.5.0",
                         "vite": "^5.4.0", "vitest": "^2.0.0",
                         "@testing-library/react": "^16.0.0", "@testing-library/jest-dom": "^6.4.0",
-                        "jsdom": "^24.0.0", "fake-indexeddb": "^6.0.0"},
+                        "jsdom": "^24.0.0", "fake-indexeddb": "^6.0.0",
+                        "@types/express": "^4.17.21", "@types/cors": "^2.8.17",
+                        "concurrently": "^8.2.0", "tsx": "^4.7.0"},
     "engines": {"node": ">=18.0.0"}
 }, indent=2))
 
 # V5.0.0: .env 文件 VITE_PROJECT_ID 不含 owner
 ensure_file(f"{base}/.env.development",
-    f"VITE_MODE=sim\nVITE_API_BASE=/api/v1\nVITE_WS_URL=ws://localhost:8000/ws\n"
+    f"VITE_MODE=sim\nVITE_API_BASE=/api/v1\nVITE_API_BASE_URL=http://localhost:3001/api\n"
+    f"VITE_MOCK_SERVER_PORT=3001\n"
+    f"VITE_WS_URL=ws://localhost:8000/ws\n"
     f"VITE_AUTH_MODE=mock\nVITE_PROJECT_ID={project_id}\nVITE_DEV_PORT={assigned_port}\n")
 ensure_file(f"{base}/.env.production",
     f"VITE_MODE=real\nVITE_API_BASE=https://api.example.com/api/v1\n"
+    f"VITE_API_BASE_URL=https://api.example.com/api\n"
     f"VITE_WS_URL=wss://api.example.com/ws\nVITE_AUTH_MODE=jwt\nVITE_PROJECT_ID={project_id}\n")
 ensure_file(f"{base}/.env.sim", f"VITE_MODE=sim\nVITE_PROJECT_ID={project_id}\n")
+ensure_file(f"{base}/.env.real", f"VITE_MODE=real\nVITE_API_BASE_URL=http://localhost:3001/api\nVITE_MOCK_SERVER_PORT=3001\nVITE_AUTH_MODE=jwt\nVITE_PROJECT_ID={project_id}\n")
 ensure_file(f"{base}/.env.example",
     f"# 复制为 .env.development\nVITE_MODE=sim\nVITE_API_BASE=/api/v1\n"
+    f"VITE_API_BASE_URL=http://localhost:3001/api\nVITE_MOCK_SERVER_PORT=3001\n"
     f"VITE_WS_URL=ws://localhost:8000/ws\nVITE_AUTH_MODE=mock\n"
     f"VITE_PROJECT_ID={project_id}\nVITE_DEV_PORT={assigned_port}\n")
 

@@ -1,8 +1,16 @@
 # ============================================
-# Workflow: arch-flow（架构评审流程 V3.2.0）
-# 版本: v3.2.0
-# 最后更新: 2026-07-20
+# Workflow: arch-flow（架构评审流程 V3.3.0）
+# 版本: v3.3.0
+# 最后更新: 2026-07-22
 # ============================================
+#
+# V3.3.0 升级：Mock后端 + 跨端验收 + 状态机契约
+#   1. 新增 C-A9：Mock后端完整性——基于Zod Schema生成Mock路由+状态机引擎+auth路由
+#   2. 新增 C-A10：跨端验收脚手架——e2e-acceptance/目录+验收场景脚本+共享数据上下文
+#   3. C-A5增强：契约Zod完整性从"实体Schema"升级为"三层契约（实体Schema+API契约+状态机）"
+#   4. C-A6增强：五维可插拔从"sim+real占位"升级为"real adapter实现（打Mock后端API）"
+#   5. Step 1新增产出：Mock后端脚手架 + real adapter实现 + 跨端验收脚手架
+#   6. 依赖 tech-stack.yml V3.1.0（Mock后端架构+跨端验收架构+状态机契约）
 #
 # V3.2.0 升级：非功能需求（NFR）主题识别
 #   1. 新增 ai_brain 推理模块 nfr_topic_identification——AI辅助Arch识别NFR主题
@@ -37,13 +45,14 @@
 
 workflow:
   id: "arch-flow"
-  name: "架构评审流程（V3.2.0 NFR主题识别+Arch架构决策大脑）"
-  version: "3.2.0"
+  name: "架构评审流程（V3.3.0 Mock后端+跨端验收+状态机契约+NFR主题识别+Arch架构决策大脑）"
+  version: "3.3.0"
   trigger_command: "/init（PM 调度 Arch，设计完成后）"
   owner: "arch-agent"
   gates_reference: ".codebuddy/knowledge/common/gates-registry.yml#stages.arch"
   iron_rules_reference: ".codebuddy/knowledge/common/iron-rules-registry.yml#agents.arch_agent"
   supervisor: "pm-agent"
+  expert_registry: ".codebuddy/knowledge/common/expert-registry.yml#ba_analysis.architecture_stage"  # V3.4.0新增：架构阶段扫盲专家
   standard: ".codebuddy/knowledge/common/arch/tech-stack.yml"
   gatekeeper: true
 
@@ -81,12 +90,16 @@ workflow:
           输出：影响波及图（波及范围+影响级别）
 
       - id: "nfr_topic_identification"
-        name: "非功能需求主题识别（V3.2.0新增）"
+        name: "非功能需求主题识别（V3.2.0新增，V3.4.0增强：NFR前移）"
         description: |
           AI辅助Arch从需求文档中识别非功能需求（NFR）主题。
-          不是让Arch凭空写NFR——AI扫描FN/UC/BR/状态机/数据实体，
-          基于业务特征推理出8大NFR主题是否存在+严重级别+实现建议。
-          输入：PRD的FN/UC/BR/ENT/状态机 + 系统类型声明 + 领域知识
+          V3.4.0增强——NFR不再只在架构阶段识别，而是前移到三阶段分析的每个扫盲环节：
+          阶段1业务还原：技术专家帮产品经理识别业务场景涉及的NFR（如直播→高并发+时效）
+          阶段2系统划分：技术专家帮产品经理识别系统层NFR（如跨系统→数据一致性+同步）
+          阶段3终端划分：技术专家帮产品经理识别终端层NFR（如APP→弱网+响应效率）
+          架构阶段：Arch汇总前面识别的NFR，给出技术实现方案。
+          产品经理不需要懂技术实现，但需要在业务分析阶段就意识到技术要求。
+          输入：三阶段扫盲产出的NFR清单 + PRD的FN/UC/BR/ENT/状态机 + 系统类型声明
           输出：NFR主题清单（8大主题×严重级别×实现建议×关联FN）
           8大NFR主题：
             1. 高并发（concurrency）：哪些FN涉及高并发场景？（如直播审核实时推送）
@@ -142,6 +155,10 @@ workflow:
         - "NFR实现方案（基于step-0识别的NFR主题，给出技术实现方案）"
         - "三段回溯表（需求→设计→架构的 FN 级映射）"
         - "设计→代码衰减控制清单（O-09）"
+        - "三层契约：实体Schema + API契约(request/response Zod) + 状态机定义（V3.3.0新增）"
+        - "Mock后端脚手架：mock-server/ 基于Zod Schema生成Mock路由+状态机引擎+auth路由（V3.3.0新增）"
+        - "real adapter实现：adapters/real/ HttpTransport+JwtAuthProvider+各业务Repository（V3.3.0新增）"
+        - "跨端验收脚手架：e2e-acceptance/ 验收场景脚本+共享数据上下文+配置（V3.3.0新增）"
       path: "projects/{project}/docs/04-arch/"
       checkpoint: true  # 人工卡点③（守门员裁决）
       note: "守门员裁决：通过→移交 FD；驳回→problem_list 路由 BA/UX/Arch 重评"
@@ -174,14 +191,22 @@ workflow:
       check: "逐 FN 核对三段是否齐全"
       fail_action: "PM 驳回，Arch 补充缺失追溯"
     - id: "C-A5"
-      name: "契约 Zod 完整性（V3.0.0新增）"
-      description: "每个接口必须有 request/response Zod Schema + 错误码枚举"
-      check: "逐接口核对 src/contracts/schemas/ 下是否有对应 Zod 定义"
-      fail_action: "PM 驳回，Arch 补充缺失的 Zod Schema"
+      name: "契约 Zod 完整性（V3.0.0新增，V3.3.0增强为三层契约）"
+      description: "三层契约完整：实体Schema + API契约(request/response Zod) + 状态机定义"
+      check: |
+        1. src/contracts/schemas/ 有全部实体Zod Schema
+        2. src/contracts/api/ 有全部接口的request/response Zod Schema + 错误码枚举
+        3. src/contracts/state-machine/ 有状态流转实体的状态机定义
+        4. src/contracts/registry.ts 有API路由注册表
+      fail_action: "PM 驳回，Arch 补充缺失的三层契约"
     - id: "C-A6"
-      name: "五维可插拔（V3.0.0新增）"
-      description: "data/transport/stream/asset/auth 五维度都有 sim+real 实现"
-      check: "逐维度核对 src/adapters/sim/ 和 src/adapters/real/ 下是否有对应实现"
+      name: "五维可插拔（V3.0.0新增，V3.3.0增强为real adapter实现）"
+      description: "data/transport/stream/asset/auth 五维度都有 sim+real 实现，real adapter打Mock后端API"
+      check: |
+        1. src/adapters/sim/ 和 src/adapters/real/ 下有对应实现（非空目录）
+        2. real/HttpTransport.ts 实现了fetch+token+Zod校验
+        3. real/JwtAuthProvider.ts 实现了登录+token存储+请求带header
+        4. real/repositories/ 有各业务Repository实现
       fail_action: "PM 驳回，Arch 补齐缺失维度的 sim/real 实现"
     - id: "C-A7"
       name: "单元测试架构（V3.0.0新增）"
@@ -193,6 +218,27 @@ workflow:
       description: "Arch必须产出NFR主题清单（8大NFR主题×严重级别×实现建议×关联FN），并回传BA纳入PRD §18"
       check: "核对 docs/03-architecture/NFR-*.yml 存在 + PRD §18 非功能需求章节存在"
       fail_action: "PM 驳回，Arch执行NFR主题识别（AI辅助nfr_topic_identification推理模块）"
+    - id: "C-A9"
+      name: "Mock后端完整性（V3.3.0新增）"
+      description: "mock-server/ 基于Zod Schema生成Mock路由+状态机引擎+auth路由+内存DB持久化"
+      check: |
+        1. mock-server/server.ts 可独立启动（npm run mock）
+        2. mock-server/zod-mock.ts 根据Response Schema自动生成Mock数据
+        3. mock-server/store.ts 内存数据库+JSON文件持久化
+        4. mock-server/state-machine-engine.ts 基于contracts/state-machine/校验状态流转
+        5. mock-server/routes/auth.ts 登录接口返回JWT token
+        6. mock-server/routes/ 有全部接口的CRUD+状态流转路由
+      fail_action: "PM 驳回，Arch 补齐Mock后端缺失组件"
+    - id: "C-A10"
+      name: "跨端验收脚手架（V3.3.0新增）"
+      description: "e2e-acceptance/ 验收场景脚本+共享数据上下文+配置（原型阶段和真实系统阶段统一框架）"
+      check: |
+        1. e2e-acceptance/src/config.ts 环境配置（后台URL/APP路由/API地址）
+        2. e2e-acceptance/src/contexts/shared-data.ts 跨端共享数据上下文
+        3. e2e-acceptance/src/scenarios/ 至少1个验收场景脚本(SC-E2E)
+        4. e2e-acceptance/src/utils/ 连接工具（原型:Playwright多上下文 / 真实系统:CDP客户端）
+        5. e2e-acceptance/package.json 依赖声明(playwright/ws)
+      fail_action: "PM 驳回，Arch 补齐跨端验收脚手架"
 
   # ============================================
   # 接口契约终稿（O-05）
@@ -243,5 +289,7 @@ workflow:
     - [ ] C-A6 五维可插拔（V3.0.0新增）
     - [ ] C-A7 单元测试架构（V3.0.0新增）
     - [ ] C-A8 NFR清单完整性（V3.2.0新增）
+    - [ ] C-A9 Mock后端完整性（V3.3.0新增）
+    - [ ] C-A10 跨端验收脚手架（V3.3.0新增）
 
     **请裁决**：通过 / 驳回（原因：xxx）

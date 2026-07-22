@@ -307,7 +307,7 @@
       owner: "ba-agent"
       supervisor: "pm-agent"
       workflow: "requirement-flow"
-      workflow_version: "V3.2.0"
+      workflow_version: "V3.5.0"
       pm_controlled: true
       checkpoint: true  # 人工卡点①
       impact_analysis: true
@@ -983,10 +983,14 @@
       owner: "pm-agent"
       file: "learn-domain.yml"
       methodology: "从行业标准网页链接学习业务领域知识→5部分结构（泳道+流程+信息流+矩阵+方案）→领域知识库→BA需求分析参考"
+    - flow: "需求理解+影响分析+融合分析（V5.4.0新增公共流程）"
+      owner: "ba-agent"
+      file: "demand-impact-fusion-flow.yml"
+      methodology: "三层架构：Layer1需求理解(6维+知识库映射)→Layer2影响分析(5层知识库全量检索+10维扫描+2轮收窄)→Layer3融合分析(三维业务融合度+综合评分+版本规划判断)。/init和/change共用，保证影响分析一致性"
     - flow: "需求分析"
       owner: "ba-agent"
       file: "requirement-flow.yml"
-      methodology: "用户旅行地图→需求场景(5W2H)→业务流程→版本规划→信息流→状态机→原子用例"
+      methodology: "用户旅行地图→需求场景(5W2H)→业务流程→版本规划→信息流→状态机→原子用例。V3.5.0：§0.5引用demand-impact-fusion-flow.yml公共流程"
     - flow: "设计"
       owner: "ux-agent"
       file: "design-flow.yml"

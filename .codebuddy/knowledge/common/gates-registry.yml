@@ -271,6 +271,131 @@ stages:
           4. 无未处理的盲区（pending状态为0）
           5. 场景清单已冻结（作为§3用例设计的输入）
         on_fail: "阻止进入设计阶段。PM驳回BA：多专家盲区审查未完成或闭环验证未通过。BA必须执行§2.5的场景级盲区审查，确认所有盲区已处理，场景清单已冻结。"
+      - id: "G-REQ-22"
+        type: "hard_gate"
+        name: "业务闭环验证（V3.4.0新增：7要素验证）"
+        check: "content_pattern_in_prd"
+        target: "projects/{project}/docs/01-requirements/"
+        pattern: "业务闭环验证.*通过"
+        description: |
+          V3.4.0新增——阶段1业务还原的闭环验证。
+          7要素：角色人/销售方式/支付方式/谁支付/谁收款/如何结算/结算给谁。
+          从"角色人"出发，沿"销售→支付→收款→结算"链路走一遍，每个环节都有明确的角色和方式，没有断点。
+          PM检查：PRD中业务闭环验证结论为"通过"，7要素全部明确。
+        on_fail: "阻止进入阶段2。PM驳回BA：业务闭环验证未通过。BA必须完成7要素验证，每个环节明确角色和方式。"
+      - id: "G-REQ-23"
+        type: "hard_gate"
+        name: "系统闭环验证（V3.4.0新增：9要素验证）"
+        check: "content_pattern_in_prd"
+        target: "projects/{project}/docs/01-requirements/"
+        pattern: "系统闭环验证.*通过"
+        description: |
+          V3.4.0新增——阶段2系统划分的闭环验证。
+          9要素：商品创建/展示/下单/支付/发货/查看/售后/处理/系统归属。
+          从"商品创建"出发，沿"展示→下单→支付→发货→收货→售后"链路走一遍，每个环节都有明确的系统归属。
+          PM检查：PRD中系统闭环验证结论为"通过"，9要素全部明确系统归属。
+        on_fail: "阻止进入阶段3。PM驳回BA：系统闭环验证未通过。BA必须完成9要素验证，每个环节明确系统归属。"
+      - id: "G-REQ-24"
+        type: "hard_gate"
+        name: "系统划分完整性（V3.4.0新增）"
+        check: "file_exists"
+        target: "projects/{project}/docs/01-requirements/"
+        pattern: "系统泳道图"
+        description: |
+          V3.4.0新增——阶段2系统划分的产物完整性。
+          PM检查：
+          1. 系统泳道图存在（按业务系统分泳道，含系统间配合箭头）
+          2. 业务系统清单存在（系统名/缩写/边界/职责/复用性）
+          3. 系统间配合分析存在（系统间接口+第三方接口时序图）
+          4. 系统边界已冻结（用户确认冻结）
+        on_fail: "阻止进入阶段3。PM驳回BA：系统划分产物不完整。BA必须完成系统泳道图+系统清单+系统间配合分析。"
+      - id: "G-REQ-25"
+        type: "hard_gate"
+        name: "终端划分完整性（V3.4.0新增）"
+        check: "file_exists"
+        target: "projects/{project}/docs/01-requirements/"
+        pattern: "终端泳道图"
+        description: |
+          V3.4.0新增——阶段3终端划分的产物完整性。
+          PM检查：
+          1. 终端泳道图存在（按终端分泳道，含跨端流转箭头）
+          2. 业务系统×终端矩阵存在（哪个系统运行在哪个终端）
+          3. 跨端流转路径存在（哪些操作跨端，跨端数据传递点）
+          4. 终端清单已冻结（用户确认冻结）
+          架构师从终端泳道图提取：需要几套前端代码+几个base path+跨端API+Mock后端接口。
+        on_fail: "阻止进入架构评审。PM驳回BA：终端划分产物不完整。BA必须完成终端泳道图+系统×终端矩阵+跨端流转路径。"
+
+  # ---- 公共流程：需求理解+影响分析+融合分析（V3.5.0新增）----
+  impact_fusion:
+    owner: "ba-agent"
+    workflow: "demand-impact-fusion-flow.yml"
+    description: |
+      V3.5.0新增——需求理解+影响分析+融合分析公共流程门禁。
+      /init(存量)和/change共用此流程，保证影响分析一致性。
+    gates:
+      - id: "G-IMPACT-01"
+        type: "hard_gate"
+        name: "知识库5层检索完整性（V3.5.0新增）"
+        check: "content_pattern"
+        target: "impact报告 retrieval_log"
+        pattern: "layers_accessed.*layer.*5"
+        description: |
+          影响分析必须5层知识库全量检索（PRD+版本沉淀逐版本+项目经验+通用经验+领域知识）。
+          当前成员对应的project下所有已close版本必须全部扫描。
+          检查retrieval_log中5层全部accessed + versions_scanned覆盖全部已close版本。
+        on_fail: "阻止进入融合分析。PM驳回BA：知识库检索不完整，必须补全5层检索+全部已close版本扫描。"
+        iron_rule: "IMPACT-01"
+
+      - id: "G-IMPACT-02"
+        type: "hard_gate"
+        name: "10维影响扫描完整性（V3.5.0新增）"
+        check: "content_pattern"
+        target: "impact报告 impact_matrix"
+        pattern: "按depth_mode的dimensions清单"
+        description: |
+          按深度模式（lite=2维/standard=6维/full=10维）逐条校验扫描结果。
+          每维有扫描结果，缺失维度视为不通过。
+        on_fail: "阻止进入收窄机制。PM驳回BA：影响扫描维度不完整，必须补全。"
+
+      - id: "G-IMPACT-03"
+        type: "hard_gate"
+        name: "收窄日志完整性（V3.5.0新增）"
+        check: "content_pattern"
+        target: "impact-narrowing-log-{version}.yml"
+        pattern: "excluded.*reason.*risk_flag"
+        description: |
+          收窄排除项必须记录排除原因+风险标记（后续版本处理标记）。
+          禁止无原因排除、禁止无风险标记排除。
+          检查narrowing_log中排除项全部有reason+risk_flag。
+        on_fail: "阻止影响范围冻结。PM驳回BA：收窄排除项缺少原因或风险标记，必须补全。"
+        iron_rule: "IMPACT-03"
+
+      - id: "G-IMPACT-04"
+        type: "hard_gate"
+        name: "三维融合度评估完整性（V3.5.0新增）"
+        check: "content_pattern"
+        target: "融合分析报告 business_fusion"
+        pattern: "process_integration.*role_permission.*data_flow.*overall"
+        description: |
+          融合分析必须执行三维业务融合度评估（流程衔接度+角色权限交叉度+数据流交叉度）。
+          三维全部有level+details，overall判定存在。
+          禁止只做技术影响面评分不做业务融合度。
+        on_fail: "阻止进入版本规划判断。PM驳回BA：三维融合度评估不完整，必须补全。"
+        iron_rule: "IMPACT-04"
+
+      - id: "G-IMPACT-05"
+        type: "hard_gate"
+        name: "版本规划决策完整性（V3.5.0新增）"
+        check: "content_pattern"
+        target: "融合分析报告 version_planning"
+        pattern: "planning_decision"
+        description: |
+          综合评分L/XL时必须有round_2_planning产出。
+          XL必须有planning_decision（split或single_version+risk_flag）。
+          L须有用户确认（单版本或拆分）。
+          S/M可跳过第2轮但fusion_report仍须有version_planning.decision=single_version。
+        on_fail: "阻止进入三阶段分析。PM驳回BA：版本规划决策缺失，必须补全。"
+        iron_rule: "IMPACT-05"
 
   # ---- Stage-3 设计 ----
   design:
