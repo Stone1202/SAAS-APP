@@ -12,13 +12,17 @@
       :auditEnabled="false"
     />
 
-    <!-- 告警统计 -->
+    <!-- 告警统计（红黄蓝三级+审查状态） -->
     <AlertStatsBar
       :total="violations.length"
         :pending="violations.filter((v: any) => v.disposal_status === 'pending').length"
         :recorded="violations.filter((v: any) => v.disposal_status === 'recorded').length"
         :ignored="violations.filter((v: any) => v.disposal_status === 'ignored').length"
         :severe="violations.filter((v: any) => v.violation_level === 'L1').length"
+        :redCount="violations.filter((v: any) => v.violation_level === 'L1' || v.violation_level === 'L2').length"
+        :yellowCount="violations.filter((v: any) => v.violation_level === 'L3').length"
+        :blueCount="violations.filter((v: any) => v.violation_level === 'L4').length"
+        auditStatus="stopped"
     />
 
     <!-- 违规列表（只读） -->
@@ -32,6 +36,7 @@
     <DisposalBar
       :canAct="false"
       :canSever="false"
+      :canIgnore="false"
       @record="() => {}"
       @sever="() => {}"
       @ignore="() => {}"

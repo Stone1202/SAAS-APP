@@ -18,13 +18,17 @@
         :auditEnabled="auditEnabled"
       />
 
-      <!-- 告警统计 -->
+      <!-- 告警统计（红黄蓝三级+审查状态） -->
       <AlertStatsBar
         :total="violations.length"
         :pending="violations.filter((v: any) => v.disposal_status === 'pending').length"
         :recorded="violations.filter((v: any) => v.disposal_status === 'recorded').length"
         :ignored="violations.filter((v: any) => v.disposal_status === 'ignored').length"
         :severe="violations.filter((v: any) => v.violation_level === 'L1').length"
+        :redCount="violations.filter((v: any) => v.violation_level === 'L1' || v.violation_level === 'L2').length"
+        :yellowCount="violations.filter((v: any) => v.violation_level === 'L3').length"
+        :blueCount="violations.filter((v: any) => v.violation_level === 'L4').length"
+        auditStatus="reviewing"
       />
 
       <!-- 违规列表 -->
@@ -34,10 +38,11 @@
         @select="selectViolation"
       />
 
-      <!-- 处置按钮栏 -->
+      <!-- 处置按钮栏（BR-AUDIT-003 渐进式规则） -->
       <DisposalBar
         :canAct="!!selectedViolation && selectedViolation.disposal_status === 'pending'"
-        :canSever="!!selectedViolation && selectedViolation.violation_level === 'L1'"
+        :canSever="!!selectedViolation && selectedViolation.violation_level !== 'L4'"
+        :canIgnore="!!selectedViolation && selectedViolation.violation_level !== 'L1'"
         @record="openDisposal('record')"
         @sever="openDisposal('sever')"
         @ignore="openDisposal('ignore')"
@@ -80,7 +85,7 @@ const route = useRoute();
 const store = useAuditStore();
 
 // 路由参数
-const streamId = computed(() => (route.query.streamId as string) || '');
+const streamId = computed(() => (route.query.streamId as string) || (route.params.streamId as string) || 'stream-001');
 
 // 场次信息（仿真）
 const fieldInfo = ref({

@@ -15,10 +15,8 @@
         <!-- 审查开关控制 -->
         <AuditSwitchControl
           :enabled="t.audit_enabled"
-          :level="t.mute_mode === 'silent' ? 'all' : 'custom' as any"
           :lastOperation="getLastOp(t.tenant_id)"
           @toggle="openSwitchModal(t)"
-          @update:level="(l) => updateLevel(t.tenant_id, l)"
         />
       </div>
     </div>
@@ -82,24 +80,11 @@ const tenants = ref<TenantAuditConfig[]>([
   },
 ]);
 
-// 审计级别缓存
-const levelCache = ref<Record<string, string>>({
-  'T-001': 'all',
-  'T-002': 'sensitive_only',
-  'T-003': 'all',
-  'T-004': 'custom',
-});
-
 // 最后操作记录
 const lastOps = ref<Record<string, string>>({});
 
 function getLastOp(tid: string) {
   return lastOps.value[tid] || '';
-}
-
-function updateLevel(tid: string, level: string) {
-  levelCache.value[tid] = level;
-  lastOps.value[tid] = `审查级别调为「${level === 'all' ? '全部' : level === 'sensitive_only' ? '仅涉黄涉暴' : '自定义'}」`;
 }
 
 const modalVisible = ref(false);

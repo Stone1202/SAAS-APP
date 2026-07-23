@@ -1,5 +1,5 @@
 <template>
-  <!-- B-AUDIT-002：审查开关控制区 -->
+  <!-- B-AUDIT-002：审查开关控制区（V1仅开关Toggle，审查级别由腾讯云配置层管理） -->
   <div class="audit-switch-control">
     <div class="control-row">
       <span class="control-label">内容审查</span>
@@ -12,26 +12,8 @@
       </button>
     </div>
 
-    <div class="divider" />
-
-    <div class="level-row">
-      <span class="control-label">审查级别</span>
-      <div class="radio-group">
-        <label
-          v-for="opt in levelOptions"
-          :key="opt.value"
-          :class="['radio-item', { active: level === opt.value, disabled: !enabled }]"
-        >
-          <input
-            type="radio"
-            :value="opt.value"
-            :checked="level === opt.value"
-            :disabled="!enabled"
-            @change="$emit('update:level', opt.value)"
-          />
-          <span>{{ opt.label }}</span>
-        </label>
-      </div>
+    <div class="audit-note">
+      审查策略由腾讯云审核模板统一配置，系统侧仅控制开关
     </div>
 
     <div v-if="lastOperation" class="last-op">
@@ -41,24 +23,14 @@
 </template>
 
 <script setup lang="ts">
-type AuditLevel = 'all' | 'sensitive_only' | 'custom';
-
 defineProps<{
   enabled: boolean;
-  level: AuditLevel;
   lastOperation?: string;
 }>();
 
 defineEmits<{
   toggle: [];
-  'update:level': [value: AuditLevel];
 }>();
-
-const levelOptions: { label: string; value: AuditLevel }[] = [
-  { label: '全部', value: 'all' },
-  { label: '仅涉黄涉暴', value: 'sensitive_only' },
-  { label: '自定义', value: 'custom' },
-];
 </script>
 
 <style scoped>
@@ -102,35 +74,14 @@ const levelOptions: { label: string; value: AuditLevel }[] = [
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 .toggle-switch.on .toggle-knob { left: 24px; }
-.divider {
-  height: 1px;
-  background: var(--color-border, #D9D9D9);
-  margin: 16px 0;
-}
-.level-row {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.radio-group {
-  display: flex;
-  gap: 16px;
-}
-.radio-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: var(--font-body, 14px);
-  color: var(--color-text-primary, #262626);
-  cursor: pointer;
-}
-.radio-item.disabled {
-  color: var(--color-text-secondary, #8C8C8C);
-  cursor: not-allowed;
-}
-.radio-item input[type="radio"] { accent-color: var(--color-primary, #1890FF); }
-.last-op {
+.audit-note {
   margin-top: 12px;
+  font-size: var(--font-small, 12px);
+  color: var(--color-text-secondary, #8C8C8C);
+  line-height: 1.5;
+}
+.last-op {
+  margin-top: 8px;
   font-size: var(--font-small, 12px);
   color: var(--color-text-secondary, #8C8C8C);
 }

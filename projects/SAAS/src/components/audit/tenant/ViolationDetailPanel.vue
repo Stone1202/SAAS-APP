@@ -121,7 +121,7 @@ function statusText(status: string) {
   animation: fade-in 0.2s ease-out;
 }
 .drawer-panel {
-  width: 420px;
+  width: 400px;
   max-width: 90vw;
   height: 100vh;
   background: #fff;

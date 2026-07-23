@@ -67,10 +67,12 @@ export const useAuditStore = defineStore('audit', () => {
 
   /** 告警统计（红黄蓝三级） */
   const alertStats = computed<AlertStats>(() => {
-    const stats = { l1: 0, l2: 0, l3: 0, l4: 0, total: violations.value.length };
+    const stats: AlertStats = { l1: 0, l2: 0, l3: 0, l4: 0, total: violations.value.length };
     for (const v of violations.value) {
-      if (v.violation_level in stats) {
-        stats[v.violation_level as keyof Pick<AlertStats, 'l1' | 'l2' | 'l3' | 'l4'>]++;
+      // violation_level 是大写（L1/L2/L3/L4），映射到 stat 小写键
+      const key = v.violation_level.toLowerCase() as keyof Omit<AlertStats, 'total'>;
+      if (key in stats) {
+        stats[key]++;
       }
     }
     return stats;
