@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -eo pipefail
 
 # ═════════════════════════════════════════════════════
 # POM 多项目一键构建脚本
@@ -45,19 +45,20 @@ for entry in "${PROJECTS[@]}"; do
   # 1. 安装依赖
   echo "  [1/3] npm install..."
   cd "$PROJECT_DIR"
-  npm install --prefer-offline --no-audit --no-fund 2>&1 | tail -3
+  npm install --no-audit --no-fund
   
   # 2. 构建
   echo "  [2/3] npm run build:sim..."
-  npm run build:sim 2>&1 | tail -5
+  npm run build:sim
   
   # 3. 复制产物到 artifacts
   if [ -d "$PROJECT_DIR/dist" ]; then
     mkdir -p "$VERSION_DIR"
     cp -r "$PROJECT_DIR/dist"/* "$VERSION_DIR/"
-    echo "  [3/3] Copied to: $member/$slug/v1.0.0/"
+    echo "  [3/3] Copied to: $member/$slug/v1.0.0/ ($(find "$VERSION_DIR" -type f | wc -l) files)"
   else
     echo "  [3/3] ERROR: dist/ not found after build!"
+    exit 1
   fi
 done
 
