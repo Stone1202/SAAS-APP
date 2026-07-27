@@ -23,6 +23,8 @@
       "acceptance_screenshots_dir": "docs/05-acceptance/screenshots/",
       "handoff_path": "docs/08-handoff/",
       "closed_at": "2026-07-27T12:00+08:00",
+      "reclosed_at": "2026-07-27T18:00+08:00",
+      "reclose_reason": "PRD HTML相关用例格式优化 + ViolationsPanel类型修复",
       "test_pass_rate": "100%",
       "acceptance": "4/4通过,验收通过",
       "quality_score": 92,
@@ -35,7 +37,8 @@
         {"stage": "test", "completed_at": "2026-07-27T11:30+08:00"},
         {"stage": "accept", "completed_at": "2026-07-27T11:40+08:00"},
         {"stage": "handoff", "completed_at": "2026-07-27T11:50+08:00"},
-        {"stage": "closed", "completed_at": "2026-07-27T12:00+08:00"}
+        {"stage": "closed", "completed_at": "2026-07-27T12:00+08:00"},
+        {"stage": "re-closed", "completed_at": "2026-07-27T18:00+08:00"}
       ]
     }
   ]
