@@ -1,5 +1,5 @@
 {
-  "name": "糖尿病智慧健康平台",
+  "name": "SugarMate",
   "version": "0.1.0",
   "project": {"type": "high-fidelity-simulation"},
   "techStack": {}, "contracts": {}, "db": {}, "modules": []
