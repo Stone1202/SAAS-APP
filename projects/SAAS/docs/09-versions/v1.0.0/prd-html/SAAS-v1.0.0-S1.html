@@ -283,8 +283,10 @@ sequenceDiagram
       <tr><th>影响数据</th><td colspan="3">tenant.audit_enabled, tenant.mute_mode, tenant_audit_log, audit_switch_event</td></tr>
     </table>
 
+    <!-- L1 锚点截图：租户管理列表 -->
     <div class="screenshot-wrap">
-      <img src="../../../05-acceptance/screenshots/ac-step3-01-admin-tenant.png" alt="运营后台-租户管理列表" loading="lazy">
+      <img src="screenshots/PG-AUDIT-PC-001-租户管理列表.png" alt="运营后台-租户管理列表（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption">PG-AUDIT-PC-001 · 运营后台-租户管理列表 · L1 锚点截图 · 2026-07-27 实时截取</div>
     </div>
 
     <div class="uc-segment">
@@ -307,6 +309,12 @@ sequenceDiagram
         <li><span class="tag tag-auto">系统自动</span> 系统保存 tenant.audit_enabled 状态，并生成操作日志（操作人/时间/租户/原状态/新状态/租户编号）；</li>
         <li><span class="tag tag-event">事件驱动</span> 系统通过共享 Store/BroadcastChannel 广播 audit_switch_event，下游页面（直播中控、直播列表、回放任务、观众端、历史违规入口）实时联动。</li>
       </ol>
+    </div>
+
+    <!-- L2 增量截图：审查开关弹窗 -->
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-AUDIT-PC-001-审查开关弹窗.png" alt="运营后台-审查开关二次确认弹窗（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption">PG-AUDIT-PC-001 · 审查开关二次确认弹窗 · L2 增量截图 · 步骤3触发</div>
     </div>
 
     <div class="uc-segment">
@@ -359,8 +367,17 @@ sequenceDiagram
       <tr><th>影响数据</th><td colspan="3">violation_record, live_stream.audit_status, callback_lost_event, disposal_log, live_stream.mute_mode</td></tr>
     </table>
 
+    <!-- L1 锚点截图：直播中控审查Tab -->
     <div class="screenshot-wrap">
-      <img src="../../../05-acceptance/screenshots/ac-step2-03-auditpanel.png" alt="直播中控-内容审查面板" loading="lazy">
+      <img src="screenshots/PG-AUDIT-PC-002-直播中控审查面板.png" alt="直播中控-内容审查面板（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption">PG-AUDIT-PC-002 · 直播中控内容审查Tab · L1 锚点截图 · 2026-07-27 实时截取</div>
+    </div>
+
+    <!-- L2 增量截图：历史违规列表面板 -->
+    <!-- ai:screenshot id=l2-violations page=PG-AUDIT-PC-004 ucs=UC-AUDIT-002 state=违规列表 visible_elements=违规列表/筛选器/详情面板 -->
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-AUDIT-PC-004-历史违规列表.png" alt="历史违规列表面板（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption">PG-AUDIT-PC-004 · 历史违规列表面板 · L2 增量截图 · 从直播中控入口进入</div>
     </div>
 
     <div class="uc-segment">
@@ -450,8 +467,11 @@ sequenceDiagram
       <tr><th>影响数据</th><td colspan="3">replay.mute_task_status, replay.publish_status, replay.mute_segments, replay.mute_mode, violation_record, replay.audit_log</td></tr>
     </table>
 
+    <!-- L1 锚点截图：回放详情审查 -->
+    <!-- ai:screenshot id=l1-replay page=PG-AUDIT-PC-003 ucs=UC-AUDIT-003 state=回放详情-擦音审查 -->
     <div class="screenshot-wrap">
-      <img src="../../../05-acceptance/screenshots/ac-step1-uc003-replay.png" alt="回放详情-擦音对比" loading="lazy">
+      <img src="screenshots/PG-AUDIT-PC-003-回放详情审查.png" alt="回放详情-擦音审查（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption">PG-AUDIT-PC-003 · 回放详情审查 · L1 锚点截图 · 2026-07-27 实时截取</div>
     </div>
 
     <div class="uc-segment">
@@ -538,8 +558,11 @@ sequenceDiagram
       <tr><th>影响数据</th><td colspan="3">live_stream.mute_mode, callback_lost_event, live_stream.audit_status（只读）</td></tr>
     </table>
 
+    <!-- L1 锚点截图：H5观众直播间 -->
+    <!-- ai:screenshot id=l1-viewer page=PG-AUDIT-APP-001 ucs=UC-AUDIT-004 terminal=H5 state=直播间审查效果感知 -->
     <div class="screenshot-wrap">
-      <img src="../../../05-acceptance/screenshots/ac-step2-04-viewer-h5.png" alt="观众端-H5直播间" loading="lazy">
+      <img src="screenshots/PG-AUDIT-APP-001-H5观众直播间.png" alt="H5观众直播间（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption">PG-AUDIT-APP-001 · H5观众直播间 · L1 锚点截图 · 2026-07-27 实时截取（375×812）</div>
     </div>
 
     <div class="uc-segment">
@@ -617,8 +640,11 @@ sequenceDiagram
       <tr><th>影响数据</th><td colspan="3">live_stream.status, live_stream.audit_enabled, replay.mute_status, replay.publish_status, tenant.audit_enabled</td></tr>
     </table>
 
+    <!-- L1 锚点截图：租户仪表板/直播场次列表 -->
+    <!-- ai:screenshot id=l1-dashboard page=PG-AUDIT-PC-005 ucs=UC-AUDIT-005 state=直播场次列表-审查入口 -->
     <div class="screenshot-wrap">
-      <img src="../../../05-acceptance/screenshots/ac-step2-01-dashboard.png" alt="租户后台-直播/回放管理列表" loading="lazy">
+      <img src="screenshots/PG-AUDIT-PC-005-租户仪表板.png" alt="租户仪表板-直播场次列表（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption">PG-AUDIT-PC-005 · 租户仪表板-直播场次列表 · L1 锚点截图 · 2026-07-27 实时截取</div>
     </div>
 
     <div class="uc-segment">
@@ -721,7 +747,7 @@ sequenceDiagram
     <b style="color:var(--c-green);">✅ 验收通过。</b>直播内容审查 v1.0.0 交付质量满足发布标准：核心功能链路（开关→审查→处置→回放→发布→观众感知）完整可用，3个终端（运营后台/租户后台/H5观众端）页面渲染正常，0个阻塞性Bug。
   </p>
   <p style="margin-top:8px;font-size:13px;color:var(--c-text-muted);">
-    验收报告：docs/05-acceptance/accept-reports/ACR-audit-v1.0.0-20260727.md ｜ 截图：docs/05-acceptance/screenshots/ (17张)
+    验收报告：docs/05-acceptance/accept-reports/ACR-audit-v1.0.0-20260727.md ｜ 实时截图：prd-html/screenshots/ (7张，2026-07-27 dev server 实时截取)
   </p>
 </div>
 
