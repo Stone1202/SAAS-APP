@@ -77,14 +77,16 @@ else
 fi
 
 # ── EdgeOne Pages SPA fallback 配置 ──
-# 每个 SPA 版本目录放一份 404.html（index.html 的副本），利用静态托管的
-# 目录级 404 回退机制，让深层路由正确加载 SPA，同时不影响静态资源。
-find "$ARTIFACTS" -name "index.html" -path "*/v*/*" | while read index_file; do
-  version_dir=$(dirname "$index_file")
-  cp "$index_file" "$version_dir/404.html"
-  echo "  SPA 404 fallback: $version_dir/404.html"
-done
-echo "=== SPA 404 fallback files created ==="
+# EdgeOne Pages 只识别根级 404.html。当访问子项目 SPA 的深层路由时，
+# 用根级 404.html 中的 JS 动态拉取对应 SPA 的 index.html 并替换文档，
+# 这样 URL 保持不变，Vue/React Router 能按深层路由正确渲染。
+ROOT_404_TEMPLATE="$WORKSPACE/deploy/404-template.html"
+if [ -f "$ROOT_404_TEMPLATE" ]; then
+  cp "$ROOT_404_TEMPLATE" "$ARTIFACTS/404.html"
+  echo "=== Root 404 fallback created ==="
+else
+  echo "=== WARNING: Root 404 template not found ==="
+fi
 
 # ── 列出产物结构 ──
 echo ""
