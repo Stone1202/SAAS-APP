@@ -1,11 +1,12 @@
 # PROJECT-INDEX.yml — POM 全局项目注册表
+# V2.2.0 — 新增项目 keywords 字段，支持用户输入语义路由
 # V2.1.0 — 按项目隔离（不按owner），项目有 members 列表
 # 维护者：PM Agent | 每次 /init 和 /close 时更新
 
-version: "2.1.0"
+version: "2.2.0"
 active_project: "SAAS"
 current_stream: "STR-SAAS-001"
-last_activity: "2026-07-22T14:30+08:00"
+last_activity: "2026-07-27T12:00+08:00"
 
 # ============================================
 # 成员注册表
@@ -16,6 +17,12 @@ members:
     role: "admin"
     git_name: "jojo"
     accessible_projects: ["AI-SCRM", "SAAS"]
+
+  - id: "Eltonliz"
+    name: "李政"
+    role: "member"
+    git_name: "Eltonliz"
+    accessible_projects: ["SAAS", "AI-SCRM"]
 
   # 示例：新增成员时在此追加
   # - id: "zhangsan"
@@ -32,11 +39,13 @@ projects:
     name: "AI-SCRM 智能SCRM平台"
     path: "projects/AI-SCRM"                      # V2.1.0: 按项目隔离（无owner维度）
     project_prefix: "ACRM"                        # 编号前缀（所有FN/UC/PG/MD/SC等使用）
-    members: ["jojo"]                             # V2.1.0: 项目成员列表（多人可协作同一项目）
+    members: ["jojo", "Eltonliz"]                 # V2.1.0: 项目成员列表（多人可协作同一项目）
     status: "active"
     stage: "acceptance"
     domain: "SAAS/SCRM"
     industries: ["大健康", "药业", "美妆", "百货"]
+    # V2.2.0: 项目关键词（用于 input_semantic_routing 语义匹配）
+    keywords: ["AI-SCRM", "SCRM", "运营后台", "租户后台", "租户中控", "客户管理", "统一通信", "待办中心", "跟进日历", "客户360", "话术库", "系统设置", "运营看板", "租户管理", "版本矩阵", "订阅订单", "AI用量", "营收分析"]
     po_planning_completed: true
     dev_port: 3333
     db_name: "ai-scrm-sim"                        # V2.1.0: 数据库名不含owner
@@ -52,13 +61,16 @@ projects:
     name: "SAAS直播内容审查系统"
     path: "projects/SAAS"
     project_prefix: "SAAS"
-    members: ["jojo"]
+    members: ["jojo", "Eltonliz"]
     status: "active"
-    stage: "arch"
+    stage: "closed"
     domain: "SAAS"
     industries: ["通用"]
+    # V2.2.0: 项目关键词（用于 input_semantic_routing 语义匹配）
+    keywords: ["SAAS", "直播", "直播审查", "直播内容审查", "擦音", "静音", "实时擦音", "回放擦音", "违规", "H5", "直播间", "直播中控", "中控台", "审查开关", "审查入口"]
     brainstorm_topic: "直播内容审查"
     brainstorm_type: "planning"
     brainstorm_confirmed: true
+    # /close 已由用户 jojo 显式执行（2026-07-27）
     streams:
-      - { id: "STR-SAAS-001", version: "v1.0.0", type: "新增", priority: "P0", stage: "arch", desc: "直播内容审查——实时擦音/静音+回放擦音/静音效果模拟（三终端）" }
+      - { id: "STR-SAAS-001", version: "v1.0.0", type: "新增", priority: "P0", stage: "closed", desc: "直播内容审查——实时擦音/静音+回放擦音/静音效果模拟（三终端）" }

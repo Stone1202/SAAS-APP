@@ -1,0 +1,42 @@
+{
+  "project": "SAAS",
+  "industry": "",
+  "platforms": [],
+  "status": "accept",
+  "released_baseline": "",
+  "auto_mode": false,
+  "streams": [
+    {
+      "id": "STR-SAAS-001",
+      "version": "v1.0.0",
+      "type": "新增",
+      "priority": "P0",
+      "stage": "closed",
+      "desc": "直播内容审查——实时擦音/静音+回放擦音/静音效果模拟（三终端）",
+      "brainstorm_topic": "直播内容审查",
+      "brainstorm_confirmed_path": "docs/00-brainstorm/直播内容审查/confirmed/BR-脑暴文档-确认稿.md",
+      "po_planning_path": "docs/00.5-product/",
+      "design_path": "docs/03-design/v1.0.0/内容审查/设计文档-内容审查-v1.0.0.md",
+      "design_review_path": "docs/03-design/v1.0.0/内容审查/REV-设计内部走查报告-V1.0.0.md",
+      "test_report_path": ".codebuddy/test-report/QA-TEST-REPORT-v1.0.0.md",
+      "acceptance_report_path": "docs/05-acceptance/accept-reports/ACR-audit-v1.0.0-20260727.md",
+      "acceptance_screenshots_dir": "docs/05-acceptance/screenshots/",
+      "handoff_path": "docs/08-handoff/",
+      "closed_at": "2026-07-27T12:00+08:00",
+      "test_pass_rate": "100%",
+      "acceptance": "4/4通过,验收通过",
+      "quality_score": 92,
+      "created_at": "2026-07-22T00:00+08:00",
+      "stage_history": [
+        {"stage": "requirement", "completed_at": "2026-07-22T12:00+08:00"},
+        {"stage": "design", "completed_at": "2026-07-22T14:00+08:00"},
+        {"stage": "arch", "completed_at": "2026-07-27T12:00+08:00"},
+        {"stage": "demo", "completed_at": "2026-07-27T11:00+08:00"},
+        {"stage": "test", "completed_at": "2026-07-27T11:30+08:00"},
+        {"stage": "accept", "completed_at": "2026-07-27T11:40+08:00"},
+        {"stage": "handoff", "completed_at": "2026-07-27T11:50+08:00"},
+        {"stage": "closed", "completed_at": "2026-07-27T12:00+08:00"}
+      ]
+    }
+  ]
+}
