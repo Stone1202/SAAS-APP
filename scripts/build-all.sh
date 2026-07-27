@@ -10,6 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 WORKSPACE="$(dirname "$SCRIPT_DIR")"
 ARTIFACTS="$WORKSPACE/deploy/artifacts"
 PORTAL_TEMPLATE="$WORKSPACE/deploy/access-portal/index.html"
+EDGEONE_CONFIG="$WORKSPACE/deploy/edgeone-pages.json"
 
 echo "=== POM Build All ==="
 echo "Workspace: $WORKSPACE"
@@ -71,6 +72,14 @@ if [ -f "$PORTAL_TEMPLATE" ]; then
 else
   echo ""
   echo "=== WARNING: Portal template not found ==="
+fi
+
+# ── EdgeOne Pages SPA fallback 配置 ──
+if [ -f "$EDGEONE_CONFIG" ]; then
+  cp "$EDGEONE_CONFIG" "$ARTIFACTS/edgeone.json"
+  echo "=== EdgeOne Pages config copied ==="
+else
+  echo "=== WARNING: EdgeOne Pages config not found ==="
 fi
 
 # ── 列出产物结构 ──

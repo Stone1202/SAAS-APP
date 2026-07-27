@@ -1,34 +1,28 @@
 {
-  "_comment": "EdgeOne Pages 多成员多项目多主题部署配置 — 自定义域名",
-  "base_domain": "prototype.jycao.cn",
-  "workspace": "scrm",
-  "deploy_root": "deploy/artifacts",
-  "routing_pattern": "/{member}/{project}/{topic}/{version}/",
-  "projects": {
-    "AI-SCRM": {
-      "root": "projects/AI-SCRM",
-      "framework": "react",
-      "build_command": "npm run build:sim",
-      "output_directory": "dist",
-      "env": {
-        "VITE_PROJECT_ID": "ai-scrm",
-        "VITE_BASE_PATH": "/{member}/AI-SCRM/{topic}/{version}/"
-      }
+  "rewrites": [
+    {
+      "source": "/jojo/SAAS/v1.0.0/*",
+      "destination": "/jojo/SAAS/v1.0.0/index.html"
     },
-    "SAAS": {
-      "root": "projects/SAAS",
-      "framework": "vue",
-      "build_command": "npm run build:sim",
-      "output_directory": "dist",
-      "env": {
-        "VITE_PROJECT_ID": "saas",
-        "VITE_BASE_PATH": "/{member}/SAAS/{topic}/{version}/"
-      }
+    {
+      "source": "/jojo/AI-SCRM/v1.0.0/*",
+      "destination": "/jojo/AI-SCRM/v1.0.0/index.html"
+    },
+    {
+      "source": "/jojo/*/v1.0.0/*",
+      "destination": "/jojo/$1/v1.0.0/index.html"
+    },
+    {
+      "source": "/Eltonliz/SAAS/v1.0.0/*",
+      "destination": "/Eltonliz/SAAS/v1.0.0/index.html"
+    },
+    {
+      "source": "/Eltonliz/AI-SCRM/v1.0.0/*",
+      "destination": "/Eltonliz/AI-SCRM/v1.0.0/index.html"
+    },
+    {
+      "source": "/Eltonliz/*/v1.0.0/*",
+      "destination": "/Eltonliz/$1/v1.0.0/index.html"
     }
-  },
-  "portal": {
-    "auto_generate": true,
-    "output": "deploy/artifacts/index.html",
-    "template": "deploy/access-portal/index.html"
-  }
+  ]
 }
