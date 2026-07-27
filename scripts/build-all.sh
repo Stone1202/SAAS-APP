@@ -49,8 +49,8 @@ for entry in "${PROJECTS[@]}"; do
   
   # 2. 构建（设置 base 路径，让资源引用指向正确的子目录）
   export VITE_BASE_PATH="/$member/$slug/v1.0.0/"
-  echo "  [2/3] npm run build:sim (base=$VITE_BASE_PATH)..."
-  npm run build:sim
+  echo "  [2/3] npx vite build --mode sim (base=$VITE_BASE_PATH)..."
+  npx vite build --mode sim || { echo "  [2/3] BUILD FAILED for $slug, skipping..."; continue; }
   
   # 3. 复制产物到 artifacts
   if [ -d "$PROJECT_DIR/dist" ]; then
@@ -58,8 +58,8 @@ for entry in "${PROJECTS[@]}"; do
     cp -r "$PROJECT_DIR/dist"/* "$VERSION_DIR/"
     echo "  [3/3] Copied to: $member/$slug/v1.0.0/ ($(find "$VERSION_DIR" -type f | wc -l) files)"
   else
-    echo "  [3/3] ERROR: dist/ not found after build!"
-    exit 1
+    echo "  [3/3] ERROR: dist/ not found after build, skipping..."
+    continue
   fi
 done
 

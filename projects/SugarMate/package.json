@@ -9,7 +9,7 @@
     "mock": "node mock-server/server.ts",
     "dev:mock": "concurrently \"vite --mode real\" \"node mock-server/server.ts\"",
     "build": "vite build --mode production",
-    "build:sim": "VITE_BASE_PATH=/jojo/SugarMate/v1.0.0/ vite build --mode sim",
+    "build:sim": "vite build --mode sim",
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
