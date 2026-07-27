@@ -10,9 +10,10 @@ deploy/                       @jojo180712
 .access-control.yml           @jojo180712
 
 # === 项目代码（按项目，授权成员可改） ===
-projects/AI-SCRM/             @jojo180712 @Eltonliz
-projects/SAAS/                @Eltonliz
-.codebuddy/knowledge/projects/SAAS/  @Eltonliz
+projects/AI-SCRM/             @jojo180712 @Eltonliz @fuyongjian @jiangrubin
+projects/SAAS/                @Eltonliz @linjinmei @fuyongjian @jiangrubin @zhuangjingxiang
+.codebuddy/knowledge/projects/SAAS/  @Eltonliz @linjinmei @fuyongjian @jiangrubin @zhuangjingxiang
+projects/SugarMate/           @jojo180712 @fuyongjian @jiangrubin
 
 # === 共享知识库（admin 审核） ===
 .codebuddy/knowledge/domains/        @jojo180712

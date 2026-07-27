@@ -27,6 +27,30 @@ members:
     role: "member"
     accessible_projects: ["SAAS", "AI-SCRM"]
 
+  - id: "linjinmei"
+    name: "林金梅"
+    git_name: "linjinmei"
+    role: "member"
+    accessible_projects: ["SAAS"]
+
+  - id: "fuyongjian"
+    name: "付永健"
+    git_name: "fuyongjian"
+    role: "member"
+    accessible_projects: ["AI-SCRM", "SAAS", "SugarMate"]
+
+  - id: "jiangrubin"
+    name: "江如彬"
+    git_name: "jiangrubin"
+    role: "member"
+    accessible_projects: ["AI-SCRM", "SAAS", "SugarMate"]
+
+  - id: "zhuangjingxiang"
+    name: "庄景翔"
+    git_name: "zhuangjingxiang"
+    role: "member"
+    accessible_projects: ["SAAS"]
+
 # ============================================
 # 权限边界定义
 # ============================================

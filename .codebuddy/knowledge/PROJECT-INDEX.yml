@@ -18,6 +18,34 @@ members:
   accessible_projects:
   - SAAS
   - AI-SCRM
+- id: linjinmei
+  name: 林金梅
+  role: member
+  git_name: linjinmei
+  accessible_projects:
+  - SAAS
+- id: fuyongjian
+  name: 付永健
+  role: member
+  git_name: fuyongjian
+  accessible_projects:
+  - AI-SCRM
+  - SAAS
+  - SugarMate
+- id: jiangrubin
+  name: 江如彬
+  role: member
+  git_name: jiangrubin
+  accessible_projects:
+  - AI-SCRM
+  - SAAS
+  - SugarMate
+- id: zhuangjingxiang
+  name: 庄景翔
+  role: member
+  git_name: zhuangjingxiang
+  accessible_projects:
+  - SAAS
 projects:
 - id: AI-SCRM
   name: AI-SCRM 智能SCRM平台
@@ -26,6 +54,8 @@ projects:
   members:
   - jojo
   - Eltonliz
+  - fuyongjian
+  - jiangrubin
   status: active
   stage: acceptance
   domain: SAAS/SCRM
@@ -78,6 +108,10 @@ projects:
   members:
   - jojo
   - Eltonliz
+  - linjinmei
+  - fuyongjian
+  - jiangrubin
+  - zhuangjingxiang
   status: active
   stage: closed
   domain: SAAS
@@ -112,6 +146,10 @@ projects:
 - id: SugarMate
   name: SugarMate（糖友之家）
   path: projects/SugarMate
+  members:
+  - jojo
+  - fuyongjian
+  - jiangrubin
   keywords:
   - 糖尿病
   - 慢病管理
