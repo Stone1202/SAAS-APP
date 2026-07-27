@@ -3,235 +3,444 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI-SCRM 项目门户</title>
-  <!--
-    自动生成规则：
-    - 由 deploy-manager Skill 在每次部署时全量扫描 deploy/artifacts/
-    - 发现所有 {member}/{project}/{version}/ 目录后自动更新
-    - BASE_DOMAIN 占位符在部署时替换为实际域名
-  -->
+  <title>高保真仿真门户网站</title>
   <style>
     :root {
-      --bg: #f0f2f5;
+      --bg: #f7f8fa;
       --card-bg: #ffffff;
       --text: #1a1a2e;
-      --text-secondary: #64748b;
-      --border: #e2e8f0;
-      --primary: #1677ff;
-      --primary-light: #e6f4ff;
-      --success: #52c41a;
-      --radius: 12px;
-      --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      --text-secondary: #6b7280;
+      --border: #e5e7eb;
+      --primary: #4f46e5;
+      --primary-light: #eef2ff;
+      --primary-dark: #4338ca;
+      --success: #059669;
+      --radius: 14px;
+      --radius-sm: 8px;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+      --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 24px rgba(0,0,0,0.08);
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
+      line-height: 1.6;
     }
+
+    /* ── Header ── */
     .header {
-      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #312e81 100%);
       color: white;
-      padding: 32px 48px;
+      padding: 48px 48px 40px;
+      position: relative;
+      overflow: hidden;
+    }
+    .header::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    .header-content {
+      position: relative;
+      z-index: 1;
+      max-width: 1200px;
+      margin: 0 auto;
     }
     .header h1 {
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 6px;
     }
     .header .subtitle {
-      margin-top: 6px;
-      font-size: 14px;
+      font-size: 15px;
+      color: #94a3b8;
+      font-weight: 400;
+    }
+    .header-stats {
+      display: flex;
+      gap: 32px;
+      margin-top: 24px;
+    }
+    .stat-item {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .stat-value {
+      font-size: 36px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-label {
+      font-size: 13px;
       color: #94a3b8;
     }
+
+    /* ── Container ── */
     .container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 32px 48px;
+      padding: 36px 48px;
     }
+
+    /* ── Member Section ── */
     .member-section {
-      margin-bottom: 40px;
+      margin-bottom: 44px;
     }
     .member-header {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
       margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 2px solid var(--border);
     }
     .member-avatar {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
-      background: var(--primary);
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
       color: white;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
-      font-weight: 600;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .member-info {
+      display: flex;
+      flex-direction: column;
     }
     .member-name {
-      font-size: 20px;
-      font-weight: 600;
+      font-size: 18px;
+      font-weight: 700;
     }
+    .member-role {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 1px;
+    }
+    .member-role .role-tag {
+      display: inline-block;
+      padding: 1px 10px;
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+    .member-role .role-tag.admin {
+      background: #fef3c7;
+      color: #d97706;
+    }
+
+    /* ── Project Grid ── */
     .project-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
       gap: 16px;
-      margin-bottom: 12px;
     }
     .project-card {
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 20px 24px;
-      box-shadow: var(--shadow);
-      transition: box-shadow 0.2s, border-color 0.2s;
+      padding: 22px 24px 18px;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.15s, box-shadow 0.2s, border-color 0.2s;
+      cursor: default;
     }
     .project-card:hover {
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: #c7d2fe;
     }
-    .project-name {
-      font-size: 16px;
-      font-weight: 600;
+    .project-card-header {
       display: flex;
       align-items: center;
-      gap: 8px;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .project-name {
+      font-size: 17px;
+      font-weight: 700;
     }
     .project-badge {
       font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-weight: 500;
+      padding: 2px 10px;
+      border-radius: 100px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
     }
-    .badge-react { background: #e6f4ff; color: #1677ff; }
-    .badge-vue { background: #ecfdf3; color: #16a34a; }
+    .badge-react { background: #dbeafe; color: #2563eb; }
+    .badge-vue   { background: #d1fae5; color: #059669; }
+    .badge-static { background: #f3e8ff; color: #7c3aed; }
+    .project-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+    .project-meta {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 14px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .meta-item { display: flex; align-items: center; gap: 4px; }
+
+    /* ── Version Links ── */
     .version-list {
-      margin-top: 14px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 7px;
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
     }
     .version-link {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 8px 12px;
-      border-radius: 8px;
-      background: #f8fafc;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      background: #f9fafb;
       text-decoration: none;
       color: var(--text);
       font-size: 14px;
-      transition: background 0.15s;
+      transition: all 0.15s;
+      border: 1px solid transparent;
     }
     .version-link:hover {
       background: var(--primary-light);
+      border-color: var(--primary);
       color: var(--primary);
     }
+    .version-link:active { transform: scale(0.99); }
     .version-tag {
-      font-family: "SF Mono", "Fira Code", monospace;
+      font-family: "SF Mono", "Fira Code", "JetBrains Mono", monospace;
       font-size: 13px;
-      font-weight: 500;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
-    .deploy-time {
+    .version-tag .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .dot-deployed { background: var(--success); }
+    .dot-pending { background: #f59e0b; }
+    .deploy-info {
       font-size: 12px;
       color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
+    .preview-icon {
+      opacity: 0;
+      transform: translateX(-4px);
+      transition: all 0.2s;
+    }
+    .version-link:hover .preview-icon {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* ── Empty State ── */
     .empty-state {
       text-align: center;
-      padding: 60px 20px;
+      padding: 72px 20px;
       color: var(--text-secondary);
     }
-    .empty-state .icon {
-      font-size: 48px;
-      margin-bottom: 16px;
-    }
+    .empty-state .icon { font-size: 52px; margin-bottom: 16px; }
+    .empty-state h3 { font-size: 18px; color: var(--text); margin-bottom: 6px; }
+    .empty-state p { font-size: 14px; line-height: 1.6; }
+
+    /* ── Footer ── */
     .footer {
       text-align: center;
-      padding: 24px;
+      padding: 28px;
       font-size: 12px;
       color: var(--text-secondary);
       border-top: 1px solid var(--border);
-      margin-top: 40px;
+      margin-top: 20px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .header { padding: 32px 24px 28px; }
+      .container { padding: 24px 20px; }
+      .project-grid { grid-template-columns: 1fr; }
+      .header h1 { font-size: 24px; }
+      .header-stats { gap: 20px; }
+      .stat-value { font-size: 28px; }
     }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>AI-SCRM 原型门户</h1>
-    <p class="subtitle">多成员 · 多项目 · 多版本 — 一站式原型访问入口</p>
+    <div class="header-content">
+      <h1>高保真仿真门户网站</h1>
+      <p class="subtitle">多成员 · 多项目 · 多版本 — 一站式高保真原型预览与访问入口</p>
+      <div class="header-stats"></div>
+    </div>
   </div>
 
-  <div class="container" id="app">
-    <!--
-      ═══════════════════════════════════════════
-      运行时结构（由 deploy-manager 生成）
-      ═══════════════════════════════════════════
-      每个 member 为一个 section，含 project-card 列表
-      每个 project-card 下按 topic 分组，每个 topic 下为 version-link 列表
-
-      占位标记：
-        {{BASE_DOMAIN}}  → 运行时替换为实际域名
-        {{MEMBERS}}      → 运行时替换为成员/项目/主题/版本数据
-
-      数据格式（JSON，注入到 <script> 标签）：
-        window.__DEPLOY_DATA__ = {
-          base_domain: "prototype.jycao.cn",
-          members: [
-            {
-              id: "jojo",
-              name: "jojo",
-              projects: [
-                {
-                  name: "AI-SCRM",
-                  framework: "react",
-                  topics: [
-                    {
-                      topic: "subscription-migration",
-                      versions: [
-                        { version: "v1.0.0", timestamp: "2026-07-23", url: "/jojo/AI-SCRM/subscription-migration/v1.0.0/" }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        };
-    -->
-  </div>
-
+  <div class="container" id="app"></div>
   <div class="footer">
     Powered by EdgeOne Pages · 部署时间：<span id="deploy-timestamp">--</span>
   </div>
 
-  <!-- 运行时数据注入区 -->
-  <script type="application/json" id="deploy-data">
-    {
-      "base_domain": "{{BASE_DOMAIN}}",
-      "members": {{MEMBERS}}
-    }
-  </script>
-
   <script>
-    // 解析注入数据
     (function() {
-      var dataEl = document.getElementById('deploy-data');
-      var data;
-      try {
-        data = JSON.parse(dataEl.textContent || dataEl.innerText);
-      } catch (e) {
-        data = null;
-      }
+      // ═══════════════════════════════════════
+      // 部署数据（由 deploy-manager 在部署时自动生成）
+      // 也可在此手动维护
+      // ═══════════════════════════════════════
+      var DEPLOY_DATA = {
+        base_domain: window.location.hostname,
+        members: [
+          {
+            id: "jojo",
+            name: "Jojo",
+            role: "admin",
+            projects: [
+              {
+                name: "AI-SCRM 智能SCRM平台",
+                slug: "AI-SCRM",
+                framework: "react",
+                desc: "双系统运营后台 + 租户中控 + AI沟通辅助闭环",
+                systems: 2, terminals: 2,
+                versions: [
+                  /**
+                   * NOTE: 
+                   * 路径格式：
+                   *   ./{member}/{project}/{version}/index.html
+                   * 
+                   * 部署时将项目 dist/ 复制到 deploy/artifacts/{member}/{project}/{version}/
+                   * 门户页面部署到 deploy/artifacts/index.html
+                   */
+                  { 
+                    version: "v1.0.0", 
+                    timestamp: "2026-07-21", 
+                    url: "./jojo/AI-SCRM/v1.0.0/index.html",
+                    status: "deployed"
+                  }
+                ]
+              },
+              {
+                name: "SAAS 直播内容审查系统",
+                slug: "SAAS",
+                framework: "vue",
+                desc: "直播实时擦音/静音 + 回放效果模拟 + 三终端",
+                systems: 3, terminals: 3,
+                versions: [
+                  { 
+                    version: "v1.0.0", 
+                    timestamp: "2026-07-27", 
+                    url: "./jojo/SAAS/v1.0.0/index.html",
+                    status: "deployed"
+                  }
+                ]
+              },
+              {
+                name: "糖尿病智慧健康平台",
+                slug: "糖尿病智慧健康平台",
+                framework: "vue",
+                desc: "糖尿病管理 · 健康监测 · 智能干预",
+                systems: 1, terminals: 2,
+                versions: [
+                  { 
+                    version: "v1.0.0", 
+                    timestamp: "2026-07-27", 
+                    url: "./jojo/糖尿病智慧健康平台/v1.0.0/index.html",
+                    status: "deployed"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            id: "Eltonliz",
+            name: "李政",
+            role: "member",
+            projects: [
+              {
+                name: "AI-SCRM 智能SCRM平台",
+                slug: "AI-SCRM",
+                framework: "react",
+                desc: "双系统运营后台 + 租户中控 + AI沟通辅助闭环",
+                systems: 2, terminals: 2,
+                versions: [
+                  { 
+                    version: "v1.0.0", 
+                    timestamp: "2026-07-21", 
+                    url: "./Eltonliz/AI-SCRM/v1.0.0/index.html",
+                    status: "deployed"
+                  }
+                ]
+              },
+              {
+                name: "SAAS 直播内容审查系统",
+                slug: "SAAS",
+                framework: "vue",
+                desc: "直播实时擦音/静音 + 回放效果模拟 + 三终端",
+                systems: 3, terminals: 3,
+                versions: [
+                  { 
+                    version: "v1.0.0", 
+                    timestamp: "2026-07-27", 
+                    url: "./Eltonliz/SAAS/v1.0.0/index.html",
+                    status: "deployed"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      };
 
+      // ═══════════════════════════════════════
+      // 渲染
+      // ═══════════════════════════════════════
       var container = document.getElementById('app');
-      var timestamp = document.getElementById('deploy-timestamp');
+      var timestampEl = document.getElementById('deploy-timestamp');
+      var statsEl = document.querySelector('.header-stats');
 
-      if (!data || !data.members || data.members.length === 0) {
-        container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>暂无部署内容</p><p style="font-size:13px;margin-top:4px;">成员提交部署后将自动出现在这里</p></div>';
-        timestamp.textContent = '--';
+      var data = DEPLOY_DATA;
+      var totalMembers = data.members.length;
+      var totalProjects = 0;
+      var totalVersions = 0;
+      var projectSet = {};
+      data.members.forEach(function(m) {
+        m.projects.forEach(function(p) {
+          projectSet[p.slug] = true;
+          totalVersions += p.versions.length;
+        });
+      });
+      totalProjects = Object.keys(projectSet).length;
+
+      // 头部统计
+      statsEl.innerHTML =
+        '<div class="stat-item"><span class="stat-value">' + totalMembers + '</span><span class="stat-label">位成员</span></div>' +
+        '<div class="stat-item"><span class="stat-value">' + totalProjects + '</span><span class="stat-label">个项目</span></div>' +
+        '<div class="stat-item"><span class="stat-value">' + totalVersions + '</span><span class="stat-label">个版本</span></div>';
+
+      if (!data.members || data.members.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><h3>暂无部署内容</h3><p>成员提交部署后将自动出现在这里</p></div>';
+        timestampEl.textContent = '--';
         return;
       }
 
@@ -239,45 +448,54 @@
       data.members.forEach(function(member) {
         html += '<div class="member-section">';
         html += '<div class="member-header">';
-        html += '<div class="member-avatar">' + (member.id.charAt(0).toUpperCase()) + '</div>';
-        html += '<span class="member-name">' + escapeHtml(member.id) + '</span>';
-        html += '</div>';
-        html += '<div class="project-grid">';
+        html += '<div class="member-avatar">' + (member.name || member.id).charAt(0).toUpperCase() + '</div>';
+        html += '<div class="member-info">';
+        html += '<span class="member-name">' + e(member.name || member.id) + '</span>';
+        html += '<span class="member-role"><span class="role-tag' + (member.role === 'admin' ? ' admin' : '') + '">' + (member.role === 'admin' ? '管理员' : '成员') + '</span></span>';
+        html += '</div></div>';
 
+        html += '<div class="project-grid">';
         member.projects.forEach(function(project) {
+          var badgeClass = project.framework === 'vue' ? 'badge-vue' : (project.framework === 'react' ? 'badge-react' : 'badge-static');
+          var badgeText = project.framework === 'vue' ? 'Vue' : (project.framework === 'react' ? 'React' : 'Static');
+
           html += '<div class="project-card">';
-          html += '<div class="project-name">';
-          html += escapeHtml(project.name);
-          var badgeClass = project.framework === 'vue' ? 'badge-vue' : 'badge-react';
-          html += '<span class="project-badge ' + badgeClass + '">' + (project.framework || 'react') + '</span>';
+          html += '<div class="project-card-header">';
+          html += '<span class="project-name">' + e(project.name) + '</span>';
+          html += '<span class="project-badge ' + badgeClass + '">' + badgeText + '</span>';
           html += '</div>';
-          
-          // 按主题分组展示
-          (project.topics || []).forEach(function(topicGroup) {
-            html += '<div class="topic-group" style="margin-top:12px;">';
-            html += '<div style="font-size:12px;color:#94a3b8;margin-bottom:6px;font-weight:500;">' + escapeHtml(topicGroup.topic) + '</div>';
-            html += '<div class="version-list">';
-            (topicGroup.versions || []).forEach(function(v) {
-              html += '<a class="version-link" href="' + v.url + '" target="_blank">';
-              html += '<span class="version-tag">' + escapeHtml(v.version) + '</span>';
-              html += '<span class="deploy-time">' + (v.timestamp ? v.timestamp.slice(0, 10) : '') + '</span>';
-              html += '</a>';
-            });
-            html += '</div></div>';
+          html += '<div class="project-desc">' + e(project.desc) + '</div>';
+          html += '<div class="project-meta">';
+          html += '<span class="meta-item">系统 ×' + project.systems + '</span>';
+          html += '<span class="meta-item">终端 ×' + project.terminals + '</span>';
+          html += '<span class="meta-item">' + project.versions.length + ' 个版本</span>';
+          html += '</div>';
+
+          html += '<div class="version-list">';
+          project.versions.forEach(function(v) {
+            var statusDot = v.status === 'deployed' ? 'dot-deployed' : 'dot-pending';
+            html += '<a class="version-link" href="' + v.url + '" target="_blank" rel="noopener">';
+            html += '<span class="version-tag"><span class="dot ' + statusDot + '"></span>' + e(v.version) + '</span>';
+            html += '<span class="deploy-info">';
+            html += '<span class="preview-icon">→</span>';
+            html += '<span>预览原型</span>';
+            html += '</span>';
+            html += '</a>';
           });
+          html += '</div>';
 
           html += '</div>';
         });
-
         html += '</div></div>';
       });
 
       container.innerHTML = html;
-      timestamp.textContent = data.base_domain ? new Date().toLocaleString('zh-CN') : '--';
+      timestampEl.textContent = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
     })();
 
-    function escapeHtml(str) {
-      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    function e(str) {
+      var s = String(str);
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
   </script>
 </body>
