@@ -13,6 +13,7 @@ interface OpsState {
   loadOrders: () => Promise<void>;
   approveTenant: (id: string, data: any) => Promise<void>;
   rejectTenant: (id: string, reason: string) => Promise<void>;
+  toggleTenantEnabled: (id: string) => Promise<void>;
   approveRefund: (id: string, amount?: number) => Promise<void>;
   rejectRefund: (id: string) => Promise<void>;
   updateVersionFeature: (feature: string, versions: any) => Promise<void>;
@@ -60,6 +61,11 @@ export const useOpsStore = create<OpsState>((set) => ({
 
   rejectTenant: async (id, reason) => {
     const updated = await tenantService.reject(id, reason);
+    set((s) => ({ tenants: s.tenants.map((t) => (t.id === id ? updated : t)) }));
+  },
+
+  toggleTenantEnabled: async (id) => {
+    const updated = await tenantService.toggleEnabled(id);
     set((s) => ({ tenants: s.tenants.map((t) => (t.id === id ? updated : t)) }));
   },
 

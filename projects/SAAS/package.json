@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
+    "build:sim": "vite build --mode sim",
     "preview": "vite preview",
     "test": "vitest --run",
     "test:watch": "vitest",
@@ -20,10 +21,12 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@mermaid-js/mermaid-cli": "^11.16.0",
     "@playwright/test": "^1.61.1",
     "@types/node": "^26.1.1",
     "@vitejs/plugin-vue": "^5.0.4",
     "jsdom": "^29.1.1",
+    "mermaid": "^11.16.0",
     "typescript": "^5.4.3",
     "vite": "^5.2.6",
     "vitest": "^4.1.10",

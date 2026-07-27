@@ -13,6 +13,14 @@ export const tenantService = {
   getById: tenantRepository.getById,
   approve: tenantRepository.approve,
   reject: tenantRepository.reject,
+  async setEnabled(id: string, enabled: boolean) {
+    const existing = await tenantRepository.getById(id);
+    if (!existing) throw new Error('Tenant not found');
+    return tenantRepository.update(id, { enabled, status: enabled ? 'ACTIVE' : 'SUSPENDED' });
+  },
+  async toggleEnabled(id: string) {
+    return tenantRepository.toggleEnabled(id);
+  },
 };
 
 // ============================================

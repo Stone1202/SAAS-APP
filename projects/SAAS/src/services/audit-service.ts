@@ -66,9 +66,10 @@ export function useAuditService() {
     // 更新Store（状态过渡 + 处置记录）
     store.disposeViolation(violationId, disposal);
 
-    // 断流 → 场次状态变为已结束
+    // 断流 → 场次状态变为已结束，停止接受新违规通知
     if (disposalType === 'cut_off') {
-      store.setFieldStatus('ended');
+      store.setFieldStatus('ended', violation.stream_id);
+      store.mockRunning = false;
     }
 
     return disposal;
@@ -114,6 +115,8 @@ export function useReplayService() {
       stream_id: streamId,
       replay_file_url: `https://mock-cos.example.com/replay/${streamId}/original.mp4`,
       task_status: 'processing',
+      /** BR-AUDIT-004/015: 擦音完成后默认待核对 */
+      publish_status: 'pending_review',
       progress: 0,
       started_at: new Date().toISOString(),
     };
@@ -142,6 +145,7 @@ export function useReplayService() {
           const timeoutTask: ReplayMuteTask = {
             ...task,
             task_status: 'timeout',
+            publish_status: 'pending_review',
             progress: currentProgress,
             completed_at: new Date().toISOString(),
             error_msg: '擦音处理超时（30秒），请手动重试',
@@ -157,6 +161,7 @@ export function useReplayService() {
           const failTask: ReplayMuteTask = {
             ...task,
             task_status: 'failed',
+            publish_status: 'pending_review',
             progress: currentProgress,
             completed_at: new Date().toISOString(),
             error_msg: '擦音处理失败：模拟音频解码错误',
@@ -173,6 +178,7 @@ export function useReplayService() {
           const completeTask: ReplayMuteTask = {
             ...task,
             task_status: 'completed',
+            publish_status: 'pending_review',
             progress: 100,
             muted_file_url: `https://mock-cos.example.com/replay/${task.stream_id}/muted.mp4`,
             completed_at: new Date().toISOString(),
@@ -188,9 +194,11 @@ export function useReplayService() {
     });
   }
 
-  /** 重新擦音 */
+  /** 重新擦音（BR-AUDIT-015: 驳回后重试，重置发布状态） */
   async function retryMute(streamId: string): Promise<ReplayMuteTask> {
     store.setReplayTask(null);
+    // 重置回放发布状态为待核对
+    store.replayPublishStatus = 'pending_review';
     return startReplayMute(streamId);
   }
 

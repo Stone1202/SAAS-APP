@@ -51,6 +51,9 @@ const validDisposal = {
 const validTenantConfig = {
   tenant_id: 'T-001',
   tenant_name: '九天科技',
+  contact_phone: '13800138000',
+  registered_at: '2025-01-01T00:00:00.000Z',
+  is_enabled: true,
   industry: '科技',
   stream_domain: 'rtmp://live-push.xxkeji.com/live',
   audit_enabled: true,

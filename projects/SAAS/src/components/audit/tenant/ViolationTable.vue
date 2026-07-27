@@ -23,6 +23,10 @@
         <option value="time-asc">时间↑</option>
         <option value="severity">严重度</option>
       </select>
+      <HelpIcon
+        v-if="onHelpClick"
+        @click="onHelpClick('E-AUDIT-002-04')"
+      />
     </div>
 
     <!-- 列表区 -->
@@ -31,8 +35,8 @@
       <div
         v-for="v in filteredViolations"
         :key="v.violation_id"
-        :class="['violation-row', { selected: selectedId === v.violation_id }]"
-        @click="$emit('select', v.violation_id)"
+        :class="['violation-row', { selected: selectedId === v.violation_id, readonly: disabled }]"
+        @click="handleRowClick(v.violation_id)"
       >
         <!-- 色条 -->
         <div :class="['color-bar', levelClass(v.violation_level)]" />
@@ -54,16 +58,25 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import HelpIcon from '../../use-case-card/HelpIcon.vue';
 import type { ReviewViolation, ViolationType } from '../../../contracts';
 
 const props = defineProps<{
   violations: ReviewViolation[];
   selectedId?: string;
+  disabled?: boolean;
+  onHelpClick?: (elementId: string) => void;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   select: [id: string];
 }>();
+
+/** 点击行时：只读模式禁止选中 */
+function handleRowClick(id: string) {
+  if (props.disabled) return;
+  emit('select', id);
+}
 
 // 筛选/排序
 const filterLevel = ref('');
@@ -157,6 +170,8 @@ function truncate(text: string, max: number) {
 }
 .violation-row:hover { background: var(--color-muted, #F5F5F5); }
 .violation-row.selected { background: var(--color-info-bg, #E6F7FF); }
+.violation-row.readonly { cursor: default; opacity: 0.7; }
+.violation-row.readonly:hover { background: transparent; }
 .color-bar {
   width: 4px;
   min-height: 54px;

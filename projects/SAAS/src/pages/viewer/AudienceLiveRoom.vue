@@ -1,8 +1,11 @@
 <template>
   <!-- PG-AUDIT-APP-001：观众端直播间 /h5/live/:roomId -->
-  <div class="audience-live-room">
-    <!-- 顶部连接状态 -->
-    <CallbackLostBanner :visible="!callbackReceived" />
+  <div class="audience-live-room" @click="ensureAudioContext">
+    <!-- 顶部连接状态：仅在中控显式标记回调丢失时显示 -->
+    <CallbackLostBanner :visible="store.callbackLost" />
+
+    <!-- 直播已结束覆盖层：通过 BroadcastChannel 接收中控断流事件 -->
+    <StreamEndedOverlay :visible="isStreamEnded" />
 
     <!-- 视频区域 -->
     <div class="video-area">
@@ -20,43 +23,44 @@
         </div>
       </div>
 
-      <!-- 擦音/静音效果覆盖层 -->
-      <MuteEffectOverlay :effect="currentEffect" />
-
-      <!-- 断流覆盖层 -->
-      <StreamEndedOverlay :visible="streamEnded" />
+      <!-- 擦音/静音效果覆盖层（由中控擦音模式驱动） -->
+      <MuteEffectOverlay :effect="store.liveEffect" />
     </div>
 
     <!-- 底部信息提示 -->
     <div class="bottom-info">
       <span class="room-id">房间号：{{ roomId }}</span>
-      <span v-if="currentEffect" :class="['effect-badge', currentEffect]">
-        {{ currentEffect === 'silent' ? '🔇 静音中' : '🔔 擦音中' }}
+      <span v-if="store.liveEffect" :class="['effect-badge', store.liveEffect]">
+        {{ store.liveEffect === 'silent' ? '🔇 静音中' : '🔔 擦音中' }}
       </span>
     </div>
 
-    <!-- 调试面板（仿真用） -->
-    <div class="debug-panel">
-      <div class="debug-title">仿真调试面板</div>
-      <div class="debug-controls">
-        <button @click="triggerEffect('silent')">触发静音</button>
-        <button @click="triggerEffect('beep')">触发擦音</button>
-        <button @click="clearEffect">清除效果</button>
-        <button @click="triggerEnd">模拟断流</button>
-        <button @click="triggerTimeout">模拟回调超时</button>
-      </div>
+    <!-- 音频提示：首次点击画面以启用声音 -->
+    <div v-if="audioHintVisible" class="audio-hint" @click.stop="ensureAudioContext">
+      点击画面以启用声音效果
     </div>
+
+    <!-- 用例交互卡 -->
+    <HelpButton @open="showDrawer = true" />
+    <UseCaseDrawer
+      :visible="showDrawer"
+      title="用例卡 — 观众端直播间"
+      :cards="audienceLiveRoomCards as any"
+      @close="showDrawer = false"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuditStore } from '../../stores/audit-store';
+import HelpButton from '../../components/use-case-card/HelpButton.vue';
+import UseCaseDrawer from '../../components/use-case-card/UseCaseDrawer.vue';
+import { audienceLiveRoomCards } from './useCaseCardData';
 import MuteEffectOverlay from '../../components/audit/viewer/MuteEffectOverlay.vue';
-import StreamEndedOverlay from '../../components/audit/viewer/StreamEndedOverlay.vue';
 import CallbackLostBanner from '../../components/audit/viewer/CallbackLostBanner.vue';
-import type { MuteMode } from '../../contracts';
+import StreamEndedOverlay from '../../components/audit/viewer/StreamEndedOverlay.vue';
 
 const route = useRoute();
 const store = useAuditStore();
@@ -66,37 +70,86 @@ const roomId = computed(() => (route.params.roomId as string) || 'ROOM-001');
 // 主播信息
 const anchorInfo = ref({ name: '主播小A' });
 const viewerCount = ref(25600);
+const showDrawer = ref(false);
 
-// 审查效果状态
-const currentEffect = ref<'silent' | 'beep' | null>(null);
-const streamEnded = ref(false);
-const callbackReceived = ref(false);
+// V3.0修复：通过 BroadcastChannel 监听中控断流，H5感知直播已结束
+const isStreamEnded = computed(() => store.fieldStatus === 'ended');
 
-// 仿真函数
-function triggerEffect(mode: 'silent' | 'beep') {
-  currentEffect.value = mode;
-  callbackReceived.value = true;
-  setTimeout(() => { callbackReceived.value = false; }, 500);
+// Web Audio API：擦音模式持续播放提示音
+let audioCtx: AudioContext | null = null;
+let beepOsc: OscillatorNode | null = null;
+let beepGain: GainNode | null = null;
+const audioHintVisible = ref(true);
+
+function ensureAudioContext() {
+  const AC = window.AudioContext || (window as any).webkitAudioContext;
+  if (!AC) return null;
+  if (!audioCtx) {
+    audioCtx = new AC();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume().then(() => {
+      audioHintVisible.value = false;
+    });
+  } else {
+    audioHintVisible.value = false;
+  }
+  return audioCtx;
 }
 
-function clearEffect() {
-  currentEffect.value = null;
-  callbackReceived.value = false;
+function startBeepLoop() {
+  stopBeepLoop();
+  const ctx = ensureAudioContext();
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(1000, ctx.currentTime);
+  gain.gain.setValueAtTime(0.05, ctx.currentTime);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start();
+  beepOsc = osc;
+  beepGain = gain;
 }
 
-function triggerEnd() {
-  streamEnded.value = true;
-  currentEffect.value = null;
+function stopBeepLoop() {
+  if (beepOsc) {
+    try { beepOsc.stop(); } catch {}
+    beepOsc.disconnect();
+    beepOsc = null;
+  }
+  if (beepGain) {
+    beepGain.disconnect();
+    beepGain = null;
+  }
 }
 
-function triggerTimeout() {
-  streamEnded.value = false;
-  currentEffect.value = null;
-  callbackReceived.value = false;
-}
+// 监听中控下发的直播效果：静音=停止声音，擦音=播放提示音
+watch(() => store.liveEffect, (effect) => {
+  if (effect === 'beep') {
+    startBeepLoop();
+  } else {
+    stopBeepLoop();
+  }
+}, { immediate: true });
+
+// V3.0修复：直播结束（断流）时停止音频
+watch(() => store.fieldStatus, (status) => {
+  if (status === 'ended') {
+    stopBeepLoop();
+  }
+});
 
 onMounted(() => {
   store.setFieldStatus('live');
+});
+
+onUnmounted(() => {
+  stopBeepLoop();
+  if (audioCtx && audioCtx.state !== 'closed') {
+    audioCtx.close().catch(() => {});
+  }
 });
 </script>
 
@@ -178,45 +231,18 @@ onMounted(() => {
 }
 .effect-badge.silent { background: var(--color-danger, #F5222D); color: #fff; }
 .effect-badge.beep { background: var(--color-warning, #FA8C16); color: #fff; }
-/* 调试面板 */
-.debug-panel {
+/* 音频启用提示 */
+.audio-hint {
   position: absolute;
-  bottom: 60px;
-  left: 16px;
-  right: 16px;
-  background: rgba(0,0,0,0.85);
-  backdrop-filter: blur(12px);
-  border-radius: 12px;
-  padding: 12px 16px;
-  border: 1px solid rgba(255,255,255,0.1);
-  z-index: 200;
-}
-.debug-title {
-  color: rgba(255,255,255,0.6);
-  font-size: 11px;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.debug-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.debug-controls button {
-  padding: 5px 12px;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  padding: 8px 16px;
+  background: rgba(0,0,0,0.7);
+  color: rgba(255,255,255,0.9);
   font-size: 12px;
-  background: rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.8);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.debug-controls button:hover {
-  background: rgba(255,255,255,0.2);
-}
-.debug-controls button:active {
-  background: rgba(255,255,255,0.3);
+  border-radius: 16px;
+  pointer-events: auto;
 }
 </style>

@@ -1,11 +1,13 @@
 agent:
   id: "fd-agent"
   name: "FD Agent"
-  role: "前端开发"
+  role: "前端开发 + UML驱动实现"
   department: "研发部"
-  description: "将需求转化为可运行的仿真系统代码，必须遵守11条铁律"
+  description: "将需求转化为可运行的仿真系统代码，遵守13条铁律。V3.1.0新增UML驱动实现能力（状态机层级→组件状态管理、组合片段→条件渲染、通信图→组件边界）。"
   
   md_file: ".codebuddy/agents/fd-agent.md"
+  
+  version: "V3.1.0"
   
   skills:
     - "sim-code-generator"
@@ -13,14 +15,16 @@ agent:
     - "compliance-checker"
     - "prototype-annotator"
     - "multi-platform-code-generator"
+    - "uml-to-code-mapper"           # V3.1.0新增：UML模型→前端代码映射器
     - "instruction-card-generator"   # V5.1.0同步：与config.yml对齐
 
-  # V5.1.0新增：FD实现模式大脑能力声明
+  # V5.1.0增强：FD实现模式大脑能力声明 + V3.1.0 UML推理增强
   brain_capability:
     brain_id: "fd_brain_v1"
-    brain_name: "实现模式大脑"
+    brain_name: "实现模式大脑 + UML代码推理器"
     workflow_ref: "dev-flow.yml#ai_brain"
-    reasoning_modules: ["implementation_trap_prediction", "component_reuse_reasoning", "compliance_pattern_recognition", "visual_regression_risk"]
+    reasoning_modules: ["implementation_trap_prediction", "component_reuse_reasoning", "compliance_pattern_recognition", "visual_regression_risk", "uml_state_to_component_mapper", "uml_fragment_to_render_mapper"]
+    uml_knowledge_ref: ".codebuddy/knowledge/common/uml-standards.yml"
     memory_spec: ".codebuddy/knowledge/common/brain-memory-spec.yml"
     status: "active"
   

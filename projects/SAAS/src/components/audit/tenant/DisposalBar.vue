@@ -2,32 +2,83 @@
   <!-- B-AUDIT-005：处置按钮栏（BR-AUDIT-003 处置渐进式规则驱动） -->
   <div class="disposal-bar">
     <!-- 记录按钮 — 所有级别可用 -->
-    <button class="disposal-btn record" @click="$emit('record')" :disabled="!canAct" title="记录违规">
-      记录
-    </button>
-    <!-- 断流按钮 — L4违规禁用（该级别仅可记录） -->
-    <div class="btn-wrapper" v-if="canSever">
-      <button class="disposal-btn sever" @click="$emit('sever')" :disabled="!canAct" title="断流直播">
+    <div class="btn-wrapper">
+      <button class="disposal-btn record" @click="$emit('record')" :disabled="!canAct" title="记录违规">
+        记录
+      </button>
+      <HelpIcon
+        v-if="onHelpClick"
+        @click="onHelpClick('E-AUDIT-002-06-01')"
+        title="查看「记录」按钮用例说明"
+      />
+    </div>
+    <!-- 断流按钮 -->
+    <div class="btn-wrapper" v-if="canAct && canSever">
+      <button class="disposal-btn sever" @click="$emit('sever')" title="断流直播">
         断流
       </button>
+      <HelpIcon
+        v-if="onHelpClick"
+        @click="onHelpClick('E-AUDIT-002-06-02')"
+        title="查看「断流」按钮用例说明"
+      />
+    </div>
+    <div class="btn-wrapper" v-else-if="!canAct">
+      <!-- 未选中违规 → 所有按钮禁用，通用提示 -->
+      <button class="disposal-btn sever" disabled title="请先选择一条违规记录">
+        断流
+      </button>
+      <HelpIcon
+        v-if="onHelpClick"
+        @click="onHelpClick('E-AUDIT-002-06-02')"
+        title="查看「断流」按钮用例说明"
+      />
     </div>
     <div class="btn-wrapper" v-else>
+      <!-- 已选中但该级别不可断流（L4） -->
       <button class="disposal-btn sever" disabled title="该级别（L4）仅可记录，不可断流">
         断流
       </button>
       <span class="tooltip">L4仅可记录</span>
+      <HelpIcon
+        v-if="onHelpClick"
+        @click="onHelpClick('E-AUDIT-002-06-02')"
+        title="查看「断流」按钮用例说明"
+      />
     </div>
-    <!-- 忽略按钮 — L1违规禁用（严重违规不可忽略） -->
-    <div class="btn-wrapper" v-if="canIgnore">
-      <button class="disposal-btn ignore" @click="$emit('ignore')" :disabled="!canAct" title="忽略该违规">
+    <!-- 忽略按钮 -->
+    <div class="btn-wrapper" v-if="canAct && canIgnore">
+      <button class="disposal-btn ignore" @click="$emit('ignore')" title="忽略该违规">
         忽略
       </button>
+      <HelpIcon
+        v-if="onHelpClick"
+        @click="onHelpClick('E-AUDIT-002-06-03')"
+        title="查看「忽略」按钮用例说明"
+      />
+    </div>
+    <div class="btn-wrapper" v-else-if="!canAct">
+      <!-- 未选中违规 → 所有按钮禁用，通用提示 -->
+      <button class="disposal-btn ignore" disabled title="请先选择一条违规记录">
+        忽略
+      </button>
+      <HelpIcon
+        v-if="onHelpClick"
+        @click="onHelpClick('E-AUDIT-002-06-03')"
+        title="查看「忽略」按钮用例说明"
+      />
     </div>
     <div class="btn-wrapper" v-else>
+      <!-- 已选中但该级别不可忽略（L1） -->
       <button class="disposal-btn ignore" disabled title="该级别（L1）为严重违规，不可忽略">
         忽略
       </button>
       <span class="tooltip">L1不可忽略</span>
+      <HelpIcon
+        v-if="onHelpClick"
+        @click="onHelpClick('E-AUDIT-002-06-03')"
+        title="查看「忽略」按钮用例说明"
+      />
     </div>
   </div>
 </template>
@@ -49,6 +100,7 @@ defineProps<{
   canAct: boolean;
   canSever: boolean;
   canIgnore: boolean;
+  onHelpClick?: (elementId: string) => void;
 }>();
 
 defineEmits<{
@@ -70,8 +122,8 @@ defineEmits<{
 .btn-wrapper {
   position: relative;
   display: inline-flex;
-  flex-direction: column;
   align-items: center;
+  gap: 4px;
 }
 .tooltip {
   position: absolute;

@@ -56,7 +56,10 @@ parameter_naming:
 | `--brainstorm-type` | `/brainstorm` | 脑暴类型 | strategic/planning/regular |
 | `--report-type` | `/report` | 报告类型 | test/accept/doc-index |
 | `--source` | `/learn-*`, `/brainstorm`, `/init` | 知识来源 | scheme:value 格式，可多次指定 |
+| `--topic` | `/brainstorm`,`/init`,`/change`,`/fix`,`/close`,`/deploy` | 迭代主题（V2.0.0新增） | 唯一确定一条迭代线，支持多人并行 |
 
+> **V2.0.0变更**：新增 `--topic` 作为 `/init`、`/change`、`/fix`、`/close`、`/deploy` 的共同参数。原 `/init --brainstorm-topic` 改为 `/init --topic`（保留别名兼容）。`--topic` 支持独立指定（需求明确时）或从 brainstorm 继承。
+>
 > **V1.1.0变更**：`--owner` 参数已删除。系统自动从 `git user.name` 识别成员归属，不需要手动指定。
 
 ### 2.3 source 参数格式标准
@@ -178,7 +181,7 @@ category: "核心生命周期"
 pm_controlled: true
 workflow: "project-lifecycle.yml v5.3.0"
 
-usage: "/init --project=X --type=新增|迭代|变更|修复 --desc=需求描述 [--brainstorm-topic=脑暴议题名] [--file=...] [--api=...] [--source=...] [--priority=...]"
+usage: "/init --project=X --type=新增|迭代|变更|修复 --desc=需求描述 [--topic=迭代主题] [--file=...] [--api=...] [--source=...] [--priority=...]"
 
 parameters:
   - name: "--project"
@@ -216,14 +219,14 @@ parameters:
     type: "string"
     required: true
     description: "需求描述（自然语言）"
-    description: "需求描述（自然语言）"
     smart_hint: "简要描述需求目标，影响范围由BA自动识别"
 
-  - name: "--brainstorm-topic"
+  - name: "--topic"
     type: "string"
     required: false
     default: null
-    description: "脑暴议题名（V4.2.1新增）。指定后PM按议题查找 projects/{project}/docs/00-brainstorm/{topic}/confirmed/BR-脑暴文档-确认稿.md 作为BA背景输入，同时加载领域知识清单+API分析清单。未指定时若只有一个议题自动加载，多个议题提示选择。"
+    description: "迭代主题（V2.0.0新增）。唯一确定一条迭代线，支持多人并行协作。来源：①独立指定（需求明确时）②从 /brainstorm 继承（脑暴确认后自动填充）③未指定时若仅1个脑暴议题自动加载、多个议题提示选择、无议题则提示必填。同时加载 00-brainstorm/{topic}/confirmed/ 背景知识（如果存在）"
+    aliases: ["--brainstorm-topic"]
     smart_hint: "与/brainstorm --topic=议题名 对应，适合脑暴确认后隔段时间再/init的场景"
     missing_arg_prompt: "无需追问，未提供时自动检测议题数量决定加载策略"
 
@@ -278,13 +281,15 @@ category: "核心生命周期"
 pm_controlled: true
 workflow: "project-lifecycle.yml v5.3.0"
 
-usage: "/feedback --project=X [--type=Y] [--msg=反馈内容]   （--type 可省略，自动选当前进行中需求流）"
+usage: "/feedback --project=X [--type=Y] [--msg=反馈内容]   （--project 可省略，自动通过 input_semantic_routing 推断）"
 
 parameters:
   - name: "--project"
     type: "string"
-    required: true
-    description: "项目名称"
+    required: false
+    auto_infer: true
+    fallback: "PROJECT-INDEX.yml active_project"
+    description: "项目名称（可省略——PM Agent 会从用户输入中自动识别项目关键词，无匹配时回退 active_project）"
 
   - name: "--type"
     type: "enum"
@@ -302,7 +307,7 @@ parameters:
     smart_hint: "自然语言描述反馈，PM会路由到需求分析阶段"
 
 missing_arg_prompt:
-  "--project": "请提供项目名称。"
+  "--project": "（V3.0.0起可省略——PM Agent 自动从输入中识别项目关键词，无匹配时使用 active_project）"
 ```
 
 ### 3.4 /close — 结束需求流
@@ -313,13 +318,19 @@ category: "核心生命周期"
 pm_controlled: true
 workflow: "project-lifecycle.yml v5.3.0"
 
-usage: "/close --project=X [--type=Y]"
+usage: "/close --project=X [--topic=迭代主题] [--type=Y]"
 
 parameters:
   - name: "--project"
     type: "string"
     required: true
     description: "项目名称"
+
+  - name: "--topic"
+    type: "string"
+    required: false
+    default: null
+    description: "迭代主题（V2.0.0新增）。关闭时需指定正确的 topic 定位迭代线。不提供时自动选当前活跃迭代。"
 
   - name: "--type"
     type: "enum"
@@ -672,7 +683,7 @@ category: "核心生命周期"
 pm_controlled: true
 workflow: "change-request.yml v3.1.0"
 
-usage: "/change --project=X --desc=变更概述 [--module=模块] [--file=变更文档] [--api=接口文档] [--source=来源] [--platform=pc,app] [--priority=P0|P1|P2|P3]"
+usage: "/change --project=X --desc=变更概述 [--topic=迭代主题] [--module=模块] [--file=变更文档] [--api=接口文档] [--source=来源] [--platform=pc,app] [--priority=P0|P1|P2|P3]"
 
 parameters:
   - name: "--project"
@@ -680,6 +691,13 @@ parameters:
     required: true
     description: "项目名称"
     smart_hint: "须与 projects/{project}/ 目录匹配"
+
+  - name: "--topic"
+    type: "string"
+    required: false
+    default: null
+    description: "迭代主题（V2.0.0新增）。变更必须定位到正确的迭代线。不提供时：仅1个活跃topic自动选/多个topic提示选择/无topic提示必填。"
+    smart_hint: "多成员并行同一项目时必填，确保变更落在正确迭代"
 
   - name: "--desc"
     type: "string"
@@ -738,7 +756,7 @@ category: "核心生命周期"
 pm_controlled: true
 workflow: "change-request.yml v3.1.0"
 
-usage: "/fix --project=X --desc=Bug概述 [--module=模块] [--file=Bug详细文档] [--platform=pc] [--bug-id=xxx] [--priority=P0|P1|P2|P3]"
+usage: "/fix --project=X --desc=Bug概述 [--topic=迭代主题] [--module=模块] [--file=Bug详细文档] [--platform=pc] [--bug-id=xxx] [--priority=P0|P1|P2|P3]"
 
 parameters:
   - name: "--project"
@@ -746,6 +764,13 @@ parameters:
     required: true
     description: "项目名称"
     smart_hint: "须与 projects/{project}/ 目录匹配"
+
+  - name: "--topic"
+    type: "string"
+    required: false
+    default: null
+    description: "迭代主题（V2.0.0新增）。修复必须定位到正确的迭代线。不提供时：仅1个活跃topic自动选/多个topic提示选择/无topic提示必填。"
+    smart_hint: "多成员并行同一项目时必填，确保修复落在正确迭代"
 
   - name: "--desc"
     type: "string"
@@ -798,10 +823,10 @@ missing_arg_prompt:
 command: "/deploy"
 category: "特殊入口"
 pm_controlled: true
-workflow: "project-lifecycle.yml stage-9 / deploy-manager.yml V1.0.0"
+workflow: "project-lifecycle.yml stage-9 / deploy-manager.yml V2.0.0"
 
-usage: "/deploy --project=X [--version=v1.0.0] [--retry] [--status]"
-example: "/deploy --project=AI-SCRM"
+usage: "/deploy --project=X [--topic=迭代主题] [--version=v1.0.0] [--retry] [--status]"
+example: "/deploy --project=AI-SCRM --topic=subscription-migration"
 
 parameters:
   - name: "--project"
@@ -809,6 +834,13 @@ parameters:
     required: true
     description: "项目名称"
     smart_hint: "从 PROJECT-INDEX.yml 中已注册的项目选择"
+
+  - name: "--topic"
+    type: "string"
+    required: false
+    default: null
+    description: "迭代主题（V2.0.0新增）。部署URL含 /{member}/{project}/{topic}/{version}/，不提供时自动选当前活跃迭代。"
+    smart_hint: "多成员并行同一项目时必填，确保部署到正确路由"
 
   - name: "--version"
     type: "string"
@@ -834,11 +866,13 @@ modes:
     description: "部署当前版本或指定版本"
     condition: "未指定 --status 和 --retry"
     actions:
-      - "读取 deploy/edgeone-pages.json 获取项目部署配置"
-      - "注入 VITE_PROJECT_ID={owner}-{project} + VITE_MODE=sim"
+      - "读取 deploy/edgeone-pages.json 获取部署配置"
+      - "注入 VITE_BASE_PATH=/{member}/{project}/{topic}/{version}/ + VITE_PROJECT_ID={project} + VITE_MODE=sim"
       - "执行 npm run build:sim"
-      - "推送构建产物到 EdgeOne Pages"
-      - "生成访问 URL + 更新 DEPLOY-MANIFEST + PROJECT-INDEX + access-portal"
+      - "聚合到 deploy/artifacts/{member}/{project}/{topic}/{version}/"
+      - "全量推送 deploy/artifacts/ 到 EdgeOne Pages"
+      - "生成访问 URL: https://prototype.jycao.cn/{member}/{project}/{topic}/{version}/"
+      - "更新 DEPLOY-MANIFEST + PROJECT-INDEX + 门户首页自动生成"
 
   retry:
     description: "重试上次失败的部署"

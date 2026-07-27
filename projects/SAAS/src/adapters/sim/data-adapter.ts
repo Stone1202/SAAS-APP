@@ -110,7 +110,11 @@ class MockViolationGenerator {
     const initialDelay = 2000;
 
     const loop = () => {
-      if (!this.store || this.store.fieldStatus !== 'live') return;
+      // BR-AUDIT-017: 场次结束后停止接收新违规通知
+      if (!this.store || this.store.fieldStatus !== 'live' || !this.store.mockRunning) {
+        this.timer = null;
+        return;
+      }
 
       // 30%概率标记回调丢失
       const isCallbackLost = Math.random() < 0.3;

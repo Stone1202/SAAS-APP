@@ -63,9 +63,12 @@ configs:
   api_learner: ".codebuddy/knowledge/common/api-learner.yml"  # V3.4.0新增
   governance_audit: ".codebuddy/knowledge/common/governance-audit.yml"  # V3.4.0新增
   system_blueprints: ".codebuddy/knowledge/common/system-blueprints.yml"  # V3.5.0新增：AI系统常识推理框架
+  uml_standards: ".codebuddy/knowledge/common/uml-standards.yml"  # V3.6.0新增：UML 2.5 建模标准（状态机层级+动态交互图）
   brain_memory_spec: ".codebuddy/knowledge/common/brain-memory-spec.yml"  # V3.6.0新增：大脑记忆规范
   brain_evolution_engine: ".codebuddy/knowledge/common/brain-evolution-engine.yml"  # V3.6.0新增：大脑进化引擎
   demand_impact_fusion_flow: ".codebuddy/configs/workflows/demand-impact-fusion-flow.yml"  # V3.5.0新增：需求理解+影响分析+融合分析公共流程（/init和/change共用）
+  dev_change_flow: ".codebuddy/configs/workflows/dev-change-flow.yml"  # V4.1.0新增：开发中实时变更回传（非命令触发，AI自动感知分级回流）
+  demo_flow: ".codebuddy/configs/workflows/demo-flow.yml"  # V5.4.0新增：测试前强制Demo用户验收（逐UC验收+dev-change回流循环）
   deploy_config: "deploy/edgeone-pages.json"  # V1.0.0新增：部署配置
   deploy_manifest: "deploy/DEPLOY-MANIFEST.yml"  # V1.0.0新增：部署清单
   access_portal: "deploy/access-portal/index.html"  # V1.0.0新增：访问门户
@@ -175,8 +178,8 @@ agents:
 
   ba-agent:
     yml_file: .codebuddy/configs/agents/ba-agent.yml
-    skills: [state-enumerator, req-impact-analyzer, change-impact-analyzer, doc-processor, doc-splitter, instruction-card-generator, api-learner, faithful-analysis, feedback-processor, system-common-sense-analyzer]
-    description: "业务分析师 - 需求分析，按 PM 方法论产出 REQ 产物体系（含业务泳道图/业务操作矩阵/跨系统信息流）。V3.3.0新增AI增强系统常识推理。"
+    skills: [state-enumerator, uml-state-modeler, uml-interaction-modeler, req-impact-analyzer, change-impact-analyzer, doc-processor, doc-splitter, instruction-card-generator, api-learner, faithful-analysis, feedback-processor, system-common-sense-analyzer]
+    description: "业务分析师+UML建模专家 - 需求分析，按 PM 方法论产出 REQ 产物体系（含UML 2.5层级状态机+动态交互图）。V3.5.0新增UML专业建模能力。"
 
   pm-agent:
     yml_file: .codebuddy/configs/agents/pm-agent.yml
@@ -195,13 +198,13 @@ agents:
 
   fd-agent:
     yml_file: .codebuddy/configs/agents/fd-agent.yml
-    skills: [sim-code-generator, component-builder, compliance-checker, prototype-annotator, multi-platform-code-generator, instruction-card-generator]
-    description: "前端开发 - 将需求转化为可运行仿真系统+用例卡片嵌入+版本切换器（V5.0）"
+    skills: [sim-code-generator, component-builder, compliance-checker, prototype-annotator, multi-platform-code-generator, uml-to-code-mapper, instruction-card-generator]
+    description: "前端开发+UML驱动实现 - 将需求转化为可运行仿真系统+用例卡片嵌入+版本切换器。V3.1.0新增UML驱动实现能力。"
 
   qa-agent:
     yml_file: .codebuddy/configs/agents/qa-agent.yml
-    skills: [test-runner, bug-tracker]
-    description: "质量保障 - 基于BA产物编写用例，五层测试执行"
+    skills: [test-runner, bug-tracker, uml-test-extractor]
+    description: "质量保障+UML驱动测试 - 基于BA产出的UML 2.5模型提取测试用例，五层测试执行。V2.0.0新增UML驱动测试能力。"
 
   ac-agent:
     yml_file: .codebuddy/configs/agents/ac-agent.yml
@@ -215,8 +218,8 @@ agents:
 
   arch-agent:
     yml_file: .codebuddy/configs/agents/arch-agent.yml
-    skills: [arch-tech-stack-keeper, arch-contract-definer, arch-scaffold-reviewer, api-learner, mock-server-generator, e2e-scaffold-generator]
-    description: "高保真前端开发架构师 - 定技术栈/三层契约/五维可插拔/Mock后端/跨端验收脚手架，做架构评审（守门员）V3.3.0"
+    skills: [arch-tech-stack-keeper, arch-contract-definer, arch-scaffold-reviewer, uml-architecture-mapper, api-learner, mock-server-generator, e2e-scaffold-generator]
+    description: "高保真前端开发架构师+UML消费分析器 - 定技术栈/三层契约/五维可插拔/Mock后端/跨端验收脚手架，做架构评审（守门员）。V3.2.0新增UML 2.5模型消费能力。"
 
 # ============================================
 # 命令注册（4 核心生命周期指令 + 高级调试指令 + 特殊入口）
@@ -249,20 +252,20 @@ commands:
 
   init:
     command: "/init"
-    description: "【开启需求流V4.2.0】PM 接管，针对某项目某类型开启一条需求流（自动生成版本号），进入需求分析。V4.2.0变更：取消交互式询问'新项目/存量项目'，改为自动检测projects/{--project}/。PM 组装参数路由包传递给 BA，BA 从§0.5需求深度分析整合开始（6维需求分析+8维影响扫描+融合全景图），再进入旅行地图。支持外部文档(--source)和HTTP内容作为需求输入补充。影响范围由 BA 在§0.5b自动识别。V4.2.1新增--brainstorm-topic可选参数：指定脑暴议题名，PM按议题查找对应的脑暴产物+知识库内容作为上下文输入。"
+    description: "【开启需求流V2.0.0】PM 接管，针对某项目某类型开启一条需求流（自动生成版本号），进入需求分析。PM 组装参数路由包传递给 BA，BA 从§0.5需求深度分析整合开始（6维需求分析+8维影响扫描+融合全景图），再进入旅行地图。支持外部文档(--source)和HTTP内容作为需求输入补充。影响范围由 BA 在§0.5b自动识别。V2.0.0统一--topic参数：迭代主题，支持独立指定或从brainstorm继承，路由注入/member/project/topic/version/。别名--brainstorm-topic保留兼容。"
     lifecycle: "stream-start"
     pm_controlled: true
     orchestrator: "pm-agent"
     workflow: "project-lifecycle"
     workflow_file: ".codebuddy/configs/workflows/project-lifecycle.yml"
-    usage: "/init --project=X --type=新增|变更|迭代|修复 --desc=需求描述 [--brainstorm-topic=脑暴议题名] [--file=外部需求文件.md] [--api=外部接口文档.md] [--source=local-dir:./docs] [--source=http-url:https://...] [--priority=P0|P1|P2|P3]"
-    example: "/init --project=SAAS --type=新增 --desc=直播音频违禁词检测与静音处理 --brainstorm-topic=直播音频审核 --priority=P0"
+    usage: "/init --project=X --type=新增|变更|迭代|修复 --desc=需求描述 [--topic=迭代主题] [--file=外部需求文件.md] [--api=外部接口文档.md] [--source=local-dir:./docs] [--source=http-url:https://...] [--priority=P0|P1|P2|P3]"
+    example: "/init --project=SAAS --type=新增 --desc=直播音频违禁词检测与静音处理 --topic=直播音频审核 --priority=P0"
     required_args: ["--project", "--type", "--desc"]
-    optional_args: ["--brainstorm-topic", "--file", "--api", "--source", "--priority"]
+    optional_args: ["--topic", "--file", "--api", "--source", "--priority"]
     interactive_flow:
-      description: "V4.2.0重构：取消交互式问答，改为自动检测+参数路由包。保留参数说明展示+必填项缺失指引。V4.2.1新增--brainstorm-topic脑暴议题上下文加载。"
+      description: "取消交互式问答，改为自动检测+参数路由包。保留参数说明展示+必填项缺失指引。V2.0.0统一--topic参数，别名--brainstorm-topic保留。"
       auto_detect: "扫描 projects/{--project}/ 是否存在 → 存在=存量项目 / 不存在=新项目"
-      brainstorm_topic_link: "若提供--brainstorm-topic，PM按议题查找 projects/{--project}/docs/00-brainstorm/{topic}/confirmed/BR-脑暴文档-确认稿.md 作为BA背景输入；同时加载脑暴confirmed中的领域知识清单+API分析清单传递给BA和Arch。若未提供--brainstorm-topic但00-brainstorm/下只有一个议题子目录，自动加载该议题；多个议题时提示用户选择。"
+      brainstorm_topic_link: "若提供--topic，PM按议题查找 projects/{--project}/docs/00-brainstorm/{topic}/confirmed/BR-脑暴文档-确认稿.md 作为BA背景输入；同时加载脑暴confirmed中的领域知识清单+API分析清单传递给BA和Arch；topic写入state.json作为迭代线标识。若未提供--topic但00-brainstorm/下只有一个议题子目录，自动加载该议题；多个议题时提示用户选择。"
 
   feedback:
     command: "/feedback"

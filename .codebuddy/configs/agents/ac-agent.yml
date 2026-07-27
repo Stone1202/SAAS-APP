@@ -7,6 +7,8 @@ agent:
   
   md_file: ".codebuddy/agents/ac-agent.md"
   
+  version: "V2.0.0"
+  
   skills:
     - "requirement-checker"
     - "business-flow-tester"

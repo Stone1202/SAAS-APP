@@ -1,22 +1,23 @@
 # ============================================
 # iron-rules-registry.yml — 全流程铁律注册中心
-# 版本：v1.10.0
+# 版本：v1.14.0
 # 创建：2026-07-17
-# V1.10.0新增：ARCH-12~14 设计驱动架构铁律（V5.5.0）
-#   架构不能乱来，必须依据设计和需求文档进行架构
-#   ARCH-12：路由以PRD为单一事实源
-#   ARCH-13：业务系统终端物理隔离
-#   ARCH-14：反向三文档一致性检查不可跳过
-#   铁律总数：ARCH 11→14（全铁律总数 98→101）
+# V1.14.0新增（测试前强制Demo用户验收铁律 + AC交叉核对铁律 + BA重复编号修复）：
+#   PM-14：测试前强制Demo用户验收——开发完成后必须执行demo-flow逐UC验收，直到所有UC通过+反馈闭环+产物冻结
+#   AC-06：Demo交叉核对不可跳过——AC验收时必须加载Demo验收报告逐条交叉核对
+#   BA-41~44：原BA-31~34重复编号修复（V3.4.0/V3.5.0铁律重新编号）
+#   铁律总数：PM 13→14 + AC 5→6（全铁律总数 113→115）
 # 定位：所有Agent铁律的单一事实源，统一编号统一管理
 # 引用方：各agent.md声明"遵守iron-rules-registry.yml"，各workflow.yml引用对应Agent的铁律段
 # 维护：新增/修改/废弃铁律时只需修改本文件
 # 关联方案：audit-reports/POM门禁治理与铁律统一管理架构方案-2026-07-17.md
 # ============================================
 
-version: "1.9.0"
-last_updated: "2026-07-22"
+version: "1.14.0"
+last_updated: "2026-07-24"
 
+# V1.12.0新增（/close硬前置handoff铁律）：
+#   - PM-12：handoff是close的硬前置——PM必须确保/handoff在/close之前执行完毕并通过交互用例卡一致性校验（G-HO-DELIVERY-04三位一体+G-HO-INJECT-01~04代码注入），绝不允许跳过handoff直接生成close产物
 # V1.9.0新增（回流+handoff强制约束铁律补丁）：
 #   - QA-07：回流强制触发——QA发现Bug必须触发defect-reflow
 #   - AC-07：回流强制触发——AC验收不通过必须触发defect-reflow
@@ -265,32 +266,52 @@ agents:
         rule: "用例描述专业性铁律（V5.7.0新增）：用例必须使用专业业务术语，禁止口语化。每个UC的六段描述必须清晰、准确、无歧义。PRD Review时检查术语一致性"
         enforcement: "hard"
         workflow_check: "doc-standards.yml terminology_standard"
-      - id: "BA-31"
+      - id: "BA-41"
         rule: "三阶段分析不可跳过（V3.4.0新增）：需求分析必须按阶段1业务还原(§3)→阶段2系统划分(§3.5)→阶段3终端划分(§3.8)顺序执行。禁止跳过业务还原直接做系统划分，禁止跳过系统划分直接定终端。业务系统划分是分析结果不是前提——必须先还原真实业务(角色/部门/关键动作)，闭环验证通过后才划分系统，系统闭环验证通过后才定终端。"
         enforcement: "hard"
         workflow_check: "requirement-flow.yml §3/§3.5/§3.8 + gates-registry G-REQ-22/G-REQ-23/G-REQ-24/G-REQ-25"
-        note: "V3.4.0新增：解决系统划分和终端划分作为'前提'而非'分析结果'的问题。"
-      - id: "BA-32"
+        note: "V3.4.0新增：解决系统划分和终端划分作为'前提'而非'分析结果'的问题。原编号BA-31，V1.14.0修复重复编号冲突后改为BA-41。"
+      - id: "BA-42"
         rule: "闭环验证不可跳过（V3.4.0新增）：阶段1必须通过业务闭环验证（7要素：角色人/销售方式/支付方式/谁支付/谁收款/如何结算/结算给谁）+行业对标验证；阶段2必须通过系统闭环验证（9要素：商品创建/展示/下单/支付/发货/查看/售后/处理/系统归属）。未通过闭环验证不得进入下一阶段。业务闭环验证人/钱/货的完整链路，系统闭环验证每个业务环节都有系统归属。"
         enforcement: "hard"
         workflow_check: "gates-registry G-REQ-22(业务闭环) + G-REQ-23(系统闭环)"
-        note: "V3.4.0新增：解决业务流程和系统覆盖有断点却不自知的问题。"
-      - id: "BA-33"
+        note: "V3.4.0新增：解决业务流程和系统覆盖有断点却不自知的问题。原编号BA-32，V1.14.0修复重复编号冲突后改为BA-42。"
+      - id: "BA-43"
         rule: "冻结机制（V3.4.0新增）：每阶段扫盲完成后PM展示冻结内容→用户确认→冻结→冻结内容传入下一阶段。用户有补充则退回重新分析→重新展示→重新确认。冻结内容：阶段1=场景清单，阶段2=系统边界+系统间接口清单，阶段3=终端清单+跨端流转路径。冻结后下一阶段基于冻结内容分析，不得随意变更。"
         enforcement: "hard"
         workflow_check: "requirement-flow.yml §3/§3.5/§3.8 checkpoint"
 
-      - id: "BA-34"
+      - id: "BA-44"
         rule: "用例颗粒度分级（V3.5.0新增，V3.5.1增强为14维度按需选择，V3.5.2增强为分析过程驱动）：14维度在分析过程中识别而非文档阶段才思考——Layer1.3 AI多视角维度识别（模拟专家视角基于知识库+经验库+Bug模式）→§2.5专家补盲（验证AI预判+补充遗漏）→§3/§3.5/§3.8三阶段增量更新→§5用例设计时基于已识别维度结构化输出。Level 2+用例按维度选择规则描述涉及的维度。Level 3用例至少涉及3+维度。维度选择规则详见doc-standards.yml use_case_granularity_standard。AI预判准确率在版本沉淀时统计→反馈AI学习进化。"
         enforcement: "hard"
         applies_to: "ba-agent"
         workflow_check: "demand-impact-fusion-flow.yml L1.3 + requirement-flow.yml §2.5+§5 + gates-registry G-REQ-26"
-        note: "V3.4.0新增：解决阶段间信息传递随意变更导致下游返工的问题。"
+        note: "V3.4.0新增：解决阶段间信息传递随意变更导致下游返工的问题。原编号BA-34，V1.14.0修复重复编号冲突后改为BA-44。"
       - id: "BA-38"
         rule: "回流调整留痕（V1.9.0新增）：BA收到defect-reflow反馈后，重跑需求分析的产物必须包含回流调整标记——①reflow_adjustment（调整摘要，FN/UC/BR/ENT/CONFIG/METRIC的具体变更内容）②affected_artifacts（受影响产物编号列表）③rerun_scope（full全量/incremental增量重走范围）④transit_summary（各经停阶段审视结论汇总）。禁止空跑——收到回流后不可只标记'已处理'而不产出实际调整内容。不可跳过回流直接改代码。PRD文档中须体现回流调整标识。"
         enforcement: "hard"
         workflow_check: "gates-registry G-REFLOW-03 + G-REFLOW-04"
         note: "V1.9.0新增：解决回流到BA后Agent跳过重跑需求分析直接标记done的问题。BA是回流最终决策者——必须基于各经停审视结论重新分析并调整REQ产物。"
+      - id: "BA-39"
+        rule: "UML状态机层级不可拍平（V3.5.0新增）：含嵌套子进程/并发维度/多处复用的业务状态，必须建模为复合状态/正交区域/子状态机引用。禁止将「直播中」（含审核+推流两个独立子进程）建模为简单状态。禁止将可复用状态逻辑（如违规处置）在每个引用处重复定义——必须提取为子状态机引用。违反此规则的PRD视为不合格。"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-REQ-UML-01 + uml-standards.yml state_machine_hierarchy"
+        note: "V3.5.0新增：解决状态机拍平导致数据归属丢失和模块复用缺失的根因。参考反模式：直播审查Bug-1(中控状态与历史状态不同步)。"
+      - id: "BA-40"
+        rule: "UML组合片段强制（V3.5.0新增）：每个UC的序列图必须包含至少1个alt/else组合片段。有循环/并发/中断/关键区场景时，必须分别使用loop/par/break/critical标注，禁止只靠文字描述。产物包括条件产出的通信图（给Arch做模块耦合分析）+交互概览图（序列图>50行或ref>3时强制产出）。"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-REQ-UML-02 + uml-standards.yml interaction_diagrams"
+        note: "V3.5.0新增：解决序列图只有直线无分支/循环/并发标注，导致Arch无法提取架构决策、QA无法生成完整测试矩阵的根因。参考反模式：直播审查Bug-2(场次数据归属缺失)。"
+      - id: "BA-41"
+        rule: "状态过渡操作表增强（V3.5.0新增）：状态过渡操作表必须包含增强4列——所属状态机层级（main/composite/submachine）、所属区域（正交区域标注）、子状态机关联ID、父状态联动。禁止只填写基本6列而忽略层级信息。"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-REQ-UML-01 + uml-standards.yml state_transition_table_enhanced"
+        note: "V3.5.0新增：解决状态过渡操作表缺失层级信息导致Arch无法提取Store分区设计、FD无法实现嵌套状态管理的根因。"
+      - id: "BA-42"
+        rule: "UML交互图完备性（V3.5.0新增）：BA产出的动态交互图必须覆盖三项——①序列图含组合片段②通信图标注对象通信+数据归属③交互概览图（序列图>50行或ref>3时强制）。三项缺一不可。通信图和交互概览图是Arch消费的直接输入——BA不产出则Arch无法完成模块耦合分析和系统边界划分。"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-REQ-UML-03 + uml-standards.yml interaction_diagram_rules"
+        note: "V3.5.0新增：解决Arch消费端因BA产出不足导致架构盲区的根因。四位一体(UML产出BA→消费Arch→实现FD→测试QA)。"
 
   # ============================================
   # PM Agent（项目管理）
@@ -308,9 +329,9 @@ agents:
         enforcement: "hard"
         workflow_check: "ensure-project.sh --check"
       - id: "PM-03"
-        rule: "会话恢复读PROJECT-INDEX.yml定位活跃项目"
+        rule: "项目定位三优先：1)输入语义路由(input_semantic_routing)→2)显式--project→3)active_project回退"
         enforcement: "hard"
-        workflow_check: "pm-agent.yml session_restore"
+        workflow_check: "pm-agent.yml input_semantic_routing & session_restore"
       - id: "PM-04"
         rule: "每阶段Review不可跳过，Review后才能反馈回流"
         enforcement: "hard"
@@ -328,9 +349,9 @@ agents:
         enforcement: "hard"
         workflow_check: "project-lifecycle close.pm_actions"
       - id: "PM-08"
-        rule: "/close前校验PBL全闭环+Review全产出+追溯链+版本沉淀"
+        rule: "/close前校验PBL全闭环+Review全产出+追溯链+版本沉淀+handoff完成（G-CLOSE-07）"
         enforcement: "hard"
-        workflow_check: "gates-registry G-CLOSE-01~04"
+        workflow_check: "gates-registry G-CLOSE-01~07"
       - id: "PM-09"
         rule: "大脑编排（V5.1.0新增）：PM负责全生命周期大脑编排——确保每个Stage的ai_brain被激活+brain_sync_chain脑力协同链运转+brain_memory_persistence记忆持久化+brain_evolution_trigger(/close时触发全Agent大脑进化)。大脑编排是PM第六项职责，缺失则/close阻塞。"
         enforcement: "hard"
@@ -347,6 +368,24 @@ agents:
         applies_to: "pm-agent"
         workflow_check: "gates-registry G-HO-WRITEBACK-01 + handoff.yml"
         note: "V1.9.0新增：解决handoff回传后PM跳过BA增量重跑直接记录done的缺陷。这是PM第八项职责。"
+      - id: "PM-12"
+        rule: "handoff是close的硬前置（V1.12.0新增）：PM必须确保/handoff在/close之前执行完毕并通过交互用例卡一致性校验（G-HO-DELIVERY-04三位一体一致性+G-HO-INJECT-01~04代码注入自检）。handoff对应性校验报告必须已产出、handoff循环已结束无待回传变更。绝不允许跳过handoff直接生成close产物（VERSION-INDEX/版本沉淀/质量评分等）。违反此铁律会导致虚假close记录（如SAAS项目2026-07-22事故）。"
+        enforcement: "hard"
+        applies_to: "pm-agent"
+        workflow_check: "gates-registry G-CLOSE-07 + G-HO-DELIVERY-04 + handoff.yml"
+        note: "V1.12.0新增：解决AI跳过handoff直接生成close产物的严重缺陷。PM第九项职责：/close前强制校验handoff完成度。"
+      - id: "PM-13"
+        rule: "开发中变更实时回流（V1.13.0新增）：FD在原型开发过程中检测到用户的临时决策与PRD/UX/Arch产物不一致时，必须立即触发dev-change-flow分级回流，不得等到handoff阶段才汇总变更。变更按复杂度分L1(自动记录)/L2(AI扫描+用户确认)/L3(mini需求分析循环)，回流后handoff阶段通过G-HO-DEVCHANGE-01~03门禁逐一校验。L0根本原则：任何可能改变UC行为/BR逻辑/交互模式/数据结构的开发决策，不得在PRD/UX/Arch不知情的情况下悄然落地。"
+        enforcement: "hard"
+        applies_to: "pm-agent + fd-agent"
+        workflow_check: "gates-registry G-HO-DEVCHANGE-01~03 + dev-change-flow.yml + demand-impact-fusion-flow.yml"
+        note: "V1.13.0新增：解决开发中临时决策导致的PRD/UX/Arch悄然不同步问题（SAAS项目handoff不通过根因）。PM第十项职责：确保开发中变更实时回流机制正常运转。"
+      - id: "PM-14"
+        rule: "测试前强制Demo用户验收（V5.4.0新增）：开发完成后、测试开始前，必须执行demo-flow逐UC验收。用户必须在原型上实际操作验证每个UC，收集反馈，触发dev-change-flow回流。Demo可最多循环5次，直到所有UC通过验收、所有反馈闭环。Demo完成后冻结BA/UX产物，QA基于此冻结版生成测试用例。不可跳过Demo直接进入测试（G-DEMO-01硬门禁）。L0根本原则：没有经过用户亲手验证的原型，不得进入系统测试。"
+        enforcement: "hard"
+        applies_to: "pm-agent"
+        workflow_check: "gates-registry G-DEMO-01~04 + demo-flow.yml + dev-change-flow.yml + test-flow.yml"
+        note: "V5.4.0新增：解决测试用例与用户真实需求脱节的问题。PM第十一项职责：确保Demo验收完成（所有UC通过+产物冻结）后方可调度QA进入测试。"
 
   # ============================================
   # UX Agent（设计师）
@@ -456,6 +495,11 @@ agents:
         rule: "大脑推理完整性（V5.1.0新增）：FD大脑必须执行implementation_trap_prediction(实现陷阱预测)+component_reuse_reasoning(组件复用推理)+compliance_pattern_recognition(合规模式识别)+visual_regression_risk(视觉回归风险预测)+brain_memory_import+brain_sync_export，不可跳过任一步骤"
         enforcement: "hard"
         workflow_check: "gates-registry G-DEV-03"
+      - id: "FD-14"
+        rule: "UML驱动实现铁律（V3.1.0新增）：FD实现必须消费BA产出的UML模型——复合状态的正交区域→独立Store Slice+并行订阅、子状态机引用→可复用状态Hook、alt/opt→条件渲染/逻辑分支、loop→useEffect定时器、par→Promise.all并行请求、critical→乐观锁/事务处理、break→错误边界/异常处理、通信图→React组件树边界。禁止忽略BA产出的UML模型直接自主实现状态管理和分支逻辑。"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-DEV-UML-01 + uml-standards.yml agent_responsibility_matrix.fd_agent"
+        note: "V3.1.0新增：解决FD忽略BA产出的UML模型导致组件状态管理拍平、分支逻辑漏实现、正交区域被合并的根因。四位一体(UML产出BA→消费Arch→实现FD→测试QA)。"
 
   # ============================================
   # ARCH Agent（架构师）
@@ -524,6 +568,26 @@ agents:
         enforcement: "hard"
         workflow_check: "gates-registry G-ARCH-09 + arch-flow pm_redlines C-A13"
         note: "V5.5.0新增【架构师铁律】：解决架构文档与PRD/设计/实际代码全不一致的根因。一行运行时验证>一百条纸面规则。参考反模式AP-03/04/05。"
+      - id: "ARCH-15"
+        rule: "UML状态机→数据架构映射（V3.2.0新增）：Arch必须消费BA产出的层级状态机，逐层映射为数据架构——主状态机→根实体数据表、复合状态→嵌套字段/关联子表、正交区域→独立Zustand Slice（每区域一个）、子状态机引用→独立Store/Service模块（可复用）。禁止忽略BA产出中的层级信息直接拍平为单一Store。"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-ARCH-UML-01 + uml-standards.yml agent_responsibility_matrix.arch_agent"
+        note: "V3.2.0新增：解决Arch忽略BA产出的状态机层级信息导致Store设计拍平、正交区域被合并、子状态机无法复用的根因。"
+      - id: "ARCH-16"
+        rule: "UML组合片段→API契约映射（V3.2.0新增）：Arch必须消费BA产出的组合片段，映射为契约决策——alt/else→Zod discriminatedUnion、par→独立endpoint+并发调用、critical→事务边界(原子操作+乐观锁)、loop→WebSocket/轮询机制、ref→独立API模块边界。禁止忽略组合片段的架构语义只做基础CRUD契约。"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-ARCH-UML-02 + uml-standards.yml agent_responsibility_matrix.arch_agent"
+        note: "V3.2.0新增：解决Arch忽略序列图中alt/par/break/critical组合片段导致API契约缺少分支/并发/回滚/事务设计的根因。"
+      - id: "ARCH-17"
+        rule: "通信图→模块耦合分析（V3.2.0新增）：Arch必须消费BA产出的通信图，执行三项分析——①耦合度检测（连接>5对象标记为过度耦合建议拆分）②循环依赖检测（A→B→C→A标记为架构反模式必须解耦）③数据归属检查（验证消息参数中含数据归属标识如stream_id/order_id）。产出耦合分析报告。"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-ARCH-UML-03 + uml-standards.yml communication_diagram"
+        note: "V3.2.0新增：解决缺少模块耦合分析导致循环依赖和过度耦合无法在架构阶段被发现、遗留到代码层的根因。"
+      - id: "ARCH-18"
+        rule: "交互概览图→系统边界划分（V3.2.0新增）：Arch必须消费BA产出的交互概览图，提取——Fork/Join→并发控制器设计、每个ref→独立API/Service模块、决策节点→API路由分支、控制流顺序→API调用编排（Saga/Workflow）。交互概览图是系统边界划分的直接输入。"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-ARCH-UML-04 + uml-standards.yml interaction_overview_diagram"
+        note: "V3.2.0新增：解决缺少高阶控制流视图导致系统边界划分无依据、模块拆分靠直觉的根因。"
 
   # ============================================
   # QA Agent（质量保障）— 补全（原仅1条）
@@ -562,6 +626,16 @@ agents:
         applies_to: "qa-agent"
         workflow_check: "gates-registry G-REFLOW-01 + defect-reflow.yml"
         note: "V1.9.0新增：解决QA发现Bug后Agent跳过回流直接修复标记done的核心缺陷。QA是回流的第一个触发者——Bug发现不可绕过完整的defect-reflow流程。"
+      - id: "QA-08"
+        rule: "UML组合片段→测试矩阵（V2.0.0新增）：QA必须消费BA产出的组合片段，逐片段提取测试用例——alt每分支1正向+1异常、opt触发/不触发各1、loop 0次/1次/N次/空、par并发场景全部、break中断+后续验证、critical全部成功/部分失败回滚。组合片段就是测试用例矩阵的蓝图。"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-TEST-UML-01 + uml-standards.yml agent_responsibility_matrix.qa_agent"
+        note: "V2.0.0新增：解决QA测试用例只覆盖基本路径、遗漏组合片段分支/循环/并发/中断的根因。"
+      - id: "QA-09"
+        rule: "UML状态机层级→状态覆盖（V2.0.0新增）：QA必须消费BA产出的层级状态机，进行层级状态覆盖——复合状态的每个子状态正向+异常、正交区域Cartesian Product覆盖、子状态机独立测试+集成测试（验证父联动）。禁止将层级状态拍平后只覆盖顶层状态。"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-TEST-UML-02 + uml-standards.yml agent_responsibility_matrix.qa_agent"
+        note: "V2.0.0新增：解决QA只覆盖扁平顶层状态、忽略复合状态内部子状态和正交区域组合测试的根因。"
 
   # ============================================
   # AC Agent（验收交付）— 补全（原0条）
@@ -590,6 +664,10 @@ agents:
         rule: "验收不通过项触发缺陷回流"
         enforcement: "hard"
         workflow_check: "project-lifecycle stage-7 feedback_routing"
+      - id: "AC-06"
+        rule: "Demo交叉核对不可跳过（V1.14.0新增）：AC验收时必须加载Demo验收报告（projects/{project}/docs/05-demo-reports/），逐条核对Demo反馈（FB-XX-XX）是否已在PRD中体现、是否已闭环、冻结产物hash是否与.frozen-manifest.yml一致。确认demo_verified=true后才可进入handoff。"
+        enforcement: "hard"
+        workflow_check: "gates-registry G-AC-HO-01 + acceptance-flow.yml step-2"
       - id: "AC-06"
         rule: "大脑推理完整性（V5.1.0新增）：AC+PO大脑必须执行acceptance_defect_prediction(验收缺陷模式识别)+persona_coverage_reasoning(角色覆盖推理)+business_value_alignment(商业价值对齐推理)+regression_acceptance_recommender(回归验收推荐)+brain_memory_import+brain_sync_export，不可跳过任一步骤"
         enforcement: "hard"

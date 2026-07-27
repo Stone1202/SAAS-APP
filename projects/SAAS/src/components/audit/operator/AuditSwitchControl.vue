@@ -2,11 +2,11 @@
   <!-- B-AUDIT-002：审查开关控制区（V1仅开关Toggle，审查级别由腾讯云配置层管理） -->
   <div class="audit-switch-control">
     <div class="control-row">
-      <span class="control-label">内容审查</span>
+      <span class="control-label">直播审查</span>
       <button
         :class="['toggle-switch', enabled ? 'on' : 'off']"
         @click="$emit('toggle')"
-        :aria-label="enabled ? '关闭内容审查' : '开启内容审查'"
+        :aria-label="enabled ? '关闭直播审查' : '开启直播审查'"
       >
         <span class="toggle-knob" />
       </button>

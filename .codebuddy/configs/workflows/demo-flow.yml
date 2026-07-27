@@ -1,0 +1,703 @@
+# ============================================
+# Workflow: demo-flow（测试前强制Demo用户验收）
+# 版本: v1.1.0
+# 创建日期: 2026-07-24
+# 最后更新: 2026-07-24（循环严谨性修复）
+# ============================================
+#
+# 定位：插入在 stage-5（FD开发）和 stage-6（QA测试）之间，
+#       强制用户在原型上逐UC验收，收集反馈，触发 dev-change-flow 回流，
+#       循环直到所有UC通过，确保进入测试的是"用户真正想要的"。
+#
+# 核心流程：
+#   Demo准备 → 逐UC验收 → 收集反馈 → [有反馈: dev-change回流→循环]
+#                                   → [无反馈: Demo完成 → 进入测试]
+#
+# 设计原则：
+#   1. Demo不是Review——用户必须在原型上实际操作验证
+#   2. 用例驱动验收——按BA输出的UC清单逐条比对，不遗漏
+#   3. 反馈闭环——用户反馈 → dev-change-flow → BA/UX/Arch增量更新 → FD改代码 → 再Demo
+#   4. 零反馈才放行——所有标注UC必须通过DEMO，无例外
+#   5. 测试基于最终产物——QA读取Post-Demo版本的BA+UX文档生成测试用例
+#
+# 与 dev-change-flow 的配合：
+#   - Demo产生用户反馈 → AI解析为结构化反馈项
+#   - 每个反馈项触发 dev-change-flow 分级回流
+#   - dev-change-flow 的变更包机制确保BA/UX/Arch文档被实际编辑
+#   - 文档+代码更新后，重新进入Demo循环
+#
+# 与 test-flow 的衔接：
+#   - Demo完成后，BA产物和UX设计文档均为"已冻结"状态
+#   - QA的test-flow step-1 读取此冻结版本生成测试用例
+#   - 测试用例必须对齐最终的（Post-Demo）BA/UX产物
+# ============================================
+
+workflow:
+  id: "demo-flow"
+  name: "测试前强制Demo用户验收流程（V1.1.0）"
+  version: "1.1.0"
+  trigger: "project-lifecycle stage-5.5（FD开发完成后自动触发）"
+  owner: "pm-agent"
+  coordinator: "pm-agent"
+  participants: ["用户（验收者）", "pm-agent（引导者）", "fd-agent（代码响应者）"]
+  reflow_targets: ["ba-agent", "ux-agent", "arch-agent"]
+  gates_reference: ".codebuddy/knowledge/common/gates-registry.yml#demo_stage"
+
+  iron_rules_reference: ".codebuddy/knowledge/common/iron-rules-registry.yml#agents.pm_agent"
+
+  # ============================================
+  # 核心循环：Demo → 反馈 → dev-change → 再来
+  # ============================================
+  max_demo_loops: 5  # 安全阀：最多循环5次，防止无限迭代
+
+  # ============================================
+  # 阶段 1：Demo准备
+  # ============================================
+  stage_1_prepare:
+    id: "DEMO-1"
+    name: "Demo验收准备"
+    owner: "pm-agent"
+    steps:
+      - id: "DEMO-1.1"
+        action: "校验前置条件"
+        checks:
+          - "FD开发已完成（stage-5 completion_criteria 全部通过）"
+          - "原型可正常访问（npm run dev 无编译错误）"
+          - "BA PRD 已存在于 projects/{project}/docs/01-requirements/"
+          - "UX 设计文档已存在于 projects/{project}/docs/03-design/"
+          - "JOURNAL 中无未解决的 RECORDED/CONFLICT 状态 dev-change（已在开发中全部消费）"
+        on_fail: "阻止Demo，提示PM修复前置条件"
+
+      - id: "DEMO-1.2"
+        action: "从BA PRD提取UC清单"
+        mechanism: |
+          读取 projects/{project}/docs/01-requirements/*.md 中的：
+          - 所有 FN 列表（含编号/名称/页面/优先级）
+          - 每个 FN 下的 UC 列表（含编号/名称/参与者/基本流程摘要）
+          - 所有 BR 列表（作为验收时的业务规则检查参考）
+          - 所有状态机定义（作为验收时的状态行为检查参考）
+          
+          特别注意：如果 PRD §19（handoff回传区）有 dev-change 记录，
+          说明PRD已在开发中经过增量更新，提取的是最终版本。
+        
+        output: "UC验收清单（结构化JSON/Markdown，按FN分组）"
+
+      - id: "DEMO-1.3"
+        action: "生成验收矩阵"
+        format:
+          fn_grouped:
+            - fn_id: "FN-{系统}-{终端}-{NNN}"
+              fn_name: "功能名称"
+              page: "对应页面"
+              priority: "P0/P1/P2"
+              ucs:
+                - uc_id: "UC-{系统}-{终端}-{NNN}"
+                  uc_name: "用例名称"
+                  brief_flow: "基本流程摘要（1-2句话）"
+                  key_checkpoints: ["检查点1", "检查点2"]  # 从前置条件/后置条件/基本流程提取
+                  instructions: "用户在原型上怎么验证（操作指引）"
+              associated_brs: ["BR-{系统}-{NNN}"]  # 此FN相关的业务规则（验收时检查）
+        
+        display: |
+          向用户展示验收矩阵，说明：
+          - 总共 {N} 个 UC 需要验收（按FN分组，共 {M} 个FN）
+          - 建议验收顺序（按优先级排列，P0→P1→P2）
+          - 验收方式：每UC一条一条来，你操作原型，AI记录结果
+
+      - id: "DEMO-1.4"
+        action: "用户确认开始Demo"
+        message: |
+          🎬 **Demo验收准备就绪**
+          
+          验收对象：{项目名} {版本号}
+          UC总数：{N}，跨 {M} 个FN
+          优先级分布：P0={x}, P1={y}, P2={z}
+          
+          **验收方式**：
+          - AI逐个展示UC，你在原型上操作验证
+          - 每个UC选择：✅通过 / 📝有反馈 / ⏭跳过（需说明原因）
+          - 所有UC通过后进入测试阶段
+          
+          准备好了吗？输入「开始」或直接说「好」
+
+  # ============================================
+  # 阶段 2：逐UC验收（核心交互循环）
+  # ============================================
+  stage_2_walkthrough:
+    id: "DEMO-2"
+    name: "逐UC验收"
+    owner: "pm-agent"
+    loop_mode: "sequential_uc"  # 按UC顺序逐个遍历
+    
+    # V1.14.0新增：scope_mode区分首次全量和重Demo增量
+    scope_mode:
+      current: "full"  # 运行时动态：首次="full"，重Demo="delta"
+      full:
+        description: "首次Demo——遍历全部UC"
+        for_each: "UC验收清单中的每个UC（按优先级排序：P0→P1→P2）"
+      delta:
+        description: "重Demo——仅遍历scope内的UC（变更UC+依赖UC+跳过UC）"
+        for_each: "redemo_scope清单中的UC（来自DEMO-4.1的delta_scope输出）"
+        display_hint: "在展示UC时标注：🔄 变更后重验 / ⏭ 补验之前跳过"
+        already_passed_hint: "不列出已通过且未受影响的UC（已在首次Demo通过），减少干扰"
+    
+    steps:
+      - id: "DEMO-2.1"
+        action: "展示当前UC信息"
+        for_each: "根据scope_mode={full|delta}选择验收范围"
+        display_format: |
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          **📍 UC-{编号}：{名称}**  [{当前UC序号}/{总UC数}]
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          
+          **所属FN**：FN-{编号}：{名称}
+          **页面**：{页面名称}
+          **参与者**：{角色}
+          **优先级**：{P0/P1/P2}
+          
+          **基本流程摘要**：
+          {从PRD提取的简要步骤}
+          
+          **关键检查项**：
+          1. {检查项1（从基本流程提取）}
+          2. {检查项2（从后置条件提取）}
+          3. {检查项3（如有关联BR，列出BR关键规则）}
+          
+          **操作指引**：
+          {具体操作步骤，引导用户操作原型}
+          
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          
+          请在原型上操作验证，然后选择：
+          
+          `✅ 通过` — 完全符合预期
+          `📝 有反馈` — 需要修改（请描述哪里不满意）
+          `⏭ 跳过` — 暂不验收（必须说明原因）
+
+      - id: "DEMO-2.2"
+        action: "收集用户判断"
+        user_action: "required"  # 必须用户明确选择
+        
+        options:
+          pass:
+            value: "✅ 通过"
+            then: "记录到DEMO-2.3，进入下一个UC"
+          feedback:
+            value: "📝 有反馈"
+            then: "进入DEMO-2.4 反馈收集"
+            collect_detail:
+              prompt: "请描述具体哪里不满意？（哪里不对/缺少什么/多了什么/应该怎么改）"
+              format: "自由文本 + AI追问澄清（如描述模糊）"
+          skip:
+            value: "⏭ 跳过"
+            then: "记录跳过原因，标记为pending，全部UC走完后回头处理"
+            require_reason: true
+            valid_reasons:
+              - "需要先验收其他UC后才能验证此UC（依赖关系）"
+              - "此UC需要特定数据/环境，当前不满足"
+              - "此UC不在此版本范围内（误列入）"
+              - "其他：{用户自定义原因}"
+
+      - id: "DEMO-2.3"
+        action: "记录通过项"
+        condition: "用户选择✅通过"
+        record:
+          uc_id: "{UC编号}"
+          status: "DEMO_PASSED"
+          timestamp: "{当前时间}"
+          note: "用户确认通过"
+
+      - id: "DEMO-2.4"
+        action: "收集并结构化反馈"
+        condition: "用户选择📝有反馈"
+        
+        sub_steps:
+          - id: "DEMO-2.4a"
+            action: "AI解析用户反馈"
+            mechanism: |
+              将用户的自然语言反馈转化为结构化反馈项：
+              
+              **AI识别维度：**
+              1. 反馈类型识别：
+                 - 功能缺失：用户说"应该有XX功能"、"少了XX"
+                 - 交互不对：用户说"这个应该XX而不是YY"、"按钮/弹窗/开关不对"
+                 - 流程不对：用户说"顺序错了"、"应该先XX再YY"
+                 - 数据不对：用户说"这个字段的值不对"、"缺了XX字段"
+                 - 视觉不对：用户说"颜色/布局/间距不对"
+                 - 文案不对：用户说"提示语/标签/按钮文字不对"
+                 - 逻辑错误：用户说"这个逻辑有问题"、"不应该XX"
+              
+              2. 影响级别初判：
+                 L1（局部调整）：改文案/样式/组件细节
+                 L2（单域变更）：改交互模式/入口/数据字段
+                 L3（跨域流程）：增删功能/改业务流程
+              
+              3. 关联UC/BR/FN映射：
+                 识别反馈影响哪些PRD对象
+              
+              AI必须追问：如果用户反馈模糊（如"这个不好"、"体验差"），
+              必须追问："具体是哪一个环节不好？界面/流程/数据/速度？能描述一下你期望的表现吗？"
+
+          - id: "DEMO-2.4b"
+            action: "展示解析结果给用户确认"
+            display_format: |
+              📝 **你反馈的问题：**
+              
+              > {用户原始反馈}
+              
+              **AI理解**：
+              - 类型：{反馈类型}
+              - 影响：{受影响UC/BR/FN} + 复杂度预估 {L1/L2/L3}
+              - 建议修改：{AI总结的修改方向}
+              
+              **AI理解的正确性**：
+              - ✅ 理解的完全正确，按这个改
+              - 📝 我有补充说明
+              - ❌ 理解的不对，我再描述一下
+
+          - id: "DEMO-2.4c"
+            action: "记录反馈项"
+            output:
+              feedback_item:
+                id: "FB-{YYMMDD}-{序号}"
+                uc_id: "{UC编号}"
+                original_feedback: "{用户原始自然语言反馈}"
+                ai_parsed:
+                  type: "{反馈类型}"
+                  complexity: "L1/L2/L3"
+                  affected_objects: ["对象ID列表"]
+                  suggested_change: "{AI建议的修改方向}"
+                status: "PENDING_DEVCHANGE"
+                created_at: "{时间戳}"
+
+      - id: "DEMO-2.5"
+        action: "继续下一个UC或本轮验收完成"
+        loop: "回到DEMO-2.1，处理下一个UC"
+        condition: "DEMO-2.1的当前验收范围内仍有未验收UC（full=全量/ delta=redemo_uc_set）"
+        on_scope_exhausted: |
+          当前范围内所有UC已验收完毕：
+          - scope_mode=full + 有反馈/跳过 → 进入DEMO-3（反馈处理）
+          - scope_mode=full + 零反馈零跳过 → 进入DEMO-5（直接完成，无需重Demo）
+          - scope_mode=delta + 有反馈 → 进入DEMO-3（新一轮反馈处理→再循环）
+          - scope_mode=delta + 零反馈零跳过 → 进入DEMO-4 → DEMO-4.1条件C满足 → DEMO-5（完成）
+
+  # ============================================
+  # 阶段 3：反馈处理（触发dev-change回流）
+  # ============================================
+  stage_3_feedback_processing:
+    id: "DEMO-3"
+    name: "反馈处理——触发dev-change回流"
+    owner: "pm-agent"
+    condition: "DEMO-2 收集到了反馈项（feedback_items 非空）"
+
+    steps:
+      - id: "DEMO-3.1"
+        action: "汇总所有反馈"
+        display: |
+          📊 **Demo验收反馈汇总**
+          
+          | 状态 | 数量 |
+          |------|------|
+          | ✅ 通过 | {passed_count}/{total_count} |
+          | 📝 有反馈 | {feedback_count}/{total_count} |
+          | ⏭ 跳过 | {skipped_count}/{total_count} |
+          
+          **反馈清单**：
+          {逐条列出 FB-XX-XX 编号 + UC + 反馈摘要 + 复杂度预判}
+          
+          共 {N} 条反馈，现在开始逐条触发 dev-change-flow 回流。
+
+      - id: "DEMO-3.2"
+        action: "逐条触发dev-change-flow"
+        mechanism: |
+          对每个 feedback_item 执行：
+          
+          1. **增强AI识别**（V1.1.0）：
+             基于DEMO-2.4a的解析结果，进行二次深度识别：
+             - 读取受影响UC的完整PRD段落（不是只看摘要）
+             - 对比原型实际表现与PRD描述的具体偏差
+             - 输出精确的：what_changed（具体改了什么）/ original（PRD原文）/ current（原型现状）
+             
+          2. **生成变更包**：
+             根据复杂度创建对应变更包：
+             - L1 → RECORD_PACKET（日志级记录）
+             - L2 → BA_PACKET + UX_PACKET（+ ARCH_PACKET no_change确认）
+             - L3 → 完整 BA_PACKET + UX_PACKET + ARCH_PACKET
+             
+          3. **执行回流**：
+             - L1：自动写入PRD §19，不中断
+             - L2：展示影响面 → 用户确认回流范围 → Agent消费变更包 → 文件编辑
+             - L3：触发 mini 需求分析循环 → Agent消费变更包 → 增量流程
+           
+          4. **FD代码调整**：
+             待 BA/UX/Arch 消费变更包完成后，
+             根据最新的PRD/UX文档调整受影响的页面代码。
+        
+        ordering: |
+          反馈处理顺序：
+          1. 先按复杂度分组：优先处理 L3（影响最大）→ L2 → L1
+          2. 同组内按依赖关系排序（有依赖的反馈先处理）
+          3. 合并同类反馈：同一UC的多个反馈合并为一个变更包处理
+          
+          优化：如果多个不同UC的反馈互不相关，
+          可以并行触发 dev-change-flow（各自消费各自的变更包）。
+
+      - id: "DEMO-3.3"
+        action: "回流完成确认"
+        checks:
+          - "所有 feedback_item 的变更包已被对应Agent消费"
+          - "BA PRD 已更新（受影响的段落已完成编辑）"
+          - "UX 设计文档已更新（如有 ）"
+          - "Arch 契约/路由已更新或确认无变化（如有）"
+          - "FD 代码已按最新PRD/UX调整"
+          - "PRD §19 handoff回传区已记录所有变更"
+        on_fail: "回退到未完成的 feedback_item，重新执行DEMO-3.2"
+
+      # V1.14.0新增：显式循环状态管理
+      - id: "DEMO-3.5"
+        action: "更新循环状态"
+        mechanism: |
+          在进入DEMO-4重新判断前，显式记录循环状态：
+          
+          1. 循环次数自增：demo_loop_count = demo_loop_count + 1（首次从0→1）
+          2. 记录本轮变更清单：changed_uc_ids（本轮dev-change涉及的所有UC编号）
+          3. 记录待处理跳过UC：pending_skipped_uc_ids（尚未处理的跳过UC）
+          4. 存储位置：临时状态对象，随本次Demo会话传递，最终写入DEMO验收报告
+          
+          状态快照格式：
+          ```yaml
+          demo_loop_state:
+            loop_number: {当前循环次数}
+            total_loops_max: {max_demo_loops}
+            this_loop:
+              feedback_items: [{feedback_item.id}...]
+              changed_uc_ids: [{UC编号}...]
+            accumulated:
+              total_feedback_items: {累计反馈数}
+              total_changes: {累计变更数}
+            pending_skipped: [{跳过UC编号}...]
+            ucs_still_failing: [{本轮仍有反馈的UC编号}...]
+          ```
+        output: "demo_loop_state（传递到DEMO-4）"
+
+  # ============================================
+  # 阶段 4：重新Demo（循环判定）
+  # ============================================
+  stage_4_redemo:
+    id: "DEMO-4"
+    name: "重新Demo——循环直到零反馈"
+    owner: "pm-agent"
+
+    steps:
+      - id: "DEMO-4.1"
+        action: "判断是否需要重新Demo + 计算重Demo范围"
+        input: "demo_loop_state（来自DEMO-3.5）"
+        
+        logic: |
+          条件A：demo_loop_state.ucs_still_failing 非空（本轮有变更UC需重验）
+            → 需要重新Demo
+          
+          条件B：demo_loop_state.pending_skipped 非空（有跳过UC待处理）
+            → 需要回头处理这些UC
+          
+          条件C：A和B均为空（全部UC通过 + 无跳过）
+            → 跳过重新Demo，直接进入DEMO-5完成阶段
+        
+        # V1.14.0新增：依赖UC识别
+        dependency_analysis:
+          description: |
+            对于条件A中的变更UC，识别"可能受影响的"其他UC：
+            
+            识别规则（按PRD对象关联推断）：
+            1. **FN内联动**：变更UC所在FN下的其他UC（同功能模块内可能联动）
+            2. **BR共享**：如果变更涉及BR-XX-XX，所有引用该BR的UC可能受影响
+            3. **状态机联动**：如果变更涉及状态变更，同一状态机的所有UC可能受影响
+            4. **数据实体共享**：如果变更涉及ENT字段修改，所有读写该字段的UC可能受影响
+            5. **页面共享**：如果变更涉及UI组件修改，同页面下其他UC可能受影响
+            
+            识别原则：
+            - 宁可多列不可遗漏——多列的UC用户可快速判断"没影响→✅通过"
+            - 输出依赖链说明：如"UC-001变更→涉及BR-003→UC-005/UC-007也引用BR-003"
+            - 依赖UC默认纳入重验scope，但用户可手动标记为"已确认无影响→跳过"
+          
+          output:
+            dependency_map:
+              - changed_uc: "UC-{编号}"
+                change_type: "{变更类型}"
+                affected_objects: [{受影响BR/ENT/状态机}]
+                dependent_ucs: [{依赖UC编号及原因}]
+        
+        delta_scope_computation:
+          description: |
+            基于条件A/B和依赖分析结果，计算本轮重Demo的精确范围：
+            
+            redemo_uc_set = changed_uc_ids          # 变更UC本身
+                          + dependency_map[].dependent_ucs  # 依赖UC
+                          + pending_skipped_uc_ids   # 跳过UC
+            
+            去重后输出 delta_scope（有序列表，变更UC优先→依赖UC→跳过UC）
+        
+        display: |
+          {如果A或B满足}
+          🔄 **需要重新Demo（第{demo_loop_state.loop_number}/{max_demo_loops}轮）**
+          
+          本轮重Demo范围：
+          - 因变更需重验：{N}个（UC-xxx → 改了XX / UC-yyy → 改了YY）
+           - 牵连依赖UC：{M}个（UC-aaa ← 因共享BR-003受影响 / UC-bbb ← 同页面UI变更）
+          - 之前跳过现补验：{K}个（UC-zzz）
+          - 总计：{N+M+K}个（全量UC{x}个中已通过{y}个无需重验）
+          
+          {如果C满足}
+          ✅ **所有UC通过 + 无跳过UC，Demo验收完成！**
+        
+        # V1.14.0新增：循环安全阀判断
+        loop_safety_check:
+          condition: "demo_loop_state.loop_number >= max_demo_loops AND (A或B仍满足)"
+          action: |
+            暂停 → 不接受用户继续修改 → 触发 failure_handling.max_loops_exceeded：
+            PM介入决策（见failure_handling段，三选一）
+
+      - id: "DEMO-4.2"
+        action: "重新执行逐UC验收"
+        condition: "DEMO-4.1 判断需要重新Demo"
+        # 将scope_mode切换为delta，仅验收DEMO-4.1计算的delta_scope
+        scope_mode_switch: "full→delta（DEMO-2.1的for_each现在只遍历redemo_uc_set）"
+        goto: "DEMO-2.1（scope_mode=delta，仅处理delta_scope内的UC）"
+        on_return: "DEMO-2走完 → DEMO-2.5无剩余UC → 自然进入DEMO-3（新一轮反馈收集）→ DEMO-3.5（loop_state +1）→ DEMO-4（再次判断）→ 循环直到零反馈‖超上限‖零跳过"
+
+  # ============================================
+  # 阶段 5：Demo完成
+  # ============================================
+  stage_5_complete:
+    id: "DEMO-5"
+    name: "Demo完成——进入测试"
+    owner: "pm-agent"
+    condition: "所有应验收的UC已通过DEMO（无pending反馈项）"
+
+    steps:
+      - id: "DEMO-5.1"
+        action: "生成Demo验收报告"
+        output:
+          file: "projects/{project}/docs/05-demo-reports/DEMO-{version}-{timestamp}.md"
+          content:
+            header:
+              project: "{项目名}"
+              version: "{版本号}"
+              demo_date: "{日期}"
+              demo_cycles: "{循环次数}"
+              total_ucs: "{总UC数}"
+              passed_first_time: "{一次性通过数}"
+              passed_after_feedback: "{经反馈后通过数}"
+              skipped: "{跳过数（和最终处理结果）}"
+            uc_details:
+              - uc_id: "UC-{编号}"
+                status: "PASSED | PASSED_AFTER_FIX | SKIPPED_WITH_REASON"
+                feedback_count: "{反馈次数}"
+                feedback_summary: "{反馈摘要}"
+            change_summary:
+              total_changes: "{总变更数}"
+              by_level:
+                L1: "{L1变更数}"
+                L2: "{L2变更数}"
+                L3: "{L3变更数}"
+              by_agent:
+                ba_changes: "{BA文档修改次数}"
+                ux_changes: "{UX文档修改次数}"
+                arch_changes: "{Arch文档修改次数}"
+            screenshot_index:
+              description: "每个验收通过的UC对应的原型截图索引"
+              format: "UC编号 | 页面 | 截图路径 | 关键交互点"
+
+      - id: "DEMO-5.2"
+        action: "冻结BA和UX产物"
+        description: |
+          Demo完成标志着BA产物和UX设计文档已进入"冻结"状态。
+          此后的测试（stage-6）必须基于此冻结版本生成测试用例。
+          验收（stage-7）必须交叉核对冻结版本与Demo报告的一致性。
+          
+          冻结操作：
+          1. 在PRD §1（版本历史）追加一条Demo完成记录
+          2. 在UX设计文档中标注设计冻结
+          3. 更新PROJECT-INDEX.yml的 current_stage 为 stage-6
+          4. JOURNAL 记录 Demo完成事件（含D5.1统计摘要）
+          5. **V1.14.0新增软锁机制：生成冻结快照清单**
+        
+        freeze_lock:
+          description: |
+            软锁机制——通过文件级快照实现产物冻结的"可验证、可审计"：
+            1. **快照清单**：生成 .frozen-manifest.yml，记录冻结时刻每个产物的git hash和文件大小
+            2. **冻结验证**：handoff/AC阶段可对比当前产物hash与快照hash，不一致则告警
+            3. **变更追溯**：如有差异，追溯到PRD §19 handoff回传区是否记录了变更
+            4. **非阻断设计**：软锁不阻止文件修改（修改必须通过dev-change流程+PRD §19记录），
+               但修改必须有理由且在handoff时逐条审计
+          output:
+            file: "projects/{project}/.codebuddy/demo-frozen/{version}/.frozen-manifest.yml"
+            content:
+              demo_date: "{冻结日期}"
+              demo_version: "{版本号}"
+              demo_cycles: "{循环次数}"
+              total_ucs_passed: "{通过的UC数}"
+              git_hash: "{git rev-parse HEAD}"
+              frozen_artifacts:
+                - path: "docs/01-requirements/PRD-*.md"
+                  sha256: "{文件SHA256}"
+                  size: "{文件大小}"
+                - path: "docs/03-design/UX-*.md"
+                  sha256: "{文件SHA256}"
+                  size: "{文件大小}"
+                - path: "docs/02-architecture/ARCH-*.md"
+                  sha256: "{文件SHA256}"
+                  size: "{文件大小}"
+        
+        freeze_marker: |
+          以下产物版本为Post-Demo冻结版，供QA生成测试用例：
+          - PRD: projects/{project}/docs/01-requirements/*.md
+          - UX:  projects/{project}/docs/03-design/*.md
+          - Arch: projects/{project}/docs/02-architecture/*.md（如有）
+          - 冻结快照: projects/{project}/.codebuddy/demo-frozen/{version}/.frozen-manifest.yml（V1.14.0新增）
+
+      - id: "DEMO-5.3"
+        action: "交接给测试阶段"
+        message: |
+          ✅ **Demo验收完成！**
+          
+          验收结果：{总UC数}个UC全部通过（{一次性通过}个一次过，{迭代通过}个经反馈后过）
+          Demo循环次数：{x}次
+          最后反馈时间：{时间}
+          
+          BA/UX/Arch产物已冻结 ✅
+          测试用例将基于最终产物生成 ✅
+          
+          📋 **进入测试阶段（stage-6）** ...
+        
+        handover_data:
+          to_qa:
+            - "Demo验收报告（含每个UC的通过状态和截图索引）"
+            - "冻结版BA PRD（测试用例数据源）"
+            - "冻结版UX设计文档（视觉回归基线）"
+            - "变更汇总（L1/L2/L3变更清单，供QA评估风险）"
+            - "Demo中发现的边界情况/易忽略的场景（供QA设计边界用例）"
+          to_ba:
+            - "最终验收结果（BA产物的最终形态确认）"
+            - "用户反馈中涉及的需求澄清（如有）"
+
+  # ============================================
+  # 与 dev-change-flow 的增强AI识别配合
+  # ============================================
+  enhanced_ai_recognition:
+    description: |
+      Demo验收阶段对 dev-change-flow 的AI识别能力要求更高——
+      因为用户反馈是自然语言形式，不是明确的"把X改成Y"。
+      
+      AI需要在 DEMO-2.4a 阶段完成：
+      1. 自然语言→结构化反馈类型（功能/交互/流程/数据/视觉/文案/逻辑）
+      2. 反馈→PRD对象映射（这场反馈影响哪些UC/BR/FN）
+      3. 模糊反馈→追问澄清→精确变更点
+      4. 变更复杂度预判（L1/L2/L3）
+      
+      此识别是 dev-change-flow D0 阶段的增强版本——
+      D0 监听的是开发中的显式决策（"把弹窗改成Switch"），
+      Demo识别需额外处理用户的感性表达（"这个体验不好"）。
+    
+    ambiguity_handling:
+      strategy: "三步追问"
+      examples:
+        - user_says: "这个体验不好"
+          ai_clarify: "具体是哪个环节的体验不好？是页面打开慢、信息太多找不到重点、还是操作步骤太复杂？"
+        - user_says: "这里应该更智能一点"
+          ai_clarify: "你期望什么样的智能表现？比如自动填写、智能推荐、还是根据历史行为调整？"
+        - user_says: "这个功能不对"
+          ai_clarify: "功能不对是指：功能缺失（应该有但没有）、功能多余（不应该有）、还是实现方式不对（有但做法不符合预期）？"
+    
+    confidence_scoring:
+      description: "AI对每次解析输出置信度（0-1），低于0.7时必须追问澄清"
+      thresholds:
+        high_confidence: "≥0.9 → 直接展示解析结果，问正确性确认"
+        medium_confidence: "0.7-0.89 → 展示解析结果，提示可能有偏差"
+        low_confidence: "<0.7 → 必须追问澄清，禁止直接生成变更包"
+
+  # ============================================
+  # Demo失败处理（安全阀）
+  # ============================================
+  failure_handling:
+    max_loops_exceeded:
+      condition: "Demo循环次数超过 {max_demo_loops}"
+      action: |
+        PM介入决策：
+        ① 拆分问题到下一版本（剩余反馈标记DEFERRED，创建Backlog条目）
+        ② 召开临时评审（召集BA/UX/FD联合评审剩余问题）
+        ③ 简化需求范围（移除争议UC，缩小当前版本范围）
+      default: "建议①——将剩余{unresolved_count}条反馈延期到下一版本"
+    
+    cannot_reproduce:
+      condition: "反馈中提到的问题在原型上无法重现"
+      action: "标记为NEEDS_REPRO，PM协调FD确认环境/数据是否正确"
+    
+    conflicting_feedback:
+      condition: "多条反馈之间存在矛盾（如反馈A要求增加步骤B，反馈B要求简化流程）"
+      action: "PM列出冲突项，请用户给出优先级或折中方案"
+
+  # ============================================
+  # 配套的 Agent 职责
+  # ============================================
+  agent_responsibilities:
+    pm-agent:
+      role: "Demo引导者"
+      duties:
+        - "准备UC验收清单（从BA PRD提取）"
+        - "引导用户逐个UC操作原型验收"
+        - "收集反馈（含自然语言→结构化转化的AI识别）"
+        - "触发dev-change-flow回流"
+        - "管理Demo循环（安全阀+循环控制）"
+        - "生成Demo验收报告 → 交接给QA"
+    
+    fd-agent:
+      role: "代码响应者"
+      duties:
+        - "提供可操作的原型（确保页面可访问）"
+        - "根据dev-change回流结果调整代码"
+        - "处理'无法重现'的反馈（排查环境/数据问题）"
+    
+    ba-agent:
+      role: "需求同步者（通过dev-change-flow触发）"
+      duties:
+        - "消费 BA_PACKET → 编辑PRD文件"
+        - "注意：Demo阶段BA的输入源是dev-change-flow产出的BA_PACKET，不是直接来自用户"
+    
+    ux-agent:
+      role: "设计同步者（通过dev-change-flow触发）"
+      duties:
+        - "消费 UX_PACKET → 编辑设计文档"
+    
+    arch-agent:
+      role: "契约守护者（通过dev-change-flow触发）"
+      duties:
+        - "消费 ARCH_PACKET → 编辑契约或确认无变化"
+
+  # ============================================
+  # 版本历史
+  # ============================================
+  version_history:
+    - version: "1.1.0"
+      date: "2026-07-24"
+      type: "功能增强——循环严谨性修复"
+      changes:
+        - "DEMO-2新增 scope_mode（full/delta）：首次全量验收 vs 重Demo仅scope内UC"
+        - "DEMO-2.5增强：scope耗尽后的四种分流逻辑（直接完成/进入反馈/进入判断/再循环）"
+        - "DEMO-3.5新增：显式循环状态管理（loop_number+changed_ucs+pendingskipped+delta_scope），解决循环计数器无存储位置的问题"
+        - "DEMO-4.1新增：依赖UC识别机制（5条规则：FN联动/BR共享/状态机联动/数据实体共享/页面共享）+ delta_scope_computation"
+        - "DEMO-4.1新增：loop_safety_check——在判断时检查循环上限，超限不进入下一轮直接触发failure_handling"
+        - "DEMO-4.2增强：scope_mode_switch + on_return（明确重入DEMO-2→3→3.5→4的完整循环路径）"
+        - "DEMO-5.2增强：软锁机制（V1.14.0冻结快照）"
+        "整体循环严谨性提升：完整状态机链路 DEMO-2→3→3.5→4→2(delta)→3→3.5→4→...→5"
+    - version: "1.0.0"
+      date: "2026-07-24"
+      type: "重大新增"
+      changes:
+        - "新增测试前强制Demo用户验收流程，填补开发→测试之间的验收空白"
+        - "基于BA输出的UC清单逐条验收，五个阶段：准备→逐UC→反馈处理→重新Demo→完成"
+        - "与dev-change-flow深度集成：Demo反馈→AI增强识别→dev-change→BA/UX/Arch/FD回流→再Demo"
+        - "增强AI识别：从自然语言反馈→结构化变更→变更包生成→文件级编辑"
+        - "Demo安全阀：最多5次循环+模糊反馈追问+冲突反馈协调"
+        - "产物冻结机制：Demo完成后冻结BA/UX产物，测试基于最终版本"
+        - "Demo验收报告：验收记录+截图索引+变更汇总，交接给QA"

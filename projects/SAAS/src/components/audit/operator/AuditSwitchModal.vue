@@ -1,61 +1,112 @@
 <template>
-  <!-- M-AUDIT-001：审查开关确认弹窗 -->
+  <!-- M-AUDIT-001：内容审查开关弹窗（UC-AUDIT-001 step3-5） -->
   <teleport to="body">
     <div v-if="visible" class="modal-overlay" @click.self="$emit('cancel')">
-      <div :class="['modal', enabling ? 'enable' : 'disable']">
+      <div class="modal">
         <div class="modal-header">
-          <h3>{{ enabling ? '确认开启内容审查' : '确认关闭内容审查' }}</h3>
+          <h3>内容审查开关配置</h3>
         </div>
 
         <div class="modal-body">
-          <div class="summary-row">
-            <span>租户：{{ config.tenant_name }}（{{ config.tenant_id }}）</span>
-          </div>
-          <div class="summary-row">
-            <span>推流域名：{{ config.stream_domain || '—' }}</span>
-          </div>
-          <div class="summary-row">
-            <span>今日违规数：{{ config.today_violation_count }}</span>
+          <!-- 租户信息 -->
+          <div class="tenant-info-grid">
+            <div class="info-item">
+              <span class="info-label">租户名称</span>
+              <span class="info-value">{{ config?.tenant_name }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">租户编号</span>
+              <span class="info-value">{{ config?.tenant_id }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">推流域名</span>
+              <span class="info-value">{{ config?.stream_domain || '—' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">今日违规数</span>
+              <span class="info-value danger">{{ config?.today_violation_count ?? 0 }}</span>
+            </div>
           </div>
 
           <div class="divider" />
 
-          <p v-if="enabling" class="desc">
-            开启后该租户所有直播将触发内容审查，直播中控将显示内容审查Tab，运营可实时监控和处置违规内容。
-          </p>
-          <template v-else>
-            <p class="desc">
-              关闭后该租户所有直播不再触发内容审查：
-            </p>
-            <ul class="effect-list">
-              <li>直播列表不再显示审查入口</li>
-              <li>直播中控无内容审查Tab</li>
-              <li>观众端无擦音效果</li>
-              <li>回放不再自动擦音</li>
-            </ul>
-            <div class="warning-box">
-              ⚠ 平台不可降级类（涉黄/涉暴/公共安全/社会安全/违法乱纪/广告法）仍由腾讯云配置层强制执行
+          <!-- 开关操作区 -->
+          <div class="toggle-section">
+            <div class="toggle-row">
+              <span class="toggle-label">内容审查</span>
+              <el-switch
+                :model-value="internalEnabled"
+                size="large"
+                @change="onToggleChange"
+              />
+              <span :class="['toggle-status', internalEnabled ? 'on' : 'off']">
+                {{ internalEnabled ? '已开启' : '已关闭' }}
+              </span>
             </div>
-          </template>
-
-          <div v-if="!enabling" class="level-row">
-            <span>审查级别：</span>
-            <span class="level-value">{{ levelLabel }}</span>
           </div>
 
-          <div v-if="!enabling && liveCount > 0" class="live-warning">
-            ⚠ 当前有 <strong>{{ liveCount }}</strong> 场直播正在进行中<br />
-            关闭后直播中控内容审查Tab将立即消失，已产生的违规记录保留但不再接收新违规
+          <div class="divider" />
+
+          <!-- 5级联动影响说明 -->
+          <div class="linkage-section" v-if="showLinkage">
+            <p class="linkage-title">操作影响范围（5级联动）</p>
+            <div class="linkage-chain">
+              <!-- Level 1: 审查开关本身 -->
+              <div class="chain-node root">
+                <span class="chain-icon">①</span>
+                <span class="chain-text">直播审查开关</span>
+                <span :class="['chain-state', internalEnabled ? 'on' : 'off']">
+                  {{ internalEnabled ? 'ON' : 'OFF' }}
+                </span>
+              </div>
+              <div class="chain-arrow">→</div>
+              <!-- Level 2: 直播中控Tab -->
+              <div class="chain-node">
+                <span class="chain-icon">②</span>
+                <span class="chain-text">直播中控Tab</span>
+                <span :class="['chain-state', internalEnabled ? 'on' : 'off']">
+                  {{ internalEnabled ? '显示' : '隐藏' }}
+                </span>
+              </div>
+              <div class="chain-arrow">→</div>
+              <!-- Level 3: 直播列表入口 -->
+              <div class="chain-node">
+                <span class="chain-icon">③</span>
+                <span class="chain-text">直播列表入口</span>
+                <span :class="['chain-state', internalEnabled ? 'on' : 'off']">
+                  {{ internalEnabled ? '可操作' : '不可操作' }}
+                </span>
+              </div>
+              <div class="chain-arrow">→</div>
+              <!-- Level 4: 回放擦音 -->
+              <div class="chain-node">
+                <span class="chain-icon">④</span>
+                <span class="chain-text">回放擦音任务</span>
+                <span :class="['chain-state', internalEnabled ? 'on' : 'off']">
+                  {{ internalEnabled ? '自动创建' : '跳过' }}
+                </span>
+              </div>
+              <div class="chain-arrow">→</div>
+              <!-- Level 5: 观众端效果 -->
+              <div class="chain-node leaf">
+                <span class="chain-icon">⑤</span>
+                <span class="chain-text">观众端效果</span>
+                <span :class="['chain-state', internalEnabled ? 'on' : 'off']">
+                  {{ internalEnabled ? '生效' : '不生效' }}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
         <div class="modal-footer">
           <button class="btn btn-default" @click="$emit('cancel')">取消</button>
           <button
-            :class="['btn', enabling ? 'btn-primary' : 'btn-danger']"
-            @click="$emit('confirm')"
+            :class="['btn', hasChanged ? 'btn-primary' : 'btn-primary']"
+            :disabled="!hasChanged"
+            @click="handleConfirm"
           >
-            {{ enabling ? '确认开启' : '确认关闭' }}
+            确认{{ internalEnabled ? '开启' : '关闭' }}
           </button>
         </div>
       </div>
@@ -64,35 +115,54 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, watch, computed } from 'vue';
 import type { TenantAuditConfig } from '../../../contracts';
 
 const props = defineProps<{
   visible: boolean;
-  enabling: boolean;
-  config: TenantAuditConfig;
-  liveCount: number;
+  config: TenantAuditConfig | null;
 }>();
 
-defineEmits<{
-  confirm: [];
+const emit = defineEmits<{
+  confirm: [enabled: boolean];
   cancel: [];
 }>();
 
-const levelOptions: Record<string, string> = {
-  all: '全部',
-  sensitive_only: '仅涉黄涉暴',
-  custom: '自定义',
-};
+/** 弹窗内部的开关状态 */
+const internalEnabled = ref(false);
 
-const levelLabel = computed(() => levelOptions['all'] || '全部');
+/** 弹窗打开时，同步当前租户的开关状态 */
+watch(() => props.visible, (visible) => {
+  if (visible && props.config) {
+    internalEnabled.value = props.config.audit_enabled;
+  }
+});
+
+/** 开关是否发生变化 */
+const hasChanged = computed(() => {
+  return props.config ? internalEnabled.value !== props.config.audit_enabled : false;
+});
+
+/** 切换开关后才显示联动影响 */
+const showLinkage = ref(false);
+
+/** step4: 运营人员在弹窗内切换开关状态 */
+function onToggleChange(val: boolean) {
+  internalEnabled.value = val;
+  showLinkage.value = true;
+}
+
+/** step5: 确认是否开启/关闭 */
+function handleConfirm() {
+  emit('confirm', internalEnabled.value);
+}
 </script>
 
 <style scoped>
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: var(--color-mask, rgba(0,0,0,0.45));
+  background: rgba(0, 0, 0, 0.45);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -101,98 +171,188 @@ const levelLabel = computed(() => levelOptions['all'] || '全部');
 }
 .modal {
   background: #fff;
-  border-radius: var(--radius-lg, 8px);
-  box-shadow: var(--shadow-modal, 0 4px 20px rgba(0,0,0,0.15));
-  width: 480px;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  width: 520px;
   max-width: 90vw;
-  max-height: 80vh;
+  max-height: 85vh;
   overflow-y: auto;
 }
-.modal.disable { border: 2px solid var(--color-danger, #F5222D); }
-.modal.enable { border: 2px solid transparent; }
-.modal.disable .modal-header { background: var(--color-danger-bg, #FFF2F0); }
 .modal-header {
   padding: 16px 24px;
-  border-bottom: 1px solid var(--color-border, #D9D9D9);
+  border-bottom: 1px solid #D9D9D9;
 }
 .modal-header h3 {
   margin: 0;
-  font-size: var(--font-h3, 16px);
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 600;
+  color: #262626;
 }
 .modal-body {
   padding: 20px 24px;
-  max-height: 50vh;
-  overflow-y: auto;
 }
-.summary-row {
-  font-size: var(--font-body, 14px);
-  color: var(--color-text-primary, #262626);
-  margin-bottom: 6px;
+.tenant-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.info-label {
+  font-size: 12px;
+  color: #8C8C8C;
+}
+.info-value {
+  font-size: 14px;
+  color: #262626;
+  font-weight: 500;
+}
+.info-value.danger {
+  color: #F5222D;
 }
 .divider {
   height: 1px;
-  background: var(--color-border, #D9D9D9);
-  margin: 12px 0;
+  background: #F0F0F0;
+  margin: 16px 0;
 }
-.desc {
-  font-size: var(--font-body, 14px);
-  color: var(--color-text-secondary, #8C8C8C);
-  margin: 8px 0;
+.toggle-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0;
 }
-.effect-list {
-  margin: 4px 0 8px;
-  padding-left: 20px;
-  font-size: var(--font-body, 14px);
-  color: var(--color-text-secondary, #8C8C8C);
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
-.effect-list li { margin-bottom: 2px; }
-.warning-box {
-  background: var(--color-warning-bg, #FFF7E6);
-  border: 1px solid var(--color-warning, #FA8C16);
-  border-radius: var(--radius-sm, 2px);
-  padding: 8px 12px;
-  font-size: var(--font-small, 12px);
-  color: var(--color-warning, #FA8C16);
-  margin-top: 12px;
+.toggle-label {
+  font-size: 15px;
+  font-weight: 500;
+  color: #262626;
+  min-width: 80px;
+  text-align: right;
 }
-.level-row {
-  margin-top: 8px;
-  font-size: var(--font-body, 14px);
-  color: var(--color-text-secondary, #8C8C8C);
+.toggle-status {
+  font-size: 14px;
+  font-weight: 500;
+  min-width: 56px;
 }
-.level-value { color: var(--color-text-primary, #262626); font-weight: 500; }
-.live-warning {
-  background: var(--color-warning-bg, #FFF7E6);
-  border: 1px solid var(--color-warning, #FA8C16);
-  border-radius: var(--radius-sm, 2px);
-  padding: 10px 14px;
-  margin-top: 12px;
-  font-size: var(--font-small, 12px);
-  color: var(--color-warning, #FA8C16);
-  line-height: 1.6;
+.toggle-status.on {
+  color: #52C41A;
 }
+.toggle-status.off {
+  color: #FF4D4F;
+}
+
+/* 5级联动 */
+.linkage-section {
+  background: #FAFAFA;
+  border: 1px solid #F0F0F0;
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin-top: 4px;
+}
+.linkage-title {
+  font-size: 13px;
+  color: #8C8C8C;
+  margin: 0 0 12px;
+}
+.linkage-chain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+}
+.chain-node {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: #fff;
+  border: 1px solid #E8E8E8;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.chain-node.root {
+  border-color: #1890FF;
+}
+.chain-node.leaf {
+  border-color: #722ED1;
+}
+.chain-icon {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8C8C8C;
+}
+.chain-text {
+  font-size: 12px;
+  color: #595959;
+}
+.chain-state {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+.chain-state.on {
+  color: #52C41A;
+  background: #F6FFED;
+}
+.chain-state.off {
+  color: #BFBFBF;
+  background: #FAFAFA;
+}
+.chain-arrow {
+  font-size: 12px;
+  color: #D9D9D9;
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+
 .modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 24px 16px;
-  border-top: 1px solid var(--color-border, #D9D9D9);
+  border-top: 1px solid #F0F0F0;
 }
 .btn {
   padding: 6px 20px;
-  border-radius: var(--radius-md, 4px);
-  font-size: var(--font-body, 14px);
+  border-radius: 4px;
+  font-size: 14px;
   cursor: pointer;
-  border: 1px solid var(--color-border, #D9D9D9);
+  border: 1px solid #D9D9D9;
   transition: all 0.2s;
 }
-.btn-default { background: #fff; color: var(--color-text-primary, #262626); }
-.btn-default:hover { border-color: var(--color-primary, #1890FF); color: var(--color-primary, #1890FF); }
-.btn-primary { background: var(--color-primary, #1890FF); color: #fff; border-color: var(--color-primary, #1890FF); }
-.btn-primary:hover { background: var(--color-primary-hover, #40A9FF); }
-.btn-danger { background: var(--color-danger, #F5222D); color: #fff; border-color: var(--color-danger, #F5222D); }
-.btn-danger:hover { background: #FF4D4F; }
+.btn-default {
+  background: #fff;
+  color: #262626;
+}
+.btn-default:hover {
+  border-color: #1890FF;
+  color: #1890FF;
+}
+.btn-primary {
+  background: #1890FF;
+  color: #fff;
+  border-color: #1890FF;
+}
+.btn-primary:hover {
+  background: #40A9FF;
+}
+.btn-primary:disabled {
+  background: #D9D9D9;
+  border-color: #D9D9D9;
+  color: #fff;
+  cursor: not-allowed;
+}
 
-@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 </style>

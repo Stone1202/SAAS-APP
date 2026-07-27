@@ -1,0 +1,1580 @@
+# ============================================
+# 领域知识：互联网医院
+# 版本：v1.3.0（处方外流发起端深度细化——基于国家医保局〔2024〕86号政策 + 2025年全国电子处方中心互联互通实践）
+# 分类：medical（医疗健康）
+# 学习方法：传统模式（traditional）
+# 来源：互联网医院业务架构文档 × 2个版本（HTML）+ 6位医疗领域专家联合盲区审查 + 处方外流最新政策专项深化
+# 增量内容：v1.2.0(HIS对接协议层/电子病历SOAP结构/转诊流转/急诊通道/多院区排班/慢病增强/处方增强/病历全生命周期/医保前置机对接)
+#   → v1.3.0 处方外流发起端新增：①处方开具→CA电子签章自动加盖→国密加密上传电子处方中心全流程
+#   ②处方唯一码(RxID)生成与关联 ③处方有效期管理(72h/7d) ④PASS前置审方(11强制拦截+12风险提醒)
+#   ⑤处方外流药品目录(排除精麻毒放/儿童禁慎用/注射剂等) ⑥处方状态回传追踪(已开具→已审方→已接收→已调配→已核销)
+#   ⑦处方数据监管上报(精麻药品/双通道药品强制上报) ⑧处方模板管理
+# 完整资产由 v1.2.0 和 v1.3.0 共同构成
+# 版本：v1.3.0（6位专家联合盲区审查闭环 + 处方外流政策专项深化）
+
+domain:
+  name: "互联网医院"
+  category: "medical"
+  version: "v1.3.0"
+  learned_at: "2026-07-24"
+  learning_method: "traditional"
+  source_urls:
+    - "file:互联网医院业务架构文档.html"           # v1.0.0原始来源
+    - "file:互联网医院业务架构文档.html（第二版本）" # v1.1.0增量来源
+    - "6位专家联合盲区审查"                         # v1.2.0专家审查增量
+    - "国家医保局〔2024〕86号通知+2025年31省电子处方中心落地实践"  # v1.3.0处方外流政策深化
+  description: |
+    互联网医院是通过互联网技术将传统医疗服务的"诊前-诊中-诊后"全流程线上化的业务体系。
+    覆盖在线问诊、电子处方、药品配送、预约挂号、慢病管理、健康档案、转诊流转、急诊通道、
+    电子病历(EMR)、多院区管理、HIS深度对接(LIS/PACS/医保前置机)、处方外流（经电子处方中心
+    与药店对接）等核心医疗场景，涉及患者、医生、药师、物流、系统平台、HIS系统管理员等多角色协同。
+  curation_policy: |
+    本知识从互联网医院业务架构文档×2版本+6位专家联合盲区审查+
+    国家医保局〔2024〕86号政策深化提取，保留：
+    业务架构（7域30能力→7域32能力）、产品架构（5层）、业务泳道（6角色含HIS管理员）、
+    业务流程（含分支）、信息流（15实体→16实体+10通道→11通道）、
+    状态机（11状态16转换）、操作矩阵（6角色×16操作→6角色×19操作）。
+    过滤：具体技术实现代码、UI布局细节、运营数据。
+  status: "draft"
+  # v1.3.0 新增：处方外流政策深化审查记录
+  policy_deepening:
+    reviewed_at: "2026-07-24"
+    policy_basis:
+      - "国家医保局〔2024〕86号《关于规范医保药品外配处方管理的通知》"
+      - "全国统一医保信息平台电子处方中心技术规范"
+      - "《处方管理办法》（卫生部令第53号）"
+    key_policy_points:
+      - "2025.1.1起处方外流必须经电子处方中心，禁止纸质处方传递"
+      - "处方开具后必须自动加盖CA电子签章，国密算法加密上传"
+      - "处方唯一码(RxID)由电子处方中心统一生成，全链路追溯"
+      - "处方有效期72h（特殊延至7d），超期处方不可流转"
+      - "外流处方须经PASS前置审方（11强制拦截+12风险提醒）"
+      - "外流药品目录：排除精麻毒放/儿童禁慎用/注射剂/含兴奋剂等不可外流品种"
+      - "精麻药品处方/双通道药品处方须强制上报药监监管平台"
+      - "处方模板管理提高慢病/儿科等常用方开方效率"
+  # v1.2.0 新增：专家审查记录
+  expert_review:
+    reviewed_at: "2026-07-24"
+    reviewers:
+      - expert: "互联网医院专家"
+        blind_spots_found: 6
+        key_findings: ["多院区/多科室管理缺失", "急诊通道缺失", "转诊流转缺失", "医生多点执业缺失", "问诊质量控制缺失", "医患纠纷处理缺失"]
+      - expert: "医院HIS系统专家"
+        blind_spots_found: 8
+        key_findings: ["HIS对接协议层缺失(HL7 FHIR/WebService)", "电子病历(EMR)同步缺失", "医生排班同步缺失", "药品目录同步缺失", "检查检验预约闭环缺失", "挂号号源同步缺失", "住院对接缺失", "医保前置机对接缺失"]
+      - expert: "慢病管理专家"
+        blind_spots_found: 6
+        key_findings: ["多维健康数据采集(IoT)缺失", "长期处方机制缺失", "用药依从性管理缺失", "指标异常预警缺失", "定期复查联动缺失", "社区联动缺失"]
+      - expert: "处方管理专家"
+        blind_spots_found: 7
+        key_findings: ["处方配伍禁忌自动检查缺失", "处方分级审核缺失", "精麻药品处方管理缺失", "儿童/老人剂量判定缺失", "处方外流机制缺失", "处方模板管理缺失", "处方监管上报缺失"]
+      - expert: "病历管理专家"
+        blind_spots_found: 6
+        key_findings: ["SOAP病历结构缺失", "病历质控缺失", "病历归档与封存缺失", "病历共享授权缺失", "多学科会诊(MDT)缺失", "病历打印导出缺失"]
+      - expert: "药店业务专家"
+        blind_spots_found: 2
+        key_findings: ["药品效期管理缺失", "比价与替代药品推荐缺失"]
+    total_blind_spots: 35
+    high_severity: 18
+    medium_severity: 17
+
+  # ============================================
+  # 1. 业务泳道图（角色×阶段×动作）
+  # ============================================
+  swimlane:
+    roles:
+      - role_id: "ROLE-YYY-001"
+        name: "患者/用户"
+        type: "end_user"
+        description: "医疗服务的需求方，发起问诊、购药、预约等行为"
+        core_need: "便捷获取优质医疗服务，减少就医时间和成本"
+      - role_id: "ROLE-YYY-002"
+        name: "系统平台"
+        type: "system"
+        description: "互联网医院平台，负责业务调度、数据流转、状态管理"
+        core_need: "高效精准的调度能力，保障医疗服务质量与合规"
+      - role_id: "ROLE-YYY-003"
+        name: "医生"
+        type: "service_provider"
+        description: "医疗服务提供方，负责接诊、诊断、开方"
+        core_need: "高效接诊工具，保障诊疗质量与合理收入"
+      - role_id: "ROLE-YYY-004"
+        name: "药师"
+        type: "service_provider"
+        description: "处方审核方，负责电子处方审核与用药安全把关"
+        core_need: "高效审核工具，保障用药安全合规"
+      - role_id: "ROLE-YYY-005"
+        name: "物流/配送"
+        type: "service_provider"
+        description: "药品配送方，负责处方药品的打包与送达"
+        core_need: "准确及时的药品配送服务"
+      # v1.2.0 新增：HIS系统管理员（HIS系统专家审查发现）
+      - role_id: "ROLE-YYY-006"
+        name: "HIS系统管理员"
+        type: "system_administrator"
+        description: "医院信息系统管理员，负责HIS排班同步、号源管理、电子病历对接、检查检验系统(LIS/PACS)对接、医保前置机维护"
+        core_need: "保障互联网医院与院内系统的数据实时同步与一致性"
+
+    stages:
+      - "诊前阶段"
+      - "问诊阶段"
+      - "处方阶段"
+      - "购药阶段"
+      - "交付阶段"
+      - "转诊阶段"    # v1.2.0 新增
+      - "急诊阶段"    # v1.2.0 新增
+      - "慢病管理阶段" # v1.2.0 新增
+
+    actions:
+      # 诊前阶段
+      - role: "患者"
+        stage: "诊前阶段"
+        action: "选择科室/医生，填写病情描述，发起问诊"
+        input: "科室分类、医生列表、病情信息"
+        output: "问诊订单创建"
+        sources: ["互联网医院业务架构文档"]
+      - role: "系统平台"
+        stage: "诊前阶段"
+        action: "展示科室/医生，AI智能分诊，生成问诊订单"
+        input: "患者选择的科室/病情描述"
+        output: "待支付问诊订单"
+        sources: ["互联网医院业务架构文档"]
+      - role: "医生"
+        stage: "诊前阶段"
+        action: "设置排班、服务范围、问诊费用"
+        input: "排班信息、执业信息"
+        output: "可预约时段与接诊能力"
+        sources: ["互联网医院业务架构文档"]
+
+      # 问诊阶段
+      - role: "患者"
+        stage: "问诊阶段"
+        action: "支付问诊费，等待医生接诊，进行图文/视频问诊交流"
+        input: "问诊费金额、支付方式"
+        output: "支付成功，问诊中"
+        sources: ["互联网医院业务架构文档"]
+      - role: "系统平台"
+        stage: "问诊阶段"
+        action: "处理支付、分配医生、建立即时通讯/视频通道、记录问诊过程"
+        input: "支付结果、医生排班状态"
+        output: "问诊会话记录"
+        sources: ["互联网医院业务架构文档"]
+      - role: "医生"
+        stage: "问诊阶段"
+        action: "接收问诊、查阅病情、与患者交流、做出诊断"
+        input: "患者病情描述、历史病历"
+        output: "诊断结论、开具处方（如需）"
+        sources: ["互联网医院业务架构文档"]
+
+      # 处方阶段
+      - role: "医生"
+        stage: "处方阶段"
+        action: "开具电子处方（药品名称、用法用量、疗程）"
+        input: "诊断结论、药品目录"
+        output: "待审核电子处方"
+        sources: ["互联网医院业务架构文档"]
+      - role: "药师"
+        stage: "处方阶段"
+        action: "审核电子处方（用药合理性、配伍禁忌、剂量安全）"
+        input: "电子处方内容、药品知识库"
+        output: "审核通过/驳回的处方"
+        sources: ["互联网医院业务架构文档"]
+      - role: "系统平台"
+        stage: "处方阶段"
+        action: "处方流转（医生→药师→患者）、用药提醒、处方存档"
+        input: "处方内容、审核结果"
+        output: "已审核处方（可购药）"
+        sources: ["互联网医院业务架构文档"]
+
+      # 购药阶段
+      - role: "患者"
+        stage: "购药阶段"
+        action: "确认处方药品、支付药费"
+        input: "处方药品清单、药费金额"
+        output: "购药订单支付完成"
+        sources: ["互联网医院业务架构文档"]
+      - role: "系统平台"
+        stage: "购药阶段"
+        action: "生成购药订单、处理药费支付、生成配送单"
+        input: "患者确认、支付结果"
+        output: "待配送订单"
+        sources: ["互联网医院业务架构文档"]
+
+      # 交付阶段
+      - role: "物流/配送"
+        stage: "交付阶段"
+        action: "拣药打包、配送上门"
+        input: "配送订单、药品清单、收货地址"
+        output: "签收确认"
+        sources: ["互联网医院业务架构文档"]
+      - role: "患者"
+        stage: "交付阶段"
+        action: "签收药品、评价问诊服务"
+        input: "配送药品、问诊体验"
+        output: "签收记录、评价反馈"
+        sources: ["互联网医院业务架构文档"]
+
+  # ============================================
+  # 2. 业务流程图
+  # ============================================
+  flow:
+    happy_path: |
+      患者发起问诊并选择科室 → 支付问诊费 → 系统分配医生 → 医生接诊并问诊交流 →
+      医生开具电子处方 → 药师审核处方 → 审核通过后患者确认购药 → 支付药费 →
+      药品配送 → 患者签收 → 问诊评价 → 完成
+
+      ```mermaid
+      flowchart TD
+        A["👤 患者：发起问诊·选择科室"] --> B["👤 患者：支付问诊费"]
+        B --> C{"💳 支付是否成功？"}
+        C -->|否| C1["❌ 支付失败·订单取消"]
+        C -->|是| D["👨‍⚕️ 医生：接诊·问诊交流"]
+        D --> E["👨‍⚕️ 医生：开具电子处方"]
+        E --> F{"🔍 药师：审核处方"}
+        F -->|驳回| F1["👨‍⚕️ 医生：修改处方"]
+        F1 --> E
+        F -->|通过| G["👤 患者：确认购药·支付药费"]
+        G --> H["📦 物流：药品配送"]
+        H --> I["👤 患者：签收药品"]
+        I --> J["👤 患者：问诊评价"]
+        J --> K["✅ 问诊完成"]
+      ```
+
+    exceptions:
+      - desc: "支付失败：问诊费支付异常（余额不足/支付超时/支付渠道故障），订单取消，引导患者重新发起"
+        sources: ["互联网医院业务架构文档"]
+      - desc: "医生拒诊：医生因非执业范围/信息不足等原因拒绝接诊，系统退款并推荐其他医生"
+        sources: ["互联网医院业务架构文档"]
+      - desc: "处方驳回：药师审核不通过（用药不合理/剂量超标/配伍禁忌），退回医生修改"
+        sources: ["互联网医院业务架构文档"]
+      - desc: "配送异常：物流延误/药品破损/地址错误，触发客服介入处理"
+        sources: ["互联网医院业务架构文档"]
+
+    branches:
+      - desc: "过时未支付：问诊费超过15分钟未支付，订单自动取消（可重新发起）"
+        sources: ["互联网医院业务架构文档"]
+      - desc: "医生超时未接诊：超过设定时间无人接诊，系统自动退款并推荐同科室其他医生"
+        sources: ["互联网医院业务架构文档"]
+      - desc: "无需购药：医生诊断后认为无需服药，直接给出健康建议并结束问诊"
+        sources: ["互联网医院业务架构文档"]
+      - desc: "线下转诊：医生判断病情不适合线上处理，建议患者前往线下医疗机构"
+        sources: ["互联网医院业务架构文档"]
+
+  # ============================================
+  # 3. 业务信息流
+  # ============================================
+  info_flow:
+    entities:
+      - name: "患者信息"
+        producer: "患者"
+        consumer: "系统平台 → 医生"
+        depends_on: "患者注册/实名认证"
+        key_fields: ["姓名", "身份证号", "手机号", "年龄", "性别", "过敏史"]
+        sources: ["互联网医院业务架构文档"]
+      - name: "问诊订单"
+        producer: "系统平台"
+        consumer: "支付系统 → 医生"
+        depends_on: "患者选择科室+提交病情"
+        key_fields: ["订单编号", "患者ID", "科室", "医生ID", "问诊费", "状态", "创建时间"]
+        sources: ["互联网医院业务架构文档"]
+      - name: "病情描述"
+        producer: "患者"
+        consumer: "系统平台 → 医生"
+        depends_on: "问诊订单创建"
+        key_fields: ["主诉", "现病史", "既往史", "症状图片", "持续时间"]
+        sources: ["互联网医院业务架构文档"]
+      - name: "诊断结论"
+        producer: "医生"
+        consumer: "患者"
+        depends_on: "病情描述 + 问诊交流"
+        key_fields: ["诊断结果", "处置建议", "是否需要服药", "是否建议转诊"]
+        sources: ["互联网医院业务架构文档"]
+      - name: "电子处方"
+        producer: "医生"
+        consumer: "药师 → 患者 → 药店/配送方"
+        depends_on: "诊断结论"
+        key_fields: ["处方编号", "患者ID", "医生ID", "药品列表", "用法用量", "疗程", "审核状态"]
+        sources: ["互联网医院业务架构文档"]
+      - name: "处方审核记录"
+        producer: "药师"
+        consumer: "系统平台 → 医生 → 患者"
+        depends_on: "电子处方"
+        key_fields: ["审核结果", "驳回原因", "审核时间", "药师ID", "风险提示"]
+        sources: ["互联网医院业务架构文档"]
+      - name: "购药订单"
+        producer: "系统平台"
+        consumer: "支付系统 → 物流系统 → 患者"
+        depends_on: "处方审核通过 + 患者确认"
+        key_fields: ["订单编号", "处方编号", "药品明细", "药费", "收货地址", "配送状态"]
+        sources: ["互联网医院业务架构文档"]
+      - name: "配送信息"
+        producer: "物流系统"
+        consumer: "患者"
+        depends_on: "购药订单"
+        key_fields: ["运单号", "配送员", "预计送达时间", "配送状态", "签收记录"]
+        sources: ["互联网医院业务架构文档"]
+      - name: "评价反馈"
+        producer: "患者"
+        consumer: "系统平台 → 医生"
+        depends_on: "签收药品 / 问诊结束"
+        key_fields: ["评分", "评价内容", "匿名标识"]
+        sources: ["互联网医院业务架构文档"]
+      - name: "支付流水"
+        producer: "支付系统"
+        consumer: "系统平台 → 患者"
+        depends_on: "问诊订单 / 购药订单"
+        key_fields: ["支付单号", "订单编号", "支付金额", "支付方式", "支付时间", "支付状态"]
+        sources: ["互联网医院业务架构文档"]
+
+    # v1.2.0 新增：5个信息实体（HIS/病历/转诊/IoT专家审查发现）
+      - name: "电子病历（EMR）"
+        producer: "医生"
+        consumer: "HIS系统 → 患者"
+        depends_on: "问诊完成 + 诊断结论"
+        key_fields: ["emr_id", "主诉(S)", "客观检查(O)", "评估(A)", "计划(P)", "诊断", "ICD编码", "版本号", "状态（草稿/暂存/已完成/已归档/已封存）"]
+        soap_structure: true
+        sources: ["病历管理专家审查"]
+      - name: "检查检验报告"
+        producer: "LIS/PACS系统"
+        consumer: "系统平台 → 医生 → 患者"
+        depends_on: "医生开具检查单 + 患者到院检查"
+        key_fields: ["报告编号", "检查类型（检验/影像）", "检验项目/部位", "检测结果", "参考范围", "异常标记", "报告医生", "审核时间"]
+        life_cycle: "已开单→已预约→已采样→已出报告→已审核→已回传"
+        sources: ["HIS系统专家审查"]
+      - name: "转诊单"
+        producer: "医生"
+        consumer: "目标科室/医院 → 患者"
+        depends_on: "医生判断不适合线上处理"
+        key_fields: ["转诊编号", "来源科室", "目标科室", "来源医院", "目标医院", "转诊原因", "紧急程度（急/亚急/常规）", "附带病历", "转诊状态"]
+        life_cycle: "申请中→已受理→已到达→已完成/已拒绝"
+        sources: ["互联网医院专家审查"]
+      - name: "医生排班信息"
+        producer: "HIS系统"
+        consumer: "系统平台 → 医生 → 患者"
+        depends_on: "HIS排班同步"
+        key_fields: ["排班ID", "医生ID", "医院ID", "科室ID", "日期", "时间段列表", "号源配额", "已预约数", "同步来源(HIS)", "最后同步时间"]
+        life_cycle: "同步中→已发布→已满号→已停诊"
+        sources: ["HIS系统专家审查"]
+      - name: "健康监测数据（IoT）"
+        producer: "IoT设备（血糖仪/血压计/可穿戴设备）"
+        consumer: "系统平台 → 医生"
+        depends_on: "设备绑定 + 数据同步"
+        key_fields: ["数据ID", "患者ID", "设备类型", "指标类型（血糖/血压/心率/血氧）", "指标值", "单位", "测量时间", "是否超出阈值", "关联预警ID"]
+        life_cycle: "已采集→已同步→异常标记→已处理"
+        sources: ["慢病管理专家审查"]
+
+    cross_system: |
+      互联网医院平台作为信息枢纽，与多个外部系统交互：
+
+      1. **支付系统**：问诊费/药费的在线支付与退款
+      2. **HIS系统**（医院信息系统）：医生排班同步、电子病历(EMR)双向同步、号源锁号、药品目录映射
+      3. **LIS/PACS系统**：检验科/影像科结果回传，检查单开具→HIS预约→到院检查→报告回传闭环
+      4. **药品供应链系统**：药品库存、处方流转、配送管理
+      5. **即时通讯系统**：医患图文/视频问诊通道
+      6. **医保系统**：医保前置机对接，医保结算与报销链路
+      7. **区域卫生信息平台**：电子健康卡、检验结果互认
+      8. **IoT健康设备平台**：血糖仪/血压计/可穿戴设备数据自动同步
+      9. **药监监管平台**：处方数据监管上报（精麻药品/处方外流追溯）
+      10. **社区医疗系统**：慢病管理与社区医院/家庭医生的双向转诊与数据共享
+
+      HIS对接协议层（v1.2.0 新增）：
+      - 主流协议：HL7 FHIR R4（推荐）、HL7 v2.x（兼容）、WebService/SOAP（传统HIS）
+      - 数据库级：视图同步（只读视图→定时ETL）、消息队列（HIS→MQ→互联网医院）
+      - 号源同步机制：增量同步（变更推送）为主 + 全量同步（每日对账）为辅
+      - 冲突处理：HIS侧为权威源，互联网医院侧以HIS为准覆盖，冲突时标记人工处理
+      - 药品目录映射：HIS药品编码↔互联网医院药品ID，支持1:1/1:N/N:1映射，定期增量更新
+
+      ```mermaid
+      flowchart LR
+        P["患者"] -- 发起问诊/购药 --> PF["互联网医院平台"]
+        D["医生"] -- 接诊/开方 --> PF
+        PA["药师"] -- 审核处方 --> PF
+        L["物流"] -- 配送信息 --> PF
+        HA["HIS管理员"] -- 排班/号源同步 --> PF
+        PF -- 支付请求 --> PAY["支付系统"]
+        PF -- 排班/EMR/号源 --> HIS["HIS系统<br/>HL7 FHIR/WebService"]
+        PF -- 检查单/报告 --> LIS["LIS/PACS系统"]
+        PF -- 处方流转 --> DRUG["药品供应链"]
+        PF -- 问诊通道 --> IM["即时通讯"]
+        PF -- 医保结算 --> MI["医保系统<br/>（医保前置机）"]
+        PF -- 健康数据电子健康卡 --> REG["区域卫生平台"]
+        PF -- 健康数据采集/预警 --> IOT["IoT健康设备"]
+        PF -- 处方监管上报 --> SUP["药监监管平台"]
+        PF -- 慢病转诊 --> COM["社区医疗系统"]
+      ```
+
+  # ============================================
+  # 4. 业务操作矩阵（角色×状态×操作）
+  # ============================================
+  operation_matrix:
+    roles:
+      - "患者"
+      - "医生"
+      - "药师"
+      - "物流/配送"
+      - "系统平台"
+      - "HIS系统管理员"  # v1.2.0 新增
+    states:
+      - "待支付"
+      - "待接诊"
+      - "问诊中"
+      - "待开方"
+      - "待审核"
+      - "待复审"      # v1.2.0 新增
+      - "待购药"
+      - "待配送"
+      - "已完成"
+      - "已取消"
+      - "已转诊"      # v1.2.0 新增
+    matrix:
+      - role: "患者"
+        state: "待支付"
+        operations: ["取消问诊", "支付问诊费"]
+        target_state: "已取消 / 待接诊"
+        sources: ["互联网医院业务架构文档"]
+      - role: "患者"
+        state: "问诊中"
+        operations: ["发送病情描述", "上传症状图片", "发起视频通话"]
+        target_state: "问诊中"
+        sources: ["互联网医院业务架构文档"]
+      - role: "患者"
+        state: "待购药"
+        operations: ["确认购药", "支付药费", "放弃购药"]
+        target_state: "待配送 / 已完成"
+        sources: ["互联网医院业务架构文档"]
+      - role: "患者"
+        state: "待配送"
+        operations: ["查看物流", "联系客服"]
+        target_state: "待配送"
+        sources: ["互联网医院业务架构文档"]
+      - role: "患者"
+        state: "已完成"
+        operations: ["评价问诊", "查看处方", "复诊预约"]
+        target_state: "已完成"
+        sources: ["互联网医院业务架构文档"]
+      - role: "医生"
+        state: "待接诊"
+        operations: ["确认接诊", "拒绝接诊"]
+        target_state: "问诊中 / 已取消"
+        sources: ["互联网医院业务架构文档"]
+      - role: "医生"
+        state: "问诊中"
+        operations: ["回复患者", "查看病历", "做出诊断", "开具处方"]
+        target_state: "待开方 / 已完成"
+        sources: ["互联网医院业务架构文档"]
+      - role: "医生"
+        state: "待审核（驳回）"
+        operations: ["修改处方", "重新提交审核"]
+        target_state: "待审核"
+        sources: ["互联网医院业务架构文档"]
+      - role: "药师"
+        state: "待审核"
+        operations: ["通过处方", "驳回处方（附原因）"]
+        target_state: "待购药 / 待开方"
+        sources: ["互联网医院业务架构文档"]
+      - role: "物流/配送"
+        state: "待配送"
+        operations: ["接单", "拣货", "发货", "标记送达"]
+        target_state: "已完成"
+        sources: ["互联网医院业务架构文档"]
+      - role: "系统平台"
+        state: "任意"
+        operations: ["状态监控", "超时自动取消", "消息推送", "数据归档"]
+        target_state: "依操作而定"
+        sources: ["互联网医院业务架构文档"]
+
+    # v1.2.0 新增操作矩阵行
+      - role: "医生"
+        state: "问诊中"
+        operations: ["发起转诊", "发起MDT会诊", "书写SOAP病历"]
+        target_state: "已转诊 / 问诊中"
+        sources: ["互联网医院专家审查", "病历管理专家审查"]
+      - role: "药师"
+        state: "待复审"
+        operations: ["独立审核（双审）", "驳回（附原因）"]
+        target_state: "待购药 / 待开方"
+        sources: ["处方管理专家审查"]
+      - role: "HIS系统管理员"
+        state: "任意"
+        operations: ["排班同步", "号源管理", "药品目录映射", "EMR回写确认", "病历归档/封存", "LIS/PACS对接"]
+        target_state: "依操作而定"
+        sources: ["HIS系统专家审查", "病历管理专家审查"]
+      - role: "患者"
+        state: "已转诊"
+        operations: ["查看转诊单", "确认转诊", "到达目标科室报告"]
+        target_state: "已转诊 → 已完成"
+        sources: ["互联网医院专家审查"]
+
+  # ============================================
+  # 5. 业务规则
+  # ============================================
+  business_rules:
+    - id: "BR-YYY-001"
+      name: "问诊费支付前置"
+      description: "患者必须在支付问诊费后，系统才会将问诊订单推送给医生。支付超时15分钟自动取消。"
+      trigger: "问诊订单创建"
+      behavior: "标记订单为待支付 → 支付超时15分钟 → 自动取消"
+      related_state: "待支付 → 待接诊 / 已取消"
+      sources: ["互联网医院业务架构文档"]
+    - id: "BR-YYY-002"
+      name: "医生接诊时效"
+      description: "医生需在规定时间内接诊（通常30分钟），超时系统自动退款并推荐其他医生。"
+      trigger: "支付成功，订单进入待接诊"
+      behavior: "计时开始 → 超时未接诊 → 自动退款+推荐其他医生"
+      related_state: "待接诊 → 问诊中 / 已取消"
+      sources: ["互联网医院业务架构文档"]
+    - id: "BR-YYY-003"
+      name: "处方审核必过"
+      description: "所有电子处方必须经药师审核通过后，患者方可购药。审核不通过的处方返回医生修改。"
+      trigger: "医生开具电子处方"
+      behavior: "处方进入待审核 → 药师审核 → 通过/驳回 → 通过后进入待购药"
+      related_state: "待开方 → 待审核 → 待购药 / 待开方"
+      sources: ["互联网医院业务架构文档"]
+    - id: "BR-YYY-004"
+      name: "药品配送签收闭环"
+      description: "药品必须由患者本人或授权人签收，签收后问诊流程方可评价。未签收不得标记为完成。"
+      trigger: "药品配送中"
+      behavior: "配送员送达 → 患者签收 → 状态更新为已完成"
+      related_state: "待配送 → 已完成"
+      sources: ["互联网医院业务架构文档"]
+    - id: "BR-YYY-005"
+      name: "实名认证强制"
+      description: "患者发起问诊前须完成实名认证，未实名用户不可使用问诊服务。"
+      trigger: "用户发起问诊"
+      behavior: "检查实名状态 → 未实名引导认证 → 已实名继续"
+      related_state: "无（前置校验）"
+      sources: ["互联网医院业务架构文档"]
+    - id: "BR-YYY-006"
+      name: "处方药品限制"
+      description: "互联网医院不得开具麻醉药品、精神药品等特殊管理药品。处方药品范围受监管限制。"
+      trigger: "医生开具处方时选择药品"
+      behavior: "系统校验药品分类 → 禁止类药品无法选择 → 处方药品需在合规目录内"
+      related_state: "待开方"
+      sources: ["互联网医院业务架构文档"]
+
+    # v1.2.0 新增：10条业务规则（处方管理/HIS/慢病/病历专家审查发现）
+    - id: "BR-YYY-007"
+      name: "处方分级审核"
+      description: "普通处方AI初筛→药师终审；高风险处方（含抗生素/激素/精麻药物/儿童用药）强制人工双人审核。"
+      trigger: "处方进入审核队列"
+      behavior: "系统判定风险等级 → 普通：AI预审+1名药师 → 高风险：强制2名药师独立审核 → 均通过后方可流转"
+      related_state: "待审核 → 待复审（如需） → 待购药"
+      sources: ["处方管理专家审查"]
+    - id: "BR-YYY-008"
+      name: "精麻药品处方管理"
+      description: "精麻药品处方需经医院药事管理委员会审批（一级）+ 药监系统备案（二级），双审批通过后方可调配。"
+      trigger: "处方含精麻药品"
+      behavior: "标记为精麻处方 → 医院药事会审批 → 药监系统备案 → 通过后药师方可审核"
+      related_state: "待复审"
+      sources: ["处方管理专家审查"]
+    - id: "BR-YYY-009"
+      name: "长期处方（慢病）机制"
+      description: "确诊慢病患者可开具不超过12周长处方（普通处方≤7天）。长处方需标注复诊节点，到期自动提醒复查。"
+      trigger: "医生诊断为慢病且需长期用药"
+      behavior: "标记为长处方（最长12周）→ 标注复诊时间节点 → 到期前3天自动推送复诊提醒 → 复诊后重新评估用药方案"
+      related_state: "待购药 → 慢病管理"
+      sources: ["慢病管理专家审查"]
+    - id: "BR-YYY-010"
+      name: "病历质控时效"
+      description: "接诊完成后24小时内必须完成电子病历书写，超时标记为质控缺陷。病历需包含完整SOAP结构（主诉/客观检查/评估/计划）。"
+      trigger: "问诊结束（诊断完成或处方开具）"
+      behavior: "启动24小时计时 → 病历SOAP完整性校验 → 超时或缺失必填项标记质控缺陷 → 纳入医生质控评分"
+      related_state: "问诊中 → 已完成（含病历质控状态）"
+      sources: ["病历管理专家审查"]
+    - id: "BR-YYY-011"
+      name: "转诊流转规则"
+      description: "医生判断不适宜线上处理的病情，可发起转诊。转诊分为：同院跨科室（院内转诊）、跨院转诊（含线上→线下）。转诊后原问诊订单状态变更为已转诊。"
+      trigger: "医生判断需要线下或专科进一步诊疗"
+      behavior: "医生填写转诊原因+目标科室/医院 → 系统生成转诊单 → 推送患者 → 患者确认后锁定目标号源（如需）"
+      related_state: "问诊中 → TRANSFERRED"
+      sources: ["互联网医院专家审查"]
+    - id: "BR-YYY-012"
+      name: "HIS号源同步"
+      description: "HIS号源变更（新增/取消/修改）实时推送到互联网医院。互联网医院侧以HIS为权威源，冲突时以HIS为准覆盖。锁号操作需在HIS侧同步确认。"
+      trigger: "HIS侧号源变更"
+      behavior: "HIS推送增量变更 → 互联网医院接收更新 → 冲突覆盖(HIS优先) → 异常标记人工处理"
+      related_state: "待接诊（号源维度）"
+      sources: ["HIS系统专家审查"]
+    - id: "BR-YYY-013"
+      name: "检查检验闭环"
+      description: "互联网医院开具检查单→HIS预约→患者到院→LIS/PACS出报告→报告回传互联网医院→医生查看→患者查看。全程状态可追溯。"
+      trigger: "医生开具检查单"
+      behavior: "开单→HIS预约→到院检查→LIS/PACS出报告→回传→通知医生→推送患者"
+      related_state: "检查单：已开单→已预约→已采样→已出报告→已回传"
+      sources: ["HIS系统专家审查"]
+    - id: "BR-YYY-014"
+      name: "处方配伍禁忌自动检查"
+      description: "医生开具处方时，系统自动对多药联用进行配伍禁忌检查（基于药品知识库+AI推理）。发现禁忌组合立即阻断并提示，医生需确认或修改后方可提交。"
+      trigger: "处方含≥2种药品"
+      behavior: "AI自动检查配伍禁忌 → 无禁忌直接放行 → 有禁忌阻断+提示 → 医生确认(强制修改或添加临床理由) → 提交"
+      related_state: "待开方"
+      sources: ["处方管理专家审查"]
+    - id: "BR-YYY-015"
+      name: "儿童/老人剂量自动判定"
+      description: "处方含18岁以下或65岁以上患者时，系统根据年龄+体重自动校验药品剂量合理性，超出推荐范围则标记警告，医生需确认后方可提交。"
+      trigger: "处方患者年龄<18或≥65"
+      behavior: "系统查询剂量知识库 → 计算推荐剂量范围 → 处方剂量超出范围→警告+医生确认 → 范围内直接放行"
+      related_state: "待开方"
+      sources: ["处方管理专家审查"]
+    - id: "BR-YYY-016"
+      name: "慢病指标异常预警"
+      description: "IoT健康设备采集的血糖/血压等指标超出预设阈值时，系统自动生成预警→推送患者+紧急联系人→通知签约医生→超24小时未响应自动升级预警级别。"
+      trigger: "IoT数据超出个人阈值范围"
+      behavior: "指标超阈值 → 生成预警(标注严重级别) → 推送患者+紧急联系人 → 通知签约医生 → 24h未处理自动升级 → 升级后仍未处理触发人工客服介入"
+      related_state: "慢病管理中（预警状态）"
+      sources: ["慢病管理专家审查"]
+
+    # v1.3.0 新增：4条处方外流发起端业务规则（基于国家医保局〔2024〕86号）
+    - id: "BR-YYY-017"
+      name: "处方外流发起——电子签名与加密上传"
+      description: |
+        医生开具处方后，系统自动加盖CA电子签章（含医生数字证书+时间戳+机构信息），经国密算法加密后上传至
+        国家医保电子处方中心。电子处方中心分配全局唯一处方编号（RxID），并作为全链路追溯主键。
+        未加盖有效电子签章的处方不得外流——签章非法则上传被电子处方中心直接拒绝。
+        上传成功→处方状态变更为「已上传至电子处方中心」。
+      trigger: "医生提交处方并确认外流"
+      behavior: "处方提交 → 校验电子签章证书有效性 → 国密算法加密 → 生成上传数据包 → 调用电子处方中心标准化接口上传 → 接收RxID → 关联本地处方ID与RxID → 状态变更为「已上传」→ 操作日志记录"
+      related_state: "待开方 → 已上传至电子处方中心"
+      sources: ["国家医保局〔2024〕86号通知", "国家医保局电子处方中心技术规范"]
+    - id: "BR-YYY-018"
+      name: "处方外流药品目录——可外流品种管控"
+      description: |
+        处方外流药品目录受严格管控，以下类别药品禁止通过互联网医院处方外流：
+        ①麻醉药品、精神药品（精麻药品禁止外流，须线下调配）
+        ②医疗用毒性药品、放射性药品
+        ③儿童禁/慎用药品（部分省份规定）
+        ④注射剂（无菌保障风险，原则上不外流）
+        ⑤含兴奋剂类药品（运动员慎用品种）
+        ⑥特殊储存条件无法满足的药品（如超低温-80℃药品，药店不具备储存条件）
+        医生开具外流处方时系统自动校验药品是否在可外流目录内，不在目录内的药品不可选择外流通道。
+      trigger: "医生开具处方时选择药品 + 标记处方外流"
+      behavior: "选择药品 → 系统校验药品是否在可外流目录内 → 禁止外流品种：标记为「不可外流」，仅限院内调配或线下渠道 → 可外流品种：正常开具+标记外流通道 → 双通道药品：额外标记并强制通过电子处方中心流转"
+      related_state: "待开方"
+      sources: ["处方管理办法", "国家医保局〔2024〕86号通知", "互联网医院处方流转药品目录规范"]
+    - id: "BR-YYY-019"
+      name: "处方外流有效期管理"
+      description: |
+        电子处方开具后72小时（3日）内有效，通过电子处方中心外流至药店。特殊情形（如慢病长期用药方案）
+        经执业医师说明理由可延长至7日（168小时）。精确到秒计时。
+        处方超过有效期后电子处方中心自动标记「已过期」，药店不可再接收该处方。
+        处方外流平台须实时同步处方有效期状态至医生端和患者端，到期前1小时推送提醒。
+      trigger: "处方开具完成并上传电子处方中心"
+      behavior: "处方上传 → 记录有效期截止时间（精确秒） → 电子处方中心计时 → 到期前1h推送患者「处方即将过期」 → 到期自动标记已过期 → 释放药店锁定 → 通知来源医生 → 患者需重新就医开方"
+      related_state: "已上传至电子处方中心 → 已过期"
+      sources: ["处方管理办法", "国家医保局〔2024〕86号通知"]
+    - id: "BR-YYY-020"
+      name: "处方外流状态追踪与回传"
+      description: |
+        互联网医院将处方上传至电子处方中心后，须持续追踪处方在外部的流转状态（已审方/已接收/已调配/已核销/已过期/已拒绝），
+        并在医生端和患者端可视化展示。电子处方中心在药店完成处方核销后，将核销结果（含调配药师签名+药品批号+追溯码+核销时间）
+        回传至开具机构，形成处方外流全链路闭环。精麻药品处方和双通道药品处方额外触发药监监管上报。
+      trigger: "处方上传至电子处方中心后"
+      behavior: "处方上传 → 定时轮询电子处方中心查询处方状态 → 状态变更更新本地 → 已核销→接收核销结果回传(20项数据) → 归档至处方流转记录 → 精麻/双通道处方→同步上报药监监管平台 → 记录全链路日志"
+      related_state: "已上传 → 已审方(药店) → 已接收(药店) → 已调配 → 已核销 → 已回传(闭环)"
+      sources: ["国家医保局〔2024〕86号通知", "药监处方监管上报规范"]
+
+  # ============================================
+  # 6. 业务动作
+  # ============================================
+  business_actions:
+    - id: "ACT-YYY-001"
+      name: "发起问诊"
+      trigger_role: "患者"
+      input: "科室选择、病情描述（主诉+症状+图片）"
+      output: "问诊订单"
+      precondition: "患者已完成实名认证"
+      postcondition: "订单状态=待支付"
+      sources: ["互联网医院业务架构文档"]
+    - id: "ACT-YYY-002"
+      name: "支付问诊费"
+      trigger_role: "患者"
+      input: "问诊订单编号、支付方式"
+      output: "支付流水"
+      precondition: "订单状态=待支付"
+      postcondition: "订单状态=待接诊"
+      sources: ["互联网医院业务架构文档"]
+    - id: "ACT-YYY-003"
+      name: "医生接诊"
+      trigger_role: "医生"
+      input: "问诊订单、患者病情"
+      output: "接诊确认"
+      precondition: "订单状态=待接诊"
+      postcondition: "订单状态=问诊中"
+      sources: ["互联网医院业务架构文档"]
+    - id: "ACT-YYY-004"
+      name: "开具电子处方"
+      trigger_role: "医生"
+      input: "诊断结论、药品选择、用法用量"
+      output: "电子处方"
+      precondition: "订单状态=问诊中"
+      postcondition: "订单状态=待审核"
+      sources: ["互联网医院业务架构文档"]
+    - id: "ACT-YYY-005"
+      name: "审核处方"
+      trigger_role: "药师"
+      input: "电子处方、药品知识库"
+      output: "审核结果（通过/驳回+原因）"
+      precondition: "存在待审核处方"
+      postcondition: "审核通过→待购药 / 驳回→待开方"
+      sources: ["互联网医院业务架构文档"]
+    - id: "ACT-YYY-006"
+      name: "确认购药"
+      trigger_role: "患者"
+      input: "处方药品清单"
+      output: "购药订单"
+      precondition: "处方审核状态=已通过"
+      postcondition: "订单状态=待配送"
+      sources: ["互联网医院业务架构文档"]
+    - id: "ACT-YYY-007"
+      name: "药品配送"
+      trigger_role: "物流"
+      input: "购药订单、药品清单、收货地址"
+      output: "配送物流信息"
+      precondition: "购药订单已支付"
+      postcondition: "配送完成→已完成"
+      sources: ["互联网医院业务架构文档"]
+    - id: "ACT-YYY-008"
+      name: "问诊评价"
+      trigger_role: "患者"
+      input: "评分（1-5星）、评价文字"
+      output: "评价记录"
+      precondition: "订单状态=已完成"
+      postcondition: "评价存档，计入医生评分"
+      sources: ["互联网医院业务架构文档"]
+
+    # v1.2.0 新增：8个业务动作（转诊/急诊/病历/HIS/慢病）
+    - id: "ACT-YYY-009"
+      name: "发起转诊"
+      trigger_role: "医生"
+      input: "转诊原因、目标科室/医院、附带病历"
+      output: "转诊单"
+      precondition: "诊断完成，判断需要线下/专科进一步诊疗"
+      postcondition: "订单状态=已转诊，转诊单生成"
+      sources: ["互联网医院专家审查"]
+    - id: "ACT-YYY-010"
+      name: "急诊快速问诊"
+      trigger_role: "患者"
+      input: "急诊症状描述、紧急程度标注"
+      output: "急诊问诊订单"
+      precondition: "病情符合急诊标准"
+      postcondition: "最高优先级排队，30秒内必须接诊"
+      sources: ["互联网医院专家审查"]
+    - id: "ACT-YYY-011"
+      name: "书写电子病历（SOAP）"
+      trigger_role: "医生"
+      input: "问诊记录、诊断结论、处方信息"
+      output: "EMR（SOAP格式）"
+      precondition: "问诊完成或处方已开"
+      postcondition: "EMR留存，写回HIS，24h质控计时启动"
+      sources: ["病历管理专家审查"]
+    - id: "ACT-YYY-012"
+      name: "病历归档与封存"
+      trigger_role: "HIS系统管理员"
+      input: "病历ID、归档/封存原因"
+      output: "归档/封存记录"
+      precondition: "EMR状态=已完成，满足归档条件（如就诊后30天）或封存条件（如司法纠纷）"
+      postcondition: "EMR标记为已归档/已封存，不可修改，解封需审批"
+      sources: ["病历管理专家审查"]
+    - id: "ACT-YYY-013"
+      name: "HIS排班同步"
+      trigger_role: "HIS系统管理员"
+      input: "HIS排班变更数据（增量/全量）"
+      output: "互联网医院排班更新"
+      precondition: "HIS排班已发布或变更"
+      postcondition: "互联网医院侧号源同步，冲突以HIS为准"
+      sources: ["HIS系统专家审查"]
+    - id: "ACT-YYY-014"
+      name: "检查检验闭环"
+      trigger_role: "医生"
+      input: "检查项目选择、患者信息"
+      output: "检查检验申请单"
+      precondition: "诊断需要辅助检查"
+      postcondition: "开单→HIS预约→到院检查→LIS/PACS报告回传→医生查看"
+      sources: ["HIS系统专家审查"]
+    - id: "ACT-YYY-015"
+      name: "IoT健康数据采集与预警"
+      trigger_role: "IoT设备/系统平台"
+      input: "设备测量数据（血糖/血压/心率/血氧）"
+      output: "健康数据记录 + 预警（如需）"
+      precondition: "设备已绑定，数据同步通道畅通"
+      postcondition: "数据存储+趋势分析+超阈值自动预警"
+      sources: ["慢病管理专家审查"]
+    - id: "ACT-YYY-016"
+      name: "多学科会诊（MDT）"
+      trigger_role: "医生"
+      input: "会诊请求、患者病历、会诊科室列表"
+      output: "MDT会诊记录"
+      precondition: "病情复杂，需要多学科联合诊断"
+      postcondition: "协同病历生成，各科室意见汇总，最终诊断结论"
+      sources: ["病历管理专家审查"]
+
+    # v1.3.0 新增：3个处方外流相关业务动作
+    - id: "ACT-YYY-017"
+      name: "开具外流处方"
+      trigger_role: "医生"
+      input: "诊断结论、处方药品（可外流品种）、用法用量、患者信息"
+      output: "电子处方+CA签章+RxID"
+      precondition: "问诊完成+诊断明确+药品在可外流目录内"
+      postcondition: "处方加盖电子签章→国密加密→上传电子处方中心→分配RxID→医生端显示处方外流状态"
+      sources: ["国家医保局〔2024〕86号通知"]
+    - id: "ACT-YYY-018"
+      name: "处方外流状态追踪"
+      trigger_role: "医生/患者"
+      input: "RxID"
+      output: "处方外流状态（已上传/已审方/已接收/已调配/已核销/已过期）"
+      precondition: "处方已上传电子处方中心"
+      postcondition: "可视化展示处方全链路状态，已核销后接收药店回传的调配详情"
+      sources: ["国家医保局〔2024〕86号通知", "电子处方流转合规实务指南"]
+    - id: "ACT-YYY-019"
+      name: "处方监管上报"
+      trigger_role: "系统平台"
+      input: "精麻药品处方/双通道药品处方的完整处方数据"
+      output: "监管上报回执"
+      precondition: "处方类型=精麻药品或双通道药品+处方已上传电子处方中心"
+      postcondition: "处方数据上报至药监监管平台+上报记录留存"
+      sources: ["药监处方监管规范"]
+
+  # ============================================
+  # 7. 业务状态机
+  # ============================================
+  state_machine:
+    entity: "问诊订单"
+    states:
+      - "INIT"        # 待支付
+      - "PENDING"     # 待接诊
+      - "IN_CHAT"     # 问诊中
+      - "WAIT_RX"     # 待开方
+      - "WAIT_REVIEW" # 待审核
+      - "REVIEW_PENDING" # 待复审（v1.2.0新增：精麻药品/高风险处方双审）
+      - "WAIT_BUY"    # 待购药
+      - "WAIT_DELIVERY" # 待配送
+      - "COMPLETED"   # 已完成
+      - "CANCELLED"   # 已取消
+      - "TRANSFERRED" # 已转诊（v1.2.0新增）
+
+    transitions:
+      - from: "INIT"
+        to: "PENDING"
+        trigger: "支付问诊费成功"
+        operator: "患者"
+        precondition: "问诊订单已创建，支付有效"
+        post_action: "系统推送订单给对应科室医生"
+      - from: "INIT"
+        to: "CANCELLED"
+        trigger: "支付超时15分钟 / 患者主动取消"
+        operator: "系统 / 患者"
+        precondition: "订单状态=INIT"
+        post_action: "释放订单资源，退款（如有扣款）"
+      - from: "PENDING"
+        to: "IN_CHAT"
+        trigger: "医生确认接诊"
+        operator: "医生"
+        precondition: "医生在排班时间内，订单在有效期内"
+        post_action: "建立问诊会话通道，通知患者医生已接诊"
+      - from: "PENDING"
+        to: "CANCELLED"
+        trigger: "医生超时未接诊 / 医生拒诊"
+        operator: "系统 / 医生"
+        precondition: "接诊超时或医生明确拒诊"
+        post_action: "自动退款，推荐其他医生"
+      - from: "IN_CHAT"
+        to: "WAIT_RX"
+        trigger: "医生完成诊断并开具处方"
+        operator: "医生"
+        precondition: "完成问诊交流，做出诊断"
+        post_action: "处方提交药师审核队列"
+      - from: "IN_CHAT"
+        to: "COMPLETED"
+        trigger: "医生给出健康建议（无需服药/建议转诊）"
+        operator: "医生"
+        precondition: "诊断结论明确，无需用药"
+        post_action: "推送诊断报告给患者，可评价"
+      - from: "WAIT_REVIEW"
+        to: "WAIT_BUY"
+        trigger: "药师审核通过"
+        operator: "药师"
+        precondition: "处方内容合规，用药合理"
+        post_action: "推送处方给患者，提示可购药"
+      - from: "WAIT_REVIEW"
+        to: "WAIT_RX"
+        trigger: "药师驳回处方（附原因）"
+        operator: "药师"
+        precondition: "处方存在用药问题"
+        post_action: "退回医生修改，通知患者处方审核中"
+      - from: "WAIT_BUY"
+        to: "WAIT_DELIVERY"
+        trigger: "患者确认购药并支付药费"
+        operator: "患者"
+        precondition: "确认药品清单，支付成功"
+        post_action: "生成配送单，推送给物流系统"
+      - from: "WAIT_BUY"
+        to: "COMPLETED"
+        trigger: "患者放弃购药"
+        operator: "患者"
+        precondition: "明确放弃本次购药"
+        post_action: "问诊可直接评价"
+      - from: "WAIT_DELIVERY"
+        to: "COMPLETED"
+        trigger: "药品配送完成，患者签收"
+        operator: "物流 + 患者"
+        precondition: "药品送达并签收"
+        post_action: "可进行问诊评价"
+
+    # v1.2.0 新增：转诊/复审流程
+      - from: "IN_CHAT"
+        to: "TRANSFERRED"
+        trigger: "医生判断需要线下进一步诊疗，发起转诊"
+        operator: "医生"
+        precondition: "诊断明确且不适合线上处理"
+        post_action: "生成转诊单，推送患者，关联目标科室/医院"
+      - from: "TRANSFERRED"
+        to: "COMPLETED"
+        trigger: "患者到达目标科室并完成就诊"
+        operator: "系统平台"
+        precondition: "转诊单状态=已到达，目标医院回传就诊记录"
+        post_action: "转诊闭环，原问诊可评价"
+      - from: "WAIT_REVIEW"
+        to: "REVIEW_PENDING"
+        trigger: "处方被判定为高风险（精麻药品/抗生素/激素/儿童用药），需双人审核"
+        operator: "系统"
+        precondition: "AI风险评分>阈值 或 药品类型=精麻/抗生素/激素"
+        post_action: "进入双人审核队列，通知第二位药师"
+      - from: "REVIEW_PENDING"
+        to: "WAIT_BUY"
+        trigger: "两名药师均审核通过"
+        operator: "药师×2"
+        precondition: "双审均通过，无剩余异议"
+        post_action: "标记双审通过，处方可流转购药"
+      - from: "REVIEW_PENDING"
+        to: "WAIT_RX"
+        trigger: "任一药师驳回（附原因）"
+        operator: "药师"
+        precondition: "处方存在用药问题"
+        post_action: "退回医生修改，附带两位药师审核意见"
+
+    diagram: |
+      ```mermaid
+      stateDiagram-v2
+        [*] --> INIT
+        INIT --> PENDING : 支付问诊费成功
+        INIT --> CANCELLED : 超时15分钟/主动取消
+        PENDING --> IN_CHAT : 医生接诊
+        PENDING --> CANCELLED : 超时未接诊/拒诊
+        IN_CHAT --> WAIT_RX : 开具处方
+        IN_CHAT --> COMPLETED : 无需服药
+        IN_CHAT --> TRANSFERRED : 发起转诊
+        TRANSFERRED --> COMPLETED : 转诊完成
+        WAIT_RX --> WAIT_REVIEW : 提交审核
+        WAIT_REVIEW --> WAIT_BUY : 审核通过
+        WAIT_REVIEW --> REVIEW_PENDING : 高风险双审
+        REVIEW_PENDING --> WAIT_BUY : 双审通过
+        REVIEW_PENDING --> WAIT_RX : 驳回修改
+        WAIT_REVIEW --> WAIT_RX : 驳回修改
+        WAIT_BUY --> WAIT_DELIVERY : 支付药费
+        WAIT_BUY --> COMPLETED : 放弃购药
+        WAIT_DELIVERY --> COMPLETED : 签收药品
+        COMPLETED --> [*]
+        CANCELLED --> [*]
+        TRANSFERRED --> [*]
+      ```
+
+  # ============================================
+  # 8. 解决方案概括
+  # ============================================
+  solution:
+    patterns:
+      - desc: "**分层解耦架构**：5层产品架构（用户访问层→业务应用层→服务支撑层→数据基础层→基础设施层），每层独立演进，下层为上层提供能力支撑"
+        sources: ["互联网医院业务架构文档"]
+      - desc: "**处方-审核分离**：医生开方与药师审核完全解耦，确保用药安全的独立把关，符合医药监管要求"
+        sources: ["互联网医院业务架构文档"]
+      - desc: "**状态可追溯**：问诊订单全生命周期8个状态+10条转换规则，每个状态变更记录操作者、时间戳、触发条件"
+        sources: ["互联网医院业务架构文档"]
+      - desc: "**信息闭环**：6大信息通道（患者→医生→药师→物流→支付→监管）以平台为枢纽双向流通，确保信息不丢失"
+        sources: ["互联网医院业务架构文档"]
+      - desc: "**业务能力矩阵化**：6大业务域（核心医疗/医疗服务/健康管理/运营支撑/支付结算/互联互通）×24项核心能力，覆盖诊前-诊中-诊后全链路"
+        sources: ["互联网医院业务架构文档"]
+    best_practices:
+      - desc: "医生资源管理与排班机制是服务质量的基础保障，需支持多科室、多时段、灵活排班"
+        sources: ["互联网医院业务架构文档"]
+      - desc: "处方流转需与药品供应链系统深度集成，实现处方审核→购药→配送的无缝衔接"
+        sources: ["互联网医院业务架构文档"]
+      - desc: "患者端操作体验要极简——病情描述支持AI辅助填写、支付一步完成、物流实时追踪"
+        sources: ["互联网医院业务架构文档"]
+      - desc: "合规是底线——实名认证→处方审核→药品限制→数据加密，每步都不可跳过"
+        sources: ["互联网医院业务架构文档"]
+
+  # ============================================
+  # 9. 主题清单
+  # ============================================
+  themes:
+    - id: "THM-YYY-001"
+      name: "在线问诊"
+      description: "患者通过互联网平台发起图文/视频问诊，医生在线接诊并做出诊断"
+      content_ratio: "30%"
+      related_api_count: 0
+      priority: "high"
+      sub_themes: ["科室选择与分诊", "医患即时通讯", "视频问诊", "诊断报告"]
+      sources: ["互联网医院业务架构文档"]
+    - id: "THM-YYY-002"
+      name: "电子处方与审核"
+      description: "医生开具电子处方，药师独立审核，处方合规流转"
+      content_ratio: "25%"
+      related_api_count: 0
+      priority: "high"
+      sub_themes: ["处方开具", "处方审核流程", "处方驳回与修改", "处方流转"]
+      sources: ["互联网医院业务架构文档"]
+    - id: "THM-YYY-003"
+      name: "药品配送"
+      description: "处方药品的线上下单、支付、物流配送与签收"
+      content_ratio: "15%"
+      related_api_count: 0
+      priority: "high"
+      sub_themes: ["购药确认", "药费支付", "配送追踪", "签收确认"]
+      sources: ["互联网医院业务架构文档"]
+    - id: "THM-YYY-004"
+      name: "预约挂号与检查"
+      description: "在线预约挂号、检查检验预约、报告查询"
+      content_ratio: "10%"
+      related_api_count: 0
+      priority: "medium"
+      sub_themes: ["科室预约", "检查预约", "报告查询"]
+      sources: ["互联网医院业务架构文档"]
+    - id: "THM-YYY-005"
+      name: "健康管理"
+      description: "慢病管理、健康档案、随访管理、健康评估"
+      content_ratio: "10%"
+      related_api_count: 0
+      priority: "medium"
+      sub_themes: ["慢病跟踪", "健康档案", "随访计划", "风险评估"]
+      sources: ["互联网医院业务架构文档"]
+    - id: "THM-YYY-006"
+      name: "运营与合规"
+      description: "用户管理、医生管理、排班、支付结算、医保、监管合规"
+      content_ratio: "10%"
+      related_api_count: 0
+      priority: "medium"
+      sub_themes: ["用户实名认证", "医生资质管理", "排班调度", "支付与医保", "数据合规"]
+      sources: ["互联网医院业务架构文档"]
+
+    # v1.2.0 新增：4个主题（急诊/转诊/病历/HIS对接）
+    - id: "THM-YYY-007"
+      name: "急诊通道"
+      description: "急诊快速问诊，最高优先级，跳过排班直接分配医生，限时接诊"
+      content_ratio: "5%"
+      related_api_count: 0
+      priority: "high"
+      sub_themes: ["急诊症状识别", "急诊优先级路由", "急诊限时接诊(30秒)", "急诊绿色通道"]
+      sources: ["互联网医院专家审查"]
+    - id: "THM-YYY-008"
+      name: "转诊流转"
+      description: "线上→线下转诊、跨科室转诊、跨院转诊的完整流程管理"
+      content_ratio: "5%"
+      related_api_count: 0
+      priority: "high"
+      sub_themes: ["院内转诊（跨科室）", "跨院转诊", "线上→线下转诊", "转诊追踪与闭环"]
+      sources: ["互联网医院专家审查"]
+    - id: "THM-YYY-009"
+      name: "电子病历（EMR）与HIS对接"
+      description: "SOAP格式电子病历书写/质控/归档、HIS排班同步、号源管理、检查检验闭环、药品目录映射"
+      content_ratio: "10%"
+      related_api_count: 0
+      priority: "high"
+      sub_themes: ["EMR书写(SOAP)", "病历质控(24h)", "病历归档/封存", "病历共享授权", "MDT多学科会诊", "HIS排班同步", "号源锁号", "检查检验闭环", "药品目录映射"]
+      sources: ["病历管理专家审查", "HIS系统专家审查"]
+    - id: "THM-YYY-010"
+      name: "慢病管理增强"
+      description: "长期处方(长处方)、IoT健康数据采集、指标异常预警、用药依从性、社区联动"
+      content_ratio: "5%"
+      related_api_count: 0
+      priority: "medium"
+      sub_themes: ["长期处方(≤12周)", "IoT数据接入(血糖仪/血压计/可穿戴)", "指标异常分级预警", "用药依从性管理", "定期复查联动", "社区医疗对接"]
+      sources: ["慢病管理专家审查"]
+
+    # v1.3.0 新增：处方外流与监管主题
+    - id: "THM-YYY-011"
+      name: "处方外流与监管"
+      description: "基于国家医保局〔2024〕86号通知，互联网医院处方经电子处方中心外流至定点药店的全链路管理——含处方开具（CA签章+国密加密上传）、外流药品目录管控（排除精麻毒放/注射剂/禁慎用品种）、处方有效期管理(72h/7d)、外流状态追踪（已开具→已审方→已接收→已调配→已核销）、精麻药品和双通道药品强制监管上报"
+      content_ratio: "5%"
+      priority: "high"
+      sub_themes: ["处方外流CA签章与加密上传", "外流药品目录管控", "处方有效期管理(72h/7d)", "处方外流状态全链路追踪", "精麻药品/双通道药品监管上报", "处方模板管理（慢病/儿科等常用方模板）"]
+      sources: ["国家医保局〔2024〕86号通知", "药监处方监管规范"]
+
+  # ============================================
+  # 10. 场景清单
+  # ============================================
+  scenes:
+    - id: "SC-YYY-001"
+      name: "在线图文问诊"
+      theme_id: "THM-YYY-001"
+      description: "患者通过文字+图片方式向医生发起在线问诊，医生接诊后通过图文交流做出诊断"
+      trigger: "患者选择科室并提交病情描述"
+      closure: "医生完成诊断并给出建议/开具处方"
+      participant_roles: ["患者", "医生", "系统平台"]
+      depends_on: []
+      depended_by: ["SC-YYY-002"]
+      flow_sketch: |
+        flowchart TD
+          A["患者选择科室"] --> B["填写病情描述"]
+          B --> C["支付问诊费"]
+          C --> D{"支付成功？"}
+          D -->|是| E["系统分配医生"]
+          D -->|否| D1["取消订单"]
+          E --> F["医生接诊"]
+          F --> G["图文交流"]
+          G --> H{"是否需要开方？"}
+          H -->|是| I["进入处方流程"]
+          H -->|否| J["给出健康建议"]
+      sources: ["互联网医院业务架构文档"]
+      priority: "high"
+
+    - id: "SC-YYY-002"
+      name: "电子处方开具与审核"
+      theme_id: "THM-YYY-002"
+      description: "医生根据诊断结果开具电子处方，药师独立审核后流转给患者"
+      trigger: "医生诊断完成，判断需要用药"
+      closure: "处方审核通过，患者可购药"
+      participant_roles: ["医生", "药师", "系统平台"]
+      depends_on: ["SC-YYY-001"]
+      depended_by: ["SC-YYY-003"]
+      flow_sketch: |
+        flowchart TD
+          A["医生选择药品"] --> B["填写用法用量"]
+          B --> C["提交处方"]
+          C --> D["药师接收处方"]
+          D --> E{"审核结果？"}
+          E -->|通过| F["处方流转给患者"]
+          E -->|驳回| G["退回医生修改"]
+          G --> A
+      sources: ["互联网医院业务架构文档"]
+      priority: "high"
+
+    - id: "SC-YYY-003"
+      name: "处方药品购买与配送"
+      theme_id: "THM-YYY-003"
+      description: "患者确认处方药品并支付药费，系统安排物流配送上门"
+      trigger: "处方审核通过"
+      closure: "药品签收，问诊评价完成"
+      participant_roles: ["患者", "物流", "系统平台"]
+      depends_on: ["SC-YYY-002"]
+      depended_by: []
+      flow_sketch: |
+        flowchart TD
+          A["患者查看处方药品"] --> B["确认购药"]
+          B --> C["支付药费"]
+          C --> D{"支付成功？"}
+          D -->|是| E["生成配送单"]
+          D -->|否| D1["重新支付"]
+          E --> F["物流拣货发货"]
+          F --> G["患者签收"]
+          G --> H["问诊评价"]
+      sources: ["互联网医院业务架构文档"]
+      priority: "high"
+
+    - id: "SC-YYY-004"
+      name: "预约挂号"
+      theme_id: "THM-YYY-004"
+      description: "患者在线预约线下门诊挂号，选择科室、医生、时段"
+      trigger: "患者需要线下就诊"
+      closure: "挂号成功，按时到院就诊"
+      participant_roles: ["患者", "系统平台"]
+      depends_on: []
+      depended_by: []
+      flow_sketch: |
+        flowchart TD
+          A["选择科室"] --> B["选择医生"]
+          B --> C["选择时段"]
+          C --> D["确认挂号"]
+          D --> E["支付挂号费"]
+          E --> F{"支付成功？"}
+          F -->|是| G["挂号成功·推送提醒"]
+          F -->|否| F1["取消预约"]
+      sources: ["互联网医院业务架构文档"]
+      priority: "medium"
+
+    - id: "SC-YYY-005"
+      name: "慢病管理"
+      theme_id: "THM-YYY-005"
+      description: "对慢性病患者进行长期跟踪管理，定期随访、用药提醒、健康数据监测"
+      trigger: "患者被纳入慢病管理计划"
+      closure: "持续管理，直到健康指标达标或退出计划"
+      participant_roles: ["患者", "医生", "系统平台"]
+      depends_on: []
+      depended_by: []
+      flow_sketch: |
+        flowchart TD
+          A["建立慢病档案"] --> B["设定管理目标"]
+          B --> C["定期录入健康数据"]
+          C --> D["系统分析趋势"]
+          D --> E{"出现异常？"}
+          E -->|是| F["医生干预/调整方案"]
+          E -->|否| G["继续监测"]
+          F --> H["更新管理计划"]
+          H --> C
+          G --> C
+      sources: ["互联网医院业务架构文档"]
+      priority: "medium"
+
+    - id: "SC-YYY-006"
+      name: "用户实名认证"
+      theme_id: "THM-YYY-006"
+      description: "用户在使用问诊服务前完成实名认证（姓名+身份证+人脸识别）"
+      trigger: "用户首次使用问诊服务"
+      closure: "实名认证通过，开通问诊权限"
+      participant_roles: ["患者", "系统平台"]
+      depends_on: []
+      depended_by: ["SC-YYY-001"]
+      flow_sketch: |
+        flowchart TD
+          A["填写姓名+身份证号"] --> B["上传身份证照片"]
+          B --> C["人脸识别验证"]
+          C --> D{"认证结果？"}
+          D -->|通过| E["开通问诊权限"]
+          D -->|不通过| F["重新提交/人工审核"]
+      sources: ["互联网医院业务架构文档"]
+      priority: "high"
+
+    # v1.2.0 新增：6个场景（急诊/转诊/病历/HIS/慢病/MDT）
+    - id: "SC-YYY-007"
+      name: "急诊快速问诊"
+      theme_id: "THM-YYY-007"
+      description: "患者发起急诊问诊，系统最高优先级路由，跳过常规排队，30秒内分配值班医生，限时完成初诊评估"
+      trigger: "患者标记为急诊症状并提交"
+      closure: "急诊初诊完成，给出处置方案或引导线下急诊"
+      participant_roles: ["患者", "医生", "系统平台"]
+      depends_on: ["SC-YYY-006"]
+      depended_by: ["SC-YYY-002"]
+      flow_sketch: |
+        flowchart TD
+          A["患者标注急诊症状"] --> B["系统识别急诊标准"]
+          B --> C{"符合急诊标准？"}
+          C -->|是| D["最高优先级入队"]
+          C -->|否| C1["引导普通问诊"]
+          D --> E["跳过排班·30秒内分配值班医生"]
+          E --> F["急诊问诊交流"]
+          F --> G{"可线上处理？"}
+          G -->|是| H["给出处置方案"]
+          G -->|否| I["引导线下急诊/120"]
+      sources: ["互联网医院专家审查"]
+      priority: "high"
+
+    - id: "SC-YYY-008"
+      name: "转诊流转闭环"
+      theme_id: "THM-YYY-008"
+      description: "医生判断不适合线上处理的病情，发起转诊（院内跨科室/跨院/线上→线下），生成转诊单，追踪转诊状态直至闭环"
+      trigger: "医生诊断后判断需要转诊"
+      closure: "患者到达目标科室并完成就诊，转诊单闭环"
+      participant_roles: ["医生", "患者", "HIS系统管理员", "系统平台"]
+      depends_on: ["SC-YYY-001"]
+      depended_by: []
+      flow_sketch: |
+        flowchart TD
+          A["医生判断需转诊"] --> B["填写转诊原因+目标科室/医院"]
+          B --> C["系统生成转诊单"]
+          C --> D["推送患者确认"]
+          D --> E{"患者确认转诊？"}
+          E -->|是| F{"是跨院转诊？"}
+          F -->|是| G["锁定目标医院号源"]
+          F -->|否| H["院内跨科室排班"]
+          E -->|否| E1["继续线上问诊"]
+          G --> I["患者到达目标科室"]
+          H --> I
+          I --> J["目标科室就诊完成"]
+          J --> K["转诊闭环·原问诊可评价"]
+      sources: ["互联网医院专家审查"]
+      priority: "high"
+
+    - id: "SC-YYY-009"
+      name: "电子病历全生命周期管理"
+      theme_id: "THM-YYY-009"
+      description: "覆盖病历书写（SOAP格式）→质控校验→写回HIS→归档→封存/解封→共享授权的完整生命周期"
+      trigger: "问诊完成（诊断完成或处方开具）"
+      closure: "EMR完成归档或按需封存"
+      participant_roles: ["医生", "HIS系统管理员", "系统平台"]
+      depends_on: ["SC-YYY-001", "SC-YYY-002"]
+      depended_by: []
+      flow_sketch: |
+        flowchart TD
+          A["问诊完成·触发病历书写"] --> B["医生填写SOAP（S主诉/O检查/A评估/P计划）"]
+          B --> C["系统质控校验（必填项+时效24h）"]
+          C --> D{"质控通过？"}
+          D -->|是| E["EMR保存+写回HIS"]
+          D -->|否| F["标记质控缺陷·强制补全"]
+          F --> B
+          E --> G["病历归档（就诊后30天自动）"]
+          G --> H{"触发封存条件？"}
+          H -->|是(司法/纠纷)| I["病历封存·不可修改"]
+          H -->|否| J["病历可查可共享"]
+          I --> K{"封存期满/解封审批通过"}
+          K -->|是| J
+      sources: ["病历管理专家审查"]
+      priority: "high"
+
+    - id: "SC-YYY-010"
+      name: "HIS对接与数据同步"
+      theme_id: "THM-YYY-009"
+      description: "互联网医院与HIS系统的排班同步、号源管理、药品目录映射、EMR双向同步的完整数据对接流程"
+      trigger: "HIS管理员触发同步或HIS侧变更推送"
+      closure: "互联网医院侧数据与HIS一致"
+      participant_roles: ["HIS系统管理员", "系统平台"]
+      depends_on: []
+      depended_by: ["SC-YYY-001", "SC-YYY-002", "SC-YYY-004"]
+      flow_sketch: |
+        flowchart TD
+          A["HIS侧数据变更"] --> B["增量推送（实时/5min）"]
+          B --> C["互联网医院接收"]
+          C --> D{"数据类型？"}
+          D -->|排班| E["更新医生排班+号源"]
+          D -->|号源| F["同步号源配额+锁号"]
+          D -->|药品目录| G["HIS编码→平台ID映射"]
+          D -->|EMR| H["病历回写HIS确认"]
+          E --> I{"冲突检测？"}
+          I -->|冲突| J["以HIS为准覆盖·标记日志"]
+          I -->|无冲突| K["正常更新"]
+      sources: ["HIS系统专家审查"]
+      priority: "high"
+
+    - id: "SC-YYY-011"
+      name: "慢病管理增强版（长处方+IoT预警）"
+      theme_id: "THM-YYY-010"
+      description: "面向慢病患者的增强管理：长期处方（最长12周）+ IoT设备数据自动采集 + 指标异常分级预警 + 用药依从性管理 + 社区联动"
+      trigger: "患者被确诊慢病并纳入管理计划"
+      closure: "持续管理，指标达标或退出计划"
+      participant_roles: ["患者", "医生", "系统平台", "IoT设备"]
+      depends_on: ["SC-YYY-002"]
+      depended_by: []
+      flow_sketch: |
+        flowchart TD
+          A["建立慢病档案"] --> B["设定管理目标+预警阈值"]
+          B --> C["开具长期处方（≤12周+复诊节点）"]
+          C --> D["IoT设备绑定+数据同步"]
+          D --> E["定时采集（血糖/血压/心率/血氧）"]
+          E --> F{"指标超出阈值？"}
+          F -->|是| G["生成分级预警（L1提醒/L2通知/L3紧急）"]
+          F -->|否| H["正常趋势分析"]
+          G --> I["推送患者+紧急联系人"]
+          I --> J["通知签约医生"]
+          J --> K{"24h内响应？"}
+          K -->|是| L["医生调整用药/管理方案"]
+          K -->|否| M["预警自动升级·人工客服介入"]
+          L --> H
+          M --> H
+          C --> N["用药依从性管理"]
+          N --> O["按时服药提醒"]
+          O --> P{"漏服？"}
+          P -->|是| Q["补服指导推送"]
+          P -->|否| R["依从性记录"]
+          R --> H
+          H --> S{"复诊时间到？"}
+          S -->|是| T["自动推送复诊提醒+预约联动+社区协作"]
+          T --> A
+          S -->|否| E
+      sources: ["慢病管理专家审查"]
+      priority: "medium"
+
+    - id: "SC-YYY-012"
+      name: "多学科会诊（MDT）"
+      theme_id: "THM-YYY-009"
+      description: "针对复杂病情，主治医生发起多学科会诊，邀请多科室医生协同诊断，生成MDT会诊记录"
+      trigger: "主治医生判断需要多学科联合诊断"
+      closure: "MDT会诊完成，生成综合诊断结论和治疗方案"
+      participant_roles: ["主治医生", "参诊医生（多科室）", "系统平台"]
+      depends_on: ["SC-YYY-001"]
+      depended_by: []
+      flow_sketch: |
+        flowchart TD
+          A["主治医生发起MDT"] --> B["选择参诊科室/医生+上传病历"]
+          B --> C["系统推送会诊通知"]
+          C --> D["参诊医生接收"]
+          D --> E["协同病历编辑/评论"]
+          E --> F{"所有参诊医生提交意见？"}
+          F -->|否| G["等待·超时提醒"]
+          G --> E
+          F -->|是| H["主治医生汇总意见"]
+          H --> I["生成MDT会诊记录"]
+          I --> J["最终诊断结论+治疗方案"]
+          J --> K["推送患者+存档"]
+      sources: ["病历管理专家审查"]
+      priority: "medium"
+
+    # v1.3.0 新增：处方外流发起全流程（基于86号政策）
+    - id: "SC-YYY-013"
+      name: "处方外流发起——电子处方经电子处方中心流转至药店"
+      theme_id: "THM-YYY-011"
+      description: |
+        医生完成在线问诊后，开具电子处方并标记外流。经CA电子签章、国密加密、可外流药品目录校验、
+        PASS前置审方后，上传至国家医保电子处方中心（分配全局唯一RxID），
+        处方中心智能匹配具备双通道资质的定点药店，完成处方从医院到药店的合规流转。
+        互联网医院持续追踪处方外部状态直至核销闭环，精麻/双通道药品额外触发监管上报。
+      trigger: "医生完成问诊，开具处方并选择处方外流"
+      closure: "处方上传至电子处方中心+分配RxID→流转至药店→药店完成核销后回传→全链路闭环归档"
+      participant_roles: ["医生", "患者", "电子处方中心(系统)", "系统平台"]
+      depends_on: ["SC-YYY-001", "SC-YYY-002"]
+      depended_by: []
+      flow_sketch: |
+        flowchart TD
+          subgraph P1["🏥 处方开具"]
+            A["医生完成问诊+诊断明确"] --> B["开具处方"]
+            B --> C{"药品在可外流目录内？"}
+            C -->|否| C1["仅限院内调配/线下渠道<br/>不可外流"]
+            C -->|是| D["标记处方外流通道<br/>双通道药品额外标记"]
+          end
+
+          subgraph P2["🔐 智能审核与签章"]
+            D --> E["PASS系统前置审方<br/>11强制拦截+12风险提醒"]
+            E --> F{"触发拦截？"}
+            F -->|是| F1["自动驳回+提示修改"]
+            F -->|否| G["系统自动加盖CA电子签章<br/>（医生证书+时间戳+机构信息）"]
+          end
+
+          subgraph P3["📤 加密上传电子处方中心"]
+            G --> H["国密算法加密处方数据"]
+            H --> I["调用电子处方中心标准化接口上传"]
+            I --> J["电子处方中心分配全局唯一RxID"]
+            J --> K["关联本地处方ID与RxID<br/>处方状态→「已上传」"]
+          end
+
+          subgraph P4["📡 智能匹配与流转"]
+            K --> L["电子处方中心智能匹配<br/>具备双通道资质的定点药店"]
+            L --> M["处方加密推送至匹配药店"]
+            M --> N["医生端+患者端可视化展示<br/>处方外部流转状态"]
+          end
+
+          subgraph P5["✅ 闭环追踪"]
+            N --> O["定时轮询处方状态"]
+            O --> P{"处方外部状态？"}
+            P -->|已过期(超72h/7d)| P1["标记过期+通知患者重新就医"]
+            P -->|已拒绝(药店)| P2["记录拒绝原因+可重新流转"]
+            P -->|已核销(药店)| Q["接收药店回传<br/>20项核心数据"]
+            Q --> R{"处方类型？"}
+            R -->|精麻药品/双通道| S["强制上报药监监管平台"]
+            R -->|普通处方| T["归档至处方流转记录"]
+            S --> T
+            T --> U["全链路闭环完成 ✅"]
+          end
+
+          style P2 fill:#e8f5e9,stroke:#2e7d32
+          style P3 fill:#e3f2fd,stroke:#1565c0
+          style P4 fill:#fff3e0,stroke:#e65100
+          style P5 fill:#fce4ec,stroke:#c62828
+      sources: ["国家医保局〔2024〕86号通知", "国家医保局电子处方中心技术规范", "处方管理办法"]
+      priority: "critical"
+
+    # v1.3.0 新增：处方模板管理
+    - id: "SC-YYY-014"
+      name: "处方模板管理（提高开方效率）"
+      theme_id: "THM-YYY-011"
+      description: "为慢病、儿科、常见病等高频场景建立处方模板，医生可快速加载模板并调整，减少重复录入，提高开方效率"
+      trigger: "医生进入开方界面"
+      closure: "基于模板完成处方开具"
+      participant_roles: ["医生", "系统平台"]
+      depends_on: []
+      depended_by: ["SC-YYY-002", "SC-YYY-013"]
+      flow_sketch: |
+        flowchart TD
+          A["进入开方"] --> B{"使用模板？"}
+          B -->|是| C["按科室/疾病分类浏览模板"]
+          C --> D["选择模板加载处方"]
+          D --> E["医生调整剂量/用法"]
+          B -->|否| E
+          E --> F["提交处方"]
+          F --> G["本次处方可保存为新模板（可选）"]
+          G --> H["药师审核后模板可复用"]
+      sources: ["处方管理专家审查"]
+      priority: "medium"
+
+  # ============================================
+  # 产品架构（附加）
+  # ============================================
+  product_architecture:
+    layers:
+      - name: "用户访问层"
+        components: ["患者端APP", "医生端APP", "Web门户网站", "微信小程序", "开放平台API"]
+        responsibility: "多终端用户入口，统一鉴权与适配"
+      - name: "业务应用层"
+        components: ["在线问诊", "电子处方", "药品配送", "预约挂号", "健康档案", "慢病管理"]
+        responsibility: "核心医疗业务能力，面向终端用户提供服务"
+      - name: "服务支撑层"
+        components: ["即时通讯", "视频通话", "在线支付", "处方流转", "AI智能分诊"]
+        responsibility: "为业务应用层提供可复用的公共服务能力"
+      - name: "数据基础层"
+        components: ["患者档案", "电子病历", "处方中心", "医学知识库"]
+        responsibility: "数据持久化与管理，支撑上层业务决策"
+      - name: "基础设施层"
+        components: ["云平台", "信息安全", "合规审计", "运维监控"]
+        responsibility: "底层基础设施保障，安全与合规"
+
+  # ============================================
+  # 业务架构（6域24能力）
+  # ============================================
+  business_architecture:
+    domains:
+      - name: "核心医疗域"
+        capabilities: ["在线问诊（图文）", "在线问诊（视频）", "电子处方", "处方审核", "药品配送"]
+        description: "互联网医院核心业务流程——从问诊到用药的完整闭环"
+      - name: "医疗服务域"
+        capabilities: ["预约挂号", "检查预约", "体检预约", "报告查询"]
+        description: "线上预约与服务查询，与线下医疗机构对接"
+      - name: "健康管理域"
+        capabilities: ["慢病管理", "健康档案", "随访管理", "健康评估"]
+        description: "面向慢病和健康人群的长期管理服务"
+      - name: "运营支撑域"
+        capabilities: ["用户管理", "医生管理", "排班管理", "评价管理"]
+        description: "平台运营所必需的管理能力"
+      - name: "支付结算域"
+        capabilities: ["在线支付", "医保结算", "退款管理", "对账管理"]
+        description: "问诊费/药费的支付与结算"
+      - name: "互联互通域"
+        capabilities: ["电子健康卡", "HIS系统对接(HL7 FHIR/WebService)", "LIS/PACS对接", "医保前置机对接", "药监平台对接", "区域平台对接", "检验结果互认", "IoT设备对接"]
+        description: "与外部医疗系统/平台的互联互通，HIS深度对接含排班/号源/EMR/药品目录"
+
+    # v1.2.0 新增：第7域
+      - name: "病历管理域"
+        capabilities: ["电子病历(EMR SOAP)", "病历质控(24h)", "病历归档与封存", "病历共享授权", "MDT多学科会诊", "病历打印导出"]
+        description: "电子病历的全生命周期管理——从书写到归档/封存的完整链条"
+
+  # ============================================
+  # 架构指标汇总表（v1.1.0 增量新增）
+  # ============================================
+  architecture_summary:
+    roles_count: 6          # 患者/医生/药师/物流/系统平台/HIS管理员（v1.2.0新增）
+    states_count: 11        # INIT/PENDING/IN_CHAT/WAIT_RX/WAIT_REVIEW/REVIEW_PENDING/WAIT_BUY/WAIT_DELIVERY/COMPLETED/CANCELLED/TRANSFERRED（v1.2.0新增2个）
+    transitions_count: 16   # 状态转换路径数（v1.2.0新增5条）
+    exception_branches: 4   # 支付失败/医生拒诊/处方驳回/配送异常
+    alt_branches: 6         # 过时未支付/超时未接诊/无需购药/线下转诊/急诊升级/处方被驳（v1.2.0新增2个）
+    business_rules_count: 16 # BR-YYY-001~016（v1.2.0新增10条）
+    business_actions_count: 16  # ACT-YYY-001~016（v1.2.0新增8个）
+    scenes_count: 14        # 6原有+6(v1.2.0新增)+2(v1.3.0新增)：处方外流发起/处方模板管理
+    themes_count: 11        # 6原有+4(v1.2.0新增)+1(v1.3.0新增)：处方外流与监管
+    swimlane_stages: 8      # 5原有+3新增：转诊阶段/急诊阶段/慢病管理阶段
+    total_roles_types: 6    # 角色类型数
+    layers_count: 5         # 产品架构层数
+    domains_count: 7        # 业务架构域数
+    capabilities_count: 32  # 核心能力总数（v1.3.0新增处方外流+处方模板2项）
+
+  # ============================================
+  # UML建模规范对照（v1.1.0 增量新增）
+  # ============================================
+  uml_modeling_standards:
+    notation: "UML 2.5"
+    mapping:
+      - uml_artifact: "用例图（Use Case Diagram）"
+        domain_artifact: "场景清单（§10 Scenes）"
+        description: "12大业务场景对应12个用例，6角色为参与者（Actor），互联网医院平台为系统边界（v1.2.0从6→12场景）"
+      - uml_artifact: "泳道活动图（Swimlane Activity Diagram）"
+        domain_artifact: "业务泳道图（§1 Swimlane）"
+        description: "6泳道（患者/系统/医生/药师/物流/HIS管理员 {v1.2.0新增}）× 8阶段（原5阶段+转诊/急诊/慢病管理 {v1.2.0新增}），展示跨角色业务动作流转"
+      - uml_artifact: "业务序列图（Business Sequence Diagram）"
+        domain_artifact: "业务动作（§6 Business Actions）"
+        description: "16个业务动作定义角色→系统→响应的时序交互（v1.2.0从8→16）"
+      - uml_artifact: "状态机图（State Machine Diagram）"
+        domain_artifact: "状态机（§7 State Machine）"
+        description: "11状态×16转换（v1.2.0从9状态×11转换扩展），每个转换含触发事件/前置条件/后置动作"
+      - uml_artifact: "领域模型图（Domain Model）"
+        domain_artifact: "信息流实体（§3 Info Flow Entities）"
+        description: "15信息实体+10跨系统通道（v1.2.0从10实体+6通道扩展），展示数据边界与聚合根"
+      - uml_artifact: "部署图（Deployment Diagram）"
+        domain_artifact: "产品架构（§产品架构）"
+        description: "5层架构对应部署节点：用户终端→网关→服务→数据→基础设施"
+      - uml_artifact: "业务规则表"
+        domain_artifact: "业务规则（§5 Business Rules）"
+        description: "16条BR（v1.2.0从6→16），每条含触发条件→行为→关联状态的完整语义"

@@ -208,14 +208,14 @@ export async function seedInitialData() {
     await db.put('todos', t);
   }
 
-  // 种子租户数据（运营后台）
+  // 种子租户数据（运营后台）——对齐知识库「租户管理_1.html」字段：租户编号/名称/联系电话/注册时间/启用状态
   const tenants = [
-    { id: 'T001', companyName: '健康云科技', industry: '大健康', version: '专业版' as const, status: 'ACTIVE' as const, contactName: '张总', contactPhone: '13800000001', companySize: '100-200人', healthScore: 85, aiUsagePercent: 42, expireDate: '2027-01-15', registeredAt: '2026-01-15T00:00:00Z' },
-    { id: 'T002', companyName: '美丽化妆', industry: '美妆', version: '基础版' as const, status: 'GRACE' as const, contactName: '李经理', contactPhone: '13800000002', companySize: '20-50人', healthScore: 62, aiUsagePercent: 28, expireDate: '2026-08-01', registeredAt: '2026-02-01T00:00:00Z' },
-    { id: 'T003', companyName: '同仁堂', industry: '药业', version: '企业版' as const, status: 'ACTIVE' as const, contactName: '王总', contactPhone: '13800000003', companySize: '500+人', healthScore: 92, aiUsagePercent: 68, expireDate: '2026-12-31', registeredAt: '2025-12-01T00:00:00Z' },
-    { id: 'T004', companyName: '新申请百货', industry: '百货', version: '体验版' as const, status: 'PENDING' as const, contactName: '赵经理', contactPhone: '13900000004', companySize: '50-100人', healthScore: 35, aiUsagePercent: 0, expireDate: '2026-08-20', registeredAt: '2026-07-15T00:00:00Z' },
-    { id: 'T005', companyName: '百草堂药业', industry: '药业', version: '专业版' as const, status: 'ACTIVE' as const, contactName: '陈经理', contactPhone: '13800000005', companySize: '200-500人', healthScore: 78, aiUsagePercent: 55, expireDate: '2027-03-20', registeredAt: '2026-03-20T00:00:00Z' },
-    { id: 'T006', companyName: '丽人美容', industry: '美妆', version: '体验版' as const, status: 'TRIAL' as const, contactName: '周经理', contactPhone: '13800000006', companySize: '10-20人', healthScore: 50, aiUsagePercent: 12, expireDate: '2026-08-05', registeredAt: '2026-07-05T00:00:00Z' },
+    { id: '2607200069234905632ID', companyName: '健康云科技', industry: '大健康', version: '专业版' as const, status: 'ACTIVE' as const, contactName: '张总', contactPhone: '17676616451', companySize: '100-200人', healthScore: 85, aiUsagePercent: 42, expireDate: '2027-01-15', registeredAt: '2026-07-20T11:31:38Z', enabled: true },
+    { id: '2607200069234904670ID', companyName: '美丽化妆', industry: '美妆', version: '基础版' as const, status: 'ACTIVE' as const, contactName: '李经理', contactPhone: '17678816881', companySize: '20-50人', healthScore: 62, aiUsagePercent: 28, expireDate: '2026-08-01', registeredAt: '2026-07-20T11:20:21Z', enabled: true },
+    { id: '2607200069234903342ID', companyName: '同仁堂', industry: '药业', version: '企业版' as const, status: 'ACTIVE' as const, contactName: '王总', contactPhone: '13922413536', companySize: '500+人', healthScore: 92, aiUsagePercent: 68, expireDate: '2026-12-31', registeredAt: '2026-07-20T11:09:09Z', enabled: true },
+    { id: '2607200069234889796ID', companyName: '新申请百货', industry: '百货', version: '体验版' as const, status: 'PENDING' as const, contactName: '赵经理', contactPhone: '13311111111', companySize: '50-100人', healthScore: 35, aiUsagePercent: 0, expireDate: '2026-08-20', registeredAt: '2026-07-20T10:14:53Z', enabled: false },
+    { id: '2607190069191202051ID', companyName: '百草堂药业', industry: '药业', version: '专业版' as const, status: 'ACTIVE' as const, contactName: '陈经理', contactPhone: '14800000000', companySize: '200-500人', healthScore: 78, aiUsagePercent: 55, expireDate: '2027-03-20', registeredAt: '2026-07-19T15:34:45Z', enabled: true },
+    { id: '2607190069191202052ID', companyName: '丽人美容', industry: '美妆', version: '体验版' as const, status: 'TRIAL' as const, contactName: '周经理', contactPhone: '13800000006', companySize: '10-20人', healthScore: 50, aiUsagePercent: 12, expireDate: '2026-08-05', registeredAt: '2026-07-05T00:00:00Z', enabled: true },
   ];
   for (const t of tenants) {
     await db.put('tenants', t);

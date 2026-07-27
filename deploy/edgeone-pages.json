@@ -1,38 +1,34 @@
 {
-  "$schema": "https://json.schema.vercel.app/deploy/config",
-  "deploy_target": "edgeone-pages",
-  "version": "1.0.0",
-  "description": "EdgeOne Pages 部署配置 — 多人多项目路径路由",
-  "global": {
-    "workspace": "ai-scrm",
-    "base_domain": "edgeone.app",
-    "access_protection": {
-      "enabled": true,
-      "auth_type": "password",
-      "accounts": [
-        { "username": "admin", "role": "admin", "scope": "all" },
-        { "username": "viewer", "role": "viewer", "scope": "all" }
-      ]
-    }
-  },
+  "_comment": "EdgeOne Pages 多成员多项目多主题部署配置 — 自定义域名",
+  "base_domain": "prototype.jycao.cn",
+  "workspace": "scrm",
+  "deploy_root": "deploy/artifacts",
+  "routing_pattern": "/{member}/{project}/{topic}/{version}/",
   "projects": {
-    "ai-scrm": {
-      "project": "AI-SCRM",
+    "AI-SCRM": {
       "root": "projects/AI-SCRM",
+      "framework": "react",
       "build_command": "npm run build:sim",
       "output_directory": "dist",
       "env": {
         "VITE_PROJECT_ID": "ai-scrm",
-        "VITE_MODE": "sim"
-      },
-      "routes": [
-        { "src": "/ai-scrm/(.*)", "dest": "/$1" }
-      ],
-      "access_url_pattern": "/ai-scrm/{version}/"
+        "VITE_BASE_PATH": "/{member}/AI-SCRM/{topic}/{version}/"
+      }
+    },
+    "SAAS": {
+      "root": "projects/SAAS",
+      "framework": "vue",
+      "build_command": "npm run build:sim",
+      "output_directory": "dist",
+      "env": {
+        "VITE_PROJECT_ID": "saas",
+        "VITE_BASE_PATH": "/{member}/SAAS/{topic}/{version}/"
+      }
     }
   },
-  "deploy_hooks": {
-    "pre_deploy": "npm run build:sim",
-    "post_deploy": "更新 DEPLOY-MANIFEST.yml + access-portal/index.html + PROJECT-INDEX.yml"
+  "portal": {
+    "auto_generate": true,
+    "output": "deploy/artifacts/index.html",
+    "template": "deploy/access-portal/index.html"
   }
 }

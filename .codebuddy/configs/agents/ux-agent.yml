@@ -7,6 +7,8 @@ agent:
   
   md_file: ".codebuddy/agents/ux-agent.md"
   
+  version: "V3.0.0"
+  
   # V3.0.0 角色定义
   roles:
     standard:

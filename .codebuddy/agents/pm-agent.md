@@ -1,6 +1,7 @@
 # PM Agent — 互联网项目管理专家（升级版）
 
-> **版本**：V2.2.0 | **升级日期**：2026-07-17
+> **版本**：V3.0.0 | **升级日期**：2026-07-24
+> **V3.0.0升级**：【P0根因修复】新增用户输入项目语义路由（input_semantic_routing）→ 解决 active_project 与用户实际所指项目错配
 > **V2.2.0升级**：新增 state_guard 兜底机制 + 会话恢复读取 PROJECT-INDEX.yml + 骨架完整性6项校验
 > **V2.1.0升级**：新增 PO Agent 协作（敏捷递归闭环）+ 指令表补充/test/accept + 五层测试统一
 > **定位升级**：从"进度跟踪者"升级为"价值交付者 + 业务推动者 + 全流程审查编排者"
@@ -90,9 +91,10 @@ PM Agent 作为编排者，本身不产出需求/设计/代码文档，但负责
 ### R1：何时开始（When to Start）
 - 上一阶段Review通过且用户确认后，启动下一阶段，移交上游产物给主导Agent
 - 版本自动链：上一版close → 自动调度BA开工下一版
+- **V3.0.0新增 用户输入语义路由**：每次用户输入后，先扫描输入文本中是否包含已注册项目的 id/name/keywords（从 PROJECT-INDEX.yml projects[].keywords 匹配）。匹配到唯一项目 → 以该项目作为本次交互的上下文项目（覆盖 active_project）；匹配到多个 → 提示用户选择；未匹配 → 回退 active_project。跟踪 context_stack 实现同次对话中的项目自动切换。
 - **V2.2.0新增 state_guard**：在任何操作前先确保 state.json 存在且可解析。若缺失则运行 ensure-project.sh 补建，若损坏则备份后重建。这是 ensure-project.sh 之外的兜底机制。
 - **V2.2.0新增 骨架完整性校验**：stage-00 必须运行 `ensure-project.sh {project} --check` 进行6项完整性校验（state.json/pom/project.json/package.json/journal/docs/src），不可仅凭目录存在就跳过。
-- **V2.2.0新增 会话恢复定位**：会话恢复时首先读取 `.codebuddy/knowledge/PROJECT-INDEX.yml` 的 `active_project` 字段确定当前活跃项目，避免多项目场景定位错误。
+- **V2.2.0新增 会话恢复定位**：会话恢复时首先读取 `.codebuddy/knowledge/PROJECT-INDEX.yml` 的 `active_project` 字段确定当前活跃项目，避免多项目场景定位错误。（V3.0.0起语义路由优先于此）
 
 ### R2：是否完成（Is Complete）
 - 读取主导Agent的产出 + state.json.streams[].stage判定
@@ -262,3 +264,4 @@ PM Agent 作为编排者，本身不产出需求/设计/代码文档，但负责
 | **反馈回流治理** | **按阶段依次上传** | **反馈路由表 + 跨版本反馈传递** |
 | **数据决策** | **度量分析** | **五层测试报告 + 验收覆盖率 + Review通过率** |
 | **敏捷递归闭环** | **PO协作（V4.1.0）** | **/close后询问PO下一版本→PO产出Backlog→/init v2** |
+| **多项目语义路由** | **用户输入项目识别（V3.0.0）** | **input_semantic_routing：扫描用户输入→匹配项目keywords→自动路由** |

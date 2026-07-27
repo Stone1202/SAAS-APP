@@ -7,6 +7,8 @@ agent:
   
   md_file: ".codebuddy/agents/po-agent.md"
   
+  version: "V1.1.0"
+  
   skills:
     - "backlog-prioritizer"
     - "business-analyzer"

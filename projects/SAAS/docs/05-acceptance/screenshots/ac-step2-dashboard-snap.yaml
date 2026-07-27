@@ -1,0 +1,132 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - tablist [ref=e8]:
+      - tab "直播管理" [selected] [ref=e10]:
+        - generic [ref=e11]:
+          - text: 直播管理
+          - button "查看「直播管理/回放管理」Tab用例说明" [ref=e12] [cursor=pointer]:
+            - img [ref=e13]
+      - tab "回放管理" [ref=e16]:
+        - generic [ref=e17]:
+          - text: 回放管理
+          - button "查看「直播管理/回放管理」Tab用例说明" [ref=e18] [cursor=pointer]:
+            - img [ref=e19]
+    - generic:
+      - tabpanel "直播管理"
+  - generic [ref=e22]:
+    - generic [ref=e24]:
+      - generic [ref=e25]: 直播管理
+      - generic [ref=e27]: 仿真模式
+    - generic [ref=e30]:
+      - table [ref=e32]:
+        - rowgroup [ref=e40]:
+          - row "场次ID 场次名称 主播 状态 观看人数 操作" [ref=e41]:
+            - columnheader "场次ID" [ref=e42]:
+              - generic [ref=e43]: 场次ID
+            - columnheader "场次名称" [ref=e44]:
+              - generic [ref=e45]: 场次名称
+            - columnheader "主播" [ref=e46]:
+              - generic [ref=e47]: 主播
+            - columnheader "状态" [ref=e48]:
+              - generic [ref=e50]:
+                - text: 状态
+                - button "查看「直播状态标签」用例说明" [ref=e51] [cursor=pointer]:
+                  - img [ref=e52]
+            - columnheader "观看人数" [ref=e55]:
+              - generic [ref=e56]: 观看人数
+            - columnheader "操作" [ref=e57]:
+              - generic [ref=e59]:
+                - text: 操作
+                - button "查看「操作」列用例说明" [ref=e60] [cursor=pointer]:
+                  - img [ref=e61]
+      - table [ref=e68]:
+        - rowgroup [ref=e76]:
+          - row "LIVE-001 周一科技前沿直播 科技小王 直播中 1234 中控台 更多" [ref=e77]:
+            - cell "LIVE-001" [ref=e78]:
+              - generic [ref=e79]: LIVE-001
+            - cell "周一科技前沿直播" [ref=e80]:
+              - generic [ref=e81]: 周一科技前沿直播
+            - cell "科技小王" [ref=e82]:
+              - generic [ref=e83]: 科技小王
+            - cell "直播中" [ref=e84]:
+              - generic [ref=e86]:
+                - generic [ref=e88]: 直播中
+                - button "查看「直播状态标签」用例说明" [ref=e89] [cursor=pointer]:
+                  - img [ref=e90]
+            - cell "1234" [ref=e93]:
+              - generic [ref=e94]: "1234"
+            - cell "中控台 更多" [ref=e95]:
+              - generic [ref=e97]:
+                - button "中控台" [ref=e98] [cursor=pointer]:
+                  - generic [ref=e99]: 中控台
+                - button "查看「中控台」按钮用例说明" [ref=e100] [cursor=pointer]:
+                  - img [ref=e101]
+                - button "更多" [ref=e105] [cursor=pointer]:
+                  - generic [ref=e106]:
+                    - text: 更多
+                    - img [ref=e108]
+          - row "LIVE-002 新品发布会实况 品牌主播 直播中 5678 中控台 更多" [ref=e110]:
+            - cell "LIVE-002" [ref=e111]:
+              - generic [ref=e112]: LIVE-002
+            - cell "新品发布会实况" [ref=e113]:
+              - generic [ref=e114]: 新品发布会实况
+            - cell "品牌主播" [ref=e115]:
+              - generic [ref=e116]: 品牌主播
+            - cell "直播中" [ref=e117]:
+              - generic [ref=e119]:
+                - generic [ref=e121]: 直播中
+                - button "查看「直播状态标签」用例说明" [ref=e122] [cursor=pointer]:
+                  - img [ref=e123]
+            - cell "5678" [ref=e126]:
+              - generic [ref=e127]: "5678"
+            - cell "中控台 更多" [ref=e128]:
+              - generic [ref=e130]:
+                - button "中控台" [ref=e131] [cursor=pointer]:
+                  - generic [ref=e132]: 中控台
+                - button "查看「中控台」按钮用例说明" [ref=e133] [cursor=pointer]:
+                  - img [ref=e134]
+                - button "更多" [ref=e138] [cursor=pointer]:
+                  - generic [ref=e139]:
+                    - text: 更多
+                    - img [ref=e141]
+          - row "LIVE-003 周末娱乐专场 娱乐达人 已结束 9999 更多" [ref=e143]:
+            - cell "LIVE-003" [ref=e144]:
+              - generic [ref=e145]: LIVE-003
+            - cell "周末娱乐专场" [ref=e146]:
+              - generic [ref=e147]: 周末娱乐专场
+            - cell "娱乐达人" [ref=e148]:
+              - generic [ref=e149]: 娱乐达人
+            - cell "已结束" [ref=e150]:
+              - generic [ref=e152]:
+                - generic [ref=e154]: 已结束
+                - button "查看「直播状态标签」用例说明" [ref=e155] [cursor=pointer]:
+                  - img [ref=e156]
+            - cell "9999" [ref=e159]:
+              - generic [ref=e160]: "9999"
+            - cell "更多" [ref=e161]:
+              - button "更多" [ref=e165] [cursor=pointer]:
+                - generic [ref=e166]:
+                  - text: 更多
+                  - img [ref=e168]
+          - row "LIVE-004 知识付费公开课 教育博士 已结束 3456 更多" [ref=e170]:
+            - cell "LIVE-004" [ref=e171]:
+              - generic [ref=e172]: LIVE-004
+            - cell "知识付费公开课" [ref=e173]:
+              - generic [ref=e174]: 知识付费公开课
+            - cell "教育博士" [ref=e175]:
+              - generic [ref=e176]: 教育博士
+            - cell "已结束" [ref=e177]:
+              - generic [ref=e179]:
+                - generic [ref=e181]: 已结束
+                - button "查看「直播状态标签」用例说明" [ref=e182] [cursor=pointer]:
+                  - img [ref=e183]
+            - cell "3456" [ref=e186]:
+              - generic [ref=e187]: "3456"
+            - cell "更多" [ref=e188]:
+              - button "更多" [ref=e192] [cursor=pointer]:
+                - generic [ref=e193]:
+                  - text: 更多
+                  - img [ref=e195]
+  - button "用例卡" [ref=e198] [cursor=pointer]:
+    - img [ref=e199]
+    - generic [ref=e202]: 用例卡

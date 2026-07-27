@@ -122,19 +122,21 @@ export type Segment = z.infer<typeof SegmentSchema>;
 export const TenantSchema = z.object({
   id: z.string(),
   companyName: z.string().min(1),
-  industry: z.string(),
-  version: z.enum(['体验版', '基础版', '专业版', '企业版']),
-  status: z.enum(['ACTIVE', 'PENDING', 'TRIAL', 'GRACE', 'SUSPENDED', 'CLOSED']),
+  industry: z.string().optional(),
+  version: z.enum(['体验版', '基础版', '专业版', '企业版']).optional(),
+  status: z.enum(['ACTIVE', 'PENDING', 'TRIAL', 'GRACE', 'SUSPENDED', 'CLOSED']).optional(),
   contactName: z.string().optional(),
   contactPhone: z.string().optional(),
   companySize: z.string().optional(),
-  healthScore: z.number().min(0).max(100).default(85),
-  aiUsagePercent: z.number().min(0).max(100).default(0),
-  expireDate: z.string(),
+  healthScore: z.number().min(0).max(100).default(85).optional(),
+  aiUsagePercent: z.number().min(0).max(100).default(0).optional(),
+  expireDate: z.string().optional(),
   registeredAt: z.string(),
+  enabled: z.boolean().default(true),
 });
 
 export type Tenant = z.infer<typeof TenantSchema>;
+export type TenantStatus = Tenant['status'];
 
 // ============================================
 // 版本功能矩阵 (Version Feature Matrix)
@@ -211,3 +213,151 @@ export const OpsDashboardStatsSchema = z.object({
 });
 
 export type OpsDashboardStats = z.infer<typeof OpsDashboardStatsSchema>;
+
+// ============================================
+// 消息 (Message) - ENT-TNT-004
+// ============================================
+export const MessageSchema = z.object({
+  id: z.string(),
+  commId: z.string(),
+  senderType: z.enum(['agent', 'customer']),
+  content: z.string(),
+  contentType: z.enum(['text', 'image', 'file', 'voice', 'video']).default('text'),
+  emotionLabel: z.enum(['positive', 'neutral', 'negative', 'angry']).optional(),
+  sentAt: z.string(),
+});
+
+export type Message = z.infer<typeof MessageSchema>;
+
+// ============================================
+// AI总结 (Summary) - ENT-TNT-006
+// ============================================
+export const SummarySchema = z.object({
+  id: z.string(),
+  commId: z.string(),
+  summaryText: z.string(),
+  keyDecisions: z.array(z.string()).default([]),
+  emotionSummary: z.string().optional(),
+  suggestions: z.array(z.string()).default([]),
+  qualityScore: z.number().min(0).max(100).optional(),
+  confirmed: z.boolean().default(false),
+});
+
+export type Summary = z.infer<typeof SummarySchema>;
+
+// ============================================
+// 商品 (Product) - ENT-TNT-008
+// ============================================
+export const ProductSchema = z.object({
+  id: z.string(),
+  tenantId: z.string(),
+  name: z.string().min(1),
+  price: z.number().min(0),
+  description: z.string().optional(),
+  imageUrl: z.string().optional(),
+  isActive: z.boolean().default(true),
+});
+
+export type Product = z.infer<typeof ProductSchema>;
+
+// ============================================
+// 客户意向 (Intent) - ENT-TNT-009
+// ============================================
+export const IntentSchema = z.object({
+  id: z.string(),
+  customerId: z.string(),
+  commId: z.string().optional(),
+  intentType: z.enum(['高意向', '比价', '顾虑', '不感兴趣', '待定']),
+  confidence: z.number().min(0).max(1),
+  detectedAt: z.string(),
+});
+
+export type Intent = z.infer<typeof IntentSchema>;
+
+// ============================================
+// 质检记录 (QualityCheck) - ENT-TNT-010
+// ============================================
+export const QualityCheckSchema = z.object({
+  id: z.string(),
+  commId: z.string(),
+  openingScore: z.number().min(0).max(100),
+  discoveryScore: z.number().min(0).max(100),
+  objectionScore: z.number().min(0).max(100),
+  closingScore: z.number().min(0).max(100),
+  endingScore: z.number().min(0).max(100),
+  totalScore: z.number().min(0).max(100),
+  grade: z.enum(['S', 'A', 'B', 'C', 'D']),
+  reviewStatus: z.enum(['PENDING', 'REVIEWED']).default('PENDING'),
+  createdAt: z.string().optional(),
+});
+
+export type QualityCheck = z.infer<typeof QualityCheckSchema>;
+
+// ============================================
+// 企微授权 (WeChatAccount) - ENT-TNT-011
+// ============================================
+export const WeChatAccountSchema = z.object({
+  id: z.string(),
+  tenantId: z.string(),
+  corpId: z.string().min(1),
+  corpName: z.string().min(1),
+  corpSecretEnc: z.string().optional(),
+  accessToken: z.string().optional(),
+  tokenExpiresAt: z.string().optional(),
+  employeeCount: z.number().default(0),
+  customerCount: z.number().default(0),
+  groupCount: z.number().default(0),
+  syncStatus: z.enum(['PENDING', 'SYNCING', 'AUTHORIZED', 'EXPIRED', 'REVOKED']).default('PENDING'),
+  status: z.enum(['PENDING', 'SYNCING', 'AUTHORIZED', 'EXPIRED', 'REVOKED']).default('PENDING'),
+  createdAt: z.string().optional(),
+});
+
+export type WeChatAccount = z.infer<typeof WeChatAccountSchema>;
+
+// ============================================
+// 企微客户群 (WeChatGroup) - ENT-TNT-012
+// ============================================
+export const WeChatGroupSchema = z.object({
+  id: z.string(),
+  wxAccountId: z.string(),
+  groupId: z.string().min(1), // 企微群ID
+  groupName: z.string().min(1),
+  memberCount: z.number().default(0),
+  ownerId: z.string().optional(),
+  ownerName: z.string().optional(),
+  syncedAt: z.string(),
+});
+
+export type WeChatGroup = z.infer<typeof WeChatGroupSchema>;
+
+// ============================================
+// 企微好友关系 (WeChatContact) - ENT-TNT-013
+// ============================================
+export const WeChatContactSchema = z.object({
+  id: z.string(),
+  wxAccountId: z.string(),
+  employeeId: z.string(),
+  customerId: z.string(),
+  externalUserId: z.string().min(1), // 企微外部联系人ID
+  addWay: z.string().optional(),
+  addTime: z.string(),
+  isFriend: z.boolean().default(true),
+  inGroups: z.array(z.string()).default([]),
+});
+
+export type WeChatContact = z.infer<typeof WeChatContactSchema>;
+
+// ============================================
+// AI用量记录 (AIUsage) - ENT-OPS-004
+// ============================================
+export const AIUsageSchema = z.object({
+  id: z.string(),
+  tenantId: z.string(),
+  agentType: z.string(),
+  callCount: z.number().default(0),
+  tokenCount: z.number().default(0),
+  cost: z.number().default(0),
+  periodDate: z.string(),
+});
+
+export type AIUsage = z.infer<typeof AIUsageSchema>;

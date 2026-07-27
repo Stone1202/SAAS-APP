@@ -21,12 +21,11 @@ members:
     role: "admin"
     accessible_projects: ["AI-SCRM"]    # V1.2.0: 可访问的项目列表（支持跨项目协作）
 
-  # 示例：新增成员
-  # - id: "zhangsan"
-  #   name: "张三"
-  #   git_name: "zhangsan"
-  #   role: "member"
-  #   accessible_projects: ["erp-portal", "AI-SCRM"]  # 张三可访问多个项目
+  - id: "Eltonliz"
+    name: "李政"
+    git_name: "Eltonliz"
+    role: "member"
+    accessible_projects: ["SAAS", "AI-SCRM"]
 
 # ============================================
 # 权限边界定义

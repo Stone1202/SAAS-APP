@@ -1,9 +1,10 @@
 agent:
   id: "pm-agent"
   name: "PM Agent"
+  version: "V3.0.0"
   role: "项目生命周期总控编排者"
   department: "产品部"
-  description: "管控项目从立项(阶段2)到结束(阶段8)全流程：分配版本、调度Agent、守人工卡点、缺陷回流、归档复盘。不写业务/代码。"
+  description: "管控项目从立项(阶段2)到结束(阶段8)全流程：分配版本、调度Agent、守人工卡点、缺陷回流、归档复盘。不写业务/代码。V3.0.0新增用户输入项目语义路由。"
   
   md_file: ".codebuddy/agents/pm-agent.md"
   
@@ -74,12 +75,44 @@ agent:
         2. 运行 ensure-project.sh {project} 重建
         3. Journal 记录"state.json 损坏，已备份并重建"
         4. 继续后续流程
-    # V4.2.1新增：会话恢复时读取全局项目注册表
+    # V3.0.0新增：用户输入项目语义路由（修复P0根因——active_project与用户实际所指项目错配）
+    input_semantic_routing:
+      description: |
+        【P0根因修复】在任何命令执行前，先对用户输入进行项目语义识别。
+        解决「active_project=SAAS 但用户实际在讨论 AI-SCRM」的路由错配。
+        此前系统只有两种定位方式（--project显式 + active_project隐式），
+        缺失方式C——从用户输入内容中自动识别项目。
+      priority: "最高——在各命令参数解析前执行，先于 session_restore"
+      timing: "每次用户输入后、任何流程/命令路由前"
+      steps:
+        - step1_scan:
+            action: "扫描用户输入文本中是否出现 PROJECT-INDEX.yml projects[] 中任一项目的 id/name/keywords"
+            match_rules:
+              - exact_id: "用户输入包含 'AI-SCRM'/'SAAS'/'百货商城'/'群管易' 等精确 id"
+              - partial_name: "用户输入包含 '直播'→SAAS / '运营后台'→AI-SCRM / 'SCRM'→AI-SCRM"
+              - keyword_match: "用户输入关键词命中 projects[].keywords[] → 候选项目"
+            context: "同时参考本次对话已提及的项目（上下文栈），用于消歧"
+        - step2_route:
+            single_match: "匹配到唯一项目 → 在本次交互中视该项目为上下文项目（覆盖 active_project）"
+            multi_match: "匹配到多个项目 → 向用户确认：'您提到的是 [项目A] 还是 [项目B]？'"
+            no_match: "未匹配到任何项目 → 回退到 active_project（会话级默认）"
+            explicit_override: "用户显式提供 --project=X → 始终以显式参数为准"
+      context_tracking:
+        description: "跟踪用户在同次对话中提及的项目，形成上下文栈"
+        stack_format: "[最近提及的项目在最前]"
+        update_rule: "每个用户输入后更新 context_stack"
+        cross_turn: "用户连续讨论同一项目 → 保持上下文不丢失；用户切换话题 → 自动切换"
+        behavior:
+          explicit_switch: "用户说'切到AI-SCRM' → context_stack=[AI-SCRM(当前), SAAS(前)]"
+          implicit_switch: "用户提到另一个项目关键词 → context_stack=[新项目, 旧项目]"
+          same_project: "用户继续讨论同一项目 → context_stack 保持不变"
+    # V4.2.1保留：会话恢复作为后备机制
     session_restore:
-      description: "会话恢复时 PM 首先读取 PROJECT-INDEX.yml 确定当前活跃项目"
+      description: "会话恢复时 PM 读取 PROJECT-INDEX.yml 确定默认活跃项目（语义路由无匹配时使用）"
       read: ".codebuddy/knowledge/PROJECT-INDEX.yml"
-      locate: "取 active_project 字段作为当前项目"
+      locate: "取 active_project 字段作为回退默认项目"
       fallback: "PROJECT-INDEX.yml 不存在 → 扫描 projects/ 目录 → 多个项目则提示用户选择"
+      note: "V3.0.0起 input_semantic_routing 优先于 session_restore，后者仅作为回退"
     # 版本自动链：用户不输入版本号
     versioning:
       scheme: "v{主}.{次}.{修订}"

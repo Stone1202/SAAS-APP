@@ -1,46 +1,62 @@
-# DEPLOY-MANIFEST.yml — 部署清单（每次 /close 自动更新）
-# 维护者：PM Agent + deploy-manager Skill | 每次 /close 和 /deploy 时更新
 # ============================================
-version: "1.0.0"
-last_deploy: "2026-07-21T15:45+08:00"
-deploy_target: "edgeone-pages"
-workspace_url: "https://ai-scrm-dpzzl2eobkr6.edgeone.dev"
-edgeone_project_id: "makers-ia0gfprurxre"
-edgeone_project_name: "ai-scrm"
-edgeone_console_url: "https://console.cloud.tencent.com/edgeone/pages/project/makers-ia0gfprurxre/index"
+# DEPLOY-MANIFEST.yml — 部署清单（新版：非平台锁定）
+# ============================================
+# 版本：V2.0.0
+# 变更：域名迁移至自定义域名 + 主题路由 + 多成员多项目聚合部署
+# 域名：prototype.jycao.cn
+# ============================================
 
-# 部署记录（按时间倒序，最新在上）
-deployments:
-  - owner: "jojo"
-    project: "AI-SCRM"
-    version: "v1.0.0"
-    deployed_at: "2026-07-21T15:30+08:00"
-    git_tag: null
-    build_mode: "sim"
-    url: "https://ai-scrm.edgeone.app/jojo/AI-SCRM/v1.0.0/"
-    status: "success"
-    db_name: "jojo-ai-scrm-sim"
-    build_duration_sec: 3
-    deploy_duration_sec: 15
-    artifacts:
-      - "projects/jojo/AI-SCRM/dist/"
-    url: "https://ai-scrm-dpzzl2eobkr6.edgeone.dev"
-    preview_url: "https://ai-scrm-dpzzl2eobkr6.edgeone.dev?eo_token=ba568ae2d29b475d81b10749169cb106&eo_time=1784615937"
-    error_msg: null
+workspace:
+  name: AI-SCRM
+  workspace_url: "https://prototype.jycao.cn"
 
-# 示例条目（实际部署时自动追加）：
-# - owner: "jojo"
-#   project: "AI-SCRM"
-#   version: "v1.0.0"
-#   deployed_at: "2026-07-21T15:00+08:00"
-#   git_tag: "v1.0.0"
-#   build_mode: "sim"
-#   url: "https://ai-scrm.edgeone.app/jojo/AI-SCRM/v1.0.0/"
-#   status: "success"
-#   db_name: "jojo-ai-scrm-sim"
-#   build_duration_sec: 45
-#   deploy_duration_sec: 12
-#   artifacts:
-#     - "projects/jojo/AI-SCRM/dist/"
-#     - "projects/jojo/AI-SCRM/docs/09-versions/v1.0.0/"
-#   error_msg: null
+deploy_provider:
+  type: edgeone_pages           # 可替换为其他平台
+  edgeone_project_id: "pages-ai-scrm"
+  edgeone_project_name: "ai-scrm-pages"
+  edgeone_console_url: "https://console.tencentcloud.com/edgeone/pages"
+
+# ---------- 部署路由规范 ----------
+routing:
+  base_domain: "prototype.jycao.cn"
+  pattern: "/{member}/{project}/{topic}/{version}/"
+  root_portal: "/"              # 门户首页在根路径
+
+# ---------- 聚合部署记录 ----------
+last_deploy:
+  timestamp: ""
+  deployed_by: ""
+  total_members: 0
+  total_projects: 0
+  members: {}
+  # 示例结构（运行时填充）：
+  # members:
+  #   jojo:
+  #     projects:
+  #       AI-SCRM:
+  #         topics:
+  #           subscription-migration:
+  #             versions:
+  #               - version: "v1.0.0"
+  #                 timestamp: "2026-07-23T10:00:00+08:00"
+  #                 url: "https://prototype.jycao.cn/jojo/AI-SCRM/subscription-migration/v1.0.0/"
+  #           customer-tag-refactor:
+  #             versions:
+  #               - version: "v1.0.0"
+  #                 timestamp: "2026-07-23T11:00:00+08:00"
+  #                 url: "https://prototype.jycao.cn/jojo/AI-SCRM/customer-tag-refactor/v1.0.0/"
+  #       SAAS:
+  #         topics:
+  #           live-audit-panel:
+  #             versions:
+  #               - version: "v1.0.0"
+  #                 timestamp: "2026-07-23T10:00:00+08:00"
+  #                 url: "https://prototype.jycao.cn/jojo/SAAS/live-audit-panel/v1.0.0/"
+
+# ---------- 部署历史（追加，不覆盖） ----------
+deploy_history: []
+  # - timestamp: "2026-07-23T10:00:00+08:00"
+  #   deployed_by: "jojo"
+  #   event: "全量聚合部署"
+  #   members_count: 2
+  #   projects_count: 3

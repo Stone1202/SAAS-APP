@@ -289,6 +289,9 @@ stages:
 gates_reference: ".codebuddy/knowledge/common/gates-registry.yml#stages.po_planning"
 # 门禁定义见 gates-registry.yml → stages.po_planning（G-PO-01~04，单一事实源）
 
+iron_rules_reference: ".codebuddy/knowledge/common/iron-rules-registry.yml#agents.po_agent"
+# 铁律定义见 iron-rules-registry.yml → PO-01~09（PO规划铁律，单一事实源）
+
 # ============================================
 # 产物归属厘清
 # ============================================

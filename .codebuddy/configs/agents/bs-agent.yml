@@ -7,6 +7,8 @@ agent:
   
   md_file: ".codebuddy/agents/bs-agent.md"
 
+  version: "V3.5.0"
+
   # V5.1.0新增：BS大脑能力声明（pending——待后续迭代注入）
   brain_capability:
     status: "pending"

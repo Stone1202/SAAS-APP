@@ -30,6 +30,7 @@
           :checked="modelValue === opt.value"
           @change="$emit('update:modelValue', opt.value)"
           :disabled="fieldStatus !== 'live'"
+          :data-testid="`mute-mode-${opt.value}`"
         />
         <span>{{ opt.label }}</span>
       </label>
@@ -41,7 +42,7 @@
       <small>违规列表已切换为只读，处置不可用</small>
     </div>
     <div v-if="!auditEnabled && fieldStatus === 'live'" class="banner audit-off">
-      ⚠ 内容审查已关闭<br />
+      ⚠ 直播审查已关闭<br />
       <small>已产生违规保留，不再接收新违规</small>
     </div>
   </div>

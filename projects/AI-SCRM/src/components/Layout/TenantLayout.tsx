@@ -78,6 +78,7 @@ const menuItems: MenuProps['items'] = [
     label: '系统设置',
     children: [
       { key: '/tenant/settings', label: '团队管理' },
+      { key: '/tenant/wechat-auth', label: '企微授权' },
     ],
   },
 ];

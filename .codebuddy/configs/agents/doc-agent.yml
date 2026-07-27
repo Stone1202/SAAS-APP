@@ -7,6 +7,8 @@ agent:
   
   md_file: ".codebuddy/agents/doc-agent.md"
   
+  version: "V2.0.0"
+  
   skills:
     - "doc-processor"            # V5.1.0合并：doc-indexer+doc-linker+doc-validator+doc-template-enforcer→doc-processor
 

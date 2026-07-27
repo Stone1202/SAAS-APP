@@ -32,7 +32,7 @@ const AudienceLiveRoom = () => import('../pages/viewer/AudienceLiveRoom.vue');
 // ============================================
 const routes: RouteRecordRaw[] = [
   // ─── PC-运营后台（/admin/ 前缀）───
-  // PRD §17 行1：/admin/tenant → 租户管理列表 → 操作列「内容审查开关」→ 二次确认弹窗
+  // PRD §17 行1：/admin/tenant → 租户管理列表 → 操作列「直播审查开关」→ 二次确认弹窗
   {
     path: '/admin/tenant',
     name: 'AdminTenant',
@@ -42,7 +42,7 @@ const routes: RouteRecordRaw[] = [
       system: 'SAAS运营后台',
       fn: ['FN-AUDIT-PC-001'],       // PRD §17 行1
       page: 'PG-AUDIT-PC-001',
-      description: '租户管理列表 → 操作列「内容审查开关」→ 二次确认弹窗',
+      description: '租户管理列表 → 操作列「直播审查开关」→ 二次确认弹窗',
     },
   },
 
@@ -60,7 +60,7 @@ const routes: RouteRecordRaw[] = [
       description: '仿真入口：模拟直播列表 →「更多」下拉菜单（查看历史违规列表 / 查看回放）+「中控台」按钮',
     },
   },
-  // PRD §17 行3：/tenant/live-control?tab=audit → 直播中控台「内容审查」Tab
+  // PRD §17 行3：/tenant/live-control?tab=audit → 直播中控台「直播审查」Tab
   {
     path: '/tenant/live-control',
     name: 'LiveControlAudit',
@@ -70,7 +70,7 @@ const routes: RouteRecordRaw[] = [
       system: 'SAAS租户后台',
       fn: ['FN-AUDIT-PC-002', 'FN-AUDIT-PC-003'],  // PRD §17 行3
       page: 'PG-AUDIT-PC-002',
-      description: '直播中控台 → 右侧「内容审查」Tab（?tab=audit&streamId=xxx）→ 侧滑面板（违规列表+告警统计+处置操作）',
+      description: '直播中控台 → 右侧「直播审查」Tab（?tab=audit&streamId=xxx）→ 侧滑面板（违规列表+告警统计+处置操作）',
     },
   },
   // PRD §17 行2+行5：/tenant/live/:streamId/violations → 历史违规列表 + 处置操作 + 擦音模式

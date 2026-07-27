@@ -67,6 +67,15 @@ export const ReplayTaskStatusEnum = z.enum([
 ]);
 export type ReplayTaskStatus = z.infer<typeof ReplayTaskStatusEnum>;
 
+/** BR-AUDIT-004/015: 回放发布状态——擦音完成后须人工核对，通过才可发布 */
+export const PublishStatusEnum = z.enum([
+  'pending_review',   // 待核对（擦音完成，等待人工核对）
+  'reviewed',         // 已核对（人工核对通过，待发布）
+  'published',        // 已发布（观众可观看）
+  'rejected',         // 已驳回（核对不通过，需重新擦音）
+]);
+export type PublishStatus = z.infer<typeof PublishStatusEnum>;
+
 // ============================================
 // ENT-AUDIT-001: 违规记录
 // ============================================
@@ -112,6 +121,9 @@ export type ReviewDisposal = z.infer<typeof ReviewDisposalSchema>;
 export const TenantAuditConfigSchema = z.object({
   tenant_id: z.string(),
   tenant_name: z.string(),
+  contact_phone: z.string(),
+  registered_at: z.string(),
+  is_enabled: z.boolean(),
   industry: z.string(),
   stream_domain: z.string(),
   audit_enabled: z.boolean(),
@@ -130,6 +142,8 @@ export const ReplayMuteTaskSchema = z.object({
   replay_file_url: z.string().url(),
   muted_file_url: z.string().url().optional(),
   task_status: ReplayTaskStatusEnum,
+  /** BR-AUDIT-004/015: 擦音完成后须人工核对→发布，不得直接开放 */
+  publish_status: PublishStatusEnum.default('pending_review'),
   progress: z.number().int().min(0).max(100),
   started_at: z.string().datetime().optional(),
   completed_at: z.string().datetime().optional(),
@@ -149,8 +163,12 @@ export const ReplayFileSchema = z.object({
   file_size: z.number().int().min(0),
   created_at: z.string().datetime(),
   play_url_original: z.string().url(),
+  /** 擦音后的视频URL（仅publish_status !== 'pending_review' 时可用） */
   play_url_muted: z.string().url().optional(),
   is_muted: z.boolean(),
+  /** BR-AUDIT-004/015: 回放必须人工核对通过+发布后才可观看 */
+  publish_status: PublishStatusEnum.default('pending_review'),
+  /** 兼容旧字段，等同于 publish_status === 'published' */
   allow_play: z.boolean(),
 });
 export type ReplayFile = z.infer<typeof ReplayFileSchema>;

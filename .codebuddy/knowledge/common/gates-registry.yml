@@ -1,6 +1,6 @@
 # ============================================
 # gates-registry.yml — 全流程门禁注册中心
-# 版本：v1.8.0
+# 版本：v1.11.0
 # 创建：2026-07-17
 # 定位：每个阶段的产物完整性校验规则单一事实源
 # 引用方：各workflow.yml通过gates_reference引用，project-lifecycle.yml各stage引用
@@ -8,11 +8,18 @@
 # 关联方案：audit-reports/POM门禁治理与铁律统一管理架构方案-2026-07-17.md
 # ============================================
 
-version: "1.10.0"
-last_updated: "2026-07-22"
+version: "1.14.0"
+last_updated: "2026-07-24"
 
-# V1.10.0新增（V5.5.0设计驱动架构）：
-#   - G-ARCH-07~09：反向三文档一致性检查3条硬门禁（路由对齐+业务系统隔离+反向检查）
+# V1.14.0新增（Demo阶段门禁）：
+#   - G-DEMO-01~04：Demo不可跳过/所有UC通过/反馈全部闭环/BA/UX产物冻结
+# V1.13.0新增（dev-change开发中实时变更回传门禁）：
+#   - G-HO-DEVCHANGE-01~03：handoff回传区无未消费记录+Agent确认+L2/L3变更可追溯+临时决策版本锚定
+# V1.12.0新增（/close硬前置handoff门禁）：
+#   - G-REQ-UML-01~03：UML需求产出门禁（状态机层级完整性+组合片段完整性+交互图完备性）
+#   - G-ARCH-UML-01~04：UML架构消费门禁（状态机映射+组合片段映射+耦合分析+系统边界）
+#   - G-DEV-UML-01：UML驱动实现门禁
+#   - G-TEST-UML-01~02：UML驱动测试门禁（组合片段测试矩阵+状态覆盖矩阵）
 #   - C-A11~C-A13 对应门禁，架构不能乱来，必须依据设计和需求文档进行架构
 # V1.9.0新增（回流+handoff强制约束补丁）：
 #   - G-REFLOW-01~04：回流启动/经停审视/到达BA/需求重跑 4条硬门禁
@@ -378,6 +385,48 @@ stages:
           禁止跳过场景分析直接写用例。
         on_fail: "阻止进入用例设计。PM驳回BA：场景分析未输出操作类型矩阵。"
         iron_rule: "BA-35"
+      - id: "G-REQ-UML-01"
+        type: "hard_gate"
+        name: "UML状态机层级完整性（V3.5.0新增）"
+        check: "content_pattern"
+        target: "PRD 状态机章节"
+        pattern: "composite|复合状态|submachine|子状态机|orthogonal|正交区域"
+        description: |
+          V3.5.0新增——UML状态机层级完整性门禁（BA-39/BA-41铁律）。
+          BA产出的状态机必须包含层级建模：
+          1. 带嵌套子进程的状态必须建模为复合状态（含内部子状态区域）
+          2. 被多处复用的状态逻辑必须提取为子状态机引用（含入口/出口标注）
+          3. 同一实体多维度独立状态必须建模为正交区域（-- 分隔）
+          4. 状态过渡操作表含增强4列（层级/区域/子机关联/父联动）
+          禁止将层级业务状态拍平为简单状态列表。
+        on_fail: "阻止进入架构评审。PM驳回BA：状态机层级建模不完整。BA必须依据uml-standards.yml完成层级建模后重新提交。"
+        iron_rule: "BA-39, BA-41"
+      - id: "G-REQ-UML-02"
+        type: "hard_gate"
+        name: "UML组合片段完整性（V3.5.0新增）"
+        check: "content_pattern"
+        target: "PRD 序列图章节"
+        pattern: "alt|else|opt|loop|break|par|critical"
+        description: |
+          V3.5.0新增——UML序列图组合片段门禁（BA-40铁律）。
+          每个UC的序列图必须包含：至少1个alt/else组合片段。
+          有循环/并发/中断/关键区场景时必须分别使用loop/par/break/critical。
+          禁止产出只有直线的"裸序列图"——组合片段是Arch提取架构决策和QA提取测试用例的直接输入。
+        on_fail: "阻止进入架构评审。PM驳回BA：组合片段不完整。BA必须依据uml-standards.yml补充组合片段后重新提交。"
+        iron_rule: "BA-40"
+      - id: "G-REQ-UML-03"
+        type: "hard_gate"
+        name: "UML交互图完备性（V3.5.0新增）"
+        check: "content_pattern"
+        target: "PRD 动态交互图章节"
+        pattern: "通信图|communication|交互概览|interaction_overview"
+        description: |
+          V3.5.0新增——UML交互图完备性门禁（BA-42铁律）。
+          复杂流程（序列图>50行或ref>3）时必须产出交互概览图。
+          所有序列图必须配套通信图（标注对象通信+数据归属）。
+          这两项是Arch做模块耦合分析和系统边界划分的必要输入。
+        on_fail: "阻止进入架构评审。PM驳回BA：交互图不完整。BA必须补充通信图和交互概览图后重新提交。"
+        iron_rule: "BA-42"
   impact_fusion:
     owner: "ba-agent"
     workflow: "demand-impact-fusion-flow.yml"
@@ -618,6 +667,53 @@ stages:
           反向检查不可跳过（max_retry=3），未通过则架构视为不合格。
           详见 checklists/design-prd-reverse-match.yml V2.0.0。
         on_fail: "PM驳回Arch：反向三文档一致性检查未执行。Arch必须按照design-prd-reverse-match.yml执行5维度检查，产出REVERSE-MATCH-REPORT.md，修复全部不一致项（最多3次重试）。"
+      - id: "G-ARCH-UML-01"
+        type: "hard_gate"
+        name: "UML状态机层级→数据架构映射（V3.2.0新增）"
+        check: "content_pattern"
+        target: "arch产出 Store/数据架构设计"
+        pattern: "slice|store.*orthogonal|submachine.*store|复合状态.*字段"
+        description: |
+          V3.2.0新增——UML状态机层级→数据架构映射门禁（ARCH-15铁律）。
+          Arch必须消费BA产出的层级状态机，每个复合状态/正交区域有对应的Store Slice设计。
+          每个子状态机引用有独立的Store/Service模块。
+          禁止忽略BA产出的层级信息直接拍平为单一Store。
+        on_fail: "PM驳回Arch：状态机层级未映射到数据架构。"
+        iron_rule: "ARCH-15"
+      - id: "G-ARCH-UML-02"
+        type: "hard_gate"
+        name: "UML组合片段→API契约映射（V3.2.0新增）"
+        check: "content_pattern"
+        target: "arch产出 API契约设计"
+        pattern: "discriminatedUnion|concurrent.*endpoint|transaction.*boundary|polling|websocket"
+        description: |
+          V3.2.0新增——UML组合片段→API契约映射门禁（ARCH-16铁律）。
+          Arch必须消费BA产出的组合片段，每个alt/par/break/critical有对应的API分支/并发/回滚/事务设计。
+          禁止忽略组合片段的架构语义只做基础CRUD契约。
+        on_fail: "PM驳回Arch：组合片段未映射到API契约。"
+        iron_rule: "ARCH-16"
+      - id: "G-ARCH-UML-03"
+        type: "hard_gate"
+        name: "通信图→模块耦合分析（V3.2.0新增）"
+        check: "content_pattern"
+        target: "arch产出 模块耦合分析"
+        pattern: "耦合|coupling|循环依赖|circular"
+        description: |
+          V3.2.0新增——通信图→模块耦合分析门禁（ARCH-17铁律）。
+          Arch必须产出耦合分析报告——标记过度耦合对象（>5连接）和循环依赖。
+        on_fail: "PM驳回Arch：模块耦合分析未完成。"
+        iron_rule: "ARCH-17"
+      - id: "G-ARCH-UML-04"
+        type: "hard_gate"
+        name: "交互概览图→系统边界划分（V3.2.0新增）"
+        check: "content_pattern"
+        target: "arch产出 系统边界设计"
+        pattern: "Fork.*Join|concurrent.*controller|Saga|Workflow|module.*boundary"
+        description: |
+          V3.2.0新增——交互概览图→系统边界划分门禁（ARCH-18铁律）。
+          Arch必须基于交互概览图中Fork/Join和ref引用进行系统边界划分和API编排设计。
+        on_fail: "PM驳回Arch：系统边界划分缺少UML依据。"
+        iron_rule: "ARCH-18"
 
   # ---- Stage-5 开发 ----
   dev:
@@ -648,6 +744,18 @@ stages:
           FD大脑必须完成：①实现陷阱预测②组件复用推理③合规模式识别④视觉回归风险预测
           ⑤brain_memory_import加载⑥brain_sync_export导出
         on_fail: "阻止进入测试阶段。PM驳回FD：大脑推理未完整执行。FD必须完成全部4个推理模块+brain_memory_import+brain_sync_export。"
+      - id: "G-DEV-UML-01"
+        type: "hard_gate"
+        name: "UML驱动实现完整性（V3.1.0新增）"
+        check: "content_pattern"
+        target: "dev产出 组件代码"
+        pattern: "useReducer|Promise\.all|error.*boundary|useEffect.*timer|乐观|retry"
+        description: |
+          V3.1.0新增——UML驱动实现门禁（FD-14铁律）。
+          FD必须消费BA产出的UML模型，复合状态→嵌套状态管理，正交区域→独立Slice，
+          子状态机→可复用Hook，alt→条件渲染，par→并行请求，critical→事务处理。
+          禁止忽略BA产出的UML模型直接自主实现状态管理和分支逻辑。
+        on_fail: "阻止进入测试阶段。PM驳回FD：实现未对齐UML模型。"
 
   # ---- Stage-6 测试 ----
   test:
@@ -684,6 +792,31 @@ stages:
           QA大脑必须完成：①Bug热力图预测②覆盖盲区检测③回归测试智能推荐④风险驱动排序
           ⑤brain_memory_import加载⑥brain_sync_export导出
         on_fail: "阻止进入验收阶段。PM驳回QA：大脑推理未完整执行。QA必须完成全部4个推理模块+brain_memory_import+brain_sync_export。"
+      - id: "G-TEST-UML-01"
+        type: "hard_gate"
+        name: "UML组合片段→测试矩阵提取（V2.0.0新增）"
+        check: "content_pattern"
+        target: "docs/05-test/test-cases/TC-*.md"
+        pattern: "alt|opt|loop|break|par|critical|uml_source"
+        description: |
+          V2.0.0新增——UML组合片段→测试矩阵门禁（QA-08铁律）。
+          QA必须消费BA产出的组合片段，TC标注uml_source字段。
+          每个alt→N分支测试、opt→2用例、loop→4边界、par→并发场景、break→中断验证、critical→回滚测试。
+        on_fail: "阻止进入验收阶段。PM驳回QA：测试用例未覆盖UML组合片段。"
+        iron_rule: "QA-08"
+      - id: "G-TEST-UML-02"
+        type: "hard_gate"
+        name: "UML状态机层级→状态覆盖矩阵（V2.0.0新增）"
+        check: "content_pattern"
+        target: "docs/05-test/test-cases/TC-*.md"
+        pattern: "composite.*coverage|orthogonal.*cartesian|submachine.*integration|状态组合"
+        description: |
+          V2.0.0新增——UML状态机层级→状态覆盖门禁（QA-09铁律）。
+          QA必须消费BA产出的层级状态机，复合状态的每个子状态有正向+异常测试，
+          正交区域有Cartesian Product覆盖，子状态机有独立+集成测试（验证父联动）。
+          禁止将层级状态拍平后只覆盖顶层状态。
+        on_fail: "阻止进入验收阶段。PM驳回QA：状态覆盖不足——层级状态机未完整测试。"
+        iron_rule: "QA-09"
 
   # ---- Stage-7 验收 ----
   accept:
@@ -714,6 +847,23 @@ stages:
           AC大脑必须完成：①验收缺陷模式识别②角色覆盖推理③商业价值对齐推理④回归验收推荐
           ⑤brain_memory_import加载⑥brain_sync_export导出
         on_fail: "阻止/close。PM驳回AC/PO：大脑推理未完整执行。AC+PO必须完成全部4个推理模块+brain_memory_import+brain_sync_export。"
+      - id: "G-AC-HO-01"
+        type: "hard_gate"
+        name: "Demo验收已通过——AC→handoff前置门禁（V1.14.0新增）"
+        check: "content_pattern+file_exists"
+        target:
+          - "projects/{project}/docs/05-demo-reports/DEMO-{version}-*.md"
+          - "docs/06-acceptance/ACR-*.md"
+        pattern: "demo_verified.*true|Demo验收已通过|Demo已闭环"
+        description: |
+          V1.14.0新增：填补 AC→handoff 链路缺失的硬门禁。
+          验收流程必须交叉核对 Demo 验收报告，确认：
+          ① 所有Demo反馈已闭环（feedback_status全部RESOLVED）
+          ② Demo通过的UC与AC通过的UC一致（无遗漏）
+          ③ PRD §19 handoff回传区已记录Demo侧变更
+          ④ Demo验收报告中的 frozen_marker 与当前PRD/UX版本一致
+          此门禁确保Demo→AC→handoff的连续闭环，防止出现"AC通过了但Demo反馈未处理"的断裂。
+        on_fail: "阻止进入handoff。PM要求AC补充：①交叉核对Demo验收报告②确认所有Demo反馈已闭环③冻结版本一致性校验。AC必须补验收报告中的demo_verified=true标记。"
 
   # ---- Stage-8 关闭 ----
   close:
@@ -738,11 +888,11 @@ stages:
         on_fail: "阻止/close，PM要求补充：①缺失的transit_records ②缺失的reflow_adjustment标记 ③缺失的writeback_rerun标记。每条PBL必须有完整的回流路径记录。"
       - id: "G-CLOSE-02"
         type: "hard_gate"
-        name: "8阶段Review报告全产出"
+        name: "REV-SUMMARY汇总报告产出（V5.3.0：7合1）"
         check: "file_exists"
-        target: "projects/{project}/.codebuddy/journal/reviews/"
-        min_file_count: 7
-        on_fail: "阻止/close，PM补充缺失的Review报告"
+        target: "projects/{project}/.codebuddy/journal/reviews/REV-SUMMARY-v{version}.md"
+        min_file_count: 1
+        on_fail: "阻止/close，PM补充REV-SUMMARY汇总报告"
       - id: "G-CLOSE-03"
         type: "hard_gate"
         name: "追溯链通过"
@@ -785,6 +935,21 @@ stages:
           截图必须是close阶段dev server的真实页面截图（原型截图无验收价值）。
           生成时机：handoff之后、版本快照之前。
         on_fail: "阻止/close。PM执行HTML需求文档生成流程：启动dev server→逐页面截图→UC标注→状态矩阵→五图渲染→NFR章节→生成HTML文档。"
+      - id: "G-CLOSE-07"
+        type: "hard_gate"
+        name: "handoff完成+交互用例卡一致性（V1.12.0新增：/close硬前置）"
+        check: "cross_reference"
+        target: "handoff对应性校验报告 + G-HO-DELIVERY-04（三位一体一致性）+ G-HO-INJECT-01~04（代码注入自检）"
+        description: |
+          V1.12.0新增：/close 硬前置条件——必须先完成 /handoff 并通过交互用例卡一致性校验。
+          校验内容：
+          ① handoff 对应性校验报告已产出（handoff.yml correspondence_gate 通过）
+          ② G-HO-DELIVERY-04 三位一体一致性通过：PRD的FN/UC ↔ 仿真原型的页面/操作 ↔ 用例卡片的steps，三者编号一致且行为一致
+          ③ G-HO-INJECT-01~04 代码注入自检全部通过（卡片数据完整+页面标注完整+构建零错误+空连接禁止）
+          ④ handoff 循环已结束（无待回传变更，writeback_rerun 全部 done）
+          如果用户未执行 /handoff 或 handoff 未完成，/close 必须被阻止。
+          绝不允许跳过 handoff 直接生成 close 产物（VERSION-INDEX/版本沉淀等）。
+        on_fail: "阻止/close。PM必须先执行/handoff并确保：①对应性校验通过 ②三位一体一致性（G-HO-DELIVERY-04）通过 ③代码注入自检（G-HO-INJECT-01~04）通过 ④handoff循环结束无待回传变更。SAAS项目2026-07-22事故：AI跳过handoff直接生成了closed状态的VERSION-INDEX和版本沉淀，用户实际未执行/close。"
 
   # ============================================
   # V1.9.0新增：回流强制约束段（G-REFLOW-01~04）
@@ -1134,6 +1299,103 @@ stages:
         description: "V5.6.0新增——空连接禁止门禁（BA-34铁律）。原型中每个操作按钮必须有对应的交互实现+对应UC。禁止：空连接/空函数/Toast功能开发中/表单无校验/搜索无效果/操作无UC。QA/验收时逐个检查所有操作按钮。"
         on_fail: "阻止/close，补做缺失的交互实现+缺失的UC"
         iron_rule: "BA-34"
+
+  # ---- V1.13.0新增：dev-change回传区验收（G-HO-DEVCHANGE-01~03） ----
+  handoff_devchange:
+    owner: "PM + FD"
+    description: |
+      V1.13.0新增——handoff阶段必须逐一检查 PRD §19 handoff回传区 中
+      所有 dev-change-flow 记录的变更是否已被各 Agent 确认/消费。
+      防止开发中的临时决策在PRD/UX/Arch层面被遗忘。
+    workflow: "handoff.yml + dev-change-flow.yml"
+    gates:
+      - id: "G-HO-DEVCHANGE-01"
+        type: "hard_gate"
+        name: "handoff回传区无未消费记录"
+        check: "content_scan"
+        target: "PRD §19 handoff回传区"
+        description: |
+          扫描 PRD §19 的所有 dev-change 记录，确保没有 RECORDED 或 CONFLICT 状态项。
+          - RECORDED：变更已记录但对应Agent尚未确认/更新PRD
+          - CONFLICT：回传区记录与PRD正文章节仍有冲突
+          所有记录必须为 CONFIRMED（Agent已确认）或 DEFERRED（有Backlog条目锚定）。
+        on_fail: "阻止/close。PM逐条展示未消费变更，触发对应Agent确认后方可重试handoff。"
+      - id: "G-HO-DEVCHANGE-02"
+        type: "hard_gate"
+        name: "L2/L3变更已获Agent确认"
+        check: "cross_reference"
+        target: "所有 L2/L3 级 dev-change 记录 × 对应Agent增量更新产物"
+        description: |
+          每一笔 L2/L3 级的 dev-change 记录必须能被追溯到：
+          - BA：PRD中对应UC/BR/状态机的增量更新章节
+          - UX：设计中对应页面的更新规范
+          - Arch：对应ENT/契约的变更记录或「确认无变化」声明
+        on_fail: "阻止/close。未溯源的变更回退到对应Agent执行增量更新。"
+      - id: "G-HO-DEVCHANGE-03"
+        type: "soft_gate"
+        name: "temp_deviation版本锚定"
+        check: "content_scan"
+        target: "所有标注为 temp_deviation 的变更记录"
+        description: |
+          扫描所有临时决策（用户说「先这么做、后续再改」类型），
+          确保每条 temp_deviation 的 plan_fix_version 字段 ≤ 当前版本号。
+          如果 fix_version > current_version，该偏差允许延期但需给出说明。
+        on_fail: "提示PM：{x}条temp_deviation计划在当前版本修复但未执行。选择：标记DEFERRED/立即修复。"
+
+  # ---- V1.14.0新增：Demo阶段门禁（G-DEMO-01~04） ----
+  demo_stage:
+    owner: "PM"
+    description: |
+      V1.14.0新增——测试前强制Demo用户验收阶段的门禁。
+      确保Demo不跳过、所有UC已验收、反馈已闭环、产物已冻结。
+    workflow: "demo-flow.yml"
+    gates:
+      - id: "G-DEMO-01"
+        type: "hard_gate"
+        name: "Demo不可跳过"
+        check: "stage_trace"
+        target: "PROJECT-INDEX.yml + JOURNAL"
+        description: |
+          project-lifecycle stage-5.5 为 hard_gate（checkpoint: true, auto_advance: false）。
+          PROJECT-INDEX.yml 中 current_stage 必须经过 stage-5.5（Demo）方可到达 stage-6（测试）。
+          如跳过Demo直接进入测试，G-DEMO-01 触发阻止。
+        on_fail: "阻止进入stage-6。PM必须执行demo-flow完成逐UC验收。"
+      - id: "G-DEMO-02"
+        type: "hard_gate"
+        name: "所有UC已通过Demo验收"
+        check: "content_scan"
+        target: "Demo验收报告（projects/{project}/docs/05-demo-reports/）"
+        description: |
+          扫描Demo验收报告中的UC状态，所有UC必须为 PASSED（含PASSED_AFTER_FIX）。
+          不允许有 pending feedback_item 或 SKIPPED 状态的UC（除非SKIPPED有明确的版本外延期记录）。
+        on_fail: "阻止进入stage-6。列出未通过的UC清单，重新执行Demo验收循环。"
+      - id: "G-DEMO-03"
+        type: "hard_gate"
+        name: "Demo反馈已全部闭环"
+        check: "cross_reference"
+        target: "Demo验收报告 × PRD §19 handoff回传区 × dev-change-flow日志"
+        description: |
+          所有Demo阶段的 feedback_item 必须满足：
+          - 对应的 dev-change 变更包已被对应Agent消费
+          - BA/UX/Arch文档已更新（或确认无变化）
+          - FD代码已按更新后的文档调整
+          - PRD §19有完整的变更记录
+          不允许有 PENDING_DEVCHANGE 状态的反馈项。
+        on_fail: "阻止进入stage-6。列出未闭环反馈项，触发dev-change-flow回流后重新Demo。"
+      - id: "G-DEMO-04"
+        type: "hard_gate"
+        name: "BA/UX产物已冻结"
+        check: "content_scan"
+        target: "PRD §1（版本历史）+ UX设计文档 + PROJECT-INDEX.yml"
+        description: |
+          确认：
+          - PRD §1 版本历史中有Demo完成记录（日期+Dem版本号）
+          - UX设计文档中有冻结标注
+          - PROJECT-INDEX.yml current_stage = stage-6（或 Demo→Test 交接记录）
+          此门禁确保QA在step-1（用例生成）时读取的是Post-Demo冻结版本。
+        on_fail: "阻止QA生成测试用例。PM执行DEMO-5.2冻结操作。"
+
+  # ---- V1.9.0新增：handoff回传强制重跑（G-HO-WRITEBACK-01） ----
 
   # ---- V1.9.0新增：handoff回传强制重跑（G-HO-WRITEBACK-01） ----
   handoff_writeback:

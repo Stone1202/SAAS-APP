@@ -417,9 +417,35 @@ doc_standard:
       - 业务时序图(sequenceDiagram)
       - 三方接口时序图(含接口路径)
     format: mermaid
+    state_machine_enhanced:
+      required: true
+      description: |
+        V3.5.0新增：UML 2.5层级状态机规范（知识来源：uml-standards.yml）。
+        状态机不再只能拍平为简单状态列表——BA必须进行层级建模分析。
+      hierarchy_types:
+        composite_state: 
+          definition: "含嵌套子状态的父状态——用嵌套state语法表达内部区域"
+          rule: "一个状态下存在多个独立进展的子进程时，必须建模为复合状态"
+        submachine_state:
+          definition: "多个业务模块复用的独立状态机——用嵌套state+note标注入口/出口"
+          rule: "同一组状态逻辑被多处复用时，必须提取为子状态机引用"
+        orthogonal_regions:
+          definition: "同一实体多个独立演化的状态维度——在复合状态内用 -- 分隔"
+          rule: "同一实体有多个独立演化的状态维度时，必须建模为正交区域"
+      mermaid_syntax: "stateDiagram-v2 嵌套 state + note + -- 分隔"
     state_transition_table:
       required: true
       columns: [当前状态, 触发操作, 目标状态, 操作者, 前置约束, 后置动作]
+      enhanced_columns: # V3.5.0新增
+        - name: "所属状态机层级"
+          values: [main, composite, submachine]
+          desc: "标注此转换属于主状态机、复合状态内部还是子状态机"
+        - name: "所属区域（正交）"
+          desc: "如果有正交区域，标注此转换属于哪个区域"
+        - name: "子状态机关联ID"
+          desc: "如果目标状态是子状态机引用，标注子状态机ID"
+        - name: "父状态联动"
+          desc: "子状态机的此转换是否触发父级状态转换"
     coverage_rule: "图中每个节点须映射到至少一个 FN；非主线 FN 至少在主流程图中出现一次"
     scene_orchestration_graph:
       required: true

@@ -1,0 +1,662 @@
+# ============================================
+# UML 建模标准（UML 2.5 核心知识）
+# 版本：V1.0.0
+# 创建：2026-07-24
+# 定位：UML 2.5 标准知识的单一事实源，覆盖状态机层级建模和动态交互图高级特性
+# 使用方：BA（产出建模）/ Arch（消费转化）/ FD（实现落地）/ QA（测试提取）
+# ============================================
+
+version: "1.0.0"
+last_updated: "2026-07-24"
+description: |
+  UML 2.5 标准知识库，作为BA/Arch/FD/QA四个Agent的UML基础知识底座。
+  覆盖两大领域：状态机层级建模和动态交互图高级建模。
+  所有Agent的UML能力引用本文件为知识来源。
+
+# ============================================
+# 第一章：状态机层级建模
+# ============================================
+state_machine_hierarchy:
+
+  # ---- 1.1 状态机层级概念 ----
+  hierarchy_concepts:
+    description: |
+      UML 2.5 标准中状态机（State Machine）的核心层级结构。
+      业务系统往往不是扁平状态机——一个实体可能包含多个状态维度（并发），
+      一个状态内部可能有子状态链（复合），多个业务实体间存在主从关系（子状态机引用）。
+
+    # 简单状态（Simple State）
+    simple_state:
+      definition: "不包含子状态的原子状态，没有内部结构"
+      uml_syntax: "直接命名，如：待付款"
+      business_example: 
+        good: "订单【已取消】"
+        bad: "把'直播中'当作简单状态——实际'直播中'是一个包含审核/推流等多个子进程的复合状态"
+      pom_current: "✅ 已支持"
+
+    # 复合状态（Composite State）
+    composite_state:
+      definition: |
+        包含一个或多个区域（Region）的父状态。子状态直接嵌套在父状态内部展示。
+        可以包含顺序区域（sequential region）和并发区域（orthogonal region）。
+      uml_syntax: |
+        state 父状态名 {
+          state 顺序区域 {
+            [*] → 子状态1 → 子状态2 → 子状态3
+          }
+          --
+          state 并发区域 {
+            ...
+          }
+        }
+      business_example: |
+        「直播中」是复合状态，包含：
+        - 审核区域：正常→违规待审→处置→正常
+        - 推流区域：推流正常→推流中断→恢复推流
+      identification_rule: |
+        BA识别复合状态的判定标准：
+        1. 一个状态下存在多个独立进展的子进程
+        2. 子进程有自己的生命周期（开始→中间→结束）
+        3. 子进程之间可能需要并行或顺序执行
+      pom_current: "❌ 不支持——当前仅有扁平状态机"
+      mermaid_support: "partial——Mermaid stateDiagram-v2 支持嵌套state语法，但不支持region虚线分隔"
+
+    # 子状态机引用（Submachine State）
+    submachine_state:
+      definition: |
+        引用一个外部定义的独立状态机（黑盒复用）。
+        通过入口点（entry point）和出口点（exit point）与外部交互。
+        被引用的子状态机是一个独立定义的可复用模块。
+      uml_syntax: |
+        state 子机引用名 : 子机ID {
+          state entry_point_1 <<entryPoint>>
+          state exit_point_success <<exitPoint>>
+          state exit_point_failure <<exitPoint>>
+        }
+      business_example: |
+        「违规处置」是一个独立子状态机（pending→recorded→cut_off→ignored→archived）
+        被「直播审查」、「短视频审查」、「房间审查」三个模块引用——
+        入口点：检测到违规→创建pending
+        出口点1（success）：处置完成→回归主控
+        出口点2（cut_off）：断流→影响场次状态
+      identification_rule: |
+        BA识别子状态机引用的判定标准：
+        1. 同一组状态转换逻辑被多个业务模块/场景复用
+        2. 子状态机有明确定义的入口和出口
+        3. 引用方不关心子状态机内部细节，只关心出口
+      pom_current: "❌ 不支持"
+      mermaid_support: "partial——Mermaid stateDiagram-v2 不支持 entry/exit point 语法，需要用注释标注"
+
+    # 正交区域（Orthogonal Regions）
+    orthogonal_regions:
+      definition: |
+        复合状态中用虚线分隔的多个并发区域（Region）。
+        每个区域同时激活、独立演化、各自行进。
+        父状态完成需要所有区域都到达终止状态。
+      uml_syntax: |
+        state 复合状态名 {
+          state 区域A {
+            [*] → 状态A1 → 状态A2 → [*]
+          }
+          --
+          state 区域B {
+            [*] → 状态B1 → 状态B2 → [*]
+          }
+        }
+      business_example: |
+        一个订单同时有：
+        - 支付状态区域：待支付→已支付→已退款
+        - 物流状态区域：待发货→已发货→已签收
+        两个区域并行演化，互不影响。
+      identification_rule: |
+        BA识别正交区域的判定标准：
+        1. 同一实体有多个独立演化的状态维度
+        2. 各维度的状态转换互不阻塞
+        3. 基状态是各维度状态的组合（如支付=已支付 AND 物流=已发货）
+      pom_current: "❌ 不支持"
+      mermaid_support: "partial——Mermaid stateDiagram-v2 支持嵌套state + -- 分隔，但不完全等同UML正交区域"
+
+    # 历史状态（History State）
+    history_state:
+      definition: |
+        记住离开复合状态时最后的活跃子状态，再次进入时恢复到那个子状态。
+        浅历史（shallow history，标记[H]）：只恢复复合状态的顶层子状态
+        深历史（deep history，标记[H*]）：递归恢复所有层级的子状态
+      business_example: |
+        用户在「填写订单」复合状态中途退出：
+        浅历史→回到「填写订单」入口（填地址）
+        深历史→回到退出时的具体子状态（已填地址→填支付方式）
+      pom_current: "❌ 不支持"
+
+    # Fork/Join（同步机制）
+    fork_join:
+      definition: |
+        Fork（分叉）：一个状态同时分裂为多个并行子状态
+        Join（汇合）：多个并行子状态全部完成后汇合为一个状态
+      business_example: |
+        订单提交后 Fork→支付处理∥物流处理→Join→订单完成
+      pom_current: "❌ 不支持"
+
+  # ---- 1.2 状态机层级建模规范 ----
+
+  modeling_rules:
+    root_machine:
+      name: "主状态机（Top-level StateMachine）"
+      owner: "BA 产出"
+      rule: |
+        每个业务实体（如场次、订单、客户）有一个主状态机。
+        主状态机描述实体生命周期内的核心状态转换。
+        主状态机可以包含复合状态和子状态机引用。
+    
+    composite:
+      name: "复合状态建模"
+      owner: "BA 产出"
+      rule: |
+        当BA发现一个状态下存在多个独立子进程时，必须建模为复合状态。
+        复合状态必须包含至少一个区域。
+        复合状态内的子状态必须有明确的进入规则和退出规则。
+    
+    submachine:
+      name: "子状态机建模"
+      owner: "BA 产出，Arch 消费"
+      rule: |
+        当BA发现一组状态逻辑被多个业务模块复用时，必须提取为子状态机。
+        子状态机必须有：唯一ID、入口列表、出口列表。
+        Arch根据子状态机决定模块化拆分策略。
+    
+    orthogonal:
+      name: "正交区域建模"
+      owner: "BA 产出，Arch 消费"
+      rule: |
+        当BA发现同一实体有多个独立演化的状态维度时，必须建模为正交区域。
+        Arch根据正交区域数量决定Store/Zustand的Slice数量——每个区域一个独立Slice。
+
+  # ---- 1.3 状态过渡操作表增强 ----
+  state_transition_table_enhanced:
+    base_columns: [当前状态, 触发操作, 目标状态, 操作者, 前置约束, 后置动作]
+    enhanced_columns:
+      - name: "所属状态机层级"
+        values: [main, composite, submachine]
+        desc: "标注此转换属于主状态机、复合状态内部还是子状态机"
+      - name: "所属区域（正交）"
+        desc: "如果有正交区域，标注此转换属于哪个区域"
+      - name: "子状态机关联ID"
+        desc: "如果目标状态是子状态机引用，标注子状态机ID"
+      - name: "父状态联动"
+        desc: "子状态机的此转换是否触发父级状态转换"
+  
+  # ---- 1.4 Mermaid 状态机层级语法参考 ----
+  mermaid_hierarchy_syntax:
+    composite_state_example: |
+      ```mermaid
+      stateDiagram-v2
+          [*] --> 未开始
+          未开始 --> 直播中 : 开播
+          直播中 --> 已结束 : 关播/断流
+
+          state 直播中 {
+              state "审核区域" as audit_region {
+                  [*] --> 正常
+                  正常 --> 违规待审 : [事件:违规触发]
+                  违规待审 --> 正常 : [事件:处置完成]
+                  违规待审 --> 断流 : [事件:L1违规]
+              }
+              --
+              state "推流区域" as push_region {
+                  [*] --> 推流正常
+                  推流正常 --> 推流中断 : [事件:网络异常]
+                  推流中断 --> 推流正常 : [事件:恢复推流]
+              }
+          }
+      ```
+
+    submachine_reference_example: |
+      ```mermaid
+      stateDiagram-v2
+          [*] --> 活跃
+          活跃 --> 违规处置 : 触发违规
+          违规处置 --> 活跃 : 处置完成
+          违规处置 --> 已断流 : L1违规断流
+
+          state 违规处置 {
+              [*] --> pending : 进入处置
+              pending --> recorded : AI记录
+              recorded --> ignored : 忽略
+              recorded --> cut_off : 断流
+              ignored --> archived : 归档
+              cut_off --> archived : 归档
+              --
+              note: "子状态机ID: violation-handler"
+              note: "出口1(success): ignored→archived→回归活跃"
+              note: "出口2(cut_off): cut_off→archived→已断流"
+          }
+      ```
+
+
+# ============================================
+# 第二章：动态交互图高级建模
+# ============================================
+interaction_diagrams:
+
+  # ---- 2.1 序列图 / 顺序图（Sequence Diagram） ----
+  sequence_diagram:
+    definition: |
+      按时间轴展开的交互图。纵轴=时间、横轴=参与者（生命线）。
+      核心表达的是「谁在什么时间点对谁做了什么操作」。
+    pom_current: "✅ 已支持基础语法（Mermaid sequenceDiagram）"
+    pom_missing: "❌ 完全欠缺组合片段（Combined Fragment）"
+
+    # 组合片段（这是升级核心！）
+    combined_fragments:
+      description: |
+        组合片段是UML 2.x中序列图的高级特性，用于表达条件分支、循环、并行等控制流。
+        POM当前所有的序列图都只是一条直线——没有条件、没有循环、没有并行，
+        碰上复杂业务流程时只能通过文字补充，导致图和文字脱节。
+
+      operators:
+        - name: "alt"
+          full_name: "Alternative（选择）"
+          mermaid_syntax: |
+            alt 描述
+                步骤A
+            else 描述
+                步骤B
+            end
+          description: "互斥条件分支，类似if-else。至少有一个else分支。"
+          business_example: |
+            alt 发现违规内容
+                审核->>存储: 创建违规记录
+                审核->>场次: 推送违规通知
+            else 推流正常
+                审核->>场次: 心跳正常
+            end
+          ba_usage: "每个用例的备选流程/异常流程必须在时序图中用alt/else标注"
+
+        - name: "opt"
+          full_name: "Optional（可选）"
+          mermaid_syntax: |
+            opt 描述
+                步骤
+            end
+          description: "可选发生的行为，类似if没有else。只有条件满足时才执行。"
+          business_example: |
+            opt 网络断开
+                场次-->>场次: 断流重连中
+            end
+          ba_usage: "可选的备选流程用opt标注"
+
+        - name: "loop"
+          full_name: "Loop（循环）"
+          mermaid_syntax: |
+            loop 描述
+                步骤
+            end
+          description: "重复执行的片段，可以标注循环条件或次数。"
+          business_example: |
+            loop 直播中每5-15秒
+                审核->>场次: 检测推流帧
+            end
+          ba_usage: "定时任务、轮询、批处理等场景必须用loop标注"
+
+        - name: "break"
+          full_name: "Break（中断）"
+          mermaid_syntax: |
+            break 描述
+                步骤
+            end
+          description: "异常中断——当条件满足时，跳出当前交互片段，不执行后续步骤。"
+          business_example: |
+            break L1严重违规
+                场次->>场次: 自动断流
+            end
+          ba_usage: "会导致流程中断的异常情况用break标注"
+
+        - name: "par"
+          full_name: "Parallel（并行）"
+          mermaid_syntax: |
+            par 描述1
+                步骤A
+            and 描述2
+                步骤B
+            end
+          description: "多个片段并行执行，顺序无关。"
+          business_example: |
+            par 推流监控
+                审核->>场次: 检测推流质量
+            and 内容审核
+                审核->>存储: AI扫描违规内容
+            end
+          ba_usage: "需要同时进行的多个操作用par标注，这对Arch识别并发需求至关重要"
+
+        - name: "ref"
+          full_name: "Reference（引用）"
+          mermaid_syntax: |
+            ref over 参与者列表 : 引用的子序列图
+          description: "引用另一个序列图（子流程），避免主序列图过于庞大。"
+          business_example: |
+            ref over 审核,存储,场次 : 违规处置子流程
+          ba_usage: "复杂子流程抽离为独立的子序列图，主序列图用ref引用"
+
+        - name: "critical"
+          full_name: "Critical（关键区）"
+          mermaid_syntax: |
+            critical
+                步骤
+            end
+          description: "不可中断的关键操作序列，发生异常时整个片段回退。"
+          business_example: |
+            critical
+                场次->>存储: 扣减积分
+                场次->>账户: 增加余额
+            end
+          ba_usage: "涉及资金/积分的原子操作序列用critical标注，这对Arch识别事务边界至关重要"
+
+    # 组合片段使用规范
+    combined_fragment_rules:
+      mandatory:
+        - "每个用例的时序图必须包含至少一个组合片段（总有条件分支或需要强调的点）"
+        - "备选流程/异常流程必须用 alt/opt/break 在时序图中标注，不能只靠文字描述"
+        - "存在并发操作时必须用 par 标注，让Arch直接看到并发需求"
+      ba_produce:
+        - "BA在序列图中使用组合片段，标注业务控制流"
+      arch_consume:
+        - "Arch从alt/opt/break提取API分支逻辑"
+        - "Arch从par提取并发需求和独立Store分区"
+        - "Arch从critical提取事务边界和原子性要求"
+        - "Arch从loop提取轮询/定时任务架构需求"
+        - "Arch从ref提取子模块边界和可复用组件"
+      fd_consume:
+        - "FD从alt/opt实现if/else渲染逻辑"
+        - "FD从par识别并行请求"
+        - "FD从loop实现轮询/定时刷新"
+      qa_consume:
+        - "QA从alt/opt/break提取分支测试用例"
+        - "QA从par提取并发测试用例"
+        - "QA从loop提取边界测试用例（循环次数）"
+        - "QA从critical提取事务一致性测试用例"
+
+  # ---- 2.2 通信图 / 协作图（Communication Diagram） ----
+  communication_diagram:
+    definition: |
+      以对象/组件为节点，以链接为边的网状图。
+      与序列图等价但视角不同——序列图看「时间线」、通信图看「谁跟谁通信」。
+      对于Arch理解模块耦合度和FD理解组件通信边界至关重要。
+    
+    uml_syntax: |
+      对象节点（矩形）+ 链接（线）+ 编号消息
+      格式：序号: 消息名(参数) 方向
+    
+    business_example: |
+      直播审查系统的通信图：
+      ┌──────────────────────────────────┐
+      │  场次(Stream) ──1:心跳()──→ 审核(Audit) ←──2:违规检测()── 识别引擎(AI)
+      │    │                                                    │
+      │    └──3:获取场次信息()──→ 存储(Violations)←──4:保存违规记录()──┘
+      └──────────────────────────────────┘
+    
+    identification_rule: |
+      Arch消费通信图进行模块耦合度分析：
+      - 某对象连接了过多其他对象 → 过度耦合，需要拆分
+      - 存在循环链接 A→B→C→A → 循环依赖，需要解耦
+      - 某链接没有标注数据归属 → 数据归属不清，需要补充
+      - 消息序列号不连续 → 通信有断点，流程不完整
+    
+    mermaid_support: "Mermaid 不直接支持通信图，但可以用 flowchart 表达对象间通信关系"
+    
+    pom_current: "❌ 完全不支持——BA不产出通信图，Arch无法进行模块耦合分析"
+
+  # ---- 2.3 交互概览图（Interaction Overview Diagram） ----
+  interaction_overview_diagram:
+    definition: |
+      高阶控制流图——以活动图为骨架，但节点不是原子动作而是「子交互图」。
+      用于串联多个序列图/通信图/时序图，表达「大流程怎么串起来的」。
+    
+    structure: |
+      - 节点：子交互图引用（ref）或交互片段
+      - 连线：控制流（顺序/分支/汇合）
+      - 分支：决策节点（菱形）
+      - 并行：Fork/Join节点
+    
+    business_example: |
+      直播审查全流程的交互概览图：
+      ┌──────────────────────────────────────────┐
+      │ [用户开播] ──────────────────────┐         │
+      │    ↓                              ↓         │
+      │ ref: 创建场次流程（序列图）        │         │
+      │    ↓                                         │
+      │ ┌──── [Fork: 并发启动] ────┐                 │
+      │ ↓                          ↓                 │
+      │ ref: 推流监控              ref: 审核监控     │
+      │ ↓                          ↓                 │
+      │ │          ┌─ [alt: 违规]                     │
+      │ │          │    ref: 违规处置（子序列图）     │
+      │ │          │    ↓                             │
+      │ │          └─ [else: 正常]                    │
+      │ ↓                          ↓                  │
+      │ └──── [Join: 场次结束] ────┘                  │
+      │    ↓                                          │
+      │ ref: 违规归档序列图                           │
+      └──────────────────────────────────────────────┘
+    
+    ba_usage: |
+      当业务流程同时涉及多个序列图/子流程时，BA必须产出交互概览图。
+      判定标准：如果单个序列图的行数超过50行，或涉及3个以上ref子图，则必须画交互概览图。
+    
+    arch_consume: |
+      Arch从交互概览图提取系统边界和模块拆分方案：
+      - Fork/Join → 需要独立的并发模块
+      - 每个ref → 一个独立的API/Service模块
+      - 决策节点 → API路由分支
+      - 控制流顺序 → API调用的编排顺序
+    
+    pom_current: "❌ 完全不支持"
+
+  # ---- 2.4 时序图（Timing Diagram） ----
+  timing_diagram:
+    definition: |
+      显示状态或数值随时间变化的图。横轴=时间刻度，纵轴=状态线或数值。
+      核心表达的是「什么时间发生了什么状态变化」「各状态各持续多久」。
+    
+    note: |
+      **重要区分**：POM中的「业务时序图」（sequenceDiagram）对应UML的序列图（Sequence Diagram），
+      而非UML的时序图（Timing Diagram）。UML时序图专门描述实时约束和时间-状态关系。
+    
+    business_example: |
+      审核时效的时序图：
+      - 违规发生 → 0-30s内检测到 → 30-120s内人工确认 → 120s-300s内处置
+      - 各状态的持续时间约束和SLA
+    
+    qa_usage: |
+      QA从时序图提取时间约束测试：
+      - 审核是否在SLA时间内完成
+      - 超时是否有降级处理
+    
+    pom_current: "❌ 完全不支持"
+
+  # ---- 2.5 动态交互图使用规范 ----
+  interaction_diagram_rules:
+    sequence:
+      mandatory_for: "所有用例的基本流程和备选流程"
+      must_include: "至少一个组合片段（alt/opt/loop/break/par）"
+    communication:
+      mandatory_for: "Arch架构评审阶段——BA产出的序列图必须配套通信图"
+      output: "BA产出通信图→Arch消费进行模块耦合分析"
+    interaction_overview:
+      mandatory_for: "序列图超过50行或涉及3个以上ref子图的复杂流程"
+      output: "BA产出交互概览图→Arch提取系统边界→FD编排模块调用→QA生成E2E流程"
+    timing:
+      mandatory_for: "有明确时间约束（SLA/时效/超时）的业务场景"
+      output: "BA标注时间约束→Arch设计超时机制→QA设计时间约束测试"
+
+
+# ============================================
+# 第三章：跨Agent UML能力责任矩阵
+# ============================================
+agent_responsibility_matrix:
+
+  ba_agent:
+    role: "UML建模产出者（精通级）"
+    uml_domains:
+      - domain: "状态机"
+        capabilities:
+          - "主/子状态机拆分——识别实体间的主从关系"
+          - "复合状态建模——状态内部嵌套子状态和区域"
+          - "正交区域建模——同一实体多维度独立状态"
+          - "子状态机引用——可复用状态逻辑的提取和复用"
+          - "状态机层级文档——主状态机图和子状态机图"
+          - "状态过渡操作表增强版——含层级/区域/父联动列"
+        level: "精通"
+      - domain: "序列图"
+        capabilities:
+          - "组合片段：alt（分支）/opt（可选）/loop（循环）/break（中断）/par（并行）/ref（引用）/critical（关键区）"
+          - "每个用例的时序图必须包含组合片段标注业务控制流"
+          - "复杂子流程抽离为ref引用"
+        level: "精通"
+      - domain: "通信图"
+        capabilities:
+          - "产出给Arch做模块耦合分析的通信图"
+          - "标注对象间消息编号和参数传递"
+        level: "熟练"
+      - domain: "交互概览图"
+        capabilities:
+          - "复杂业务流程的高阶控制流串联"
+          - "标注ref引用、Fork/Join、决策节点"
+        level: "熟练"
+      - domain: "时序图（Timing Diagram）"
+        capabilities:
+          - "识别需要时间约束的业务场景"
+          - "标注状态持续时间和SLA约束"
+        level: "了解"
+
+  arch_agent:
+    role: "UML消费与转化者（精通级）"
+    uml_domains:
+      - domain: "状态机→数据架构"
+        capabilities:
+          - "主状态机→数据表（根实体）"
+          - "复合状态→嵌套数据或关联表"
+          - "正交区域→独立Zustand Slice"
+          - "子状态机→独立Store/Service模块"
+          - "历史状态→缓存/恢复策略"
+        level: "精通"
+      - domain: "组合片段→API契约"
+        capabilities:
+          - "alt/opt→API分支逻辑（Zod Schema discriminatedUnion）"
+          - "par→并发接口设计（独立请求/并行调用）"
+          - "critical→事务边界（原子操作/回滚策略）"
+          - "loop→轮询/WebSocket机制"
+          - "ref→微服务/模块边界"
+        level: "精通"
+      - domain: "通信图→模块耦合分析"
+        capabilities:
+          - "识别过度耦合对象→提出拆分解耦"
+          - "识别循环依赖→架构建模反模式"
+          - "检查数据归属是否明确"
+        level: "精通"
+      - domain: "交互概览图→系统架构"
+        capabilities:
+          - "提取系统边界和模块划分"
+          - "Fork/Join→并发控制器设计"
+          - "控制流→API调用编排"
+        level: "熟练"
+
+  fd_agent:
+    role: "UML实现落地者（熟练级）"
+    uml_domains:
+      - domain: "状态机→组件状态管理"
+        capabilities:
+          - "复合状态→嵌套组件状态管理（useReducer/状态机库如XState）"
+          - "正交区域→独立Store Slice+并行状态订阅"
+          - "子状态机→可复用状态Hook/组件"
+          - "状态过渡操作表→useEffect/事件Handler实现状态转换"
+        level: "熟练"
+      - domain: "组合片段→代码实现"
+        capabilities:
+          - "alt/opt→if/else条件渲染和逻辑分支"
+          - "loop→useEffect定时器/轮询"
+          - "par→Promise.all并行请求"
+          - "critical→乐观锁/事务处理"
+          - "break→错误边界/异常处理"
+        level: "熟练"
+      - domain: "通信图→组件边界"
+        capabilities:
+          - "通信图标注的组件关系→React组件树和Props传递"
+          - "消息序列号→组件间调用顺序"
+        level: "熟练"
+
+  qa_agent:
+    role: "UML测试驱动者（熟练级）"
+    uml_domains:
+      - domain: "状态机→测试用例"
+        capabilities:
+          - "复合状态→子状态级别的正向/异常测试"
+          - "正交区域→状态组合覆盖（Cartesian Product）"
+          - "子状态机→独立测试+集成测试（入口/出口覆盖）"
+          - "状态过渡操作表→完整状态覆盖矩阵"
+        level: "精通"
+      - domain: "组合片段→测试用例矩阵"
+        capabilities:
+          - "alt→每个分支一个正向+异常用例"
+          - "opt→有/无触发各一用例"
+          - "loop→0次/1次/N次/空循环边界测试"
+          - "par→并发场景（同时触发/乱序完成/部分失败）"
+          - "break→中断触发+后续流程状态验证"
+          - "critical→全部成功/部分失败回滚测试"
+        level: "精通"
+      - domain: "交互概览图→E2E测试"
+        capabilities:
+          - "整体控制流→端到端测试流程"
+          - "Fork/Join→并发E2E场景"
+          - "每个ref→独立Mock/集成测试边界"
+        level: "熟练"
+      - domain: "时序图（Timing Diagram）→SLA测试"
+        capabilities:
+          - "时间约束→超时测试用例"
+          - "状态持续时间→性能测试基准"
+        level: "了解"
+
+
+# ============================================
+# 第四章：Mermaid 语法参考
+# ============================================
+mermaid_reference:
+  state_diagram:
+    base: "stateDiagram-v2"
+    supported:
+      - "简单状态: state X"
+      - "状态转换: X --> Y : 触发条件"
+      - "嵌套state（复合状态）"
+      - "-- 分隔（模拟正交区域）"
+      - "[*] 初始/终止状态"
+      - "note 注释"
+    not_supported:
+      - "entryPoint/exitPoint（子状态机入口/出口）"
+      - "浅历史[H]/深历史[H*]"
+      - "Fork/Join节点"
+    workaround:
+      - "子状态机入口/出口：用 note 标注"
+      - "历史状态：用 note 或注释标注"
+      - "Fork/Join：用多个独立转换表达"
+
+  sequence_diagram:
+    base: "sequenceDiagram"
+    supported:
+      - "参与者: participant X as 名称"
+      - "消息: X->>Y: 消息"
+      - "alt/else/end（分支）"
+      - "opt/end（可选）"
+      - "loop/end（循环）"
+      - "par/and/end（并行）"
+      - "break/end（中断）"
+      - "critical/end（关键区）"
+      - "Note over/right of"
+      - "activate/deactivate（激活条）"
+    not_supported:
+      - "ref 交互片段引用（Mermaid不支持，用Note标注替代）"
+    workaround:
+      - "ref引用：用 Note over 参与者1,参与者2 : ref: 子序列图名称 替代"
+
+  other_diagrams:
+    communication: "Mermaid不直接支持，用flowchart+注释表达对象通信关系"
+    interaction_overview: "Mermaid不直接支持，用flowchart+子图引用+Note表达控制流"
+    timing: "Mermaid不直接支持，用gantt或文字描述时间约束"

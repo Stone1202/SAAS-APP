@@ -1,8 +1,18 @@
 # ============================================
-# Workflow: test-flow（测试流程 V3.2.0）
-# 版本: v3.2.0
-# 最后更新: 2026-07-20
+# Workflow: test-flow（测试流程 V3.3.0）
+# 版本: v3.3.0
+# 最后更新: 2026-07-24
 # ============================================
+#
+# V3.3.0 升级：测试用例基于Post-Demo冻结产物
+#   1. QA读取Post-Demo冻结版BA PRD + UX设计文档生成测试用例
+#      （Demo验收完成后，BA/UX产物已被冻结，QA基于此版本而非原始PRD）
+#   2. 修复后需重新Demo确认（V5.4.0新增回流链：修复→Demo→再测试）
+#   3. Demo验收报告作为QA输入：包含UC通过状态、边界情况、用户反馈历史
+#
+# V3.2.0 升级：跨端验收+测试扫盲
+#   1. 新增 test_stage 对应扫盲专家（expert-registry.yml）
+#   2. 多端测试清单自动生成
 #
 # V3.1.0 升级：QA大脑注入（质量推理大脑）
 #   1. 新增 ai_brain 段——QA质量推理大脑
@@ -19,18 +29,20 @@
 #
 # 核心原则：
 #   1. 测试用例源自 BA 产物，不是 QA 凭空编写
-#   2. 用户仅看结果，可 /feedback 追加用例
-#   3. 测试问题 → PM 路由 BA（需求分析）→ 缺陷回流闭环
-#   4. 五层测试：契约一致性 → 单元 → 浏览器 → 白盒 → 视觉回归
-#   5. V3.1.0：QA用大脑推理，不是机械执行——80%资源投在20%高风险区
+#   2. V3.3.0：BA产物必须是Post-Demo冻结版本（用户已验证通过的最终需求）
+#   3. 用户仅看结果，可 /feedback 追加用例
+#   4. 测试问题 → PM 路由 BA（需求分析）→ 缺陷回流闭环
+#   5. 五层测试：契约一致性 → 单元 → 浏览器 → 白盒 → 视觉回归
+#   6. V3.1.0：QA用大脑推理，不是机械执行——80%资源投在20%高风险区
+#   7. V3.3.0：修复后需重新Demo确认方可回归测试验收
 # ============================================
 
 workflow:
   id: "test-flow"
-  name: "测试流程（V3.2.0 跨端验收+测试扫盲+QA质量推理大脑）"
-  version: "3.2.0"
+  name: "测试流程（V3.3.0 基于Post-Demo冻结产物+跨端验收+测试扫盲+QA质量推理大脑）"
+  version: "3.3.0"
   expert_registry: ".codebuddy/knowledge/common/expert-registry.yml#ba_analysis.test_stage"  # V3.2.0新增：测试阶段扫盲专家
-  trigger_command: "/init（PM 调度 QA，开发完成后）"
+  trigger_command: "/init（PM 调度 QA，Demo验收完成后）"
   owner: "qa-agent"
   gates_reference: ".codebuddy/knowledge/common/gates-registry.yml#stages.test"
   iron_rules_reference: ".codebuddy/knowledge/common/iron-rules-registry.yml#agents.qa_agent"
@@ -98,19 +110,39 @@ workflow:
   # ============================================
   steps:
     - id: "1"
-      name: "用例生成（源自 BA 产物）"
+      name: "用例生成（源自 Post-Demo 冻结版 BA/UX 产物）"
       agent: "qa-agent"
-      input: "BA 产物体系（含业务操作矩阵、状态机、BR、User Story）"
+      input: |
+        **V3.3.0强制要求：测试用例必须基于Post-Demo冻结版产物生成**
+        
+        输入源（必须读取Demo完成后已冻结的版本）：
+        1. BA PRD（冻结版）：projects/{project}/docs/01-requirements/*.md
+           - 注意：此PRD已经过Demo阶段的dev-change回流迭代，
+             是用户逐UC验收确认后的最终版本
+        2. UX 设计文档（冻结版）：projects/{project}/docs/03-design/*.md
+           - 视觉回归测试的基线
+        3. Arch 架构文档/契约（冻结版）：projects/{project}/docs/02-architecture/*.md + src/contracts/*.ts
+        4. Demo 验收报告：projects/{project}/docs/05-demo-reports/DEMO-*.md
+           - 包含：每个UC的通过状态、边界情况、用户反馈历史
+      pre_check:
+        description: |
+          在生成测试用例前，QA必须验证输入源是Post-Demo冻结版：
+          ① PRD §1（版本历史）中必须有Demo完成记录
+          ② PROJECT-INDEX.yml 的 current_stage 必须为 stage-6
+          ③ Demo验收报告存在且所有UC状态为PASSED
+          如任一条件不满足，拒绝生成测试用例，提示PM先完成Demo验收。
       output:
         - "TC-测试用例（按端拆分）：projects/{project}/docs/04-testing/test-cases/{version}/{module}/"
       methodology: |
-        测试用例的生成源：
-        1. User Story → Happy Path 用例 + Ugly Path 用例 + Corner Case 用例
-        2. 状态机 → 合法状态转换用例 + 非法状态转换用例
-        3. BR 业务规则 → 每条 BR 对应 ≥1 个测试用例
-        4. 业务操作矩阵 → 每种角色×操作组合的权限验证用例
-        5. 流程闭环 → 正向流程用例 + 逆向流程用例 + 中断恢复用例
-        6. 多端差异 → 逐端差异点的验证用例
+        测试用例的生成源（基于 Post-Demo 冻结版）：
+        1. Post-Demo PRD的User Story → Happy Path 用例 + Ugly Path 用例 + Corner Case 用例
+        2. Post-Demo PRD的状态机 → 合法状态转换用例 + 非法状态转换用例
+        3. Post-Demo PRD的BR 业务规则 → 每条 BR 对应 ≥1 个测试用例
+        4. Post-Demo PRD的业务操作矩阵 → 每种角色×操作组合的权限验证用例
+        5. Post-Demo PRD的流程闭环 → 正向流程用例 + 逆向流程用例 + 中断恢复用例
+        6. Post-Demo PRD的多端差异 → 逐端差异点的验证用例
+        7. Demo验收报告中标注的边界情况 → 针对性边界测试用例
+        8. Post-Demo UX设计文档 → 视觉回归基线设定
 
     - id: "2"
       name: "五层测试执行"

@@ -1,14 +1,18 @@
 agent:
   id: "ba-agent"
   name: "BA Agent"
-  role: "业务分析师"
+  role: "业务分析师 + UML建模专家"
   department: "BA部门"
-  description: "负责将需求按 PM 方法论转化为结构化的 REQ 产物体系（含业务泳道图/业务操作矩阵/跨系统信息流）。V3.3.0新增AI增强系统常识推理能力（system-common-sense-analyzer）。"
+  description: "负责将需求按 PM 方法论转化为结构化的 REQ 产物体系（含UML 2.5层级状态机+动态交互图）。V3.5.0新增UML专业建模能力（主/子状态机、复合状态、正交区域、组合片段、交互概览图、通信图）。"
   
   md_file: ".codebuddy/agents/ba-agent.md"
   
+  version: "V3.5.0"
+  
   skills:
     - "state-enumerator"              # V5.3.0同步：与config.yml对齐
+    - "uml-state-modeler"             # V3.5.0新增：UML层级状态机建模（主/子/复合/正交）
+    - "uml-interaction-modeler"        # V3.5.0新增：UML动态交互图建模（组合片段+通信图+交互概览图）
     - "doc-processor"              # V5.1.0合并：doc-linker→doc-processor
     - "doc-splitter"
     - "req-impact-analyzer"
@@ -21,12 +25,13 @@ agent:
   # 注：instruction-card-generator V3.0.0 已收敛到 /handoff 唯一入口，
   #     BA 侧不再主动生成交互说明卡
 
-  # V5.1.0新增：BA需求洞察大脑能力声明
+  # V5.1.0增强：BA需求洞察大脑能力声明 + V3.5.0 UML推理增强
   brain_capability:
     brain_id: "ba_brain_v1"
-    brain_name: "需求洞察大脑"
+    brain_name: "需求洞察大脑 + UML建模分析器"
     workflow_ref: "requirement-flow.yml#ai_brain"
-    reasoning_modules: ["quality_predictor", "history_correlator"]
+    reasoning_modules: ["quality_predictor", "history_correlator", "uml_hierarchy_analyzer", "interaction_fragment_inferrer"]
+    uml_knowledge_ref: ".codebuddy/knowledge/common/uml-standards.yml"
     memory_spec: ".codebuddy/knowledge/common/brain-memory-spec.yml"
     status: "active"
   

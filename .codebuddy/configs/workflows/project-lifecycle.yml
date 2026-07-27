@@ -161,7 +161,7 @@
     V4.1.0 分层流程路由：
     
     【战略级】新项目/重大转型
-    /brainstorm --brainstorm-type=strategic → [BS脑暴+战略+商业] → [PO产品架构+规划+Backlog] → /init → [需求BA] → 📝Review → [设计UX] → 📝Review → [架构Arch] → 📝Review → [开发FD] → 📝Review → [测试QA] → 📝Review → [验收AC+PO] → 📝Review → /close → PM询问PO下一版本 → /init v2 → 递归
+    /brainstorm --brainstorm-type=strategic → [BS脑暴+战略+商业] → [PO产品架构+规划+Backlog] → /init → [需求BA] → 📝Review → [设计UX] → 📝Review → [架构Arch] → 📝Review → [开发FD] → 📝Review → [Demo用户验收] → 🔄dev-change回流循环 → [测试QA] → 📝Review → [验收AC+PO] → 📝Review → /close → PM询问PO下一版本 → /init v2 → 递归
     
     【规划级】新模块/大版本
     /brainstorm --brainstorm-type=planning → [BS脑暴] → [PO产品架构+规划+Backlog] → /init → [需求BA] → ... → /close → PM询问PO → /init v2 → 递归
@@ -170,7 +170,7 @@
     /brainstorm --brainstorm-type=regular → [BS脑暴] → /init → [需求BA] → ... → /close → /init v2 → 递归
     
     【修复级】Bug/小变更
-    /init --type=修复 → [开发FD] → [测试QA] → [验收AC] → /close
+    /init --type=修复 → [开发FD] → [Demo用户验收] → [测试QA] → [验收AC] → /close
     
     反馈回流（不变）：
     验收→测试→开发→架构→设计→需求分析（Review后触发，按阶段依次上传）
@@ -187,7 +187,7 @@
         V5.3.0升级：项目性质判断从"目录存在与否"升级为基于知识库的三级判断。
         V4.2.1升级：骨架检测从"目录存在与否"升级为6项完整性校验。
         V4.2.0 重构：PM 按 interactive_inquiry V4.2.0 流程执行（自动检测，非交互式问答）：
-        1. 接收 /init 全部参数（--project/--type/--desc/--brainstorm-topic/--file/--api/--source/--priority）
+        1. 接收 /init 全部参数（--project/--type/--desc/--topic/--file/--api/--source/--priority）
         2. **V5.3.0三级判断项目性质（基于知识库）**：
            Level 1: 扫描 projects/{--project}/ 是否存在
              ├─ 不存在 → 新项目
@@ -226,17 +226,20 @@
               **铁律：即使 projects/{project}/ 目录存在，也必须运行 --check 校验，不可仅凭目录存在就跳过**
            b. 加载知识库PRD + 版本沉淀 + 经验库 + PO Backlog + 脑暴确认稿 + 领域知识 + 跨版本反馈
            c. V4.2.0新增加载 common/metrics-standards.yml 行业统计指标规则
-           d. **V4.2.1新增脑暴议题上下文加载**：
-              - 若提供 --brainstorm-topic={topic}：
-                → 加载 projects/{--project}/docs/00-brainstorm/{topic}/confirmed/BR-脑暴文档-确认稿.md
+           d. **V2.0.0升级：--topic 统一迭代主题参数**：
+              - 若提供 --topic={topic}：
+                → 作为迭代线标识写入 state.json
+                → 路由路径注入 /{member}/{project}/{topic}/{version}/
+                → 加载 projects/{--project}/docs/00-brainstorm/{topic}/confirmed/BR-脑暴文档-确认稿.md（如果存在）
                 → 提取领域知识清单 → 注入BA上下文
                 → 提取API分析清单（如有）→ 注入BA+Arch上下文
                 → 提取三流草图+BO/BG映射 → 注入BA需求分析参考
-              - 若未提供 --brainstorm-topic：
+              - 若未提供 --topic：
                 → 扫描 00-brainstorm/ 下议题子目录
-                → 只有1个议题 → 自动加载
-                → 多个议题 → 提示用户选择或通过 --brainstorm-topic 指定
-                → 无议题 → 跳过脑暴上下文加载
+                → 只有1个议题 → 自动加载并写入 state.json
+                → 多个议题 → 提示用户选择或通过 --topic 指定
+                → 无议题且未独立指定 → 提示必填（多人并行必须区分迭代线）
+              - 别名：--brainstorm-topic 保留向后兼容
         4. 新项目：运行 ensure-project.sh {--project} 创建骨架（含6项必选文件）
         5. **V4.2.1新增 state_guard**：PM 在任何操作前确保 state.json 存在（兜底机制）
         6. PM 组装「参数路由包」传递给 BA（含9项上下文+脑暴议题上下文+路由指令+版本链）
@@ -534,6 +537,7 @@
           - "bug_prevention：上游预警（UX难度+Arch陷阱+QA历史Bug）→主动规避"
           - "compliance_precheck：编码前AI预检11条铁律"
           - "design_alignment：UX设计→代码实现的1:1对应性验证"
+          - "dev_change_monitor：开发中持续监听用户临时决策，与PRD/UX/Arch对比，检测偏差触发dev-change-flow分级回流（V1.13.0新增 PM-13）"
         memory_import:
           - "UX大脑brain_sync_export（组件难度+交互复杂度）"
           - "Arch大脑brain_sync_export（实现陷阱预警+安全注意事项）"
@@ -561,8 +565,46 @@
       problem_sources: ["编译错误", "合规违规", "契约不符", "不可访问"]
       feedback_routing: "研发实现偏差 → PM 路由 Arch 复核；需求不符 → 路由 BA"
 
+    # ---- V5.4.0新增：测试前强制Demo用户验收（stage-5.5） ----
+    - id: "stage-5.5"
+      name: "Demo用户验收（V5.4.0新增：测试前强制逐UC验收+dev-change回流循环）"
+      owner: "pm-agent"
+      supervisor: "pm-agent"
+      workflow: "demo-flow"
+      workflow_version: "V1.1.0"
+      pm_controlled: true
+      mandatory: true  # 硬强制——不可跳过
+      checkpoint: true  # 用户必须逐UC验收
+      auto_advance: false  # 必须用户明确确认才能进入测试
+      max_loops: 5  # 安全阀：最多5次Demo循环
+      description: |
+        在开发完成后、测试开始前，强制用户在原型上逐UC验收。
+        核心循环：Demo准备→逐UC验收→收集反馈→[有反馈:dev-change回流→再Demo]→[无反馈:进入测试]
+        
+        与dev-change-flow深度集成：
+        - 用户自然语言反馈→AI增强识别→结构化变更→dev-change-flow→BA/UX/Arch增量更新→FD调整代码
+        - 支持模糊反馈追问、冲突协调、循环次数安全阀
+        
+        完成后：
+        - BA/UX产物冻结（Post-Demo版本）
+        - QA基于此冻结版本生成测试用例
+        - Demo验收报告（含每个UC通过状态+截图索引+变更汇总）
+      
+      ai_brain:
+        activate: "pm_brain"  # Demo阶段PM大脑激活（引导+协调+判断）
+        reasoning_tasks:
+          - "demo_guided_walkthrough：按UC清单逐条引导用户验收+记录结果"
+          - "demo_feedback_parser：自然语言→结构化变更的增强AI识别"
+          - "demo_loop_controller：Demo循环管理+安全阀+模糊反馈追问"
+          - "demo_change_router：Demo反馈→dev-change-flow触发+变更包生成"
+      
+      completion_criteria: "所有UC验收通过（无pending反馈项）+ Demo验收报告产出 + BA/UX产物冻结"
+      problem_sources: ["用户反馈（功能缺失/交互不对/流程不对/数据不对/视觉不对/文案不对/逻辑错误）"]
+      feedback_routing: "Demo反馈 → AI解析 → dev-change-flow回流 → BA/UX/Arch增量更新 → FD调整代码 → 重新Demo直到零反馈"
+      handover_to: "stage-6（QA测试）——测试用例基于Post-Demo冻结版BA/UX产物生成"
+
     - id: "stage-6"
-      name: "测试（V5.1.0：QA大脑激活）"
+      name: "测试（V5.4.0：基于Post-Demo冻结产物）"
       owner: "qa-agent"
       supervisor: "pm-agent"
       workflow: "test-flow"
@@ -589,9 +631,9 @@
         brain_sync_export:
           to_ac: ["验收高风险点清单（FN级）", "已知限制清单"]
           to_ba: ["需求覆盖缺口建议", "测试过程中发现的需求不明确项"]
-      completion_criteria: "五层测试报告产出，失败项归 Bug + **V5.1.0：QA大脑推理完成+brain_sync_export传递**"
+      completion_criteria: "五层测试报告产出，失败项归 Bug + **V5.4.0：测试用例基于Post-Demo冻结版BA/UX产物生成** + **V5.1.0：QA大脑推理完成+brain_sync_export传递**"
       problem_sources: ["bugs/open/ 下所有 failed 项"]
-      feedback_routing: "测试问题 → PM 路由 BA（需求分析）重评，据 defect-reflow 生成 type=修复 重走 dev→test→accept。【V5.3.3硬约束】QA必须创建PBL回流条目(触发G-REFLOW-01)，不可跳过回流直接修复。最多3次循环→SM升级到PM。"
+      feedback_routing: "测试问题 → PM 路由 BA（需求分析）重评，据 defect-reflow 生成 type=修复 重走 dev→demo→test→accept（V5.4.0：修复后需重新Demo确认）。【V5.3.3硬约束】QA必须创建PBL回流条目(触发G-REFLOW-01)，不可跳过回流直接修复。最多3次循环→SM升级到PM。"
 
     - id: "stage-7"
       name: "验收（V5.1.0：AC大脑+PO大脑激活，V4.1.0新增PO商业价值验收）"
@@ -683,7 +725,8 @@
         - "  G-VER-GUARD-01 版本范围完整性：Backlog Must项100%交付，Should项≥80%"
         - "  G-VER-GUARD-02 版本质量达标：运行时验证+五层测试+验收 全通过"
         - "  G-VER-GUARD-03 三位一体交付物一致性：G-HO-DELIVERY-01~05全部通过"
-        - "  G-VER-GUARD-04 版本沉淀学习完成：沉淀8步+**大脑记忆导出+进化**+质量评分≥60"
+        - "  G-VER-GUARD-04 版本沉淀学习完成：沉淀3步（V5.3.0精简）+**大脑记忆导出+进化**+质量评分≥60"
+        - "**V1.12.0新增：/close硬前置——G-CLOSE-07校验handoff已完成+交互用例卡一致性通过（PRD↔原型↔用例卡片三位一体），绝不允许跳过handoff直接/close**"
         - "**V5.0新增：项目把关校验（G-PROJ-GUARD-01~03）——PO（项目把关人）3项把关**"
         - "  G-PROJ-GUARD-01 商业目标对齐：BO/BG达成率≥80%（block）"
         - "  G-PROJ-GUARD-02 路线图偏离度：≤20%（warn）"
@@ -725,40 +768,39 @@
         - "上线基线自动标记（strict_guard）：全 close + 无 open Bug + 无 pending feedback + PBL 全闭环 + Review报告全产出 + 追溯链通过 + **版本沉淀完成** + **大脑进化完成（V5.1.0新增）** + **三级把关通过** + **版本快照完成** + **差异报告生成**"
 
     - id: "stage-9"
-      name: "自动部署运营（V5.2.0新增 — 多人多项目部署方案）"
-      version: "V5.2.0"
+      name: "自动部署运营（V2.0.0 — 域名迁移 + 全量聚合部署）"
+      version: "V2.0.0"
       owner: "pm-agent"
       collab: []
       workflow: "deploy-manager"
-      workflow_version: "V1.0.0"
+      workflow_version: "V2.0.0"
       pm_controlled: true
       precondition: "stage-8版本快照完成"
       skill: "deploy-manager"
       description: |
-        V1.0.0新增：/close 版本快照完成后自动部署仿真原型到 EdgeOne Pages。
-        部署失败不阻断 /close（版本已冻结，可 /deploy 手动重试）。
-        部署目标可插拔：默认 EdgeOne Pages，可切换其他平台。
+        V2.0.0升级：域名从 edgeone.app 迁移到自定义域名 + 全量聚合部署。
+        核心变更：部署内容从单个项目 dist → 整个 deploy/artifacts/（所有成员全部产物）。
+        门户首页自动扫描生成，不再手动维护。
+        部署失败不阻断 /close（版本已冻结，可 /deploy --retry 手动重试）。
       actions:
-        - "**V1.0.0新增：自动部署运营（deploy-manager.yml V1.0.0）：**"
-        - "  ① 前置校验：确认 stage-8 版本快照已完成（Git Tag + build:sim 产物存在）"
-        - "  ② 读取部署配置：deploy/edgeone-pages.json 获取项目部署配置"
-        - "  ③ 注入环境变量：VITE_PROJECT_ID={project} + VITE_MODE=sim"
-        - "  ④ 执行构建：npm run build:sim（如 stage-8 已构建则复用产物）"
-        - "  ④b 复制HTML需求文档到 dist/prd/（V1.2.0修正：检查 docs/09-versions/v{version}/prd-html/ 目录存在则复制到 dist/prd/，与G-CLOSE-06命名规范对齐）"
-        - "  ⑤ 推送产物到 EdgeOne Pages：产物路径 projects/{project}/dist/ → 部署路径 /{project}/{version}/"
-        - "  ⑥ 生成访问 URL：https://{workspace}.edgeone.app/{project}/{version}/"
-        - "  ⑦ 更新部署记录："
-        - "    - 追加记录到 deploy/DEPLOY-MANIFEST.yml"
-        - "    - 更新 PROJECT-INDEX.yml 的 deploy 字段（current_version + deploy_url + deploy_history）"
-        - "    - 更新 deploy/access-portal/index.html 访问门户聚合页"
-        - "  ⑧ 输出部署结果（URL + 状态 + 耗时 + IndexedDB数据库名）"
-        - "  ⑨ 部署失败处理：不阻断/close，标记status=failed+error_msg，提示 /deploy --retry 手动重试"
-      output: "部署的仿真原型（EdgeOne Pages URL）+ DEPLOY-MANIFEST.yml 更新 + PROJECT-INDEX.yml deploy字段更新 + access-portal 更新"
+        - "**V2.0.0升级：全量聚合部署（deploy-manager.yml V2.0.0，9步流程）：**"
+        - "  ① Step1 前置校验：确认 stage-8 版本快照已完成 + 域名非占位符 + 成员权限 + EdgeOne集成已连接"
+        - "  ② Step2 读取部署配置：deploy/edgeone-pages.json + .access-control.yml + 当前用户/项目/主题/版本"
+        - "  ③ Step3 构建与聚合：注入 VITE_BASE_PATH=/{member}/{project}/{topic}/{version}/ + VITE_PROJECT_ID={project} + VITE_MODE=sim → npm run build:sim → 复制到 deploy/artifacts/{member}/{project}/{topic}/{version}/"
+        - "  ④ Step4 全量扫描：递归扫描 deploy/artifacts/ 下所有成员-项目-版本，构建部署索引"
+        - "  ⑤ Step5 生成门户首页：基于 deploy/access-portal/index.html 模板 + 扫描结果 → 生成 deploy/artifacts/index.html"
+        - "  ⑥ Step6 部署到 EdgeOne Pages：整个 deploy/artifacts/ 全量推送（含所有成员+项目+版本+门户）"
+        - "  ⑦ Step7 生成访问 URL：门户 https://{base_domain}/ + 项目 https://{base_domain}/{member}/{project}/{topic}/{version}/"
+        - "  ⑧ Step8 更新部署记录：DEPLOY-MANIFEST.yml + deploy_history 追加"
+        - "  ⑨ Step9 输出部署结果（门户URL + 项目URL + 摘要 + 域名绑定提示）"
+        - "  ⑩ 部署失败处理：不阻断/close，标记status=failed+error_msg，提示 /deploy --retry 手动重试"
+      output: "部署的全量聚合站点（自定义域名URL）+ 门户首页自动生成 + DEPLOY-MANIFEST.yml 更新 + PROJECT-INDEX.yml deploy字段更新"
       failure_handling:
         blocking: false
-        retry: "/deploy --project={project} --retry"
+        retry: "/deploy --project={project} --topic={topic} --retry"
       deploy_target: "edgeone-pages"
       deploy_config: "deploy/edgeone-pages.json"
+      domain_placeholder: "prototype.jycao.cn（部署前替换为实际域名）"
 
   # ============================================
   # 回流路由表（V4.0.0：按阶段依次上传，不跳跃）
@@ -878,8 +920,8 @@
         - "创建需求流 STR-{PREFIX}-{nnn} 写入 state.json.streams[]，stage=requirement（V1.1.0：STR含项目前缀）"
         - "**V4.2.1新增：更新 PROJECT-INDEX.yml**——设置 active_project={project} + 更新对应项目 current_stream + last_activity"
         - "PM 启动需求分析流程，传递：已学PRD上下文 + 跨版本反馈 + 上一版本沉淀 + 经验库 + **PO Backlog优先级（V4.1.0，如有）**"
-      usage: "/init --project=X --type=Y --desc=需求描述 [--file=外部需求文件.md] [--api=外部接口文档.md] [--source=local-dir:./docs] [--source=http-url:https://...] [--priority=P0|P1|P2|P3]"
-      brain_storm_link: "**V4.2.1新增--brainstorm-topic参数**：若 /init 提供 --brainstorm-topic=议题名，PM 按议题查找 projects/{project}/docs/00-brainstorm/{topic}/confirmed/BR-脑暴文档-确认稿.md 作为 BA 背景输入。同时加载脑暴 confirmed 中的领域知识清单（BA继承）+ API分析清单（BA+Arch继承，V3.4.0）。若未提供 --brainstorm-topic 但 00-brainstorm/ 下只有一个议题子目录，自动加载该议题；多个议题时提示用户选择。脑暴阶段与 /init 阶段均会智能检测项目骨架：存在则复用，不存在则新建。V3.5.0：confirmed/ 为单文件覆盖式更新（BR-脑暴文档-确认稿.md），含版本概要表格。**场景**：脑暴多轮确认后隔一段时间才 /init，通过 --brainstorm-topic 精确关联对应脑暴产物。"
+      usage: "/init --project=X --type=Y --topic=迭代主题 --desc=需求描述 [--file=外部需求文件.md] [--api=外部接口文档.md] [--source=local-dir:./docs] [--source=http-url:https://...] [--priority=P0|P1|P2|P3]"
+      brain_storm_link: "**V2.0.0统一为--topic参数**：若 /init 提供 --topic=迭代主题，PM 按议题查找 projects/{project}/docs/00-brainstorm/{topic}/confirmed/BR-脑暴文档-确认稿.md 作为 BA 背景输入。同时加载脑暴 confirmed 中的领域知识清单（BA继承）+ API分析清单（BA+Arch继承）。若未提供 --topic 但 00-brainstorm/ 下只有一个议题子目录，自动加载该议题；多个议题时提示用户选择；无议题且未独立指定时提示必填。**来源**：①独立指定（需求明确时）②从brainstorm继承③自动匹配。V3.5.0：confirmed/ 为单文件覆盖式更新。**别名**：--brainstorm-topic 保留兼容。"
       knowledge_base_link: "存量项目在 /init 前自动匹配 .codebuddy/knowledge/projects/{project}/需求文档/ 下的已学 PRD（全部卷 + 学习报告），作为需求分析上下文。"
       sedimentation_base_link: "**V4.0.1新增**：存量项目在 /init 时自动加载 .codebuddy/knowledge/projects/{project}/版本沉淀/ 下最近版本的沉淀产物（需求快照+Review经验+lessons-learned+追溯链），以及 common/经验库/ 的跨项目经验，作为需求分析和全阶段背景知识。"
       domain_knowledge_link: "**V3.0.1新增，V3.0.3增强**：脑暴阶段（brainstorm.yml v3.2.0 stage-0c）已加载领域知识并产出领域知识清单写入 confirmed/，/init 时 BA 优先继承该清单（避免重复匹配）。若脑暴阶段未执行或清单缺失，BA 自行扫描 .codebuddy/knowledge/domains/ 领域知识库，通过关键词+AI语义匹配加载与需求相关的领域知识（如退款流/分账/进销存等），作为需求分析的行业标准方案参考。缺失时提示用户先执行 /learn-domain 学习。"
@@ -887,8 +929,9 @@
 
     feedback:
       command: "/feedback"
-      description: "回流（close 前有效，V4.0.0：Review后触发，按阶段依次上传）"
+      description: "回流（close 前有效，V4.0.0：Review后触发，按阶段依次上传）。V3.0.0起 --project 可通过 input_semantic_routing 自动推断。"
       pm_actions:
+        - "**V3.0.0新增：先执行 input_semantic_routing（扫描用户输入→匹配项目keywords→自动路由）**"
         - "绑定当前 stream 的 version（--type 可省略 → 自动选未 close 流）"
         - "**V4.0.0前置：确认专家Review已完成（不可跳过Review直接回流）**"
         - "聚合 test 失败项 + accept 不通过项 + 用户 --msg/自然语言补充 + **Review发现的问题**"
@@ -897,7 +940,7 @@
         - "最终汇聚到需求分析阶段，BA调整REQ产物"
         - "写入 stream.feedbacks[]，记录回流路径+经停记录"
         - "**V4.0.0：未闭环反馈标记'跨版本传递'**"
-      usage: "/feedback --project=X --type=Y [--msg=反馈内容]"
+      usage: "/feedback [--project=X] --type=Y [--msg=反馈内容]   （--project 可省略，自动推断）"
 
     close:
       command: "/close"
@@ -905,36 +948,28 @@
       pm_actions:
         - "该流 stage=closed，冻结版本"
         - "过程记录簿闭环校验：核对 journal/problem-ledger.md 中归属该版本的所有 PBL 是否全部「已闭环」"
-        - "**V4.0.0新增：校验全部8阶段Review报告已产出且通过（reviews/目录下7份REV报告）**"
+        - "**V4.0.0新增→V5.3.0升级：校验REV-SUMMARY汇总报告已产出且通过（V5.3.0：7合1）**"
         - "**V4.0.0新增：扫描未闭环PBL，标记'跨版本传递'并记录建议处理版本**"
         - "追溯链完整性校验（O-10）：逐 FN 校验需求→设计→架构→代码四层追溯"
         - "回退元数据记录（O-12）：记录回退ID/原因/受影响模块/恢复计划"
         - "提炼 projects/{project}/.codebuddy/lessons-learned.yml"
-        # ↓↓↓ V4.0.1 新增：版本沉淀学习（knowledge-sedimentation.yml V1.0.0）↓↓↓
-        - "**V4.0.1新增：启动版本沉淀学习（PM自动执行，详见 knowledge-sedimentation.yml）：**"
-        - "  Step1 创建 .codebuddy/knowledge/projects/{project}/版本沉淀/{version}/ 目录"
-        - "  Step2 需求沉淀（PM+BA协作）：PRD+REQ产物体系+模块清单+上下游影响矩阵 → 需求沉淀/"
-        - "  Step3 Review沉淀（PM收集+提炼）：7份Review归档 + 提炼Review经验提炼.md（反复问题/最佳实践/阶段薄弱点/Review质量）"
-        - "  Step4 经验教训提炼（PM主导）：lessons-learned + 最佳实践 + 踩坑 → 追加到 common/经验库/"
-        - "  Step5 追溯链快照（PM+DOC协作）：traceability-v{version}.yml"
-        - "  Step6 更新版本索引（PM+DOC协作）：VERSION-INDEX.yml 新增条目 + 关键指标 + 经验标签"
-        - "  Step7 沉淀摘要（PM生成）：沉淀摘要.md（概述+清单+指标+经验摘要+质量评分）"
-        - "  Step8 Journal记录 + 沉淀完整性校验（不通过则阻止close）"
-        - "**沉淀质量评分（0-100）：requirements_completeness(25%)+review_depth(25%)+lessons_actionability(20%)+traceability_coverage(15%)+cross_version_value(15%)**"
-        # ↑↑↑ 版本沉淀学习结束 ↑↑↑
+        # ↓↓↓ V5.3.0 升级：版本沉淀学习精简为3步（knowledge-sedimentation.yml V5.3.0）↓↓↓
+        - "**V5.3.0升级：启动版本沉淀学习（PM自动执行，详见 knowledge-sedimentation.yml V5.3.0）：**"
+        - "  Step1 沉淀准备：创建版本沉淀目录 → 需求快照（PRD+REQ产物+模块清单+影响矩阵）→ REV-SUMMARY汇总归档（7合1）→ 经验分层提炼（项目级→projects经验/，跨项目级→common经验库/，流程改进建议→_pending/）"
+        - "  Step2 经验分层提炼+追溯链：追溯链快照 → 大脑记忆快照 → 版本索引更新 → 沉淀质量评分（5维：requirements_completeness+review_depth+lessons_actionability+traceability_coverage+cross_version_value）"
+        - "  Step3 索引+校验：生成沉淀摘要 → Journal记录 → 沉淀完整性校验（3项：需求沉淀完整+Review汇总完整+追溯链已快照，不通过则阻止close）→ 经验提升自动触发上一版本经验库增量加载"
+        # ↑↑↑ 版本沉淀学习结束（V5.3.0精简版，close提速50%）↑↑↑
         - "上线基线自动标记（strict_guard）：全 close + 无 open Bug + 无 pending feedback + PBL 全闭环 + Review报告全产出 + 追溯链通过 + **版本沉淀完成** + **自动部署完成（V1.0.0新增）**"
-        # ↓↓↓ V1.0.0 新增：stage-9 自动部署运营 ↓↓↓
-        - "**V1.0.0新增：自动部署运营（stage-9，deploy-manager.yml V1.0.0）：**"
-        - "  ① 读取部署配置 deploy/edgeone-pages.json"
-        - "  ② 注入环境变量 VITE_PROJECT_ID={project} + VITE_MODE=sim"
-        - "  ③ 执行 npm run build:sim（如 stage-8 已构建则复用）"
-        - "  ③b 复制HTML需求文档到 dist/prd/（V1.2.0修正：检查 docs/09-versions/v{version}/prd-html/ 目录存在则复制到 dist/prd/，与G-CLOSE-06命名规范对齐）"
-        - "  ④ 推送构建产物到 EdgeOne Pages"
-        - "  ⑤ 生成访问 URL: https://{workspace}.edgeone.app/{project}/{version}/ + PRD文档URL: /prd/"
-        - "  ⑥ 更新 DEPLOY-MANIFEST.yml + PROJECT-INDEX.yml deploy字段 + access-portal/index.html"
-        - "  ⑦ 输出部署结果（原型URL + PRD文档URL + 状态 + 耗时 + IndexedDB数据库名）"
-        - "  ⑧ 部署失败不阻断/close，提示 /deploy --retry 手动重试"
-        # ↑↑↑ stage-9 自动部署运营结束 ↑↑↑
+        # ↓↓↓ V2.0.0 升级：stage-9 全量聚合部署 ↓↓↓
+        - "**V2.0.0升级：全量聚合部署（stage-9，deploy-manager.yml V2.0.0，9步流程）：**"
+        - "  ① Step1-2 前置校验+读取部署配置 deploy/edgeone-pages.json（含base_domain校验）"
+        - "  ② Step3 注入环境变量 VITE_BASE_PATH=/{member}/{project}/{topic}/{version}/ + VITE_PROJECT_ID={project} + VITE_MODE=sim → npm run build:sim → 聚合到 deploy/artifacts/{member}/{project}/{topic}/{version}/"
+        - "  ③ 复制HTML需求文档到 dist/prd/（V1.2.0修正：检查 docs/09-versions/v{version}/prd-html/ 目录存在则复制到 dist/prd/，与G-CLOSE-06命名规范对齐）"
+        - "  ④ Step4-5 全量扫描 deploy/artifacts/ → 自动生成门户首页 index.html"
+        - "  ⑤ Step6-7 整个 deploy/artifacts/ 全量推送到 EdgeOne Pages → 生成访问 URL: https://{base_domain}/（门户）+ https://{base_domain}/{member}/{project}/{topic}/{version}/（项目）"
+        - "  ⑥ Step8-9 更新 DEPLOY-MANIFEST.yml + deploy_history → 输出部署结果（门户+项目URL+域名绑定提示）"
+        - "  ⑦ 部署失败不阻断/close，提示 /deploy --retry 手动重试"
+        # ↑↑↑ stage-9 全量聚合部署结束 ↑↑↑
         # ↓↓↓ V1.1.0 新增：自动Git提交 ↓↓↓
         - "**V1.1.0新增：自动Git提交（/close后自动，成员无需手动操作）：**"
         - "  ① git add projects/{project}/"
@@ -949,7 +984,7 @@
         - "  PO Agent 产出：PROD-BACKLOG-{project}-v{next}.yml（下一版本需求清单+优先级）"
         - "  PM 执行 /init --type=迭代，BA 基于 PO Backlog 优先级进行需求分析"
         - "  形成 Sprint Planning 自动化：Review→Retrospective(沉淀)→Planning(PO Backlog)→/init v2"
-      usage: "/close --project=X --type=Y"
+      usage: "/close --project=X [--topic=迭代主题] [--type=Y]"
 
     handoff:
       command: "/handoff"
@@ -972,6 +1007,7 @@
       "streams": [
         {
           "id": "STR-001",
+          "topic": "subscription-migration",
           "type": "新增",
           "version": "v1.1.0",
           "prev_closed_version": "v1.0.0",
@@ -1100,11 +1136,15 @@
     - flow: "开发"
       owner: "fd-agent"
       file: "dev-flow.yml"
-      methodology: "仿真代码生成，11 条编码铁律 + compliance-checker"
+      methodology: "仿真代码生成，11 条编码铁律 + compliance-checker + dev-change-flow实时变更回流（V1.1.0：结构化变更包BA/UX/ARCH_PACKET）"
+    - flow: "Demo用户验收"
+      owner: "pm-agent"
+      file: "demo-flow.yml"
+      methodology: "V5.4.0新增：测试前强制逐UC验收，AI增强识别自然语言反馈→dev-change回流→循环直到零反馈→BA/UX产物冻结"
     - flow: "测试"
       owner: "qa-agent"
       file: "test-flow.yml"
-      methodology: "五层测试（contract/unit/browser/whitebox/visual），用例源自 BA 产物"
+      methodology: "五层测试（contract/unit/browser/whitebox/visual），V3.3.0：用例源自Post-Demo冻结版BA/UX产物"
     - flow: "验收"
       owner: "ac-agent"
       file: "acceptance-flow.yml"

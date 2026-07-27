@@ -271,23 +271,71 @@ export const segmentRepository = {
 // ============================================
 // Tenant Repository (运营后台)
 // ============================================
+function normalizeTenant(t: any) {
+  // 兼容旧数据：未设置 enabled 时根据状态推断，默认启用
+  if (typeof t.enabled !== 'boolean') {
+    t.enabled = t.status === 'ACTIVE' || t.status === 'TRIAL' || t.status === 'GRACE';
+  }
+  return t;
+}
+
 export const tenantRepository = {
-  async getAll(filters?: { status?: string; version?: string; industry?: string }) {
+  async getAll(filters?: { status?: string; version?: string; industry?: string; enabled?: boolean; search?: string; searchField?: string }) {
     await initializeSim();
     const db = await getDB();
-    let tenants = await db.getAll('tenants');
+    let tenants = (await db.getAll('tenants')).map(normalizeTenant);
 
     if (filters?.status) tenants = tenants.filter(t => t.status === filters.status);
     if (filters?.version) tenants = tenants.filter(t => t.version === filters.version);
     if (filters?.industry) tenants = tenants.filter(t => t.industry === filters.industry);
+    if (typeof filters?.enabled === 'boolean') tenants = tenants.filter(t => t.enabled === filters.enabled);
 
-    return tenants;
+    if (filters?.search) {
+      const s = filters.search.trim().toLowerCase();
+      const field = filters.searchField || 'all';
+      tenants = tenants.filter(t => {
+        if (field === 'id' || field === 'all') {
+          if (t.id?.toLowerCase().includes(s)) return true;
+        }
+        if (field === 'companyName' || field === 'all') {
+          if (t.companyName?.toLowerCase().includes(s)) return true;
+        }
+        if (field === 'contactPhone' || field === 'all') {
+          if (t.contactPhone?.toLowerCase().includes(s)) return true;
+        }
+        return false;
+      });
+    }
+
+    return tenants.sort((a, b) => new Date(b.registeredAt).getTime() - new Date(a.registeredAt).getTime());
   },
 
   async getById(id: string) {
     await initializeSim();
     const db = await getDB();
-    return db.get('tenants', id);
+    const t = await db.get('tenants', id);
+    return t ? normalizeTenant(t) : undefined;
+  },
+
+  async update(id: string, data: Partial<any>) {
+    await initializeSim();
+    const db = await getDB();
+    const existing = await db.get('tenants', id);
+    if (!existing) throw new Error('Tenant not found');
+    const updated = { ...normalizeTenant(existing), ...data, updatedAt: new Date().toISOString() };
+    await db.put('tenants', updated);
+    return updated;
+  },
+
+  async toggleEnabled(id: string) {
+    await initializeSim();
+    const db = await getDB();
+    const existing = await db.get('tenants', id);
+    if (!existing) throw new Error('Tenant not found');
+    const next = !normalizeTenant(existing).enabled;
+    const updated = { ...existing, enabled: next, status: next ? 'ACTIVE' : 'SUSPENDED', updatedAt: new Date().toISOString() };
+    await db.put('tenants', updated);
+    return updated;
   },
 
   async approve(id: string, data: { version: string; trialDays: number; notes?: string }) {
@@ -297,6 +345,7 @@ export const tenantRepository = {
     if (!existing) throw new Error('Tenant not found');
     existing.status = 'TRIAL';
     existing.version = data.version;
+    existing.enabled = true;
     const trialEnd = new Date();
     trialEnd.setDate(trialEnd.getDate() + data.trialDays);
     existing.expireDate = trialEnd.toISOString().slice(0, 10);
@@ -310,6 +359,7 @@ export const tenantRepository = {
     const existing = await db.get('tenants', id);
     if (!existing) throw new Error('Tenant not found');
     existing.status = 'CLOSED';
+    existing.enabled = false;
     await db.put('tenants', existing);
     return existing;
   },

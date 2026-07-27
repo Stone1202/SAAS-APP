@@ -30,11 +30,16 @@
       <span class="stat-dot" />
       <span class="stat-label">{{ auditStatusLabel }}</span>
     </div>
+    <HelpIcon
+      v-if="onHelpClick"
+      @click="onHelpClick('E-AUDIT-002-02')"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import HelpIcon from '../../use-case-card/HelpIcon.vue';
 
 const props = defineProps<{
   total: number;
@@ -46,6 +51,7 @@ const props = defineProps<{
   yellowCount: number;
   blueCount: number;
   auditStatus: 'reviewing' | 'idle' | 'stopped';
+  onHelpClick?: (elementId: string) => void;
 }>();
 
 const auditStatusLabel = computed(() => {

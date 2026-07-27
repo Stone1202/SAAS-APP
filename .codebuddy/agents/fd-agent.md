@@ -1,17 +1,18 @@
-# FD Agent - 前端开发（V3.0.0 可插拔架构）
+# FD Agent - 前端开发（V3.1.0 UML驱动实现）
 
+> **V3.1.0 升级**：UML驱动实现——消费BA产出的UML 2.5模型驱动组件状态管理、条件渲染和组件边界设计
 > **V3.0.0 升级**：对齐五维可插拔架构（contracts/adapters/services 分层）
 > - 代码落 `src/adapters/sim/` + `src/adapters/real/` + `src/services/` + `src/stores/` + `src/components/` + `src/pages/`
 > - 禁止引用旧版 `src/scaffolds/`（已废弃删除）
 > - 禁止引用旧版 `src/simulation/`（已迁移到 `src/adapters/sim/`）
 > - 契约定义在 `src/contracts/schemas/`（Zod Schema）
 
-## ⚠️ 绝对不可违反的11条铁律
+## ⚠️ 绝对不可违反的12条铁律（V3.1.0新增FD-13 UML驱动）
 
-> **铁律单一事实源**：`.codebuddy/knowledge/common/iron-rules-registry.yml#agents.fd_agent`（FD-01~FD-12）
+> **铁律单一事实源**：`.codebuddy/knowledge/common/iron-rules-registry.yml#agents.fd_agent`（FD-01~FD-13）
 > **门禁单一事实源**：`.codebuddy/knowledge/common/gates-registry.yml#stages.dev`（G-DEV-01~G-DEV-02）
 > 本章节为注册中心铁律的执行说明，如有冲突以注册中心为准。
-> 注：标题"11条"为历史遗留，实际12条（FD-01~FD-12），以注册中心为准。
+> 注：标题"12条"为历史遗留，实际13条（FD-01~FD-13），以注册中心为准。
 
 违反任何一条，立即停止生成，给出违反说明和正确做法。
 
@@ -147,6 +148,18 @@ import { getDataAdapter } from '@/adapters/factory';  // Service 层才可引用
 - 每个业务操作（FN）按「角色 × 当前业务状态」实现：路由守卫（无权限拦截）+ 按钮级显隐/禁用。
 - 原型须提供「切换角色 / 切换业务状态」演示模式，直观体现"谁在什么状态下能做什么"（对应你核心诉求的矩阵可视化）。
 - 当 REQ 因未 close 补齐或全类型同步被更新，FD 须以最新 REQ 重对齐仿真与权限逻辑，禁止沿用旧版。
+
+**铁律13（FD-13，V3.1.0新增）：UML驱动实现，状态机层级落地**
+> **知识来源**：`.codebuddy/knowledge/common/uml-standards.yml#agent_responsibility_matrix.fd_agent`
+- 复合状态内的正交区域 → 独立Store Slice+并行状态订阅（每个区域一个独立useStore selector）
+- 子状态机引用 → 可复用状态Hook（如useViolationHandler被Live/ShortVideo/Room共用）
+- 组合片段alt/opt → if/else条件渲染和逻辑分支
+- 组合片段loop → useEffect定时器/轮询
+- 组合片段par → Promise.all并行请求
+- 组合片段critical → 乐观锁/事务处理
+- 组合片段break → 错误边界/异常处理
+- 通信图标注的组件关系 → React组件树和Props传递方向
+- 交互概览图Fork/Join → 并发控制+状态协调
 
 ---
 

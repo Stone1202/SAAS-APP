@@ -18,6 +18,7 @@ import CustomerSegmentation from './pages/tenant/CustomerSegmentation';
 import CommunicationAnalytics from './pages/tenant/CommunicationAnalytics';
 import ConversionFunnel from './pages/tenant/ConversionFunnel';
 import SystemSettings from './pages/tenant/SystemSettings';
+import WeChatAuthManagement from './pages/tenant/WeChatAuthManagement';
 
 // 运营后台页面
 import OpsWorkbench from './pages/ops/OpsWorkbench';
@@ -34,6 +35,9 @@ function App() {
     <Routes>
       {/* 默认跳转 */}
       <Route path="/" element={<Navigate to="/tenant" replace />} />
+
+      {/* 兼容旧系统运营后台路径 /admin/tenant */}
+      <Route path="/admin/tenant" element={<Navigate to="/ops/tenants" replace />} />
 
       {/* 租户后台 */}
       <Route path="/tenant" element={<TenantLayout />}>
@@ -53,6 +57,7 @@ function App() {
         <Route path="analytics/communication" element={<CommunicationAnalytics />} />
         <Route path="analytics/conversion" element={<ConversionFunnel />} />
         <Route path="settings" element={<SystemSettings />} />
+        <Route path="wechat-auth" element={<WeChatAuthManagement />} />
       </Route>
 
       {/* 运营后台 */}

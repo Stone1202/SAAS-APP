@@ -94,6 +94,29 @@ describe('audit-store', () => {
     expect(store.tenantConfig.mute_mode).toBe('beep');
   });
 
+  it('setMuteMode 同步设置 liveEffect 驱动 H5 效果', () => {
+    const store = useAuditStore();
+    store.setMuteMode('silent');
+    expect(store.liveEffect).toBe('silent');
+    store.setMuteMode('beep');
+    expect(store.liveEffect).toBe('beep');
+  });
+
+  it('setLiveEffect / clearLiveEffect 可独立控制当前生效效果', () => {
+    const store = useAuditStore();
+    store.setLiveEffect('beep');
+    expect(store.liveEffect).toBe('beep');
+    store.clearLiveEffect();
+    expect(store.liveEffect).toBeNull();
+  });
+
+  it('reset 清空 liveEffect', () => {
+    const store = useAuditStore();
+    store.setLiveEffect('silent');
+    store.reset();
+    expect(store.liveEffect).toBeNull();
+  });
+
   // --- disposeViolation ---
 
   it('disposeViolation(record) 将状态更新为 recorded', () => {

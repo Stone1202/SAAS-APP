@@ -6,6 +6,9 @@
 node_modules/
 **/node_modules/
 
+# Deploy artifacts（聚合部署产物，运行时生成）
+deploy/artifacts/
+
 # Build output
 dist/
 **/dist/

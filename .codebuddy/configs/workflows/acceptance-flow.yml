@@ -100,7 +100,7 @@ workflow:
       name: "需求对照验收"
       agent: "ac-agent"
       skills: ["requirement-checker"]
-      input: "POM/需求文档（User Story 列表，含FN/UC编号）+ 仿真系统"
+      input: "POM/需求文档（User Story 列表，含FN/UC编号）+ 仿真系统 + **Demo验收报告（V1.14.0新增：AC交叉比对Demo反馈是否已闭环）**"
       output:
         - "逐条 User Story 验收记录（Happy Path + Ugly Path + Corner Case，含FN/UC编号关联）"
         - "验收不通过 Bug 列表（含related_fn字段）"
@@ -118,16 +118,21 @@ workflow:
       name: "业务流程闭环验收"
       agent: "ac-agent"
       skills: ["business-flow-tester"]
-      input: "BA 业务流程产物 + 仿真系统"
+      input: "BA 业务流程产物 + 仿真系统 + **Demo验收报告交叉比对（V1.14.0新增）**"
       output:
         - "完整操作链路验收记录"
         - "流程阻断 Bug 列表"
+        - "**Demo交叉比对结果（V1.14.0新增：确认所有Demo反馈已闭环并入当前版本）**"
       methodology: |
         business-flow-tester 模拟完整操作链路：
         1. 按 BA 业务泳道图走查完整流程
         2. 验证跨角色协作流程
         3. 验证跨系统数据流转
         4. 验证异常流程的中断与恢复
+        5. **V1.14.0新增：交叉核对Demo验收报告——逐条确认：**
+           - 所有Demo反馈项（FB-XX-XX）已在PRD中体现
+           - Demo通过的UC与AC通过的UC无遗漏
+           - 冻结版产物hash与.frozen-manifest.yml中的快照一致
 
     - id: "3"
       name: "用户体验验收"

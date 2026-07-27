@@ -120,10 +120,11 @@ describe('ENT-TNT-007 TodoSchema + BR-FM-001~003', () => {
 // ============================================
 describe('ENT-OPS-001 TenantSchema + BR-TN-001', () => {
   it('应包含所有6种状态', () => {
-    expect(TenantSchema.shape.status.options).toContain('ACTIVE');
-    expect(TenantSchema.shape.status.options).toContain('SUSPENDED');
-    expect(TenantSchema.shape.status.options).toContain('CLOSED');
-    expect(TenantSchema.shape.status.options.length).toBe(6);
+    const statusEnum = TenantSchema.shape.status.unwrap();
+    expect(statusEnum.options).toContain('ACTIVE');
+    expect(statusEnum.options).toContain('SUSPENDED');
+    expect(statusEnum.options).toContain('CLOSED');
+    expect(statusEnum.options.length).toBe(6);
   });
 
   it('应包含健康度评分范围0-100', () => {

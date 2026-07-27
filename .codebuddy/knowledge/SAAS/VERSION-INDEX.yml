@@ -1,27 +1,26 @@
 # VERSION-INDEX.yml — SAAS版本索引
-# 维护者：PM Agent | /close时更新
+# 维护者：PM Agent | 仅用户显式执行 /close 时更新
+# ⚠️ AI 不得在用户未执行 /close 的情况下自动写入 closed 状态或生成版本沉淀
 
 versions:
   - version: "v1.0.0"
     date: "2026-07-22"
     type: "新增"
-    status: "closed"
-    stream_id: "STR-001"
+    status: "in_progress"
+    stream_id: "STR-SAAS-001"
     brainstorm_topic: "直播内容审查"
     desc: "直播内容审查V1配置优先——实时擦音+回放擦音+运营开关+租户中控+观众APP"
+    current_stage: "arch"
     fn_count: 6
     page_count: 7
-    test_scenarios: 26
-    test_pass_rate: "100%"
-    acceptance: "PM+BA+PO+QA四角色通过"
-    quality_score: 85
     tags: ["内容审查", "擦音", "腾讯云", "配置优先", "三终端"]
     prd_path: "docs/01-requirements/16-内容审查域-PRD-v1.0.0.md"
-    sedimentation_path: "knowledge/SAAS/版本沉淀/v1.0.0/"
-    key_lessons:
-      - "配置优先策略正确，3天完成V1全流程"
-      - "Store模拟回调bug——检查对象错误"
-      - "handoff必须强制Stage2代码注入+按钮级标注"
-      - "Web Audio API可模拟擦音效果"
+    # ⚠️ 以下字段仅 /close 后才填写，当前为占位
+    # test_scenarios: ~
+    # test_pass_rate: ~
+    # acceptance: ~
+    # quality_score: ~
+    # sedimentation_path: ~
+    # key_lessons: []
     next_version: "v2.0.0"
     next_version_plan: "敏感词库管理+风控引擎+腾讯云同步+处置流程+告警通知"

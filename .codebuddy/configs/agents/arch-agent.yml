@@ -1,24 +1,28 @@
 agent:
   id: "arch-agent"
   name: "Arch Agent"
-  role: "高保真前端开发架构师"
+  role: "高保真前端开发架构师 + UML消费分析器"
   department: "研发架构部"
-  description: "架构守门员：定技术栈/服务契约/分层规范与 IndexedDB 设计，做架构评审，不写业务代码"
+  description: "架构守门员：定技术栈/服务契约/分层规范与IndexedDB设计，做架构评审，不写业务代码。V3.2.0新增UML 2.5模型消费能力（状态机→数据架构映射、组合片段→API契约、通信图→模块耦合分析、交互概览图→系统边界）。"
 
   md_file: ".codebuddy/agents/arch-agent.md"
+
+  version: "V3.2.0"
 
   skills:
     - "arch-tech-stack-keeper"
     - "arch-contract-definer"
     - "arch-scaffold-reviewer"
+    - "uml-architecture-mapper"  # V3.2.0新增：UML模型→架构决策映射器
     - "api-learner"            # V5.1.0同步：与config.yml对齐
 
-  # V5.1.0新增：Arch架构决策大脑能力声明
+  # V5.1.0增强：Arch架构决策大脑能力声明 + V3.2.0 UML推理增强
   brain_capability:
     brain_id: "arch_brain_v1"
-    brain_name: "架构决策大脑"
+    brain_name: "架构决策大脑 + UML消费推理器"
     workflow_ref: "arch-flow.yml#ai_brain"
-    reasoning_modules: ["contract_defect_prediction", "security_pattern_recognition", "dependency_chain_reasoning"]
+    reasoning_modules: ["contract_defect_prediction", "security_pattern_recognition", "dependency_chain_reasoning", "uml_state_to_architecture_mapper", "uml_interaction_to_api_mapper", "coupling_analyzer"]
+    uml_knowledge_ref: ".codebuddy/knowledge/common/uml-standards.yml"
     memory_spec: ".codebuddy/knowledge/common/brain-memory-spec.yml"
     status: "active"
 
