@@ -35,6 +35,8 @@ function App() {
     <Routes>
       {/* 默认跳转 */}
       <Route path="/" element={<Navigate to="/tenant" replace />} />
+      {/* EdgeOne 直接访问 index.html 的兜底重定向 */}
+      <Route path="/index.html" element={<Navigate to="/" replace />} />
 
       {/* 兼容旧系统运营后台路径 /admin/tenant */}
       <Route path="/admin/tenant" element={<Navigate to="/ops/tenants" replace />} />

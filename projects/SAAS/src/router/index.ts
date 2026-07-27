@@ -117,6 +117,8 @@ const routes: RouteRecordRaw[] = [
 
   // 默认重定向 → 租户后台仿真入口
   { path: '/', redirect: '/tenant/dashboard' },
+  // EdgeOne 直接访问 index.html 的兜底重定向
+  { path: '/index.html', redirect: '/tenant/dashboard' },
 ];
 
 const router = createRouter({
