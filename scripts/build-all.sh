@@ -77,13 +77,14 @@ else
 fi
 
 # ── EdgeOne Pages SPA fallback 配置 ──
-# 根目录 edgeone.json 配置所有子项目 SPA 的 rewrite fallback
-if [ -f "$EDGEONE_CONFIG" ]; then
-  cp "$EDGEONE_CONFIG" "$ARTIFACTS/edgeone.json"
-  echo "=== EdgeOne Pages config copied to artifacts root ==="
-else
-  echo "=== WARNING: EdgeOne Pages config not found ==="
-fi
+# 每个 SPA 版本目录放一份 404.html（index.html 的副本），利用静态托管的
+# 目录级 404 回退机制，让深层路由正确加载 SPA，同时不影响静态资源。
+find "$ARTIFACTS" -name "index.html" -path "*/v*/*" | while read index_file; do
+  version_dir=$(dirname "$index_file")
+  cp "$index_file" "$version_dir/404.html"
+  echo "  SPA 404 fallback: $version_dir/404.html"
+done
+echo "=== SPA 404 fallback files created ==="
 
 # ── 列出产物结构 ──
 echo ""
