@@ -49,8 +49,8 @@ for entry in "${PROJECTS[@]}"; do
   
   # 2. 构建（设置 base 路径，让资源引用指向正确的子目录）
   export VITE_BASE_PATH="/$member/$slug/v1.0.0/"
-  echo "  [2/3] npx vite build --mode sim (base=$VITE_BASE_PATH)..."
-  npx vite build --mode sim || { echo "  [2/3] BUILD FAILED for $slug, skipping..."; continue; }
+  echo "  [2/3] npm run build:sim (base=$VITE_BASE_PATH)..."
+  npm run build:sim || { echo "  [2/3] BUILD FAILED for $slug, skipping..."; continue; }
   
   # 3. 复制产物到 artifacts
   if [ -d "$PROJECT_DIR/dist" ]; then
