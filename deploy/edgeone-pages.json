@@ -1,28 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/jojo/SAAS/v1.0.0/*",
-      "destination": "/jojo/SAAS/v1.0.0/index.html"
-    },
-    {
-      "source": "/jojo/AI-SCRM/v1.0.0/*",
-      "destination": "/jojo/AI-SCRM/v1.0.0/index.html"
-    },
-    {
-      "source": "/jojo/SugarMate/v1.0.0/*",
-      "destination": "/jojo/SugarMate/v1.0.0/index.html"
-    },
-    {
-      "source": "/Eltonliz/SAAS/v1.0.0/*",
-      "destination": "/Eltonliz/SAAS/v1.0.0/index.html"
-    },
-    {
-      "source": "/Eltonliz/AI-SCRM/v1.0.0/*",
-      "destination": "/Eltonliz/AI-SCRM/v1.0.0/index.html"
-    },
-    {
-      "source": "/Eltonliz/SugarMate/v1.0.0/*",
-      "destination": "/Eltonliz/SugarMate/v1.0.0/index.html"
+      "source": "/*",
+      "destination": "/index.html"
     }
   ]
 }
