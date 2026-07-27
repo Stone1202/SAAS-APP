@@ -24,7 +24,7 @@ mkdir -p "$ARTIFACTS"
 PROJECTS=(
   "AI-SCRM|AI-SCRM|jojo"
   "SAAS|SAAS|jojo"
-  "糖尿病智慧健康平台|糖尿病智慧健康平台|jojo"
+  "SugarMate|SugarMate|jojo"
 )
 
 # ── 逐个构建 ──
@@ -47,8 +47,9 @@ for entry in "${PROJECTS[@]}"; do
   cd "$PROJECT_DIR"
   npm install --no-audit --no-fund
   
-  # 2. 构建
-  echo "  [2/3] npm run build:sim..."
+  # 2. 构建（设置 base 路径，让资源引用指向正确的子目录）
+  export VITE_BASE_PATH="/$member/$slug/v1.0.0/"
+  echo "  [2/3] npm run build:sim (base=$VITE_BASE_PATH)..."
   npm run build:sim
   
   # 3. 复制产物到 artifacts
