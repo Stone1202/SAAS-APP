@@ -9,8 +9,8 @@
       "destination": "/jojo/AI-SCRM/v1.0.0/index.html"
     },
     {
-      "source": "/jojo/*/v1.0.0/*",
-      "destination": "/jojo/$1/v1.0.0/index.html"
+      "source": "/jojo/SugarMate/v1.0.0/*",
+      "destination": "/jojo/SugarMate/v1.0.0/index.html"
     },
     {
       "source": "/Eltonliz/SAAS/v1.0.0/*",
@@ -21,8 +21,8 @@
       "destination": "/Eltonliz/AI-SCRM/v1.0.0/index.html"
     },
     {
-      "source": "/Eltonliz/*/v1.0.0/*",
-      "destination": "/Eltonliz/$1/v1.0.0/index.html"
+      "source": "/Eltonliz/SugarMate/v1.0.0/*",
+      "destination": "/Eltonliz/SugarMate/v1.0.0/index.html"
     }
   ]
 }
