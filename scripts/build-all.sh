@@ -57,6 +57,8 @@ for entry in "${PROJECTS[@]}"; do
   if [ -d "$PROJECT_DIR/dist" ]; then
     mkdir -p "$VERSION_DIR"
     cp -r "$PROJECT_DIR/dist"/* "$VERSION_DIR/"
+    # 删除项目级 edgeone.json，避免覆盖根级 rewrite 配置
+    rm -f "$VERSION_DIR/edgeone.json"
     echo "  [3/3] Copied to: $member/$slug/v1.0.0/ ($(find "$VERSION_DIR" -type f | wc -l) files)"
   else
     echo "  [3/3] ERROR: dist/ not found after build, skipping..."
@@ -75,16 +77,10 @@ else
 fi
 
 # ── EdgeOne Pages SPA fallback 配置 ──
-# 每个 SPA 子目录都需要独立的 edgeone.json（子路径 SPA fallback 机制）
+# 根目录 edgeone.json 配置所有子项目 SPA 的 rewrite fallback
 if [ -f "$EDGEONE_CONFIG" ]; then
-  # 根目录也放一份（门户可能也需要）
   cp "$EDGEONE_CONFIG" "$ARTIFACTS/edgeone.json"
-  # 复制到每个 SPA 版本目录
-  find "$ARTIFACTS" -type d -name "v*" | while read version_dir; do
-    cp "$EDGEONE_CONFIG" "$version_dir/edgeone.json"
-    echo "  SPA fallback: $version_dir/edgeone.json"
-  done
-  echo "=== EdgeOne Pages config copied (root + each SPA subdir) ==="
+  echo "=== EdgeOne Pages config copied to artifacts root ==="
 else
   echo "=== WARNING: EdgeOne Pages config not found ==="
 fi
