@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "build:sim": "vite build --mode sim",
+    "build:sim": "VITE_BASE_PATH=/jojo/SAAS/v1.0.0/ vite build --mode sim",
     "preview": "vite preview",
     "test": "vitest --run",
     "test:watch": "vitest",

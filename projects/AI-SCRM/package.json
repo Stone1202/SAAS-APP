@@ -7,7 +7,7 @@
     "dev": "vite --mode development",
     "dev:real": "vite --mode real",
     "build": "vite build --mode production",
-    "build:sim": "vite build --mode sim",
+    "build:sim": "VITE_BASE_PATH=/jojo/AI-SCRM/v1.0.0/ vite build --mode sim",
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
