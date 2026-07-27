@@ -230,12 +230,11 @@ tr:nth-child(even) td { background: #fafbfc; }
 
     <div class="uc-segment">
       <div class="uc-segment-title">相关用例</div>
-      <table>
-        <tr><th>元素ID</th><th>UI元素</th><th>关联UC</th><th>操作说明</th><th>对应BR</th></tr>
-        <tr><td>E-AUDIT-001-01</td><td>是否启用列</td><td>UC-AUDIT-001</td><td>查看租户审查开关启用状态</td><td>BR-AUDIT-001</td></tr>
-        <tr><td>E-AUDIT-001-02</td><td>操作列 / 直播审查开关</td><td>UC-AUDIT-001</td><td>点击打开审查开关二次确认弹窗</td><td>BR-AUDIT-001</td></tr>
-        <tr><td>E-AUDIT-001-03</td><td>二次确认弹窗</td><td>UC-AUDIT-001</td><td>切换审查开关状态并确认生效</td><td>BR-AUDIT-001</td></tr>
-      </table>
+      <ul class="element-list">
+        <li>租户列表中「是否启用」列直接展示审查开关状态（已启用/已停用）</li>
+        <li>点击操作列中的「直播审查开关」链接，弹出二次确认弹窗</li>
+        <li>弹窗展示当前开关状态、租户信息及切换影响说明，确认后生效</li>
+      </ul>
     </div>
   </div>
 
@@ -324,18 +323,21 @@ tr:nth-child(even) td { background: #fafbfc; }
 
     <div class="uc-segment">
       <div class="uc-segment-title">相关用例</div>
-      <table>
-        <tr><th>元素ID</th><th>UI元素</th><th>关联UC</th><th>操作说明</th><th>对应BR</th></tr>
-        <tr><td>E-AUDIT-002-01</td><td>「内容审查」Tab</td><td>UC-AUDIT-002</td><td>切换到内容审查面板，展示实时违规告警</td><td>BR-AUDIT-002</td></tr>
-        <tr><td>E-AUDIT-002-02</td><td>顶部告警统计区</td><td>UC-AUDIT-002</td><td>展示各级别违规数和处置统计</td><td>BR-AUDIT-003</td></tr>
-        <tr><td>E-AUDIT-002-03</td><td>查看历史违规记录按钮</td><td>UC-AUDIT-002</td><td>跳转到历史违规列表面板(PG-AUDIT-PC-004)</td><td>BR-AUDIT-005</td></tr>
-        <tr><td>E-AUDIT-002-04</td><td>违规列表筛选器</td><td>UC-AUDIT-002</td><td>按级别/状态/时间筛选违规记录</td><td>BR-AUDIT-003</td></tr>
-        <tr><td>E-AUDIT-002-05</td><td>违规列表项</td><td>UC-AUDIT-002</td><td>展示违规详情，点击查看详细信息面板</td><td>BR-AUDIT-003</td></tr>
-        <tr><td>E-AUDIT-002-06-01</td><td>「记录」按钮</td><td>UC-AUDIT-002</td><td>标记违规为已记录状态</td><td>BR-AUDIT-006</td></tr>
-        <tr><td>E-AUDIT-002-06-02</td><td>「断流」按钮</td><td>UC-AUDIT-002</td><td>切断推流终止直播，观众端显示「直播已结束」</td><td>BR-AUDIT-007</td></tr>
-        <tr><td>E-AUDIT-002-06-03</td><td>「忽略」按钮</td><td>UC-AUDIT-002</td><td>标记为非违规忽略处置</td><td>BR-AUDIT-008</td></tr>
-        <tr><td>E-AUDIT-002-07</td><td>擦音模式切换</td><td>UC-AUDIT-002</td><td>切换静音/擦音模式，实时同步到观众端</td><td>BR-AUDIT-009</td></tr>
-      </table>
+      <ul class="element-list">
+        <li>中控台「内容审查」Tab：切换到审查面板，实时接收违规告警PUSH并高亮显示</li>
+        <li>顶部告警统计区：实时展示各级别（L1-L4）违规数量和处置统计</li>
+        <li>「查看历史违规记录」按钮：打开历史违规列表面板</li>
+        <li>违规列表筛选器：按违规级别、处置状态、时间范围筛选违规记录</li>
+        <li>违规列表项：展示单条违规详情，点击可展开详细信息面板</li>
+        <li>处置操作按钮组：
+          <ul>
+            <li>「记录」：标记违规为已记录状态，不中断直播</li>
+            <li>「断流」：切断推流终止直播，观众端同步显示「直播已结束」</li>
+            <li>「忽略」：标记为非违规，忽略本次告警</li>
+          </ul>
+        </li>
+        <li>擦音模式切换：在静音/嘀声模式间切换，设置实时同步到观众端</li>
+      </ul>
     </div>
   </div>
 
@@ -414,19 +416,22 @@ tr:nth-child(even) td { background: #fafbfc; }
 
     <div class="uc-segment">
       <div class="uc-segment-title">相关用例</div>
-      <table>
-        <tr><th>元素ID</th><th>UI元素</th><th>关联UC</th><th>操作说明</th><th>对应BR</th></tr>
-        <tr><td>E-AUDIT-003-01</td><td>回放播放器</td><td>UC-AUDIT-003</td><td>播放回放视频，展示擦音处理后的效果</td><td>BR-AUDIT-010</td></tr>
-        <tr><td>E-AUDIT-003-02</td><td>擦音任务进度条</td><td>UC-AUDIT-003</td><td>展示擦音处理进度（待处理/进行中/已完成/失败）</td><td>BR-AUDIT-011</td></tr>
-        <tr><td>E-AUDIT-003-03</td><td>时间轴违规标记</td><td>UC-AUDIT-003</td><td>在时间轴上标记违规发生的时间点，点击跳转到对应位置</td><td>BR-AUDIT-012</td></tr>
-        <tr><td>E-AUDIT-003-04</td><td>违规记录列表</td><td>UC-AUDIT-003</td><td>展示回放中的违规记录详情和处置结果</td><td>BR-AUDIT-012</td></tr>
-        <tr><td>E-AUDIT-003-05</td><td>擦音模式选择</td><td>UC-AUDIT-003</td><td>选择静音或嘀声擦音模式</td><td>BR-AUDIT-009</td></tr>
-        <tr><td>E-AUDIT-003-06</td><td>「重新擦音」按钮</td><td>UC-AUDIT-003</td><td>驳回后重新触发擦音处理流程</td><td>BR-AUDIT-015</td></tr>
-        <tr><td>E-AUDIT-003-07</td><td>「核对通过·发布回放」按钮</td><td>UC-AUDIT-003</td><td>确认擦音结果无误，发布回放供观众观看</td><td>BR-AUDIT-004</td></tr>
-        <tr><td>E-AUDIT-003-08</td><td>「驳回重新擦音」按钮</td><td>UC-AUDIT-003</td><td>认为擦音结果不合格，驳回重新处理</td><td>BR-AUDIT-015</td></tr>
-        <tr><td>E-AUDIT-003-09</td><td>发布状态标签</td><td>UC-AUDIT-003</td><td>显示回放当前发布状态（待核对/已核对/已发布/已驳回）</td><td>BR-AUDIT-004</td></tr>
-        <tr><td>E-AUDIT-003-10</td><td>擦音前后对比面板</td><td>UC-AUDIT-003</td><td>并排展示擦音前后的音视频效果供人工对比核对</td><td>BR-AUDIT-013</td></tr>
-      </table>
+      <ul class="element-list">
+        <li>回放播放器：播放已生成的回放视频，展示擦音处理后的实际效果</li>
+        <li>擦音任务进度条：展示擦音处理进度（待处理/进行中/已完成/失败）</li>
+        <li>时间轴违规标记：在时间轴上高亮违规发生的时间点，点击可跳转到对应位置</li>
+        <li>违规记录列表：展示当前回放中的所有违规记录及处置结果</li>
+        <li>擦音模式选择：选择静音或嘀声擦音处理模式</li>
+        <li>操作按钮组：
+          <ul>
+            <li>「核对通过·发布回放」：确认擦音结果无误，正式发布回放供观众观看</li>
+            <li>「驳回重新擦音」：认为擦音结果不合格，驳回重新处理</li>
+            <li>「重新擦音」：驳回后重新触发擦音处理流程</li>
+          </ul>
+        </li>
+        <li>发布状态标签：显示回放当前状态（待核对/已核对/已发布/已驳回）</li>
+        <li>擦音前后对比面板：左右并排展示擦音前后效果，供人工对比核对</li>
+      </ul>
     </div>
   </div>
 
@@ -502,13 +507,12 @@ tr:nth-child(even) td { background: #fafbfc; }
 
     <div class="uc-segment">
       <div class="uc-segment-title">相关用例</div>
-      <table>
-        <tr><th>元素ID</th><th>UI元素</th><th>关联UC</th><th>操作说明</th><th>对应BR</th></tr>
-        <tr><td>E-AUDIT-006-01</td><td>播放器区域</td><td>UC-AUDIT-004</td><td>观看直播，接收擦音/静音效果和违规提示</td><td>BR-AUDIT-009</td></tr>
-        <tr><td>E-AUDIT-006-02</td><td>擦音/静音效果提示</td><td>UC-AUDIT-004</td><td>展示2-5秒静音或嘀声效果提示</td><td>BR-AUDIT-009</td></tr>
-        <tr><td>E-AUDIT-006-03</td><td>回调丢失提示</td><td>UC-AUDIT-004</td><td>模拟回调中断时展示re-connected提示</td><td>BR-AUDIT-016</td></tr>
-        <tr><td>E-AUDIT-006-04</td><td>直播结束提示</td><td>UC-AUDIT-004</td><td>运营执行断流后展示「直播已结束，因内容违规已终止」</td><td>BR-AUDIT-007</td></tr>
-      </table>
+      <ul class="element-list">
+        <li>播放器区域：正常观看直播，接收运营端实时同步的擦音/断流效果</li>
+        <li>擦音/静音效果提示：运营执行擦音时观众端展示2-5秒静音或嘀声提示</li>
+        <li>回调丢失提示：模拟回调信号中断场景，展示重连提示</li>
+        <li>直播结束提示：运营执行断流后，展示「直播已结束，因内容违规已终止」</li>
+      </ul>
     </div>
   </div>
 
@@ -581,18 +585,25 @@ tr:nth-child(even) td { background: #fafbfc; }
 
     <div class="uc-segment">
       <div class="uc-segment-title">相关用例</div>
-      <table>
-        <tr><th>元素ID</th><th>UI元素</th><th>关联UC</th><th>操作说明</th><th>对应BR</th></tr>
-        <tr><td>E-AUDIT-005-01</td><td>直播管理 / 回放管理 Tab</td><td>UC-AUDIT-005</td><td>切换直播和回放两个管理视图</td><td>BR-AUDIT-014</td></tr>
-        <tr><td>E-AUDIT-005-02</td><td>直播状态标签</td><td>UC-AUDIT-005</td><td>展示直播场次当前状态（直播中/已结束）</td><td>BR-AUDIT-014</td></tr>
-        <tr><td>E-AUDIT-005-03</td><td>「中控台」按钮</td><td>UC-AUDIT-005, UC-AUDIT-002</td><td>进入直播中控台审查面板</td><td>BR-AUDIT-002</td></tr>
-        <tr><td>E-AUDIT-005-04</td><td>「更多」下拉菜单</td><td>UC-AUDIT-005</td><td>展开更多操作入口（历史违规/回放详情等）</td><td>BR-AUDIT-005</td></tr>
-        <tr><td>E-AUDIT-005-05</td><td>擦音状态标签</td><td>UC-AUDIT-005, UC-AUDIT-003</td><td>展示回放擦音处理状态</td><td>BR-AUDIT-011</td></tr>
-        <tr><td>E-AUDIT-005-06</td><td>发布状态标签</td><td>UC-AUDIT-005, UC-AUDIT-003</td><td>展示回放发布状态</td><td>BR-AUDIT-004</td></tr>
-        <tr><td>E-AUDIT-005-07</td><td>「核对并发布」按钮</td><td>UC-AUDIT-005, UC-AUDIT-003</td><td>进入回放详情页进行擦音结果核对和发布</td><td>BR-AUDIT-004</td></tr>
-        <tr><td>E-AUDIT-005-08</td><td>更多 - 查看历史违规</td><td>UC-AUDIT-005, UC-AUDIT-002</td><td>进入历史违规列表面板</td><td>BR-AUDIT-005</td></tr>
-        <tr><td>E-AUDIT-005-09</td><td>更多 - 查看回放</td><td>UC-AUDIT-005, UC-AUDIT-003</td><td>进入回放详情页审查擦音结果</td><td>BR-AUDIT-010</td></tr>
-      </table>
+      <ul class="element-list">
+        <li>直播管理/回放管理 Tab：切换直播和回放两个管理视图</li>
+        <li>直播状态标签：展示每场直播的当前状态（直播中/已结束）</li>
+        <li>「中控台」按钮：进入直播中控台，是 UC-AUDIT-002 的核心操作入口</li>
+        <li>「更多」下拉菜单：展开辅助操作入口</li>
+        <li>回放字段标签：
+          <ul>
+            <li>擦音状态标签：展示回放的擦音处理进度</li>
+            <li>发布状态标签：展示回放发布状态（对应 UC-AUDIT-003 的核对发布结果）</li>
+          </ul>
+        </li>
+        <li>「核对并发布」按钮：进入回放详情页，是 UC-AUDIT-003 的核对入口</li>
+        <li>「更多」菜单项：
+          <ul>
+            <li>查看历史违规：进入历史违规记录列表</li>
+            <li>查看回放：进入回放详情页审查擦音结果</li>
+          </ul>
+        </li>
+      </ul>
     </div>
   </div>
 </div>

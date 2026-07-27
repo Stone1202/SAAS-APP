@@ -1,6 +1,7 @@
 # 版本快照 — V1.0.0
 # 项目：SAAS | 需求流：STR-SAAS-001 直播内容审查
-# 快照时间：2026-07-27T12:00+08:00
+# 快照时间：2026-07-27（首次close 12:00，re-close 更新）
+# re-close 变更：PRD HTML「相关用例」格式优化 + ViolationsPanel 类型修复
 
 version:
   major: 1
