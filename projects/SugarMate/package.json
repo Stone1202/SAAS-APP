@@ -9,7 +9,7 @@
     "mock": "node mock-server/server.ts",
     "dev:mock": "concurrently \"vite --mode real\" \"node mock-server/server.ts\"",
     "build": "vite build --mode production",
-    "build:sim": "vite build --mode sim",
+    "build:sim": "vite build --mode sim && node -e \"const f=require('fs');let h=f.readFileSync('dist/index.html','utf8');h=h.replace(/ crossorigin/g,'');f.writeFileSync('dist/index.html',h);console.log('  crossorigin removed')\"",
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
