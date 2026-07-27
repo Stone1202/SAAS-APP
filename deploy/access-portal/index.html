@@ -258,6 +258,45 @@
       transform: translateX(0);
     }
 
+    /* ── Terminal Quick Access ── */
+    .version-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .terminal-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding-left: 2px;
+    }
+    .terminal-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 11px;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 500;
+      text-decoration: none;
+      color: var(--primary);
+      background: var(--primary-light);
+      border: 1px solid #c7d2fe;
+      transition: all 0.15s;
+    }
+    .terminal-btn:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    .terminal-btn .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.6;
+    }
+
     /* ── Empty State ── */
     .empty-state {
       text-align: center;
@@ -335,8 +374,12 @@
                   { 
                     version: "v1.0.0", 
                     timestamp: "2026-07-21", 
-                    url: "./jojo/AI-SCRM/v1.0.0/index.html",
-                    status: "deployed"
+                    url: "./jojo/AI-SCRM/v1.0.0/",
+                    status: "deployed",
+                    terminals: [
+                      { name: "租户后台 PC", path: "./jojo/AI-SCRM/v1.0.0/tenant", default: true },
+                      { name: "运营后台 PC", path: "./jojo/AI-SCRM/v1.0.0/ops" }
+                    ]
                   }
                 ]
               },
@@ -350,8 +393,13 @@
                   { 
                     version: "v1.0.0", 
                     timestamp: "2026-07-27", 
-                    url: "./jojo/SAAS/v1.0.0/index.html",
-                    status: "deployed"
+                    url: "./jojo/SAAS/v1.0.0/",
+                    status: "deployed",
+                    terminals: [
+                      { name: "租户后台 PC", path: "./jojo/SAAS/v1.0.0/tenant/dashboard", default: true },
+                      { name: "运营后台 PC", path: "./jojo/SAAS/v1.0.0/admin/tenant" },
+                      { name: "观众端 H5", path: "./jojo/SAAS/v1.0.0/h5/live/demo-room-001" }
+                    ]
                   }
                 ]
               },
@@ -365,7 +413,7 @@
                   { 
                     version: "v1.0.0", 
                     timestamp: "2026-07-27", 
-                    url: "./jojo/糖尿病智慧健康平台/v1.0.0/index.html",
+                    url: "./jojo/糖尿病智慧健康平台/v1.0.0/",
                     status: "deployed"
                   }
                 ]
@@ -387,8 +435,12 @@
                   { 
                     version: "v1.0.0", 
                     timestamp: "2026-07-21", 
-                    url: "./Eltonliz/AI-SCRM/v1.0.0/index.html",
-                    status: "deployed"
+                    url: "./Eltonliz/AI-SCRM/v1.0.0/",
+                    status: "deployed",
+                    terminals: [
+                      { name: "租户后台 PC", path: "./Eltonliz/AI-SCRM/v1.0.0/tenant", default: true },
+                      { name: "运营后台 PC", path: "./Eltonliz/AI-SCRM/v1.0.0/ops" }
+                    ]
                   }
                 ]
               },
@@ -402,8 +454,13 @@
                   { 
                     version: "v1.0.0", 
                     timestamp: "2026-07-27", 
-                    url: "./Eltonliz/SAAS/v1.0.0/index.html",
-                    status: "deployed"
+                    url: "./Eltonliz/SAAS/v1.0.0/",
+                    status: "deployed",
+                    terminals: [
+                      { name: "租户后台 PC", path: "./Eltonliz/SAAS/v1.0.0/tenant/dashboard", default: true },
+                      { name: "运营后台 PC", path: "./Eltonliz/SAAS/v1.0.0/admin/tenant" },
+                      { name: "观众端 H5", path: "./Eltonliz/SAAS/v1.0.0/h5/live/demo-room-001" }
+                    ]
                   }
                 ]
               }
@@ -474,13 +531,25 @@
           html += '<div class="version-list">';
           project.versions.forEach(function(v) {
             var statusDot = v.status === 'deployed' ? 'dot-deployed' : 'dot-pending';
+            var hasTerminals = v.terminals && v.terminals.length > 0;
+            html += '<div class="version-item">';
             html += '<a class="version-link" href="' + v.url + '" target="_blank" rel="noopener">';
             html += '<span class="version-tag"><span class="dot ' + statusDot + '"></span>' + e(v.version) + '</span>';
             html += '<span class="deploy-info">';
             html += '<span class="preview-icon">→</span>';
-            html += '<span>预览原型</span>';
+            html += '<span>' + (hasTerminals ? '默认入口' : '预览原型') + '</span>';
             html += '</span>';
             html += '</a>';
+            if (hasTerminals) {
+              html += '<div class="terminal-list">';
+              v.terminals.forEach(function(t) {
+                html += '<a class="terminal-btn" href="' + t.path + '" target="_blank" rel="noopener" title="' + e(t.name) + '">';
+                html += '<span class="dot"></span>' + e(t.name);
+                html += '</a>';
+              });
+              html += '</div>';
+            }
+            html += '</div>';
           });
           html += '</div>';
 
