@@ -4,10 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SAAS 内容审查域 v1.0.0 — 需求文档</title>
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-<script>
-mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
-</script>
+<!-- 五类图已预渲染为高清PNG，无需Mermaid JS运行时 -->
 <style>
 :root {
   --c-bg: #f8f9fa;
@@ -119,148 +116,38 @@ tr:nth-child(even) td { background: #fafbfc; }
   </div>
 </div>
 
-<!-- 一、五类图 -->
+<!-- 一、五类图（高清PNG，2400dpi） -->
 <div class="section" id="diagrams">
   <div class="section-title"><span class="num">1</span> 五类图</div>
 
   <div class="mermaid-wrap">
     <div class="diagram-label">图1 — 业务流程图</div>
-    <div class="mermaid">
-flowchart TB
-    A[平台运营管理审查开关] --> B{租户审查开关}
-    B -->|开启| C[租户直播中控显示内容审查Tab]
-    B -->|关闭| C2[主播正常直播无干扰]
-    C --> D[主播开始直播/推流模拟]
-    C2 --> D
-    D --> E[模拟回调数据生成器触发违规事件]
-    E --> F{检测到违规?}
-    F -->|是| G[直播中控展示违规告警]
-    F -->|否| H[正常直播继续]
-    G --> I{运营处置}
-    I -->|记录| J[记录违规不打断直播]
-    I -->|断流| K[切断推流终止直播]
-    I -->|忽略| L[标记非违规]
-    I -->|30秒超时| J
-    G --> M{直播中途关闭审查?}
-    M -->|是| M2[违规列表只读+待处理自动归档]
-    H --> N[直播结束→回放文件生成]
-    J --> N
-    K --> N
-    L --> N
-    N --> O[触发回放擦音模拟]
-    O --> P{擦音结果}
-    P -->|成功| Q[展示擦音前后对比→待人工核对]
-    P -->|超时| Q2[播放器锁定+手动重试]
-    P -->|失败| Q3[展示原片+警告标注+可重试]
-    Q --> R1{人工核对}
-    R1 -->|核对通过| R2[运营确认发布→观众可看回放]
-    R1 -->|驳回| R3[重新擦音→回到O]
-    E --> S[观众端感知擦音效果]
-    S --> T{擦音模式}
-    T -->|静音| U["🔇静音2-5秒"]
-    T -->|擦音| V["🎧嘀声2-5秒"]
-    K --> W["观众端: 直播已结束，因内容违规已终止"]
-    M2 --> X[观众端: 擦音效果停止]
-    </div>
+    <img src="screenshots/DIAG-01-业务流程图.png" alt="业务流程图" style="width:100%;border-radius:6px;" loading="lazy">
   </div>
 
   <div class="mermaid-wrap">
     <div class="diagram-label">图2 — 信息流转图</div>
-    <div class="mermaid">
-flowchart LR
-    subgraph 模拟层
-        Mock[模拟回调数据生成器]
-    end
-    subgraph 租户后台
-        Ctrl[直播中控审查Tab]
-        Disp[处置服务]
-    end
-    subgraph 观众端
-        Viewer[观众直播间]
-    end
-    subgraph 存储
-        DB[(违规记录-Mock)]
-    end
-    Mock -->|违规事件| Ctrl
-    Mock -->|擦音触发| Viewer
-    Ctrl -->|处置指令| Disp
-    Disp -->|处置记录| DB
-    Ctrl -->|擦音模式切换| Viewer
-    Viewer -->|静音/擦音效果| Viewer
-    </div>
+    <img src="screenshots/DIAG-02-信息流转图.png" alt="信息流转图" style="width:100%;border-radius:6px;" loading="lazy">
   </div>
 
   <div class="mermaid-wrap">
     <div class="diagram-label">图3 — 违规处置状态机</div>
-    <div class="mermaid">
-stateDiagram-v2
-    [*] --> 待处理: 模拟违规事件触发
-    待处理 --> 已记录: 运营选择记录
-    待处理 --> 已断流: 运营选择断流
-    待处理 --> 已忽略: 运营选择忽略
-    待处理 --> 已超时: 30秒未处置
-    待处理 --> 已归档: 审查关闭/场次结束
-    已超时 --> 已记录: 系统自动记录
-    已记录 --> [*]
-    已断流 --> [*]
-    已忽略 --> [*]
-    已归档 --> [*]
-    </div>
+    <img src="screenshots/DIAG-03-违规处置状态机.png" alt="违规处置状态机" style="width:100%;border-radius:6px;" loading="lazy">
   </div>
 
   <div class="mermaid-wrap">
     <div class="diagram-label">图4 — 回放发布状态机（v1.0.2新增）</div>
-    <div class="mermaid">
-stateDiagram-v2
-    [*] --> 待核对: 擦音完成
-    待核对 --> 已核对: 运营核对通过
-    待核对 --> 已驳回: 运营驳回
-    已核对 --> 已发布: 运营确认发布
-    已驳回 --> 待核对: 重新擦音完成
-    已发布 --> [*]
-    </div>
+    <img src="screenshots/DIAG-04-回放发布状态机.png" alt="回放发布状态机" style="width:100%;border-radius:6px;" loading="lazy">
   </div>
 
   <div class="mermaid-wrap">
     <div class="diagram-label">图5 — 业务时序图</div>
-    <div class="mermaid">
-sequenceDiagram
-    participant Mock as 模拟数据生成器
-    participant Ctrl as 直播中控
-    participant 运营 as 直播运营
-    participant Viewer as 观众端
-    participant Playback as 回放擦音模拟
-    Mock->>Ctrl: 模拟违规事件（定时触发）
-    Ctrl->>Ctrl: 展示告警+违规列表
-    Ctrl->>运营: 实时推送告警
-    运营->>Ctrl: 处置（记录/断流/忽略）
-    Ctrl->>Ctrl: 更新处置状态
-    Mock->>Viewer: 模拟擦音触发
-    Viewer->>Viewer: 展示静音/擦音效果（2-5秒）
-    Note over Mock,Playback: 直播结束
-    Mock->>Playback: 模拟回放文件生成
-    Playback->>Playback: 擦音处理模拟
-    Playback->>Playback: 擦音完成→待核对
-    Playback->>运营: 展示擦音前后对比
-    运营->>Playback: 核对通过·发布回放
-    Playback->>Playback: 发布完成→观众可观看回放
-    </div>
+    <img src="screenshots/DIAG-05-业务时序图.png" alt="业务时序图" style="width:100%;border-radius:6px;" loading="lazy">
   </div>
 
   <div class="mermaid-wrap">
     <div class="diagram-label">图6 — 三方接口时序图（V1模拟版）</div>
-    <div class="mermaid">
-sequenceDiagram
-    Note over Mock,Viewer: V1纯前端模拟，不对接腾讯云API
-    Mock->>Mock: 定时器生成模拟违规事件
-    Note right of Mock: "模拟字段: hit_flag/score/label<br/>suggestion/asr_text/duration/seq/stream_id"
-    Mock->>Ctrl: 模拟回调推送
-    Ctrl->>Ctrl: 签名验证（模拟跳过）
-    Ctrl->>Ctrl: 全量存储（Mock数据）
-    Ctrl->>Ctrl: 实时展示告警
-    Mock->>Viewer: 模拟擦音触发
-    Viewer->>Viewer: 静音/擦音效果展示
-    </div>
+    <img src="screenshots/DIAG-06-三方接口时序图.png" alt="三方接口时序图" style="width:100%;border-radius:6px;" loading="lazy">
   </div>
 </div>
 
@@ -342,12 +229,12 @@ sequenceDiagram
     </div>
 
     <div class="uc-segment">
-      <div class="uc-segment-title">元素级帮助入口</div>
+      <div class="uc-segment-title">相关用例</div>
       <table>
-        <tr><th>元素ID</th><th>元素名称</th><th>对应BR</th></tr>
-        <tr><td>E-AUDIT-001-01</td><td>是否启用列</td><td>BR-AUDIT-001</td></tr>
-        <tr><td>E-AUDIT-001-02</td><td>操作列 / 直播审查开关</td><td>BR-AUDIT-001</td></tr>
-        <tr><td>E-AUDIT-001-03</td><td>二次确认弹窗</td><td>BR-AUDIT-001</td></tr>
+        <tr><th>元素ID</th><th>UI元素</th><th>关联UC</th><th>操作说明</th><th>对应BR</th></tr>
+        <tr><td>E-AUDIT-001-01</td><td>是否启用列</td><td>UC-AUDIT-001</td><td>查看租户审查开关启用状态</td><td>BR-AUDIT-001</td></tr>
+        <tr><td>E-AUDIT-001-02</td><td>操作列 / 直播审查开关</td><td>UC-AUDIT-001</td><td>点击打开审查开关二次确认弹窗</td><td>BR-AUDIT-001</td></tr>
+        <tr><td>E-AUDIT-001-03</td><td>二次确认弹窗</td><td>UC-AUDIT-001</td><td>切换审查开关状态并确认生效</td><td>BR-AUDIT-001</td></tr>
       </table>
     </div>
   </div>
@@ -436,18 +323,18 @@ sequenceDiagram
     </div>
 
     <div class="uc-segment">
-      <div class="uc-segment-title">元素级帮助入口</div>
+      <div class="uc-segment-title">相关用例</div>
       <table>
-        <tr><th>元素ID</th><th>元素名称</th><th>对应BR</th></tr>
-        <tr><td>E-AUDIT-002-01</td><td>「内容审查」Tab</td><td>BR-AUDIT-002</td></tr>
-        <tr><td>E-AUDIT-002-02</td><td>顶部告警统计区</td><td>BR-AUDIT-003</td></tr>
-        <tr><td>E-AUDIT-002-03</td><td>查看历史违规记录按钮</td><td>BR-AUDIT-005</td></tr>
-        <tr><td>E-AUDIT-002-04</td><td>违规列表筛选器</td><td>BR-AUDIT-003</td></tr>
-        <tr><td>E-AUDIT-002-05</td><td>违规列表项</td><td>BR-AUDIT-003</td></tr>
-        <tr><td>E-AUDIT-002-06-01</td><td>「记录」按钮</td><td>BR-AUDIT-006</td></tr>
-        <tr><td>E-AUDIT-002-06-02</td><td>「断流」按钮</td><td>BR-AUDIT-007</td></tr>
-        <tr><td>E-AUDIT-002-06-03</td><td>「忽略」按钮</td><td>BR-AUDIT-008</td></tr>
-        <tr><td>E-AUDIT-002-07</td><td>擦音模式切换</td><td>BR-AUDIT-009</td></tr>
+        <tr><th>元素ID</th><th>UI元素</th><th>关联UC</th><th>操作说明</th><th>对应BR</th></tr>
+        <tr><td>E-AUDIT-002-01</td><td>「内容审查」Tab</td><td>UC-AUDIT-002</td><td>切换到内容审查面板，展示实时违规告警</td><td>BR-AUDIT-002</td></tr>
+        <tr><td>E-AUDIT-002-02</td><td>顶部告警统计区</td><td>UC-AUDIT-002</td><td>展示各级别违规数和处置统计</td><td>BR-AUDIT-003</td></tr>
+        <tr><td>E-AUDIT-002-03</td><td>查看历史违规记录按钮</td><td>UC-AUDIT-002</td><td>跳转到历史违规列表面板(PG-AUDIT-PC-004)</td><td>BR-AUDIT-005</td></tr>
+        <tr><td>E-AUDIT-002-04</td><td>违规列表筛选器</td><td>UC-AUDIT-002</td><td>按级别/状态/时间筛选违规记录</td><td>BR-AUDIT-003</td></tr>
+        <tr><td>E-AUDIT-002-05</td><td>违规列表项</td><td>UC-AUDIT-002</td><td>展示违规详情，点击查看详细信息面板</td><td>BR-AUDIT-003</td></tr>
+        <tr><td>E-AUDIT-002-06-01</td><td>「记录」按钮</td><td>UC-AUDIT-002</td><td>标记违规为已记录状态</td><td>BR-AUDIT-006</td></tr>
+        <tr><td>E-AUDIT-002-06-02</td><td>「断流」按钮</td><td>UC-AUDIT-002</td><td>切断推流终止直播，观众端显示「直播已结束」</td><td>BR-AUDIT-007</td></tr>
+        <tr><td>E-AUDIT-002-06-03</td><td>「忽略」按钮</td><td>UC-AUDIT-002</td><td>标记为非违规忽略处置</td><td>BR-AUDIT-008</td></tr>
+        <tr><td>E-AUDIT-002-07</td><td>擦音模式切换</td><td>UC-AUDIT-002</td><td>切换静音/擦音模式，实时同步到观众端</td><td>BR-AUDIT-009</td></tr>
       </table>
     </div>
   </div>
@@ -526,19 +413,19 @@ sequenceDiagram
     </div>
 
     <div class="uc-segment">
-      <div class="uc-segment-title">元素级帮助入口</div>
+      <div class="uc-segment-title">相关用例</div>
       <table>
-        <tr><th>元素ID</th><th>元素名称</th><th>对应BR</th></tr>
-        <tr><td>E-AUDIT-003-01</td><td>回放播放器</td><td>BR-AUDIT-010</td></tr>
-        <tr><td>E-AUDIT-003-02</td><td>擦音任务进度条</td><td>BR-AUDIT-011</td></tr>
-        <tr><td>E-AUDIT-003-03</td><td>时间轴违规标记</td><td>BR-AUDIT-012</td></tr>
-        <tr><td>E-AUDIT-003-04</td><td>违规记录列表</td><td>BR-AUDIT-012</td></tr>
-        <tr><td>E-AUDIT-003-05</td><td>擦音模式选择</td><td>BR-AUDIT-009</td></tr>
-        <tr><td>E-AUDIT-003-06</td><td>「重新擦音」按钮</td><td>BR-AUDIT-015</td></tr>
-        <tr><td>E-AUDIT-003-07</td><td>「核对通过·发布回放」按钮</td><td>BR-AUDIT-004</td></tr>
-        <tr><td>E-AUDIT-003-08</td><td>「驳回重新擦音」按钮</td><td>BR-AUDIT-015</td></tr>
-        <tr><td>E-AUDIT-003-09</td><td>发布状态标签</td><td>BR-AUDIT-004</td></tr>
-        <tr><td>E-AUDIT-003-10</td><td>擦音前后对比面板</td><td>BR-AUDIT-013</td></tr>
+        <tr><th>元素ID</th><th>UI元素</th><th>关联UC</th><th>操作说明</th><th>对应BR</th></tr>
+        <tr><td>E-AUDIT-003-01</td><td>回放播放器</td><td>UC-AUDIT-003</td><td>播放回放视频，展示擦音处理后的效果</td><td>BR-AUDIT-010</td></tr>
+        <tr><td>E-AUDIT-003-02</td><td>擦音任务进度条</td><td>UC-AUDIT-003</td><td>展示擦音处理进度（待处理/进行中/已完成/失败）</td><td>BR-AUDIT-011</td></tr>
+        <tr><td>E-AUDIT-003-03</td><td>时间轴违规标记</td><td>UC-AUDIT-003</td><td>在时间轴上标记违规发生的时间点，点击跳转到对应位置</td><td>BR-AUDIT-012</td></tr>
+        <tr><td>E-AUDIT-003-04</td><td>违规记录列表</td><td>UC-AUDIT-003</td><td>展示回放中的违规记录详情和处置结果</td><td>BR-AUDIT-012</td></tr>
+        <tr><td>E-AUDIT-003-05</td><td>擦音模式选择</td><td>UC-AUDIT-003</td><td>选择静音或嘀声擦音模式</td><td>BR-AUDIT-009</td></tr>
+        <tr><td>E-AUDIT-003-06</td><td>「重新擦音」按钮</td><td>UC-AUDIT-003</td><td>驳回后重新触发擦音处理流程</td><td>BR-AUDIT-015</td></tr>
+        <tr><td>E-AUDIT-003-07</td><td>「核对通过·发布回放」按钮</td><td>UC-AUDIT-003</td><td>确认擦音结果无误，发布回放供观众观看</td><td>BR-AUDIT-004</td></tr>
+        <tr><td>E-AUDIT-003-08</td><td>「驳回重新擦音」按钮</td><td>UC-AUDIT-003</td><td>认为擦音结果不合格，驳回重新处理</td><td>BR-AUDIT-015</td></tr>
+        <tr><td>E-AUDIT-003-09</td><td>发布状态标签</td><td>UC-AUDIT-003</td><td>显示回放当前发布状态（待核对/已核对/已发布/已驳回）</td><td>BR-AUDIT-004</td></tr>
+        <tr><td>E-AUDIT-003-10</td><td>擦音前后对比面板</td><td>UC-AUDIT-003</td><td>并排展示擦音前后的音视频效果供人工对比核对</td><td>BR-AUDIT-013</td></tr>
       </table>
     </div>
   </div>
@@ -614,13 +501,13 @@ sequenceDiagram
     </div>
 
     <div class="uc-segment">
-      <div class="uc-segment-title">元素级帮助入口</div>
+      <div class="uc-segment-title">相关用例</div>
       <table>
-        <tr><th>元素ID</th><th>元素名称</th><th>对应BR</th></tr>
-        <tr><td>E-AUDIT-006-01</td><td>播放器区域</td><td>BR-AUDIT-009</td></tr>
-        <tr><td>E-AUDIT-006-02</td><td>擦音/静音效果提示</td><td>BR-AUDIT-009</td></tr>
-        <tr><td>E-AUDIT-006-03</td><td>回调丢失提示</td><td>BR-AUDIT-016</td></tr>
-        <tr><td>E-AUDIT-006-04</td><td>直播结束提示</td><td>BR-AUDIT-007</td></tr>
+        <tr><th>元素ID</th><th>UI元素</th><th>关联UC</th><th>操作说明</th><th>对应BR</th></tr>
+        <tr><td>E-AUDIT-006-01</td><td>播放器区域</td><td>UC-AUDIT-004</td><td>观看直播，接收擦音/静音效果和违规提示</td><td>BR-AUDIT-009</td></tr>
+        <tr><td>E-AUDIT-006-02</td><td>擦音/静音效果提示</td><td>UC-AUDIT-004</td><td>展示2-5秒静音或嘀声效果提示</td><td>BR-AUDIT-009</td></tr>
+        <tr><td>E-AUDIT-006-03</td><td>回调丢失提示</td><td>UC-AUDIT-004</td><td>模拟回调中断时展示re-connected提示</td><td>BR-AUDIT-016</td></tr>
+        <tr><td>E-AUDIT-006-04</td><td>直播结束提示</td><td>UC-AUDIT-004</td><td>运营执行断流后展示「直播已结束，因内容违规已终止」</td><td>BR-AUDIT-007</td></tr>
       </table>
     </div>
   </div>
@@ -693,18 +580,18 @@ sequenceDiagram
     </div>
 
     <div class="uc-segment">
-      <div class="uc-segment-title">元素级帮助入口</div>
+      <div class="uc-segment-title">相关用例</div>
       <table>
-        <tr><th>元素ID</th><th>元素名称</th><th>对应BR</th></tr>
-        <tr><td>E-AUDIT-005-01</td><td>直播管理 / 回放管理 Tab</td><td>BR-AUDIT-014</td></tr>
-        <tr><td>E-AUDIT-005-02</td><td>直播状态标签</td><td>BR-AUDIT-014</td></tr>
-        <tr><td>E-AUDIT-005-03</td><td>「中控台」按钮</td><td>BR-AUDIT-002</td></tr>
-        <tr><td>E-AUDIT-005-04</td><td>「更多」下拉菜单</td><td>BR-AUDIT-005</td></tr>
-        <tr><td>E-AUDIT-005-05</td><td>擦音状态标签</td><td>BR-AUDIT-011</td></tr>
-        <tr><td>E-AUDIT-005-06</td><td>发布状态标签</td><td>BR-AUDIT-004</td></tr>
-        <tr><td>E-AUDIT-005-07</td><td>「核对并发布」按钮</td><td>BR-AUDIT-004</td></tr>
-        <tr><td>E-AUDIT-005-08</td><td>更多 - 查看历史违规</td><td>BR-AUDIT-005</td></tr>
-        <tr><td>E-AUDIT-005-09</td><td>更多 - 查看回放</td><td>BR-AUDIT-010</td></tr>
+        <tr><th>元素ID</th><th>UI元素</th><th>关联UC</th><th>操作说明</th><th>对应BR</th></tr>
+        <tr><td>E-AUDIT-005-01</td><td>直播管理 / 回放管理 Tab</td><td>UC-AUDIT-005</td><td>切换直播和回放两个管理视图</td><td>BR-AUDIT-014</td></tr>
+        <tr><td>E-AUDIT-005-02</td><td>直播状态标签</td><td>UC-AUDIT-005</td><td>展示直播场次当前状态（直播中/已结束）</td><td>BR-AUDIT-014</td></tr>
+        <tr><td>E-AUDIT-005-03</td><td>「中控台」按钮</td><td>UC-AUDIT-005, UC-AUDIT-002</td><td>进入直播中控台审查面板</td><td>BR-AUDIT-002</td></tr>
+        <tr><td>E-AUDIT-005-04</td><td>「更多」下拉菜单</td><td>UC-AUDIT-005</td><td>展开更多操作入口（历史违规/回放详情等）</td><td>BR-AUDIT-005</td></tr>
+        <tr><td>E-AUDIT-005-05</td><td>擦音状态标签</td><td>UC-AUDIT-005, UC-AUDIT-003</td><td>展示回放擦音处理状态</td><td>BR-AUDIT-011</td></tr>
+        <tr><td>E-AUDIT-005-06</td><td>发布状态标签</td><td>UC-AUDIT-005, UC-AUDIT-003</td><td>展示回放发布状态</td><td>BR-AUDIT-004</td></tr>
+        <tr><td>E-AUDIT-005-07</td><td>「核对并发布」按钮</td><td>UC-AUDIT-005, UC-AUDIT-003</td><td>进入回放详情页进行擦音结果核对和发布</td><td>BR-AUDIT-004</td></tr>
+        <tr><td>E-AUDIT-005-08</td><td>更多 - 查看历史违规</td><td>UC-AUDIT-005, UC-AUDIT-002</td><td>进入历史违规列表面板</td><td>BR-AUDIT-005</td></tr>
+        <tr><td>E-AUDIT-005-09</td><td>更多 - 查看回放</td><td>UC-AUDIT-005, UC-AUDIT-003</td><td>进入回放详情页审查擦音结果</td><td>BR-AUDIT-010</td></tr>
       </table>
     </div>
   </div>
@@ -732,23 +619,6 @@ sequenceDiagram
     <div class="br-item"><span class="br-id">BR-AUDIT-019</span><div class="br-text">回放擦音异常降级规则：超时→播放器锁定；失败→原片+警告</div></div>
     <div class="br-item"><span class="br-id">BR-AUDIT-020</span><div class="br-text">审查开关运行时变更规则：直播中途关闭→立即只读+归档</div></div>
   </div>
-</div>
-
-<!-- 四、验收结论 -->
-<div class="section" id="acceptance">
-  <div class="section-title"><span class="num">4</span> 验收结论</div>
-  <div class="accept-stats">
-    <div class="accept-stat"><div class="val">5/5</div><div class="lbl">UC 通过</div></div>
-    <div class="accept-stat"><div class="val">100%</div><div class="lbl">Happy Path</div></div>
-    <div class="accept-stat"><div class="val">4/4</div><div class="lbl">业务链路</div></div>
-    <div class="accept-stat"><div class="val">0</div><div class="lbl">遗留Bug</div></div>
-  </div>
-  <p style="margin-top:16px;font-size:14px;color:var(--c-text-muted);">
-    <b style="color:var(--c-green);">✅ 验收通过。</b>直播内容审查 v1.0.0 交付质量满足发布标准：核心功能链路（开关→审查→处置→回放→发布→观众感知）完整可用，3个终端（运营后台/租户后台/H5观众端）页面渲染正常，0个阻塞性Bug。
-  </p>
-  <p style="margin-top:8px;font-size:13px;color:var(--c-text-muted);">
-    验收报告：docs/05-acceptance/accept-reports/ACR-audit-v1.0.0-20260727.md ｜ 实时截图：prd-html/screenshots/ (7张，2026-07-27 dev server 实时截取)
-  </p>
 </div>
 
 <!-- FOOTER -->
