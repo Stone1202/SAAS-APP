@@ -9,11 +9,14 @@ node_modules/
 # Deploy artifacts（聚合部署产物，运行时生成）
 deploy/artifacts/
 
-# Build output
-dist/
-**/dist/
+# Build output（projects/*/dist 必须提交，让 EdgeOne clone 时能拿到构建产物）
+# 但 scripts 下的 dist 不提交
+projects/*/dist/
 build/
 **/build/
+
+# scripts 工具脚本目录的构建输出（不提交）
+scripts/**/dist/
 
 # CodeBuddy runtime（不提交运行时状态和报告）
 .codebuddy/reports/
