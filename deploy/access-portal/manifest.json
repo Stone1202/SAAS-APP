@@ -1,6 +1,6 @@
 {
   "version": "v3.0.0",
-  "comment": "V3.0.1 — AI-SCRM / SAAS 统一使用用户域名 prototype.jycao.cn 下的子目录",
+  "comment": "V3.0.2 — SAAS PRD 链接修正为 SAAS-v1.0.0-S1.html，终端标签支持点击跳转",
   "generated_at": "2026-07-29T16:30+08:00",
   "members": [
     {
@@ -28,7 +28,7 @@
             {
               "version": "v1.0.0",
               "url": "./jojo/SAAS/v1.0.0/",
-              "prd_doc_url": "./jojo/SAAS/v1.0.0/prd.html"
+              "prd_doc_url": "./jojo/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"
             }
           ]
         }
@@ -59,7 +59,7 @@
             {
               "version": "v1.0.0",
               "url": "./Eltonliz/SAAS/v1.0.0/",
-              "prd_doc_url": "./Eltonliz/SAAS/v1.0.0/prd.html"
+              "prd_doc_url": "./Eltonliz/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"
             }
           ]
         }
@@ -90,7 +90,7 @@
             {
               "version": "v1.0.0",
               "url": "./fuyongjian/SAAS/v1.0.0/",
-              "prd_doc_url": "./fuyongjian/SAAS/v1.0.0/prd.html"
+              "prd_doc_url": "./fuyongjian/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"
             }
           ]
         }
@@ -121,7 +121,7 @@
             {
               "version": "v1.0.0",
               "url": "./jiangrubin/SAAS/v1.0.0/",
-              "prd_doc_url": "./jiangrubin/SAAS/v1.0.0/prd.html"
+              "prd_doc_url": "./jiangrubin/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"
             }
           ]
         }
@@ -139,7 +139,7 @@
             {
               "version": "v1.0.0",
               "url": "./linjinmei/SAAS/v1.0.0/",
-              "prd_doc_url": "./linjinmei/SAAS/v1.0.0/prd.html"
+              "prd_doc_url": "./linjinmei/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"
             }
           ]
         }
@@ -157,7 +157,7 @@
             {
               "version": "v1.0.0",
               "url": "./zhuangjingxiang/SAAS/v1.0.0/",
-              "prd_doc_url": "./zhuangjingxiang/SAAS/v1.0.0/prd.html"
+              "prd_doc_url": "./zhuangjingxiang/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"
             }
           ]
         }

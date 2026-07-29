@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- build:v3.7.30 cache-bust -->
+<!-- build:v3.7.31 cache-bust -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -95,6 +95,10 @@
     display: inline-flex; align-items: center; gap: 4px;
     padding: 4px 12px; background: #f6ffed; border: 1px solid #b7eb8f;
     border-radius: 12px; font-size: 12px; color: #52c41a;
+    cursor: pointer; user-select: none; transition: all .2s;
+  }
+  .terminal-tag:hover {
+    background: #d9f7be; border-color: #95de64;
   }
   .terminal-icon { width: 14px; height: 14px; }
 
@@ -191,12 +195,12 @@ const PROJECT_URLS = {
 const EMBEDDED_MANIFEST = {
   "version":"v3.0.0","generated_at":"2026-07-29T16:30+08:00",
   "members":[
-    {"id":"jojo","projects":[{"slug":"AI-SCRM","name":"AI-SCRM 智能SCRM平台","framework":"React+TS","terminals":["运营后台PC","租户后台PC","H5移动端"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/prd.html"}]},{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/SAAS/v1.0.0/prd.html"}]}]},
-    {"id":"Eltonliz","projects":[{"slug":"AI-SCRM","name":"AI-SCRM 智能SCRM平台","framework":"React+TS","terminals":["运营后台PC","租户后台PC","H5移动端"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/prd.html"}]},{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/Eltonliz/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/Eltonliz/SAAS/v1.0.0/prd.html"}]}]},
-    {"id":"fuyongjian","projects":[{"slug":"AI-SCRM","name":"AI-SCRM 智能SCRM平台","framework":"React+TS","terminals":["运营后台PC","租户后台PC","H5移动端"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/prd.html"}]},{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/fuyongjian/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/fuyongjian/SAAS/v1.0.0/prd.html"}]}]},
-    {"id":"jiangrubin","projects":[{"slug":"AI-SCRM","name":"AI-SCRM 智能SCRM平台","framework":"React+TS","terminals":["运营后台PC","租户后台PC","H5移动端"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/prd.html"}]},{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jiangrubin/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jiangrubin/SAAS/v1.0.0/prd.html"}]}]},
-    {"id":"linjinmei","projects":[{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/linjinmei/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/linjinmei/SAAS/v1.0.0/prd.html"}]}]},
-    {"id":"zhuangjingxiang","projects":[{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/zhuangjingxiang/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/zhuangjingxiang/SAAS/v1.0.0/prd.html"}]}]}
+    {"id":"jojo","projects":[{"slug":"AI-SCRM","name":"AI-SCRM 智能SCRM平台","framework":"React+TS","terminals":["运营后台PC","租户后台PC","H5移动端"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/prd.html"}]},{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]}]},
+    {"id":"Eltonliz","projects":[{"slug":"AI-SCRM","name":"AI-SCRM 智能SCRM平台","framework":"React+TS","terminals":["运营后台PC","租户后台PC","H5移动端"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/prd.html"}]},{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/Eltonliz/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/Eltonliz/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]}]},
+    {"id":"fuyongjian","projects":[{"slug":"AI-SCRM","name":"AI-SCRM 智能SCRM平台","framework":"React+TS","terminals":["运营后台PC","租户后台PC","H5移动端"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/prd.html"}]},{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/fuyongjian/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/fuyongjian/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]}]},
+    {"id":"jiangrubin","projects":[{"slug":"AI-SCRM","name":"AI-SCRM 智能SCRM平台","framework":"React+TS","terminals":["运营后台PC","租户后台PC","H5移动端"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/prd.html"}]},{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jiangrubin/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jiangrubin/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]}]},
+    {"id":"linjinmei","projects":[{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/linjinmei/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/linjinmei/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]}]},
+    {"id":"zhuangjingxiang","projects":[{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/zhuangjingxiang/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/zhuangjingxiang/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]}]}
   ]
 };
 
@@ -442,6 +446,19 @@ function renderLegacyProjectCard(project, member) {
 
 // 启动
 init();
+
+// 终端标签点击：跳转到所属项目的原型入口（解决"入口点击没有效果"）
+document.addEventListener('click', (e) => {
+  const tag = e.target.closest('.terminal-tag');
+  if (!tag) return;
+  const card = tag.closest('.project-card');
+  if (!card) return;
+  const protoBtn = card.querySelector('.btn-primary[href]');
+  const url = protoBtn ? protoBtn.getAttribute('href') : '#';
+  if (url && url !== '#') {
+    window.open(url, '_blank', 'noopener');
+  }
+});
 </script>
 </body>
 </html>
