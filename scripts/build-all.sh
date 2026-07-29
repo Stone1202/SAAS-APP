@@ -56,8 +56,20 @@ extract_version() {
 # ── 构建主函数 ──
 main() {
   if [ -z "$PROJECT" ]; then
-    echo "ERROR: PROJECT is required (e.g., PROJECT=SAAS GOAL=live-audit ./scripts/build-all.sh)"
-    exit 1
+    # 未指定 PROJECT 时，尝试从项目索引读取活跃项目
+    PROJECT=$(node -e "
+      const fs = require('fs');
+      const idx = '.codebuddy/knowledge/PROJECT-INDEX.yml';
+      if (!fs.existsSync(idx)) { process.stdout.write(''); return; }
+      const text = fs.readFileSync(idx, 'utf8');
+      const m = text.match(/^active_project:\\s*(.+)$/m);
+      process.stdout.write(m ? m[1].trim() : '');
+    " 2>/dev/null)
+    if [ -z "$PROJECT" ]; then
+      echo "ERROR: PROJECT is required (e.g., PROJECT=SAAS GOAL=live-audit ./scripts/build-all.sh)"
+      exit 1
+    fi
+    echo "PROJECT not set, using active_project: $PROJECT"
   fi
 
   VERSION=$(extract_version "$GOAL")
