@@ -3,6 +3,6 @@
   "private": true,
   "description": "POM 高保真仿真原型 — 多项目 Monorepo",
   "scripts": {
-    "build:all": "bash scripts/build-all.sh"
+    "build:all": "bash scripts/edgeone-deploy.sh"
   }
 }
