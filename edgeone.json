@@ -1,5 +1,6 @@
 {
+  "outputDir": ".",
   "rewrites": [
-    { "source": "/", "destination": "/home.html" }
+    { "source": "/:path*", "destination": "/index.html" }
   ]
 }
