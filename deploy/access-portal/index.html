@@ -1,600 +1,345 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>高保真仿真门户网站</title>
-  <style>
-    :root {
-      --bg: #f7f8fa;
-      --card-bg: #ffffff;
-      --text: #1a1a2e;
-      --text-secondary: #6b7280;
-      --border: #e5e7eb;
-      --primary: #4f46e5;
-      --primary-light: #eef2ff;
-      --primary-dark: #4338ca;
-      --success: #059669;
-      --warn: #f59e0b;
-      --radius: 14px;
-      --radius-sm: 8px;
-      --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-      --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
-      --shadow-md: 0 4px 24px rgba(0,0,0,0.08);
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      line-height: 1.6;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>九天科技 — 原型门户</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #f0f2f5;
+    color: #1a1a1a;
+    min-height: 100vh;
+  }
+  /* 顶部导航 */
+  .topbar {
+    background: linear-gradient(135deg, #1677ff 0%, #0958d9 100%);
+    padding: 16px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  }
+  .topbar .brand {
+    color: #fff; font-size: 20px; font-weight: 700;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .topbar .subtitle { color: rgba(255,255,255,.75); font-size: 14px; }
 
-    /* ── Header ── */
-    .header {
-      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #312e81 100%);
-      color: white;
-      padding: 48px 48px 40px;
-      position: relative;
-      overflow: hidden;
-    }
-    .header::after {
-      content: '';
-      position: absolute;
-      top: -50%;
-      right: -10%;
-      width: 400px;
-      height: 400px;
-      background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%);
-      border-radius: 50%;
-    }
-    .header-content {
-      position: relative;
-      z-index: 1;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    .header h1 {
-      font-size: 32px;
-      font-weight: 800;
-      letter-spacing: -1px;
-      margin-bottom: 6px;
-    }
-    .header .subtitle {
-      font-size: 15px;
-      color: #94a3b8;
-      font-weight: 400;
-    }
-    .header-stats {
-      display: flex;
-      gap: 32px;
-      margin-top: 24px;
-    }
-    .header-stats .stat-loading {
-      font-size: 14px;
-      color: #94a3b8;
-    }
-    .stat-item {
-      display: flex;
-      align-items: baseline;
-      gap: 8px;
-    }
-    .stat-value {
-      font-size: 36px;
-      font-weight: 800;
-      font-variant-numeric: tabular-nums;
-    }
-    .stat-label {
-      font-size: 13px;
-      color: #94a3b8;
-    }
+  .container { max-width: 1120px; margin: 0 auto; padding: 24px 20px 60px; }
 
-    /* ── Container ── */
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 36px 48px;
-    }
+  /* 成员选择器 */
+  .member-tabs {
+    display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;
+  }
+  .member-tab {
+    padding: 8px 20px; border-radius: 20px; border: 1px solid #d9d9d9;
+    background: #fff; cursor: pointer; font-size: 14px; font-weight: 500;
+    transition: all .2s; color: #555;
+  }
+  .member-tab:hover { border-color: #1677ff; color: #1677ff; }
+  .member-tab.active { background: #1677ff; color: #fff; border-color: #1677ff; }
 
-    /* ── Member Section ── */
-    .member-section {
-      margin-bottom: 44px;
-    }
-    .member-header {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      margin-bottom: 20px;
-      padding-bottom: 14px;
-      border-bottom: 2px solid var(--border);
-    }
-    .member-avatar {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      font-weight: 700;
-    }
-    .member-info {
-      display: flex;
-      flex-direction: column;
-    }
-    .member-name {
-      font-size: 18px;
-      font-weight: 700;
-    }
-    .member-role {
-      font-size: 12px;
-      color: var(--text-secondary);
-      margin-top: 1px;
-    }
-    .member-role .role-tag {
-      display: inline-block;
-      padding: 1px 10px;
-      border-radius: 100px;
-      font-size: 11px;
-      font-weight: 600;
-      background: var(--primary-light);
-      color: var(--primary);
-    }
-    .member-role .role-tag.admin {
-      background: #fef3c7;
-      color: #d97706;
-    }
+  /* 项目卡片 */
+  .project-card {
+    background: #fff; border-radius: 12px; margin-bottom: 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    overflow: hidden;
+  }
 
-    /* ── Project Grid ── */
-    .project-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-      gap: 16px;
-    }
-    .project-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 22px 24px 18px;
-      box-shadow: var(--shadow-sm);
-      transition: transform 0.15s, box-shadow 0.2s, border-color 0.2s;
-      cursor: default;
-    }
-    .project-card:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
-      border-color: #c7d2fe;
-    }
-    .project-card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 6px;
-    }
-    .project-name {
-      font-size: 17px;
-      font-weight: 700;
-    }
-    .project-badge {
-      font-size: 11px;
-      padding: 2px 10px;
-      border-radius: 100px;
-      font-weight: 600;
-      letter-spacing: 0.3px;
-    }
-    .badge-react { background: #dbeafe; color: #2563eb; }
-    .badge-vue   { background: #d1fae5; color: #059669; }
-    .badge-static { background: #f3e8ff; color: #7c3aed; }
-    .project-desc {
-      font-size: 13px;
-      color: var(--text-secondary);
-      margin-bottom: 14px;
-      line-height: 1.5;
-    }
-    .project-meta {
-      display: flex;
-      gap: 16px;
-      margin-bottom: 14px;
-      font-size: 12px;
-      color: var(--text-secondary);
-      flex-wrap: wrap;
-    }
-    .meta-item { display: flex; align-items: center; gap: 4px; }
+  /* 完整产品区（Main聚合） */
+  .main-section {
+    padding: 24px 28px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .main-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px; flex-wrap: wrap; gap: 12px;
+  }
+  .main-title-row {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .main-title {
+    font-size: 20px; font-weight: 700; color: #1a1a1a;
+  }
+  .framework-badge {
+    display: inline-block; padding: 2px 10px; border-radius: 4px;
+    background: #e6f4ff; color: #1677ff; font-size: 12px; font-weight: 600;
+  }
+  .main-version {
+    font-size: 13px; color: #888; background: #fafafa;
+    padding: 2px 10px; border-radius: 4px; border: 1px solid #f0f0f0;
+  }
+  .main-links {
+    display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+  }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 18px; background: #1677ff; color: #fff;
+    border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 500;
+    transition: background .2s;
+  }
+  .btn-primary:hover { background: #4096ff; }
+  .btn-outline {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 18px; border: 1px solid #d9d9d9; background: #fff;
+    color: #555; border-radius: 6px; text-decoration: none;
+    font-size: 14px; transition: all .2s;
+  }
+  .btn-outline:hover { border-color: #1677ff; color: #1677ff; }
 
-    /* ── Version Links ── */
-    .version-list {
-      display: flex;
-      flex-direction: column;
-      gap: 7px;
-      border-top: 1px solid var(--border);
-      padding-top: 14px;
-    }
-    .version-link {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 14px;
-      border-radius: var(--radius-sm);
-      background: #f9fafb;
-      text-decoration: none;
-      color: var(--text);
-      font-size: 14px;
-      transition: all 0.15s;
-      border: 1px solid transparent;
-    }
-    .version-link:hover {
-      background: var(--primary-light);
-      border-color: var(--primary);
-      color: var(--primary);
-    }
-    .version-link:active { transform: scale(0.99); }
-    .version-tag {
-      font-family: "SF Mono", "Fira Code", "JetBrains Mono", monospace;
-      font-size: 13px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .version-tag .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      display: inline-block;
-    }
-    .dot-deployed { background: var(--success); }
-    .dot-pending { background: var(--warn); }
-    .deploy-info {
-      font-size: 12px;
-      color: var(--text-secondary);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .preview-icon {
-      opacity: 0;
-      transform: translateX(-4px);
-      transition: all 0.2s;
-    }
-    .version-link:hover .preview-icon {
-      opacity: 1;
-      transform: translateX(0);
-    }
+  .terminal-list {
+    display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px;
+  }
+  .terminal-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 12px; background: #f6ffed; border: 1px solid #b7eb8f;
+    border-radius: 12px; font-size: 12px; color: #52c41a;
+  }
+  .terminal-icon { width: 14px; height: 14px; }
 
-    /* ── Terminal Quick Access ── */
-    .version-item {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .terminal-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      padding-left: 2px;
-    }
-    .terminal-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 5px 11px;
-      border-radius: 100px;
-      font-size: 12px;
-      font-weight: 500;
-      text-decoration: none;
-      color: var(--primary);
-      background: var(--primary-light);
-      border: 1px solid #c7d2fe;
-      transition: all 0.15s;
-    }
-    .terminal-btn:hover {
-      background: var(--primary);
-      color: white;
-      border-color: var(--primary);
-    }
-    .terminal-btn .dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: currentColor;
-      opacity: 0.6;
-    }
+  /* 分隔线 */
+  .section-divider {
+    padding: 8px 28px; background: #fafafa;
+    font-size: 12px; color: #999; font-weight: 600;
+    letter-spacing: .5px; border-bottom: 1px solid #f0f0f0;
+  }
 
-    /* ── Fallback notice ── */
-    .fallback-banner {
-      background: #fef3c7;
-      border: 1px solid #fcd34d;
-      color: #92400e;
-      padding: 10px 18px;
-      border-radius: var(--radius-sm);
-      margin-bottom: 24px;
-      font-size: 13px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+  /* 分支明细区 */
+  .goal-section {
+    padding: 0 28px;
+  }
+  .goal-item {
+    padding: 16px 0;
+    border-bottom: 1px solid #f5f5f5;
+  }
+  .goal-item:last-child { border-bottom: none; }
+  .goal-item summary {
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+    color: #333; list-style: none;
+    user-select: none;
+  }
+  .goal-item summary::-webkit-details-marker { display: none; }
+  .goal-arrow { transition: transform .2s; font-size: 10px; color: #999; }
+  details[open] .goal-arrow { transform: rotate(90deg); }
+  .goal-branch {
+    font-size: 11px; color: #999; font-family: "SF Mono", Monaco, monospace;
+    background: #f5f5f5; padding: 2px 8px; border-radius: 4px;
+  }
+  .goal-detail {
+    padding: 12px 0 4px 24px;
+  }
+  .version-row {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .version-tag {
+    display: inline-block; padding: 1px 8px; background: #fff7e6;
+    border: 1px solid #ffd591; border-radius: 4px;
+    font-size: 12px; color: #d46b08; font-weight: 600;
+  }
+  .link-mini {
+    font-size: 13px; color: #1677ff; text-decoration: none;
+    margin-right: 12px; display: inline-flex; align-items: center; gap: 4px;
+  }
+  .link-mini:hover { text-decoration: underline; }
+  .goal-terminals { margin-top: 6px; }
 
-    /* ── Empty State ── */
-    .empty-state {
-      text-align: center;
-      padding: 72px 20px;
-      color: var(--text-secondary);
-    }
-    .empty-state .icon { font-size: 52px; margin-bottom: 16px; }
-    .empty-state h3 { font-size: 18px; color: var(--text); margin-bottom: 6px; }
-    .empty-state p { font-size: 14px; line-height: 1.6; }
+  /* 通用 */
+  .empty-state {
+    text-align: center; padding: 60px 20px; color: #999;
+    font-size: 14px;
+  }
+  .icon-sm { width: 16px; height: 16px; opacity: .6; }
 
-    /* ── Footer ── */
-    .footer {
-      text-align: center;
-      padding: 28px;
-      font-size: 12px;
-      color: var(--text-secondary);
-      border-top: 1px solid var(--border);
-      margin-top: 20px;
-    }
-
-    /* ── Responsive ── */
-    @media (max-width: 768px) {
-      .header { padding: 32px 24px 28px; }
-      .container { padding: 24px 20px; }
-      .project-grid { grid-template-columns: 1fr; }
-      .header h1 { font-size: 24px; }
-      .header-stats { gap: 20px; }
-      .stat-value { font-size: 28px; }
-    }
-  </style>
+  @media (max-width: 640px) {
+    .container { padding: 16px 12px; }
+    .main-section, .goal-section { padding: 16px; }
+    .main-header { flex-direction: column; align-items: flex-start; }
+  }
+</style>
 </head>
 <body>
-  <div class="header">
-    <div class="header-content">
-      <h1>高保真仿真门户网站</h1>
-      <p class="subtitle">多成员 · 多项目 · 多版本 — 一站式高保真原型预览与访问入口</p>
-      <div class="header-stats"><span class="stat-loading">加载中...</span></div>
+<div class="topbar">
+  <div class="brand">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="6" fill="rgba(255,255,255,.2)"/><path d="M7 8h10M7 12h8M7 16h6" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+    九天科技
+  </div>
+  <div class="subtitle">原型交付门户</div>
+</div>
+
+<div class="container">
+  <!-- 成员选择器（动态渲染） -->
+  <div class="member-tabs" id="memberTabs"></div>
+
+  <!-- 项目列表（动态渲染） -->
+  <div id="projectList">
+    <div class="empty-state">加载中...</div>
+  </div>
+</div>
+
+<script>
+// ── 渲染引擎 ──
+const MANIFEST_URL = './manifest.json';
+
+// 终端图标映射
+const TERM_ICONS = {
+  'PC': '🖥', 'H5': '📱', '小程序': '🟩', 'APP': '📲', '后台': '🖥',
+  '管理': '⚙', '运营': '🔧', '租户': '🏢', '观众': '👤', '报表': '📊'
+};
+function getTermIcon(name) {
+  for (const [k, v] of Object.entries(TERM_ICONS)) {
+    if (name.includes(k)) return v;
+  }
+  return '📄';
+}
+
+async function init() {
+  try {
+    const resp = await fetch(MANIFEST_URL);
+    if (!resp.ok) throw new Error('manifest.json 加载失败');
+    const manifest = await resp.json();
+    render(manifest);
+  } catch (e) {
+    document.getElementById('projectList').innerHTML =
+      '<div class="empty-state">⚠ 无法加载部署清单（manifest.json）</div>';
+    console.error(e);
+  }
+}
+
+function render(manifest) {
+  const members = manifest.members || [];
+  if (members.length === 0) {
+    document.getElementById('projectList').innerHTML =
+      '<div class="empty-state">暂无部署项目</div>';
+    return;
+  }
+
+  // 成员选择器
+  renderMemberTabs(members);
+
+  // 默认展示第一个成员
+  if (members.length > 0) {
+    renderMemberProjects(members[0]);
+  }
+}
+
+function renderMemberTabs(members) {
+  const tabEl = document.getElementById('memberTabs');
+  tabEl.innerHTML = members.map((m, i) =>
+    `<button class="member-tab${i === 0 ? ' active' : ''}" data-idx="${i}">${m.id}</button>`
+  ).join('');
+
+  tabEl.querySelectorAll('.member-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabEl.querySelectorAll('.member-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const idx = parseInt(btn.dataset.idx);
+      renderMemberProjects(members[idx]);
+    });
+  });
+}
+
+function renderMemberProjects(member) {
+  const projects = member.projects || [];
+  if (projects.length === 0) {
+    document.getElementById('projectList').innerHTML =
+      '<div class="empty-state">该成员暂无项目</div>';
+    return;
+  }
+
+  document.getElementById('projectList').innerHTML = projects.map(p => renderProjectCard(p)).join('');
+}
+
+function renderProjectCard(project) {
+  const goals = project.goals || [];
+  const main = project.main || {};
+  const framework = project.framework || '--';
+
+  // 全部终端（从 main.terminals 取，或从各 goal 汇总）
+  const allTerminals = main.terminals ||
+    [...new Set(goals.flatMap(g => g.terminals || []))];
+
+  return `
+  <div class="project-card">
+    <!-- 完整产品区 -->
+    <div class="main-section">
+      <div class="main-header">
+        <div class="main-title-row">
+          <span class="main-title">${project.name}</span>
+          <span class="framework-badge">${framework}</span>
+          ${main.version ? `<span class="main-version">聚合 ${main.version}</span>` : ''}
+        </div>
+        <div class="main-links">
+          ${main.proto_url ? `
+            <a href="${main.proto_url}" class="btn-primary" target="_blank">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+              完整原型
+            </a>` : ''}
+          ${main.prd_overview_url ? `
+            <a href="${main.prd_overview_url}" class="btn-outline" target="_blank">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              PRD 总览
+            </a>` : ''}
+        </div>
+      </div>
+      ${allTerminals.length > 0 ? `
+        <div class="terminal-list">
+          ${allTerminals.map(t => `<span class="terminal-tag">${getTermIcon(t)} ${t}</span>`).join('')}
+        </div>` : ''}
     </div>
-  </div>
 
-  <div class="container" id="app"></div>
-  <div class="footer">
-    Powered by EdgeOne Pages · 部署时间：<span id="deploy-timestamp">--</span>
-  </div>
+    <!-- 分支明细区 -->
+    ${goals.length > 0 ? `
+      <div class="section-divider">分支明细</div>
+      <div class="goal-section">
+        ${goals.map(g => renderGoalItem(g)).join('')}
+      </div>
+    ` : ''}
+  </div>`;
+}
 
-  <script>
-    (function() {
-      // ═══════════════════════════════════════════════════════
-      // V2.0.0 — 动态门户：从 manifest.json 加载实际制品结构
-      //
-      // 逻辑：
-      //   1. 拉取 ./manifest.json（构建时自动生成）
-      //   2. 与 METADATA 注册表合并渲染
-      //   3. 若 manifest 加载失败 → 回退硬编码数据（最终兜底）
-      //
-      // 新增成员/项目：
-      //   1. build-all.sh PROJECTS 数组加一行
-      //   2. 下方 MEMBER_META / PROJECT_META 补注册信息
-      //   → 门户自动生效，无需改渲染逻辑
-      // ═══════════════════════════════════════════════════════
+function renderGoalItem(goal) {
+  const versions = goal.versions || [];
+  const terminals = goal.terminals || [];
+  const latestVer = versions.length > 0 ? versions[versions.length - 1] : null;
 
-      // ── 元数据注册表（显示名/角色/框架/终端等） ──
-      // 注意：slug 必须与 build-all.sh 输出名完全一致
+  return `
+  <div class="goal-item">
+    <details>
+      <summary>
+        <span class="goal-arrow">▶</span>
+        ${goal.title || goal.goal}
+        <span class="goal-branch">${goal.branch || '—'}</span>
+      </summary>
+      <div class="goal-detail">
+        ${latestVer ? `
+          <div class="version-row">
+            <span class="version-tag">${latestVer.version}</span>
+            ${latestVer.prd_doc_url ? `
+              <a href="${latestVer.prd_doc_url}" class="link-mini" target="_blank">
+                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+                PRD 文档
+              </a>` : ''}
+            ${latestVer.scope_only_proto_url ? `
+              <a href="${latestVer.scope_only_proto_url}" class="link-mini" target="_blank">
+                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                纯净原型
+              </a>` : ''}
+          </div>
+        ` : '<div class="version-row"><span style="color:#999;font-size:13px;">暂无版本</span></div>'}
 
-      var MEMBER_META = {
-        "jojo":           { name: "Jojo", role: "admin" },
-        "Eltonliz":       { name: "李政",  role: "member" },
-        "linjinmei":      { name: "林金梅", role: "member" },
-        "fuyongjian":     { name: "付永健", role: "member" },
-        "jiangrubin":     { name: "江如彬", role: "member" },
-        "zhuangjingxiang":{ name: "庄景翔", role: "member" }
-      };
+        ${terminals.length > 0 ? `
+          <div class="terminal-list goal-terminals">
+            ${terminals.map(t => `<span class="terminal-tag">${getTermIcon(t)} ${t}</span>`).join('')}
+          </div>` : ''}
+      </div>
+    </details>
+  </div>`;
+}
 
-      var PROJECT_META = {
-        "AI-SCRM": {
-          name: "AI-SCRM 智能SCRM平台",
-          framework: "react",
-          desc: "双系统运营后台 + 租户中控 + AI沟通辅助闭环",
-          systems: 2,
-          terminals: {
-            "v1.0.0": [
-              { name: "租户后台 PC", path: "tenant", default: true },
-              { name: "运营后台 PC", path: "ops" }
-            ]
-          }
-        },
-        "SAAS": {
-          name: "SAAS 直播内容审查系统",
-          framework: "vue",
-          desc: "直播实时擦音/静音 + 回放效果模拟 + 三终端",
-          systems: 3,
-          terminals: {
-            "v1.0.0": [
-              { name: "租户后台 PC", path: "tenant/dashboard", default: true },
-              { name: "运营后台 PC", path: "admin/tenant" },
-              { name: "观众端 H5", path: "h5/live/demo-room-001" }
-            ]
-          }
-        },
-        "SugarMate": {
-          name: "糖尿病智慧健康平台",
-          framework: "vue",
-          desc: "糖尿病管理 · 健康监测 · 智能干预",
-          systems: 1,
-          terminals: {}
-        }
-      };
-
-      // ── 兜底数据（manifest.json 加载失败时使用） ──
-      var FALLBACK_DATA = {
-        members: [
-          {
-            id: "jojo", name: "Jojo", role: "admin",
-            projects: [
-              { slug: "AI-SCRM", versions: ["v1.0.0"] },
-              { slug: "SAAS", versions: ["v1.0.0"] },
-              { slug: "SugarMate", versions: ["v1.0.0"] }
-            ]
-          }
-        ]
-      };
-
-      // ── 渲染函数 ──
-      var container = document.getElementById('app');
-      var timestampEl = document.getElementById('deploy-timestamp');
-      var statsEl = document.querySelector('.header-stats');
-
-      function render(members, fallback, metaTimestamp) {
-        if (!members || members.length === 0) {
-          container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><h3>暂无部署内容</h3><p>成员提交部署后将自动出现在这里</p></div>';
-          statsEl.innerHTML = '<div class="stat-item"><span class="stat-value">0</span><span class="stat-label">位成员</span></div>';
-          timestampEl.textContent = metaTimestamp || '--';
-          return;
-        }
-
-        var totalProjects = 0, totalVersions = 0;
-        var projectSet = {};
-        members.forEach(function(m) {
-          m.projects.forEach(function(p) {
-            projectSet[p.slug] = true;
-            totalVersions += p.versions.length;
-          });
-        });
-        totalProjects = Object.keys(projectSet).length;
-
-        statsEl.innerHTML =
-          '<div class="stat-item"><span class="stat-value">' + members.length + '</span><span class="stat-label">位成员</span></div>' +
-          '<div class="stat-item"><span class="stat-value">' + totalProjects + '</span><span class="stat-label">个项目</span></div>' +
-          '<div class="stat-item"><span class="stat-value">' + totalVersions + '</span><span class="stat-label">个版本</span></div>';
-
-        var html = '';
-        if (fallback) {
-          html += '<div class="fallback-banner">⚠ 无法加载最新数据，当前显示为缓存版本。请尝试刷新页面。</div>';
-        }
-
-        members.forEach(function(member) {
-          var memMeta = MEMBER_META[member.id] || {};
-          var displayName = memMeta.name || member.id;
-          var role = memMeta.role || 'member';
-
-          html += '<div class="member-section">';
-          html += '<div class="member-header">';
-          html += '<div class="member-avatar">' + displayName.charAt(0).toUpperCase() + '</div>';
-          html += '<div class="member-info">';
-          html += '<span class="member-name">' + esc(displayName) + '</span>';
-          html += '<span class="member-role"><span class="role-tag' + (role === 'admin' ? ' admin' : '') + '">' + (role === 'admin' ? '管理员' : '成员') + '</span></span>';
-          html += '</div></div>';
-
-          html += '<div class="project-grid">';
-          member.projects.forEach(function(proj) {
-            var meta = PROJECT_META[proj.slug] || {};
-            var projName = meta.name || proj.slug;
-            var desc = meta.desc || '';
-            var framework = meta.framework || 'static';
-            var systems = meta.systems || 1;
-            var badgeClass = framework === 'vue' ? 'badge-vue' : (framework === 'react' ? 'badge-react' : 'badge-static');
-            var badgeText = framework === 'vue' ? 'Vue' : (framework === 'react' ? 'React' : 'Static');
-            var terminalCount = 0;
-            // count terminals from all versions
-            if (meta.terminals) {
-              Object.keys(meta.terminals).forEach(function(v) {
-                terminalCount += (meta.terminals[v] || []).length;
-              });
-            }
-
-            html += '<div class="project-card">';
-            html += '<div class="project-card-header">';
-            html += '<span class="project-name">' + esc(projName) + '</span>';
-            html += '<span class="project-badge ' + badgeClass + '">' + badgeText + '</span>';
-            html += '</div>';
-            if (desc) html += '<div class="project-desc">' + esc(desc) + '</div>';
-            html += '<div class="project-meta">';
-            html += '<span class="meta-item">系统 ×' + systems + '</span>';
-            html += '<span class="meta-item">终端 ×' + terminalCount + '</span>';
-            html += '<span class="meta-item">' + proj.versions.length + ' 个版本</span>';
-            html += '</div>';
-
-            html += '<div class="version-list">';
-            proj.versions.forEach(function(v) {
-              var verUrl = './' + member.id + '/' + proj.slug + '/' + v + '/';
-              var verTerminals = meta.terminals && meta.terminals[v] ? meta.terminals[v] : [];
-              var hasTerminals = verTerminals.length > 0;
-
-              html += '<div class="version-item">';
-              html += '<a class="version-link" href="' + verUrl + '" target="_blank" rel="noopener">';
-              html += '<span class="version-tag"><span class="dot dot-deployed"></span>' + esc(v) + '</span>';
-              html += '<span class="deploy-info"><span class="preview-icon">→</span>';
-              html += '<span>' + (hasTerminals ? '默认入口' : '预览原型') + '</span></span>';
-              html += '</a>';
-              if (hasTerminals) {
-                html += '<div class="terminal-list">';
-                verTerminals.forEach(function(t) {
-                  var tPath = './' + member.id + '/' + proj.slug + '/' + v + '/' + t.path;
-                  html += '<a class="terminal-btn" href="' + tPath + '" target="_blank" rel="noopener" title="' + esc(t.name) + '">';
-                  html += '<span class="dot"></span>' + esc(t.name);
-                  html += '</a>';
-                });
-                html += '</div>';
-              }
-              html += '</div>';
-            });
-            html += '</div>'; // version-list
-
-            html += '</div>'; // project-card
-          });
-          html += '</div>'; // project-grid
-          html += '</div>'; // member-section
-        });
-
-        container.innerHTML = html;
-        timestampEl.textContent = metaTimestamp || new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
-      }
-
-      function esc(str) {
-        var s = String(str || '');
-        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-      }
-
-      // ── 合并 manifest + metadata ──
-      function buildFromManifest(manifest) {
-        if (!manifest || !manifest.members || manifest.members.length === 0) return [];
-        return manifest.members.map(function(m) {
-          return {
-            id: m.id,
-            projects: (m.projects || []).map(function(p) {
-              return { slug: p.slug, versions: p.versions || [] };
-            }).filter(function(p) { return p.versions.length > 0; })
-          };
-        }).filter(function(m) { return m.projects.length > 0; });
-      }
-
-      // ── 启动：加载 manifest.json ──
-      (function init() {
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', './manifest.json?' + Date.now(), true);
-        xhr.timeout = 5000;
-        xhr.onload = function() {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              var manifest = JSON.parse(xhr.responseText);
-              var members = buildFromManifest(manifest);
-              if (members.length > 0) {
-                render(members, false, manifest.generated_at || null);
-                return;
-              }
-            } catch(e) { /* fall through to fallback */ }
-          }
-          // manifest failed or empty → fallback
-          var fb = buildFromManifest(FALLBACK_DATA);
-          render(fb, true, null);
-        };
-        xhr.onerror = xhr.ontimeout = function() {
-          var fb = buildFromManifest(FALLBACK_DATA);
-          render(fb, true, null);
-        };
-        xhr.send();
-      })();
-    })();
-  </script>
+// 启动
+init();
+</script>
 </body>
 </html>
