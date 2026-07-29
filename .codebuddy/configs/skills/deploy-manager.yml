@@ -91,9 +91,9 @@ steps:
       - action: identify_version
         from: state.json 或 --version 参数
         output_var: current_version
-      - action: identify_topic
-        from: state.json 或 --topic 参数
-        output_var: current_topic
+      - action: identify_goal
+        from: state.json 或 --goal 参数
+        output_var: current_goal
 
   # ==========================================
   # Step 3: 构建产物复制到聚合目录
@@ -102,13 +102,13 @@ steps:
     name: 构建产物聚合
     description: |
       将当前项目的构建产物复制到聚合部署目录。
-      目标路径：deploy/artifacts/{member}/{project}/{topic}/{version}/
+      目标路径：deploy/artifacts/{member}/{project}/{goal}/{version}/
       
       操作：
-      1. 创建目标目录：mkdir -p deploy/artifacts/{member}/{project}/{topic}/{version}/
-      2. 复制 dist 内容：cp -r projects/{project}/dist/* deploy/artifacts/{member}/{project}/{topic}/{version}/
+      1. 创建目标目录：mkdir -p deploy/artifacts/{member}/{project}/{goal}/{version}/
+      2. 复制 dist 内容：cp -r projects/{project}/dist/* deploy/artifacts/{member}/{project}/{goal}/{version}/
       3. 复制 PRD HTML 文档（如果存在）：cp -r projects/{project}/docs/09-versions/{version}/prd-html/ deploy/artifacts/.../prd/
-      4. 如有旧版本同一 member+project+topic，保留不删（全量聚合，旧版本共存）
+      4. 如有旧版本同一 member+project+goal，保留不删（全量聚合，旧版本共存）
     actions:
       - action: create_target_dir
         path: "deploy/artifacts/{current_member_id}/{current_project}/{current_topic}/{current_version}/"
@@ -125,31 +125,47 @@ steps:
         overwrite: true
 
   # ==========================================
-  # Step 4: 全量扫描现有产物 + 生成 manifest.json
+  # Step 4: 生成新版 manifest.json（V2.0.0 goal 维度）
   # ==========================================
   - id: step-4
-    name: 全量扫描产物 + 生成 manifest.json
+    name: 生成新版 manifest.json
     description: |
-      V2.0.3 升级：扫描产物目录并生成 manifest.json（门户 V2.0.0 动态加载的数据源）。
+      V2.0.0 升级：基于项目元数据模板 deploy/access-portal/manifest.json，
+      扫描实际产物目录更新版本信息，生成 deploy/artifacts/manifest.json。
       
-      扫描逻辑：
-      1. 列出 deploy/artifacts/ 下所有子目录（= 成员列表）
-      2. 对每个成员，列出其下所有子目录（= 项目列表）
-      3. 对每个项目，列出其下所有子目录（= 版本列表）
-      4. 生成 deploy/artifacts/manifest.json（门户前端 fetch 加载）
+      关键：不要生成旧版 {slug, versions:[string]} 格式，
+      必须使用新版 goal 维度结构（goals[] + main 聚合入口）。
+      
+      操作：
+      1. 读取 deploy/access-portal/manifest.json 作为元数据模板
+      2. 扫描 deploy/artifacts/{member}/{project}/ 下实际存在的 goal 目录和版本目录
+      3. 更新 goals[].versions[] 为实际产物中匹配 goal 的版本（保留 prd_doc_url/scope_only_proto_url 的相对路径模式）
+      4. 更新 main.version 为各 goal 最新版本
+      5. 更新 generated_at 为当前 ISO 8601 时间
+      6. 写出到 deploy/artifacts/manifest.json
     actions:
-      - action: scan_directory
+      - action: read_manifest_template
+        source: "deploy/access-portal/manifest.json"
+      - action: scan_artifacts
         path: "deploy/artifacts/"
-        depth: 3
+        depth: 4
       - action: generate_manifest
         output: "deploy/artifacts/manifest.json"
-        format:
-          generated_at: "ISO 8601"
-          members:
-            - id: string
-              projects:
-                - slug: string
-                  versions: [string]
+        template_source: "deploy/access-portal/manifest.json"
+        preserve_fields:
+          - "members[].projects[].name"
+          - "members[].projects[].framework"
+          - "members[].projects[].goals[].title"
+          - "members[].projects[].goals[].branch"
+          - "members[].projects[].goals[].terminals"
+          - "members[].projects[].main.proto_url"
+          - "members[].projects[].main.prd_overview_url"
+          - "members[].projects[].main.terminals"
+          - "members[].projects[].main.merged_goals"
+        dynamic_fields:
+          - "generated_at"
+          - "members[].projects[].goals[].versions[].version"
+          - "members[].projects[].main.version"
 
   # ==========================================
   # Step 5: 复制门户首页（V2.0.0 动态版）
@@ -219,11 +235,11 @@ steps:
     description: |
       生成两个 URL：
       - 门户首页：https://{base_domain}/
-      - 当前项目：https://{base_domain}/{member}/{project}/{topic}/{version}/
+      - 当前项目：https://{base_domain}/{member}/{project}/{goal}/{version}/
       
       如果域名尚未绑定，降级使用 EdgeOne 分配的 URL：
       - 门户首页：{deploy_url}/
-      - 当前项目：{deploy_url}/{member}/{project}/{topic}/{version}/
+      - 当前项目：{deploy_url}/{member}/{project}/{goal}/{version}/
     actions:
       - action: build_urls
         inputs:

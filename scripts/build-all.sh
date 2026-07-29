@@ -1,174 +1,223 @@
-#!/usr/bin/env bash
-set -eo pipefail
+#!/bin/bash
+# ============================================
+# 全量聚合构建脚本 V2.0.0
+# V4.1.0升级：goal维度感知——支持按 goal 独立构建 PRD + scope-only 原型，
+#             同时从 main 构建聚合原型，版本号从 state.json 动态读取
+# ============================================
+set -e
 
-# ═════════════════════════════════════════════════════
-# POM 多项目一键构建脚本（EdgeOne Pages 自动部署）
-#
-# 新增项目只需在 PROJECTS 数组中加一行，无需改 404 模板。
-# 详细说明：deploy/DEPLOY-GUIDE.md
-# ═════════════════════════════════════════════════════
+# ── 环境变量注入 ──
+MEMBER="${MEMBER:-$(git config user.name 2>/dev/null || echo 'unknown')}"
+PROJECT="${PROJECT:-}"
+GOAL="${GOAL:-}"
+BUILD_MODE="${BUILD_MODE:-full}"        # full | prd-only | scope-only | main-only
+VITE_BASE_PATH="${VITE_BASE_PATH:-}"
+DEPLOY_DIR="${DEPLOY_DIR:-deploy}"
+ARTIFACTS_DIR="${ARTIFACTS_DIR:-deploy/artifacts}"
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-WORKSPACE="$(dirname "$SCRIPT_DIR")"
-ARTIFACTS="$WORKSPACE/deploy/artifacts"
-PORTAL_TEMPLATE="$WORKSPACE/deploy/access-portal/index.html"
-EDGEONE_CONFIG="$WORKSPACE/deploy/edgeone-pages.json"
-
-echo "=== POM Build All ==="
-echo "Workspace: $WORKSPACE"
-echo "Artifacts: $ARTIFACTS"
-
-# 清理旧产物
-rm -rf "$ARTIFACTS"
-mkdir -p "$ARTIFACTS"
-
-# ── 定义成员项目 ──
-# 格式: "项目目录名|输出名|成员"
-# 新增项目只需在此数组加一行，无需改 404 模板或其他配置。
-# 详见：deploy/DEPLOY-GUIDE.md §4
-# 成员-项目矩阵（来源：PROJECT-INDEX.yml）
-# 格式: "项目目录名|输出名|成员"
-# 新增成员/项目只需在此数组加一行
-PROJECTS=(
-  # --- Jojo (admin) ---
-  "AI-SCRM|AI-SCRM|jojo"
-  "SAAS|SAAS|jojo"
-  "SugarMate|SugarMate|jojo"
-  # --- 李政 (Eltonliz) ---
-  "AI-SCRM|AI-SCRM|Eltonliz"
-  "SAAS|SAAS|Eltonliz"
-  # --- 林金梅 (linjinmei) ---
-  "SAAS|SAAS|linjinmei"
-  # --- 付永健 (fuyongjian) ---
-  "AI-SCRM|AI-SCRM|fuyongjian"
-  "SAAS|SAAS|fuyongjian"
-  "SugarMate|SugarMate|fuyongjian"
-  # --- 江如彬 (jiangrubin) ---
-  "AI-SCRM|AI-SCRM|jiangrubin"
-  "SAAS|SAAS|jiangrubin"
-  "SugarMate|SugarMate|jiangrubin"
-  # --- 庄景翔 (zhuangjingxiang) ---
-  "SAAS|SAAS|zhuangjingxiang"
-)
-
-# ── 逐个构建 ──
-for entry in "${PROJECTS[@]}"; do
-  IFS='|' read -r dir slug member <<< "$entry"
-  
-  PROJECT_DIR="$WORKSPACE/projects/$dir"
-  VERSION_DIR="$ARTIFACTS/$member/$slug/v1.0.0"
-  
-  echo ""
-  echo "--- Building: $slug ($member) ---"
-  
-  if [ ! -d "$PROJECT_DIR" ]; then
-    echo "  SKIP: directory not found: $PROJECT_DIR"
-    continue
-  fi
-  
-  # 1. 安装依赖
-  echo "  [1/3] npm install..."
-  cd "$PROJECT_DIR"
-  npm install --no-audit --no-fund
-  
-  # 2. 构建（设置 base 路径，让资源引用指向正确的子目录）
-  export VITE_BASE_PATH="/$member/$slug/v1.0.0/"
-  echo "  [2/3] npm run build:sim (base=$VITE_BASE_PATH)..."
-  npm run build:sim || { echo "  [2/3] BUILD FAILED for $slug, skipping..."; continue; }
-  
-  # 3. 复制产物到 artifacts
-  if [ -d "$PROJECT_DIR/dist" ]; then
-    mkdir -p "$VERSION_DIR"
-    cp -r "$PROJECT_DIR/dist"/* "$VERSION_DIR/"
-    # 删除项目级 edgeone.json，避免覆盖根级 rewrite 配置
-    rm -f "$VERSION_DIR/edgeone.json"
-    echo "  [3/4] Copied Vite build: $member/$slug/v1.0.0/ ($(find "$VERSION_DIR" -type f | wc -l) files)"
-    
-    # 3.5 复制 PRD HTML 文档（如果存在）
-    PRD_HTML_SRC="$PROJECT_DIR/docs/09-versions/v1.0.0/prd-html"
-    PRD_HTML_DST="$VERSION_DIR/prd"
-    if [ -d "$PRD_HTML_SRC" ]; then
-      mkdir -p "$PRD_HTML_DST"
-      cp -r "$PRD_HTML_SRC"/* "$PRD_HTML_DST/"
-      echo "  [3.5/4] Copied PRD HTML docs: $member/$slug/v1.0.0/prd/ ($(find "$PRD_HTML_DST" -type f | wc -l) files)"
+# ── 从 state.json 动态读取版本号 ──
+STATE_FILE="projects/${PROJECT}/.codebuddy/state.json"
+extract_version() {
+  local goal="$1"
+  if [ -f "$STATE_FILE" ]; then
+    # 查找匹配 goal 的最新 closed stream 版本
+    if [ -n "$goal" ]; then
+      VERSION=$(node -e "
+        const state = require('./${STATE_FILE}');
+        const streams = state.streams || [];
+        const closed = streams.filter(s => s.stage === 'closed' && s.goal === '${goal}');
+        if (closed.length === 0) {
+          // 找当前活跃流
+          const active = streams.filter(s => s.goal === '${goal}' && s.stage !== 'closed');
+          if (active.length > 0) {
+            process.stdout.write(active[active.length-1].version);
+          } else {
+            process.stdout.write('v1.0.0');
+          }
+        } else {
+          process.stdout.write(closed[closed.length-1].version);
+        }
+      " 2>/dev/null || echo "v1.0.0")
     else
-      echo "  [3.5/4] No PRD HTML docs found, skipping"
+      # 无 goal：取最新 stream 版本（兼容老项目）
+      VERSION=$(node -e "
+        const state = require('./${STATE_FILE}');
+        const streams = state.streams || [];
+        if (streams.length === 0) process.stdout.write('v1.0.0');
+        else process.stdout.write(streams[streams.length-1].version || 'v1.0.0');
+      " 2>/dev/null || echo "v1.0.0")
     fi
-    echo "  [4/4] Done: $member/$slug/v1.0.0/"
   else
-    echo "  [3/4] ERROR: dist/ not found after build, skipping..."
-    continue
+    VERSION="v1.0.0"
   fi
-done
+  echo "$VERSION"
+}
 
-# ── 门户页面 ──
-if [ -f "$PORTAL_TEMPLATE" ]; then
-  cp "$PORTAL_TEMPLATE" "$ARTIFACTS/index.html"
+# ── 构建主函数 ──
+main() {
+  if [ -z "$PROJECT" ]; then
+    echo "ERROR: PROJECT is required (e.g., PROJECT=SAAS GOAL=live-audit ./scripts/build-all.sh)"
+    exit 1
+  fi
+
+  VERSION=$(extract_version "$GOAL")
+  echo "BUILD: PROJECT=$PROJECT GOAL=${GOAL:-N/A} VERSION=$VERSION MODE=$BUILD_MODE"
+
+  # 确保产物目录存在
+  mkdir -p "$ARTIFACTS_DIR"
+
+  # ── 1. 构建 scope 专属 PRD HTML ──
+  if [ "$BUILD_MODE" == "full" ] || [ "$BUILD_MODE" == "prd-only" ]; then
+    if [ -n "$GOAL" ]; then
+      echo "[1/4] 构建 scope PRD HTML → $ARTIFACTS_DIR/$MEMBER/$PROJECT/$GOAL/$VERSION/prd.html"
+      mkdir -p "$ARTIFACTS_DIR/$MEMBER/$PROJECT/$GOAL/$VERSION"
+
+      # 查找 PRD HTML 产物
+      PRD_HTML_DIR="projects/${PROJECT}/docs/09-versions/${VERSION}/prd-html"
+      if [ -d "$PRD_HTML_DIR" ]; then
+        cp -r "$PRD_HTML_DIR/"* "$ARTIFACTS_DIR/$MEMBER/$PROJECT/$GOAL/$VERSION/"
+      else
+        echo "  ⚠ 未找到 PRD HTML 产物: $PRD_HTML_DIR，跳过"
+      fi
+
+      # 2. 构建 scope-only 原型（从 scope 分支构建）
+      echo "[2/4] 构建 scope-only 原型 → $ARTIFACTS_DIR/$MEMBER/$PROJECT/$GOAL/$VERSION/"
+      SCOPE_BASE_PATH="/$MEMBER/$PROJECT/$GOAL/$VERSION/"
+      VITE_BASE_PATH="$SCOPE_BASE_PATH" npm run build:sim --prefix "projects/${PROJECT}" 2>/dev/null || {
+        echo "  ⚠ scope-only 原型构建失败，跳过（可能 scope 分支未切换）"
+      }
+      if [ -d "projects/${PROJECT}/dist" ]; then
+        cp -r "projects/${PROJECT}/dist/"* "$ARTIFACTS_DIR/$MEMBER/$PROJECT/$GOAL/$VERSION/"
+      fi
+    fi
+  fi
+
+  # ── 3. 构建 main 聚合原型 ──
+  if [ "$BUILD_MODE" == "full" ] || [ "$BUILD_MODE" == "main-only" ]; then
+    echo "[3/4] 构建 main 聚合原型 → $ARTIFACTS_DIR/$MEMBER/$PROJECT/main/$VERSION/"
+
+    # V4.1.0：main 聚合版本从 manifests 读取
+    MAIN_VERSION=$VERSION
+    MAIN_DIR="$ARTIFACTS_DIR/$MEMBER/$PROJECT/main/$MAIN_VERSION"
+    mkdir -p "$MAIN_DIR"
+
+    # 切换到 main 分支构建（仅当不在 main 时）
+    CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "main")
+    if [ "$CURRENT_BRANCH" != "main" ]; then
+      echo "  → 切换到 main 分支构建聚合原型..."
+      git stash 2>/dev/null || true
+      git checkout main 2>/dev/null || {
+        echo "  ⚠ 切换 main 失败，使用当前分支构建"
+      }
+    fi
+
+    MAIN_BASE_PATH="/$MEMBER/$PROJECT/main/$MAIN_VERSION/"
+    VITE_BASE_PATH="$MAIN_BASE_PATH" npm run build:sim --prefix "projects/${PROJECT}" 2>/dev/null || {
+      echo "  ⚠ main 构建失败，跳过"
+    }
+    if [ -d "projects/${PROJECT}/dist" ]; then
+      cp -r "projects/${PROJECT}/dist/"* "$MAIN_DIR/"
+    fi
+
+    # 切回原分支
+    if [ "$CURRENT_BRANCH" != "main" ]; then
+      git checkout "$CURRENT_BRANCH" 2>/dev/null || true
+      git stash pop 2>/dev/null || true
+    fi
+
+    # 4. 生成 main PRD 聚合总览页
+    echo "[4/4] 生成 main PRD 聚合总览页 → $MAIN_DIR/prd-overview.html"
+    mkdir -p "$MAIN_DIR"
+    node -e "
+      const fs = require('fs');
+      const path = require('path');
+      const artifacts = '$ARTIFACTS_DIR';
+
+      // 扫描所有 goal 的 PRD 文件
+      const goals = [];
+      const memberDirs = fs.readdirSync(artifacts, { withFileTypes: true })
+        .filter(d => d.isDirectory());
+
+      memberDirs.forEach(memberDir => {
+        const projectPath = path.join(artifacts, memberDir.name, '$PROJECT');
+        if (!fs.existsSync(projectPath)) return;
+
+        fs.readdirSync(projectPath, { withFileTypes: true })
+          .filter(d => d.isDirectory() && d.name !== 'main')
+          .forEach(goalDir => {
+            const verDirs = fs.readdirSync(path.join(projectPath, goalDir.name), { withFileTypes: true })
+              .filter(d => d.isDirectory());
+            verDirs.forEach(verDir => {
+              const prdPath = path.join(projectPath, goalDir.name, verDir.name, 'index.html');
+              if (fs.existsSync(prdPath)) {
+                goals.push({
+                  goal: goalDir.name,
+                  version: verDir.name,
+                  url: './' + [memberDir.name, '$PROJECT', goalDir.name, verDir.name, 'index.html'].join('/')
+                });
+              }
+            });
+          });
+      });
+
+      // 生成总览页
+      const html = \`<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>$PROJECT — PRD 总览</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 40px 20px; background: #f5f5f5; }
+  h1 { color: #1a1a1a; border-bottom: 2px solid #e0e0e0; padding-bottom: 12px; }
+  .goal-card { background: #fff; border-radius: 8px; padding: 20px; margin: 16px 0; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .goal-card h2 { margin: 0 0 8px; font-size: 18px; }
+  .goal-card .meta { color: #666; font-size: 14px; }
+  .goal-card a { color: #1677ff; text-decoration: none; display: inline-block; margin-top: 8px; }
+  .empty { color: #999; text-align: center; padding: 60px 0; }
+</style>
+</head>
+<body>
+  <h1>$PROJECT — PRD 文档总览</h1>
+  \${goals.length === 0 ? '<div class=\"empty\">暂无 PRD 文档（等待各业务目标 /close 后生成）</div>' :
+    goals.map(g => \`<div class=\"goal-card\">
+      <h2>\${g.goal}</h2>
+      <div class=\"meta\">版本: \${g.version}</div>
+      <a href=\"\${g.url}\">查看 PRD 文档 →</a>
+    </div>\`).join('')
+  }
+  <p style=\"margin-top: 24px; text-align: center;\">
+    <a href=\"../\" style=\"color: #1677ff;\">← 返回原型入口</a>
+  </p>
+</body>
+</html>\`;
+      fs.writeFileSync('$MAIN_DIR/prd-overview.html', html);
+      console.log('PRD overview generated with ' + goals.length + ' goal(s)');
+    " 2>/dev/null || echo "  ⚠ PRD 总览页生成失败"
+  fi
+
+  # 5. 复制门户 manifest.json（覆盖 AI 生成的旧版格式）
+  if [ -f "$DEPLOY_DIR/access-portal/manifest.json" ]; then
+    echo "[5/4] 复制门户 manifest.json → $ARTIFACTS_DIR/manifest.json"
+    node -e "
+      const fs = require('fs');
+      const path = require('path');
+      const src = path.resolve('$DEPLOY_DIR/access-portal/manifest.json');
+      const dst = path.resolve('$ARTIFACTS_DIR/manifest.json');
+      const manifest = JSON.parse(fs.readFileSync(src, 'utf8'));
+      manifest.generated_at = new Date().toISOString();
+      fs.writeFileSync(dst, JSON.stringify(manifest, null, 2));
+      console.log('manifest.json copied: ' + manifest.members.length + ' member(s)');
+    "
+  fi
+
   echo ""
-  echo "=== Portal copied ==="
-else
-  echo ""
-  echo "=== WARNING: Portal template not found ==="
-fi
+  echo "=== 构建完成 ==="
+  echo "Main 聚合原型:  $ARTIFACTS_DIR/$MEMBER/$PROJECT/main/$VERSION/"
+  if [ -n "$GOAL" ]; then
+    echo "Scope PRD:       $ARTIFACTS_DIR/$MEMBER/$PROJECT/$GOAL/$VERSION/"
+    echo "Scope-only 原型: $ARTIFACTS_DIR/$MEMBER/$PROJECT/$GOAL/$VERSION/"
+  fi
+}
 
-# ── EdgeOne Pages SPA fallback 配置 ──
-# 
-# 方案说明：EdgeOne Pages 子目录 SPA 深层路由不自动回退 → 根级 404.html
-# 通过 JS fetch + document.write 动态加载对应子项目的 index.html
-#
-# ❌ 禁止：使用 edgeone.json rewrites（会破坏静态资源）
-# ❌ 禁止：在子目录放 edgeone.json 或 404.html（EdgeOne Pages 不识别）
-# ✅ 正确：仅此一段代码，构建时自动生成 deploy/artifacts/404.html
-#
-# 详见：deploy/DEPLOY-GUIDE.md §3
-ROOT_404_TEMPLATE="$WORKSPACE/deploy/404-template.html"
-if [ -f "$ROOT_404_TEMPLATE" ]; then
-  cp "$ROOT_404_TEMPLATE" "$ARTIFACTS/404.html"
-  echo "=== Root 404 fallback created ==="
-else
-  echo "=== WARNING: Root 404 template not found ==="
-fi
-
-# ── 生成 manifest.json（门户加载数据源） ──
-# 扫描 artifacts 目录结构自动生成，确保门户始终与实际产物一致
-echo ""
-echo "=== Generating manifest.json ==="
-MANIFEST="$ARTIFACTS/manifest.json"
-python3 -c "
-import json, os, sys
-from collections import defaultdict
-
-artifacts = '$ARTIFACTS'
-manifest = {'generated_at': '', 'members': []}
-
-# 扫描成员目录
-if os.path.isdir(artifacts):
-    for member_id in sorted(os.listdir(artifacts)):
-        member_path = os.path.join(artifacts, member_id)
-        if not os.path.isdir(member_path) or member_id.startswith('.'):
-            continue
-        member = {'id': member_id, 'projects': []}
-        for proj_slug in sorted(os.listdir(member_path)):
-            proj_path = os.path.join(member_path, proj_slug)
-            if not os.path.isdir(proj_path):
-                continue
-            versions = sorted([v for v in os.listdir(proj_path) if os.path.isdir(os.path.join(proj_path, v))])
-            member['projects'].append({'slug': proj_slug, 'versions': versions})
-        if member['projects']:
-            manifest['members'].append(member)
-
-from datetime import datetime, timezone, timedelta
-t = datetime.now(timezone(timedelta(hours=8)))
-manifest['generated_at'] = t.strftime('%Y-%m-%dT%H:%M:%S+08:00')
-
-with open('$MANIFEST', 'w', encoding='utf-8') as f:
-    json.dump(manifest, f, ensure_ascii=False, indent=2)
-print(f'  manifest.json written ({len(manifest[\"members\"])} members)')
-"
-echo "=== Manifest generated ==="
-
-# ── 列出产物结构 ──
-echo ""
-echo "=== Final artifacts ==="
-find "$ARTIFACTS" -type f | sort | head -30
-echo "=== Done ==="
+main "$@"
