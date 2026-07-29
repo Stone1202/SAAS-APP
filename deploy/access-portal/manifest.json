@@ -1,7 +1,7 @@
 {
-  "version": "v2.1.0",
-  "comment": "V2.1.0 — 对齐实际产物路径 {member}/{project}/{version}/，全成员覆盖",
-  "generated_at": "2026-07-29T14:00+08:00",
+  "version": "v3.0.0",
+  "comment": "V3.0.0 — SAAS 使用 prototype.jycao.cn 相对路径，AI-SCRM 使用独立部署域名",
+  "generated_at": "2026-07-29T16:30+08:00",
   "members": [
     {
       "id": "jojo",
@@ -14,8 +14,8 @@
           "versions": [
             {
               "version": "v1.0.0",
-              "url": "./jojo/AI-SCRM/v1.0.0/",
-              "prd_doc_url": "./jojo/AI-SCRM/v1.0.0/prd.html"
+              "url": "https://ai-scrm-dpzzl2eobkr6.edgeone.dev",
+              "prd_doc_url": "https://ai-scrm-dpzzl2eobkr6.edgeone.dev/prd.html"
             }
           ]
         },
@@ -45,8 +45,8 @@
           "versions": [
             {
               "version": "v1.0.0",
-              "url": "./Eltonliz/AI-SCRM/v1.0.0/",
-              "prd_doc_url": "./Eltonliz/AI-SCRM/v1.0.0/prd.html"
+              "url": "https://ai-scrm-dpzzl2eobkr6.edgeone.dev",
+              "prd_doc_url": "https://ai-scrm-dpzzl2eobkr6.edgeone.dev/prd.html"
             }
           ]
         },
@@ -76,8 +76,8 @@
           "versions": [
             {
               "version": "v1.0.0",
-              "url": "./fuyongjian/AI-SCRM/v1.0.0/",
-              "prd_doc_url": "./fuyongjian/AI-SCRM/v1.0.0/prd.html"
+              "url": "https://ai-scrm-dpzzl2eobkr6.edgeone.dev",
+              "prd_doc_url": "https://ai-scrm-dpzzl2eobkr6.edgeone.dev/prd.html"
             }
           ]
         },
@@ -107,8 +107,8 @@
           "versions": [
             {
               "version": "v1.0.0",
-              "url": "./jiangrubin/AI-SCRM/v1.0.0/",
-              "prd_doc_url": "./jiangrubin/AI-SCRM/v1.0.0/prd.html"
+              "url": "https://ai-scrm-dpzzl2eobkr6.edgeone.dev",
+              "prd_doc_url": "https://ai-scrm-dpzzl2eobkr6.edgeone.dev/prd.html"
             }
           ]
         },

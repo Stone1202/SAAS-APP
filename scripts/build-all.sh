@@ -78,6 +78,26 @@ main() {
   # 确保产物目录存在
   mkdir -p "$ARTIFACTS_DIR"
 
+  # ── 0. 门户入口页（最先复制，不依赖项目构建结果）──
+  PORTAL_INDEX="$DEPLOY_DIR/access-portal/index.html"
+  if [ -f "$PORTAL_INDEX" ]; then
+    echo "[0/4] 复制门户入口页 → $ARTIFACTS_DIR/index.html"
+    cp "$PORTAL_INDEX" "$ARTIFACTS_DIR/index.html"
+  fi
+  if [ -f "$DEPLOY_DIR/access-portal/manifest.json" ]; then
+    echo "[0/4] 复制门户 manifest.json → $ARTIFACTS_DIR/manifest.json"
+    node -e "
+      const fs = require('fs');
+      const path = require('path');
+      const src = path.resolve('$DEPLOY_DIR/access-portal/manifest.json');
+      const dst = path.resolve('$ARTIFACTS_DIR/manifest.json');
+      const manifest = JSON.parse(fs.readFileSync(src, 'utf8'));
+      manifest.generated_at = new Date().toISOString();
+      fs.writeFileSync(dst, JSON.stringify(manifest, null, 2));
+      console.log('manifest.json copied: ' + manifest.members.length + ' member(s)');
+    "
+  fi
+
   # ── 1. 构建 scope 专属 PRD HTML ──
   if [ "$BUILD_MODE" == "full" ] || [ "$BUILD_MODE" == "prd-only" ]; then
     if [ -n "$GOAL" ]; then
@@ -206,25 +226,6 @@ main() {
       fs.writeFileSync('$MAIN_DIR/prd-overview.html', html);
       console.log('PRD overview generated with ' + goals.length + ' goal(s)');
     " 2>/dev/null || echo "  ⚠ PRD 总览页生成失败"
-  fi
-
-  # 5. 复制门户入口页 + manifest.json（覆盖 AI 生成的旧版格式）
-  if [ -f "$DEPLOY_DIR/access-portal/index.html" ]; then
-    echo "[5/4] 复制门户入口页 → $ARTIFACTS_DIR/index.html"
-    cp "$DEPLOY_DIR/access-portal/index.html" "$ARTIFACTS_DIR/index.html"
-  fi
-  if [ -f "$DEPLOY_DIR/access-portal/manifest.json" ]; then
-    echo "[6/4] 复制门户 manifest.json → $ARTIFACTS_DIR/manifest.json"
-    node -e "
-      const fs = require('fs');
-      const path = require('path');
-      const src = path.resolve('$DEPLOY_DIR/access-portal/manifest.json');
-      const dst = path.resolve('$ARTIFACTS_DIR/manifest.json');
-      const manifest = JSON.parse(fs.readFileSync(src, 'utf8'));
-      manifest.generated_at = new Date().toISOString();
-      fs.writeFileSync(dst, JSON.stringify(manifest, null, 2));
-      console.log('manifest.json copied: ' + manifest.members.length + ' member(s)');
-    "
   fi
 
   echo ""
