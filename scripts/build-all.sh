@@ -196,9 +196,13 @@ main() {
     " 2>/dev/null || echo "  ⚠ PRD 总览页生成失败"
   fi
 
-  # 5. 复制门户 manifest.json（覆盖 AI 生成的旧版格式）
+  # 5. 复制门户入口页 + manifest.json（覆盖 AI 生成的旧版格式）
+  if [ -f "$DEPLOY_DIR/access-portal/index.html" ]; then
+    echo "[5/4] 复制门户入口页 → $ARTIFACTS_DIR/index.html"
+    cp "$DEPLOY_DIR/access-portal/index.html" "$ARTIFACTS_DIR/index.html"
+  fi
   if [ -f "$DEPLOY_DIR/access-portal/manifest.json" ]; then
-    echo "[5/4] 复制门户 manifest.json → $ARTIFACTS_DIR/manifest.json"
+    echo "[6/4] 复制门户 manifest.json → $ARTIFACTS_DIR/manifest.json"
     node -e "
       const fs = require('fs');
       const path = require('path');

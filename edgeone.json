@@ -1,6 +1,3 @@
 {
-  "outputDir": ".",
-  "rewrites": [
-    { "source": "/:path*", "destination": "/index.html" }
-  ]
+  "outputDir": "deploy/artifacts"
 }
