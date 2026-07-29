@@ -15,7 +15,7 @@
  *   行6 | /h5/live/:roomId                 | FN-AUDIT-APP-001  | 直播模拟+擦音效果
  */
 
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
+import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router';
 
 // ============================================
 // 页面组件（懒加载）
@@ -117,12 +117,10 @@ const routes: RouteRecordRaw[] = [
 
   // 默认重定向 → 租户后台仿真入口
   { path: '/', redirect: '/tenant/dashboard' },
-  // EdgeOne 直接访问 index.html 的兜底重定向
-  { path: '/index.html', redirect: '/tenant/dashboard' },
 ];
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHashHistory(),
   routes,
 });
 
