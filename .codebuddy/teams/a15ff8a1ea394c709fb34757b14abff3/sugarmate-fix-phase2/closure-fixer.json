@@ -1,0 +1,11 @@
+[
+  {
+    "id": "shutdown-1785287258904",
+    "from": "team-lead",
+    "to": "closure-fixer",
+    "type": "shutdown_request",
+    "content": "{\"type\":\"shutdown_request\",\"request_id\":\"shutdown-1785287258904\",\"reason\":\"Phase 2 全部完成，请求关闭。\",\"from\":\"team-lead\",\"timestamp\":\"2026-07-29T01:07:38.904Z\"}",
+    "timestamp": "2026-07-29T01:07:38.904Z",
+    "read": true
+  }
+]

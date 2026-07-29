@@ -773,27 +773,31 @@
       owner: "pm-agent"
       collab: []
       workflow: "deploy-manager"
-      workflow_version: "V2.0.0"
+      workflow_version: "V2.0.3"
       pm_controlled: true
       precondition: "stage-8版本快照完成"
       skill: "deploy-manager"
       description: |
+        V2.0.3升级：门户 V2.0.0 动态化（fetch manifest.json）+ 全成员构建 + Step 4 生成 manifest.json。
+        V2.0.2升级：新增 PRD HTML 文档自动复制到部署产物（Step 3.5），解决 docs/prd-html/ 不会自动部署的问题。
+        V2.0.1升级：新增 SPA 回退页生成（Step 5.5），解决子目录 SPA 深层路由空白问题。
         V2.0.0升级：域名从 edgeone.app 迁移到自定义域名 + 全量聚合部署。
         核心变更：部署内容从单个项目 dist → 整个 deploy/artifacts/（所有成员全部产物）。
         门户首页自动扫描生成，不再手动维护。
         部署失败不阻断 /close（版本已冻结，可 /deploy --retry 手动重试）。
       actions:
-        - "**V2.0.0升级：全量聚合部署（deploy-manager.yml V2.0.0，9步流程）：**"
+        - "**V2.0.0升级：全量聚合部署（deploy-manager.yml V2.0.0，9+1步流程）：**"
         - "  ① Step1 前置校验：确认 stage-8 版本快照已完成 + 域名非占位符 + 成员权限 + EdgeOne集成已连接"
         - "  ② Step2 读取部署配置：deploy/edgeone-pages.json + .access-control.yml + 当前用户/项目/主题/版本"
         - "  ③ Step3 构建与聚合：注入 VITE_BASE_PATH=/{member}/{project}/{topic}/{version}/ + VITE_PROJECT_ID={project} + VITE_MODE=sim → npm run build:sim → 复制到 deploy/artifacts/{member}/{project}/{topic}/{version}/"
         - "  ④ Step4 全量扫描：递归扫描 deploy/artifacts/ 下所有成员-项目-版本，构建部署索引"
         - "  ⑤ Step5 生成门户首页：基于 deploy/access-portal/index.html 模板 + 扫描结果 → 生成 deploy/artifacts/index.html"
-        - "  ⑥ Step6 部署到 EdgeOne Pages：整个 deploy/artifacts/ 全量推送（含所有成员+项目+版本+门户）"
-        - "  ⑦ Step7 生成访问 URL：门户 https://{base_domain}/ + 项目 https://{base_domain}/{member}/{project}/{topic}/{version}/"
-        - "  ⑧ Step8 更新部署记录：DEPLOY-MANIFEST.yml + deploy_history 追加"
-        - "  ⑨ Step9 输出部署结果（门户URL + 项目URL + 摘要 + 域名绑定提示）"
-        - "  ⑩ 部署失败处理：不阻断/close，标记status=failed+error_msg，提示 /deploy --retry 手动重试"
+        - "  ⑥ Step5.5 生成SPA回退页：复制 deploy/404-template.html → deploy/artifacts/404.html（子目录SPA fallback，详见 deploy/DEPLOY-GUIDE.md）"
+        - "  ⑦ Step6 部署到 EdgeOne Pages：整个 deploy/artifacts/ 全量推送（含所有成员+项目+版本+门户+SPA回退）"
+        - "  ⑧ Step7 生成访问 URL：门户 https://{base_domain}/ + 项目 https://{base_domain}/{member}/{project}/{topic}/{version}/"
+        - "  ⑨ Step8 更新部署记录：DEPLOY-MANIFEST.yml + deploy_history 追加"
+        - "  ⑩ Step9 输出部署结果（门户URL + 项目URL + 摘要 + 域名绑定提示）"
+        - "  ⑪ 部署失败处理：不阻断/close，标记status=failed+error_msg，提示 /deploy --retry 手动重试"
       output: "部署的全量聚合站点（自定义域名URL）+ 门户首页自动生成 + DEPLOY-MANIFEST.yml 更新 + PROJECT-INDEX.yml deploy字段更新"
       failure_handling:
         blocking: false
@@ -960,15 +964,17 @@
         - "  Step3 索引+校验：生成沉淀摘要 → Journal记录 → 沉淀完整性校验（3项：需求沉淀完整+Review汇总完整+追溯链已快照，不通过则阻止close）→ 经验提升自动触发上一版本经验库增量加载"
         # ↑↑↑ 版本沉淀学习结束（V5.3.0精简版，close提速50%）↑↑↑
         - "上线基线自动标记（strict_guard）：全 close + 无 open Bug + 无 pending feedback + PBL 全闭环 + Review报告全产出 + 追溯链通过 + **版本沉淀完成** + **自动部署完成（V1.0.0新增）**"
-        # ↓↓↓ V2.0.0 升级：stage-9 全量聚合部署 ↓↓↓
-        - "**V2.0.0升级：全量聚合部署（stage-9，deploy-manager.yml V2.0.0，9步流程）：**"
+        # ↓↓↓ V2.0.3 升级：stage-9 全量聚合部署（门户动态化 + 全成员构建） ↓↓↓
+        - "**V2.0.3升级：全量聚合部署（stage-9，deploy-manager.yml V2.0.3，9+3步流程）：**"
         - "  ① Step1-2 前置校验+读取部署配置 deploy/edgeone-pages.json（含base_domain校验）"
-        - "  ② Step3 注入环境变量 VITE_BASE_PATH=/{member}/{project}/{topic}/{version}/ + VITE_PROJECT_ID={project} + VITE_MODE=sim → npm run build:sim → 聚合到 deploy/artifacts/{member}/{project}/{topic}/{version}/"
-        - "  ③ 复制HTML需求文档到 dist/prd/（V1.2.0修正：检查 docs/09-versions/v{version}/prd-html/ 目录存在则复制到 dist/prd/，与G-CLOSE-06命名规范对齐）"
-        - "  ④ Step4-5 全量扫描 deploy/artifacts/ → 自动生成门户首页 index.html"
-        - "  ⑤ Step6-7 整个 deploy/artifacts/ 全量推送到 EdgeOne Pages → 生成访问 URL: https://{base_domain}/（门户）+ https://{base_domain}/{member}/{project}/{topic}/{version}/（项目）"
-        - "  ⑥ Step8-9 更新 DEPLOY-MANIFEST.yml + deploy_history → 输出部署结果（门户+项目URL+域名绑定提示）"
-        - "  ⑦ 部署失败不阻断/close，提示 /deploy --retry 手动重试"
+        - "  ② Step3 注入环境变量 VITE_BASE_PATH=/{member}/{project}/{version}/ → npm run build:sim → 聚合到 deploy/artifacts/{member}/{project}/{version}/"
+        - "  ③ Step3.5 复制PRD HTML文档：docs/09-versions/{version}/prd-html/ → prd/ 子目录"
+        - "  ④ Step4 全量扫描 artifacts/ → 生成 manifest.json（成员×项目×版本结构，门户 V2.0.0 动态加载）"
+        - "  ⑤ Step5 复制门户模板 → deploy/artifacts/index.html（V2.0.0 动态版，fetch manifest.json 渲染）"
+        - "  ⑥ Step5.5 生成 SPA 回退页：复制 deploy/404-template.html → deploy/artifacts/404.html"
+        - "  ⑦ Step6-7 整个 deploy/artifacts/ 全量推送到 EdgeOne Pages → 生成访问 URL"
+        - "  ⑧ Step8-9 更新 DEPLOY-MANIFEST.yml + deploy_history → 输出部署结果"
+        - "  ⑨ 部署失败不阻断/close，提示 /deploy --retry 手动重试"
         # ↑↑↑ stage-9 全量聚合部署结束 ↑↑↑
         # ↓↓↓ V1.1.0 新增：自动Git提交 ↓↓↓
         - "**V1.1.0新增：自动Git提交（/close后自动，成员无需手动操作）：**"

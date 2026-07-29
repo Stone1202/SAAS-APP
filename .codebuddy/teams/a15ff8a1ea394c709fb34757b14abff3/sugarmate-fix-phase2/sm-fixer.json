@@ -1,0 +1,20 @@
+[
+  {
+    "id": "shutdown-1785287260340",
+    "from": "team-lead",
+    "to": "sm-fixer",
+    "type": "shutdown_request",
+    "content": "{\"type\":\"shutdown_request\",\"request_id\":\"shutdown-1785287260340\",\"reason\":\"Phase 2 全部完成，请求关闭。\",\"from\":\"team-lead\",\"timestamp\":\"2026-07-29T01:07:40.340Z\"}",
+    "timestamp": "2026-07-29T01:07:40.340Z",
+    "read": true
+  },
+  {
+    "id": "nudge-1785287290341-i4ku8p",
+    "from": "team-lead",
+    "to": "sm-fixer",
+    "type": "message",
+    "content": "Reminder: a previous shutdown_request (request_id=shutdown-1785287260340) is still awaiting your response.\nPer the Shutdown Protocol, you MUST reply now with:\n  send_message(type='shutdown_response', approve=true, request_id='shutdown-1785287260340')\nIf you have unreported deliverables, send them via send_message first, then acknowledge.\nForce termination will occur shortly if no response is received.",
+    "timestamp": "2026-07-29T01:08:10.342Z",
+    "read": false
+  }
+]

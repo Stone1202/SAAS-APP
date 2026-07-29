@@ -1382,4 +1382,42 @@ domain:
     security_risks:
       - "merchantCorporationInfo.mobile（法人手机号）encryption=none，建议加密"
       - "productInfo.percentRate/fixedRate（费率字段）缺少validation校验规则"
-    uncovered_apis: "144个API待强化学习选项f)补充参数（按场景分批补充：变更服务→账户服务→资金收付→...）"
+    uncovered_apis: "144个API待强化学习选项f)补充参数"
+
+  # V3.0.0 SugarMate: 收单场景→商编映射
+  # 来源: https://open.yeepay.com/docs/products/ptssfk/api/options__rest__v2.0__mer__register__contribute__merchant
+  # 易宝按收单环境(WEB/WAP/APP/MINI_PROGRAM)和收单场景(DRUG_RETAIL/MEDICAL_SERVICE/LIVE_COMMERCE/COURSE_TRAINING等)分配不同商编(merchant_no)
+  # 同一商户可持有多个商编（不同场景独立结算）
+  sugarMate_onboard_knowledge:
+    learned_for: "SugarMate v3.0.0 入驻与入网架构分离"
+    learn_date: "2026-07-28"
+    key_concepts:
+      receive_environment:
+        description: "收单环境决定支付技术通道，影响API调用方式"
+        types:
+          WEB: "PC浏览器支付·电脑端收银台"
+          WAP: "移动H5支付·手机浏览器/公众号H5收银台"
+          APP: "APP内原生支付·SDK集成收银台"
+          MINI_PROGRAM: "小程序支付·微信小程序内支付"
+      receive_scenario:
+        description: "收单场景决定商编类型，影响结算规则和费率"
+        types:
+          DRUG_RETAIL: "药品零售·药房向用户收款"
+          MEDICAL_SERVICE: "医疗服务·医生/药剂师/营养师/HM服务收费"
+          LIVE_COMMERCE: "直播电商·达人/主播带货收款"
+          COURSE_TRAINING: "课程培训·培训机构课程收费"
+      merchant_no:
+        description: "商编是易宝给每个商户×场景分配的唯一编号"
+        rule: "同一主体(yeepay_merchant_id)×不同收单场景→不同merchant_no"
+        example: "药房DRUG_RETAIL商编≠药房旗下直播LIVE_COMMERCE商编"
+      onboard_flow_standalone:
+        description: "入网为独立流程，不入驻自动触发"
+        trigger: "入驻角色管理员在PC后台【财务中心→开通支付·易宝入网】自主发起"
+        prerequisite: "入驻审核通过"
+        auto_load: "自动引用入驻资质(证照/身份信息)，仅需补充银行账户+收单场景等支付特有要素"
+    integration_points:
+      - "SM-18独立入网状态机(§7.13)"
+      - "BR-SUG-121~128入网业务规则(§11.10)"
+      - "UC-SUG-PC-030开通支付用例(§11.11)"
+      - "§26 UI元素编号·PG-SUG-PC-002财务中心页面"
+      - "§27 SM-18仿真Mock方案·SimYeepayCallbackAdapter"

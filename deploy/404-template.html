@@ -3,30 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <title>Loading...</title>
+  <!--
+    EdgeOne Pages 子目录 SPA fallback 方案
+    ＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+    问题：EdgeOne Pages 只支持根级 SPA fallback (/* → /index.html)，
+          子目录 SPA 的深层路由（如 /jojo/SAAS/v1.0.0/tenant/dashboard）会 404。
+    方案：根级 404.html 用 JS 提取 URL 中的 SPA base 路径，
+          fetch 对应 index.html 并替换文档，URL 保持不变。
+    新增项目不需要修改本文件，只需遵循 /{member}/{project}/{version}/ 路径规范。
+    详见：deploy/DEPLOY-GUIDE.md
+  -->
   <script>
     (function () {
       var path = window.location.pathname;
-      // 匹配多项目 SPA 路径: /{member}/{project}/{version}/...
-      var match = path.match(/^\/([^/]+)\/([^/]+)\/(v[^/]+)\//);
+      // 匹配子项目 SPA 路径（含脚本文件）：
+      //   - 带 topic：/{member}/{project}/{topic}/{version}/...
+      //   - 无 topic：/{member}/{project}/{version}/...
+      // 如果路径指向一个 .js/.css/.svg 等脚本资源，让浏览器正常 404（不解救）
+      // 否则 fetch 对应 index.html 并替换文档
+      var isAsset = /\.(js|css|svg|png|jpg|jpeg|gif|woff2?|ttf|ico|json|map)$/i.test(path);
+      if (isAsset) {
+        document.body.innerHTML = '<h1>404 - Not Found</h1>';
+        return;
+      }
+      var match = path.match(/^\/([^/]+)\/([^/]+)\/(v[^/]+)\//)
+               || path.match(/^\/([^/]+)\/([^/]+)\/([^/]+)\/(v[^/]+)\//);
       if (match) {
-        var base = '/' + match[1] + '/' + match[2] + '/' + match[3] + '/';
-        fetch(base + 'index.html', { cache: 'no-store' })
-          .then(function (res) {
-            if (!res.ok) throw new Error('SPA index not found');
-            return res.text();
-          })
-          .then(function (html) {
-            document.open();
-            document.write(html);
-            document.close();
-          })
-          .catch(function () {
-            document.body.innerHTML = '<h1>404 - Page Not Found</h1>';
-          });
+        // 根据匹配组数构造 base URL
+        var base;
+        if (match.length === 4) {
+          // 无 topic：/{member}/{project}/{version}/
+          base = '/' + match[1] + '/' + match[2] + '/' + match[3] + '/';
+        } else if (match.length === 5) {
+          // 带 topic：/{member}/{project}/{topic}/{version}/
+          base = '/' + match[1] + '/' + match[2] + '/' + match[3] + '/' + match[4] + '/';
+        }
+        if (base) {
+          fetch(base + 'index.html', { cache: 'no-store' })
+            .then(function (res) {
+              if (!res.ok) throw new Error('SPA index not found');
+              return res.text();
+            })
+            .then(function (html) {
+              document.open();
+              document.write(html);
+              document.close();
+            })
+            .catch(function () {
+              document.body.innerHTML = '<h1>404 - Page Not Found</h1>';
+            });
+        }
       } else {
-        document.addEventListener('DOMContentLoaded', function () {
-          document.body.innerHTML = '<h1>404 - Page Not Found</h1>';
-        });
+        document.body.innerHTML = '<h1>404 - Page Not Found</h1>';
       }
     })();
   </script>

@@ -1,18 +1,26 @@
 # ============================================
-# deploy-manager.yml — 部署管理器 Skill V2.0.0
+# deploy-manager.yml — 部署管理器 Skill V2.0.3
 # ============================================
-# 版本：V2.0.0（域名迁移 + topic路由 + 全量聚合部署）
+# 版本：V2.0.3（门户 V2.0.0 动态化 + 全成员构建 + manifest.json）
 # 核心变更：
 #   - 7步→9步：新增产物聚合 + 门户自动生成
 #   - 部署内容：单个项目 dist → 整个 deploy/artifacts/ 全量
-#   - URL：edgeone.app → 自定义域名/member/project/topic/version/
-#   - 门户首页：自动扫描→按项目→主题分组展示
-#   - topic 路由：支持多人并行同一项目不同迭代主题
+#   - URL：edgeone.app → 自定义域名/member/project/version/
+#   - 门户首页：自动扫描→按成员→项目→版本分组展示
+# V2.0.1 新增：
+#   - Step 5.5：生成 SPA 回退页 404.html（子目录 SPA fallback）
+# V2.0.2 新增：
+#   - Step 3.5：复制 PRD HTML 文档到 {version}/prd/
+# V2.0.3 新增：
+#   - 门户 V2.0.0 动态化：fetch manifest.json 而不是硬编码数据
+#   - Step 4 新增生成 manifest.json（全量扫描产物→JSON）
+#   - Step 5 简化为直接复制模板（无需模板替换）
+#   - build-all.sh 覆盖全部 6 位成员的构建
 # ============================================
 
 id: deploy-manager
 name: 部署管理器
-version: "2.0.0"
+version: "2.0.3"
 type: skill
 
 # ---------- 触发条件 ----------
@@ -26,6 +34,7 @@ dependencies:
   - config: deploy/edgeone-pages.json
   - manifest: deploy/DEPLOY-MANIFEST.yml
   - portal_template: deploy/access-portal/index.html
+  - spa_fallback_template: deploy/404-template.html
   - access_control: .access-control.yml
 
 # ---------- 9步全量聚合部署流程 ----------
@@ -98,7 +107,8 @@ steps:
       操作：
       1. 创建目标目录：mkdir -p deploy/artifacts/{member}/{project}/{topic}/{version}/
       2. 复制 dist 内容：cp -r projects/{project}/dist/* deploy/artifacts/{member}/{project}/{topic}/{version}/
-      3. 如有旧版本同一 member+project+topic，保留不删（全量聚合，旧版本共存）
+      3. 复制 PRD HTML 文档（如果存在）：cp -r projects/{project}/docs/09-versions/{version}/prd-html/ deploy/artifacts/.../prd/
+      4. 如有旧版本同一 member+project+topic，保留不删（全量聚合，旧版本共存）
     actions:
       - action: create_target_dir
         path: "deploy/artifacts/{current_member_id}/{current_project}/{current_topic}/{current_version}/"
@@ -108,61 +118,75 @@ steps:
         overwrite: true
       - action: verify_copy
         check: "deploy/artifacts/{current_member_id}/{current_project}/{current_topic}/{current_version}/index.html 存在"
+      - action: copy_prd_html
+        condition: "projects/{current_project}/docs/09-versions/{current_version}/prd-html/ 目录存在"
+        source: "projects/{current_project}/docs/09-versions/{current_version}/prd-html/"
+        target: "deploy/artifacts/{current_member_id}/{current_project}/{current_topic}/{current_version}/prd/"
+        overwrite: true
 
   # ==========================================
-  # Step 4: 全量扫描现有产物
+  # Step 4: 全量扫描现有产物 + 生成 manifest.json
   # ==========================================
   - id: step-4
-    name: 全量扫描产物
+    name: 全量扫描产物 + 生成 manifest.json
     description: |
-      递归扫描 deploy/artifacts/ 下所有成员的所有项目的所有主题的所有版本。
-      输出结构化的部署索引数据，用于生成门户首页。
+      V2.0.3 升级：扫描产物目录并生成 manifest.json（门户 V2.0.0 动态加载的数据源）。
       
       扫描逻辑：
       1. 列出 deploy/artifacts/ 下所有子目录（= 成员列表）
       2. 对每个成员，列出其下所有子目录（= 项目列表）
-      3. 对每个项目，列出其下所有子目录（= 主题列表）
-      4. 对每个主题，列出其下所有子目录（= 版本列表）
-      5. 读取每个版本目录下的 index.html 存在性确认
+      3. 对每个项目，列出其下所有子目录（= 版本列表）
+      4. 生成 deploy/artifacts/manifest.json（门户前端 fetch 加载）
     actions:
       - action: scan_directory
         path: "deploy/artifacts/"
-        depth: 4
-      - action: build_index
-        output:
+        depth: 3
+      - action: generate_manifest
+        output: "deploy/artifacts/manifest.json"
+        format:
+          generated_at: "ISO 8601"
           members:
             - id: string
               projects:
-                - name: string
-                  framework: "react" | "vue"
-                  topics:
-                    - topic: string
-                      versions:
-                        - version: string
-                          url: "/{member}/{project}/{topic}/{version}/"
-                          timestamp: string
+                - slug: string
+                  versions: [string]
 
   # ==========================================
-  # Step 5: 自动生成门户首页
+  # Step 5: 复制门户首页（V2.0.0 动态版）
   # ==========================================
   - id: step-5
-    name: 自动生成门户首页
+    name: 复制门户首页
     description: |
-      基于 Step 4 扫描结果，生成 deploy/artifacts/index.html
+      V2.0.0 升级：门户改为动态加载 manifest.json，不再嵌入硬编码数据。
+      直接将模板复制到 deploy/artifacts/index.html（无需模板替换）。
       
-      生成方式：
-      1. 读取 deploy/access-portal/index.html 作为模板
-      2. 替换 {{BASE_DOMAIN}} → base_domain
-      3. 将 Step 4 的 members 数据（含 topic 层级）序列化为 JSON，替换 {{MEMBERS}}
-      4. 写入 deploy/artifacts/index.html
-      5. 门户展示：按成员→项目→主题 分组，同一项目的不同主题折叠显示
+      门户渲染逻辑：
+      1. 页面加载时 fetch ./manifest.json
+      2. 与内置 METADATA 注册表（PROJECT_META + MEMBER_META）合并
+      3. 动态渲染成员/项目/版本/终端入口
+      4. manifest 加载失败时回退到 FALLBACK_DATA
+      
+      优势：新增成员只需改 build-all.sh PROJECTS 数组，
+      门户自动识别，无需手动更新 HTML。
     template: "deploy/access-portal/index.html"
     output: "deploy/artifacts/index.html"
-    replacements:
-      - placeholder: "{{BASE_DOMAIN}}"
-        value: "{base_domain}"
-      - placeholder: "{{MEMBERS}}"
-        value: "JSON.stringify(members)"
+    replacements: []  # V2.0.0: 无需模板替换，门户动态加载 manifest.json
+
+  # ==========================================
+  # Step 5.5: 生成 SPA 回退页（404.html）
+  # ==========================================
+  - id: step-5.5
+    name: 生成 SPA 回退页
+    description: |
+      EdgeOne Pages 只支持根级 SPA fallback，子目录 SPA 的深层路由无法自动回退。
+      解决方案：根级 404.html 中 JS 动态 fetch 子项目 index.html 并替换文档。
+      
+      详见 deploy/DEPLOY-GUIDE.md §3。
+    actions:
+      - action: copy_fallback_template
+        source: "deploy/404-template.html"
+        target: "deploy/artifacts/404.html"
+        overwrite: true
 
   # ==========================================
   # Step 6: 部署到 EdgeOne Pages
@@ -287,6 +311,22 @@ error_handling:
 
 # ---------- 版本历史 ----------
 version_history:
+  - version: "2.0.3"
+    date: "2026-07-29"
+    changes:
+      - "门户 V2.0.0 动态化：fetch manifest.json 替代硬编码数据"
+      - "Step 4 新增生成 deploy/artifacts/manifest.json"
+      - "Step 5 简化：直接复制模板，无需模板替换"
+      - "解决其他成员项目 404 的根因（硬编码数据与构建产物不一致）"
+  - version: "2.0.2"
+    date: "2026-07-29"
+    changes:
+      - "新增 Step 3.5：复制 PRD HTML 文档到 {version}/prd/（解决 docs/prd-html/ 不会被自动部署的问题）"
+  - version: "2.0.1"
+    date: "2026-07-28"
+    changes:
+      - "新增 Step 5.5：生成 SPA 回退页 deploy/artifacts/404.html（子目录 SPA fallback，解决深层路由空白问题）"
+      - "新增依赖 deploy/404-template.html"
   - version: "2.0.0"
     date: "2026-07-23"
     changes:

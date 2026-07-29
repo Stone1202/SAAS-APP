@@ -1,0 +1,29 @@
+[
+  {
+    "id": "msg-1785287236387-b24tjo",
+    "from": "team-lead",
+    "to": "banner-fixer",
+    "type": "message",
+    "content": "状态汇报一下，进度如何？其他4个fixer都已完成，就差你了。",
+    "timestamp": "2026-07-29T01:07:16.387Z",
+    "read": true
+  },
+  {
+    "id": "shutdown-1785287261063",
+    "from": "team-lead",
+    "to": "banner-fixer",
+    "type": "shutdown_request",
+    "content": "{\"type\":\"shutdown_request\",\"request_id\":\"shutdown-1785287261063\",\"reason\":\"Phase 2 全部完成，请求关闭。\",\"from\":\"team-lead\",\"timestamp\":\"2026-07-29T01:07:41.063Z\"}",
+    "timestamp": "2026-07-29T01:07:41.063Z",
+    "read": true
+  },
+  {
+    "id": "nudge-1785287291078-ftjxdu",
+    "from": "team-lead",
+    "to": "banner-fixer",
+    "type": "message",
+    "content": "Reminder: a previous shutdown_request (request_id=shutdown-1785287261063) is still awaiting your response.\nPer the Shutdown Protocol, you MUST reply now with:\n  send_message(type='shutdown_response', approve=true, request_id='shutdown-1785287261063')\nIf you have unreported deliverables, send them via send_message first, then acknowledge.\nForce termination will occur shortly if no response is received.",
+    "timestamp": "2026-07-29T01:08:11.078Z",
+    "read": false
+  }
+]
