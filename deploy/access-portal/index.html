@@ -248,13 +248,13 @@ function renderMemberProjects(member) {
     return;
   }
 
-  document.getElementById('projectList').innerHTML = projects.map(p => renderProjectCard(p)).join('');
+  document.getElementById('projectList').innerHTML = projects.map(p => renderProjectCard(p, member)).join('');
 }
 
-function renderProjectCard(project) {
+function renderProjectCard(project, member) {
   // 兼容旧版 manifest（只有 versions[]，没有 goals/main）
   if (!project.goals && project.versions) {
-    return renderLegacyProjectCard(project);
+    return renderLegacyProjectCard(project, member);
   }
 
   const goals = project.goals || [];
@@ -345,9 +345,22 @@ function renderGoalItem(goal) {
 }
 
 // 兼容旧版 manifest 渲染（versions[] 结构，支持字符串数组或对象数组）
-function renderLegacyProjectCard(project) {
+function renderLegacyProjectCard(project, member) {
   const rawVersions = project.versions || [];
-  const versions = rawVersions.map(v => typeof v === 'string' ? { version: v } : v);
+  const memberId = member && member.id ? member.id : '';
+  const projectSlug = project.slug || '';
+  // 为字符串版本补齐默认 URL（main 聚合入口兜底）
+  const versions = rawVersions.map(v => {
+    if (typeof v === 'string') {
+      const ver = v;
+      return {
+        version: ver,
+        url: memberId && projectSlug ? `./${memberId}/${projectSlug}/main/${ver}/` : '',
+        prd_doc_url: memberId && projectSlug ? `./${memberId}/${projectSlug}/main/${ver}/prd.html` : ''
+      };
+    }
+    return v;
+  });
   const framework = project.framework || 'Static';
   const projectName = project.name || project.slug || '未命名项目';
   const terminals = project.terminals || [];
