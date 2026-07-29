@@ -1,0 +1,55 @@
+{
+  "version": "v2.0.0",
+  "comment": "V2.0.0 — goal维度结构：projects[].goals[] 每个goal独立版本线，main为聚合入口",
+  "generated_at": "",
+  "members": [
+    {
+      "id": "Eltonliz",
+      "commit_url": "https://gitee.com/rex-sa/ai-scrm",
+      "projects": [
+        {
+          "slug": "SAAS",
+          "name": "SAAS",
+          "framework": "vue",
+          "goals": [
+            {
+              "goal": "live-audit",
+              "title": "直播内容审查系统",
+              "branch": "Eltonliz/SAAS-live-audit",
+              "terminals": ["租户后台PC", "运营后台PC", "观众端H5"],
+              "versions": [
+                {
+                  "version": "v1.0.0",
+                  "timestamp": "",
+                  "prd_doc_url": "./Eltonliz/SAAS/live-audit/v1.0.0/index.html",
+                  "scope_only_proto_url": "./Eltonliz/SAAS/live-audit/v1.0.0/"
+                }
+              ]
+            },
+            {
+              "goal": "finance",
+              "title": "财务管理系统",
+              "branch": "Eltonliz/SAAS-finance",
+              "terminals": ["管理后台", "报表端"],
+              "versions": [
+                {
+                  "version": "v1.0.0",
+                  "timestamp": "",
+                  "prd_doc_url": "./Eltonliz/SAAS/finance/v1.0.0/index.html",
+                  "scope_only_proto_url": "./Eltonliz/SAAS/finance/v1.0.0/"
+                }
+              ]
+            }
+          ],
+          "main": {
+            "version": "v1.0.0",
+            "proto_url": "./Eltonliz/SAAS/main/v1.0.0/",
+            "prd_overview_url": "./Eltonliz/SAAS/main/v1.0.0/prd-overview.html",
+            "terminals": ["租户后台PC", "运营后台PC", "观众端H5", "管理后台", "报表端"],
+            "merged_goals": ["live-audit", "finance"]
+          }
+        }
+      ]
+    }
+  ]
+}
