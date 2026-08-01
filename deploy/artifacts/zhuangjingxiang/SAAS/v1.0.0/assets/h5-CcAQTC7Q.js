@@ -1,0 +1,1 @@
+import{c as s,_ as t,a as n,r as o,e as i}from"./index-h3gY0C-q.js";const c="real";console.log(`[SAAS Audit Prototype] 运行模式: ${c} | 终端: H5观众端`);const e=s(t),p=n();e.use(p);e.use(o);e.use(i);o.isReady().then(()=>{const a=window.location.hash;(a===""||a==="#/"||a==="#/index.html")&&o.replace("/h5/live/demo")});e.mount("#app");

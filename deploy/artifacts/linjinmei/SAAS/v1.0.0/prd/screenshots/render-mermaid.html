@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<script src="./mermaid.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #fff; padding: 40px; }
+.diagram { margin-bottom: 60px; padding: 30px; border: 1px solid #e5e5e5; border-radius: 8px; background: #fafafa; }
+.diagram-label { font-size: 20px; font-weight: 700; margin-bottom: 20px; color: #1a1a1a; }
+.mermaid { text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="diagram" id="d1">
+<div class="diagram-label">图1 — 业务流程图（业务泳道图）</div>
+<div class="mermaid">
+flowchart TB
+    A[平台运营管理审查开关] --> B{租户审查开关}
+    B -->|开启| C[租户直播中控显示内容审查Tab]
+    B -->|关闭| C2[主播正常直播无干扰]
+    C --> D[主播开始直播/推流模拟]
+    C2 --> D
+    D --> E[模拟回调数据生成器触发违规事件]
+    E --> F{检测到违规?}
+    F -->|是| G[直播中控展示违规告警]
+    F -->|否| H[正常直播继续]
+    G --> I{运营处置}
+    I -->|记录| J[记录违规不打断直播]
+    I -->|断流| K[切断推流终止直播]
+    I -->|忽略| L[标记非违规]
+    I -->|30秒超时| J
+    G --> M{直播中途关闭审查?}
+    M -->|是| M2[违规列表只读+待处理自动归档]
+    H --> N[直播结束→回放文件生成]
+    J --> N
+    K --> N
+    L --> N
+    N --> O[触发回放擦音模拟]
+    O --> P{擦音结果}
+    P -->|成功| Q[展示擦音前后对比→待人工核对]
+    P -->|超时| Q2[播放器锁定+手动重试]
+    P -->|失败| Q3[展示原片+警告标注+可重试]
+    Q --> R1{人工核对}
+    R1 -->|核对通过| R2[运营确认发布→观众可看回放]
+    R1 -->|驳回| R3[重新擦音→回到O]
+    E --> S[观众端感知擦音效果]
+    S --> T{擦音模式}
+    T -->|静音| U["🔇静音2-5秒"]
+    T -->|擦音| V["🎧嘀声2-5秒"]
+    K --> W["观众端: 直播已结束，因内容违规已终止"]
+    M2 --> X[观众端: 擦音效果停止]
+</div>
+</div>
+
+<div class="diagram" id="d2">
+<div class="diagram-label">图2 — 信息流转图（跨模块）</div>
+<div class="mermaid">
+flowchart LR
+    subgraph 模拟层
+        Mock[模拟回调数据生成器]
+    end
+    subgraph 租户后台
+        Ctrl[直播中控审查Tab]
+        Disp[处置服务]
+    end
+    subgraph 观众端
+        Viewer[观众直播间]
+    end
+    subgraph 存储
+        DB[(违规记录-Mock)]
+    end
+    Mock -->|违规事件| Ctrl
+    Mock -->|擦音触发| Viewer
+    Ctrl -->|处置指令| Disp
+    Disp -->|处置记录| DB
+    Ctrl -->|擦音模式切换| Viewer
+    Viewer -->|静音/擦音效果| Viewer
+</div>
+</div>
+
+<div class="diagram" id="d3">
+<div class="diagram-label">图3 — 违规处置状态机 + 状态过渡操作表</div>
+<div class="mermaid">
+stateDiagram-v2
+    [*] --> 待处理: 模拟违规事件触发
+    待处理 --> 已记录: 运营选择[记录]
+    待处理 --> 已断流: 运营选择[断流]
+    待处理 --> 已忽略: 运营选择[忽略]
+    待处理 --> 已超时: 30秒未处置
+    待处理 --> 已归档: 审查关闭/场次结束
+    已超时 --> 已记录: 系统自动记录
+    已记录 --> [*]
+    已断流 --> [*]
+    已忽略 --> [*]
+    已归档 --> [*]
+</div>
+</div>
+
+<div class="diagram" id="d4">
+<div class="diagram-label">图4 — 回放发布状态机 + 状态过渡操作表</div>
+<div class="mermaid">
+stateDiagram-v2
+    [*] --> 待核对: 擦音完成
+    待核对 --> 已核对: 运营核对通过
+    待核对 --> 已驳回: 运营驳回
+    已核对 --> 已发布: 运营确认发布
+    已驳回 --> 待核对: 重新擦音完成
+    已发布 --> [*]
+</div>
+</div>
+
+<div class="diagram" id="d5">
+<div class="diagram-label">图5 — 业务时序图</div>
+<div class="mermaid">
+sequenceDiagram
+    participant Mock as 模拟数据生成器
+    participant Ctrl as 直播中控
+    participant 运营 as 直播运营
+    participant Viewer as 观众端
+    participant Playback as 回放擦音模拟
+    Mock->>Ctrl: 模拟违规事件（定时触发）
+    Ctrl->>Ctrl: 展示告警+违规列表
+    Ctrl->>运营: 实时推送告警
+    运营->>Ctrl: 处置（记录/断流/忽略）
+    Ctrl->>Ctrl: 更新处置状态
+    Mock->>Viewer: 模拟擦音触发
+    Viewer->>Viewer: 展示静音/擦音效果（2-5秒）
+    Note over Mock,Playback: 直播结束
+    Mock->>Playback: 模拟回放文件生成
+    Playback->>Playback: 擦音处理模拟
+    Playback->>Playback: 擦音完成→待核对
+    Playback->>运营: 展示擦音前后对比
+    运营->>Playback: 核对通过·发布回放
+    Playback->>Playback: 发布完成→观众可观看回放
+</div>
+</div>
+
+<div class="diagram" id="d6">
+<div class="diagram-label">图6 — 三方接口时序图（V1模拟版）</div>
+<div class="mermaid">
+sequenceDiagram
+    Note over Mock,Viewer: V1纯前端模拟，不对接腾讯云API
+    Mock->>Mock: 定时器生成模拟违规事件
+    Note right of Mock: 模拟字段: hit_flag/score/label<br/>suggestion/asr_text/duration/seq/stream_id
+    Mock->>Ctrl: 模拟回调推送
+    Ctrl->>Ctrl: 签名验证（模拟跳过）
+    Ctrl->>Ctrl: 全量存储（Mock数据）
+    Ctrl->>Ctrl: 实时展示告警
+    Mock->>Viewer: 模拟擦音触发
+    Viewer->>Viewer: 静音/擦音效果展示
+</div>
+</div>
+
+<script>
+mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose', fontSize: 16 });
+mermaid.run({ querySelector: '.mermaid' }).then(function() {
+  document.body.setAttribute('data-rendered', 'true');
+});
+</script>
+</body>
+</html>

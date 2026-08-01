@@ -96,6 +96,7 @@
     padding: 4px 12px; background: #f6ffed; border: 1px solid #b7eb8f;
     border-radius: 12px; font-size: 12px; color: #52c41a;
     cursor: pointer; user-select: none; transition: all .2s;
+    text-decoration: none;
   }
   .terminal-tag:hover {
     background: #d9f7be; border-color: #95de64;
@@ -189,19 +190,18 @@
 // 项目部署 URL 映射（以实际 EdgeOne 部署为准）
 const PROJECT_URLS = {
   // 所有项目统一走用户域名 prototype.jycao.cn 下的子目录
-  'AI-SCRM':   'https://prototype.jycao.cn',
-  'SAAS':      'https://prototype.jycao.cn',
-  'SugarMate': 'https://prototype.jycao.cn'
+  'AI-SCRM': 'https://prototype.jycao.cn',
+  'SAAS':    'https://prototype.jycao.cn'
 };
 const EMBEDDED_MANIFEST = {
-  "version":"v3.0.0","generated_at":"2026-07-29T16:30+08:00",
+  "version":"v4.0.0","generated_at":"2026-07-29T20:00+08:00","comment":"V4.0.0 — SAAS 三入口多页构建，终端标签可点击跳转",
   "members":[
-    {"id":"jojo","projects":[{"slug":"AI-SCRM","name":"AI-SCRM 智能SCRM平台","framework":"React+TS","terminals":["运营后台PC","租户后台PC","H5移动端"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/prd.html"}]},{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]},{"slug":"SugarMate","name":"SugarMate 糖伴健康平台","framework":"React+TS","terminals":["PC后台","小程序","APP","直播端"],"versions":[{"version":"v3.1.1","url":"https://prototype.jycao.cn/jojo/SugarMate/main/v3.1.1/"}]}}]},
-    {"id":"Eltonliz","projects":[{"slug":"AI-SCRM","name":"AI-SCRM 智能SCRM平台","framework":"React+TS","terminals":["运营后台PC","租户后台PC","H5移动端"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/prd.html"}]},{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/Eltonliz/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/Eltonliz/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]}]},
-    {"id":"fuyongjian","projects":[{"slug":"AI-SCRM","name":"AI-SCRM 智能SCRM平台","framework":"React+TS","terminals":["运营后台PC","租户后台PC","H5移动端"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/prd.html"}]},{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/fuyongjian/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/fuyongjian/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]}]},
-    {"id":"jiangrubin","projects":[{"slug":"AI-SCRM","name":"AI-SCRM 智能SCRM平台","framework":"React+TS","terminals":["运营后台PC","租户后台PC","H5移动端"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/prd.html"}]},{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jiangrubin/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jiangrubin/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]}]},
-    {"id":"linjinmei","projects":[{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/linjinmei/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/linjinmei/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]}]},
-    {"id":"zhuangjingxiang","projects":[{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/zhuangjingxiang/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/zhuangjingxiang/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]}]}
+    {"id":"jojo","projects":[{"slug":"AI-SCRM","name":"AI-SCRM 智能SCRM平台","framework":"React+TS","terminals":["运营后台PC","租户后台PC","H5移动端"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/prd.html"}]},{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"terminal_urls":{"运营后台PC":"https://prototype.jycao.cn/jojo/SAAS/v1.0.0/admin.html","租户后台PC":"https://prototype.jycao.cn/jojo/SAAS/v1.0.0/tenant.html","观众端H5":"https://prototype.jycao.cn/jojo/SAAS/v1.0.0/h5.html"},"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]}]},
+    {"id":"Eltonliz","projects":[{"slug":"AI-SCRM","name":"AI-SCRM 智能SCRM平台","framework":"React+TS","terminals":["运营后台PC","租户后台PC","H5移动端"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/prd.html"}]},{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"terminal_urls":{"运营后台PC":"https://prototype.jycao.cn/Eltonliz/SAAS/v1.0.0/admin.html","租户后台PC":"https://prototype.jycao.cn/Eltonliz/SAAS/v1.0.0/tenant.html","观众端H5":"https://prototype.jycao.cn/Eltonliz/SAAS/v1.0.0/h5.html"},"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/Eltonliz/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/Eltonliz/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]}]},
+    {"id":"fuyongjian","projects":[{"slug":"AI-SCRM","name":"AI-SCRM 智能SCRM平台","framework":"React+TS","terminals":["运营后台PC","租户后台PC","H5移动端"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/prd.html"}]},{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"terminal_urls":{"运营后台PC":"https://prototype.jycao.cn/fuyongjian/SAAS/v1.0.0/admin.html","租户后台PC":"https://prototype.jycao.cn/fuyongjian/SAAS/v1.0.0/tenant.html","观众端H5":"https://prototype.jycao.cn/fuyongjian/SAAS/v1.0.0/h5.html"},"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/fuyongjian/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/fuyongjian/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]}]},
+    {"id":"jiangrubin","projects":[{"slug":"AI-SCRM","name":"AI-SCRM 智能SCRM平台","framework":"React+TS","terminals":["运营后台PC","租户后台PC","H5移动端"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/prd.html"}]},{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"terminal_urls":{"运营后台PC":"https://prototype.jycao.cn/jiangrubin/SAAS/v1.0.0/admin.html","租户后台PC":"https://prototype.jycao.cn/jiangrubin/SAAS/v1.0.0/tenant.html","观众端H5":"https://prototype.jycao.cn/jiangrubin/SAAS/v1.0.0/h5.html"},"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jiangrubin/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jiangrubin/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]}]},
+    {"id":"linjinmei","projects":[{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"terminal_urls":{"运营后台PC":"https://prototype.jycao.cn/linjinmei/SAAS/v1.0.0/admin.html","租户后台PC":"https://prototype.jycao.cn/linjinmei/SAAS/v1.0.0/tenant.html","观众端H5":"https://prototype.jycao.cn/linjinmei/SAAS/v1.0.0/h5.html"},"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/linjinmei/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/linjinmei/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]}]},
+    {"id":"zhuangjingxiang","projects":[{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"terminal_urls":{"运营后台PC":"https://prototype.jycao.cn/zhuangjingxiang/SAAS/v1.0.0/admin.html","租户后台PC":"https://prototype.jycao.cn/zhuangjingxiang/SAAS/v1.0.0/tenant.html","观众端H5":"https://prototype.jycao.cn/zhuangjingxiang/SAAS/v1.0.0/h5.html"},"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/zhuangjingxiang/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/zhuangjingxiang/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]}]}
   ]
 };
 
@@ -215,6 +215,20 @@ function getTermIcon(name) {
     if (name.includes(k)) return v;
   }
   return '📄';
+}
+
+// 渲染终端标签：有 terminal_urls 时渲染为可点击链接，否则为纯展示标签
+function renderTerminalTags(terminals, terminalUrls) {
+  if (!terminals || terminals.length === 0) return '';
+  const tags = terminals.map(t => {
+    const icon = getTermIcon(t);
+    const url = terminalUrls && terminalUrls[t];
+    if (url) {
+      return `<a href="${url}" class="terminal-tag" target="_blank" rel="noopener" title="打开 ${t}">${icon} ${t}</a>`;
+    }
+    return `<span class="terminal-tag">${icon} ${t}</span>`;
+  });
+  return tags.join('');
 }
 
 async function init() {
@@ -317,7 +331,7 @@ function renderProjectCard(project, member) {
       </div>
       ${allTerminals.length > 0 ? `
         <div class="terminal-list">
-          ${allTerminals.map(t => `<span class="terminal-tag">${getTermIcon(t)} ${t}</span>`).join('')}
+          ${renderTerminalTags(allTerminals, main.terminal_urls || project.terminal_urls)}
         </div>` : ''}
     </div>
 
@@ -363,7 +377,7 @@ function renderGoalItem(goal) {
 
         ${terminals.length > 0 ? `
           <div class="terminal-list goal-terminals">
-            ${terminals.map(t => `<span class="terminal-tag">${getTermIcon(t)} ${t}</span>`).join('')}
+            ${renderTerminalTags(terminals, goal.terminal_urls)}
           </div>` : ''}
       </div>
     </details>
@@ -416,7 +430,7 @@ function renderLegacyProjectCard(project, member) {
       </div>
       ${terminals.length > 0 ? `
         <div class="terminal-list">
-          ${terminals.map(t => `<span class="terminal-tag">${getTermIcon(t)} ${t}</span>`).join('')}
+          ${renderTerminalTags(terminals, project.terminal_urls)}
         </div>` : ''}
     </div>
 
@@ -448,10 +462,13 @@ function renderLegacyProjectCard(project, member) {
 // 启动
 init();
 
-// 终端标签点击：跳转到所属项目的原型入口（解决"入口点击没有效果"）
+// 终端标签点击：仅对非链接标签（span）跳转到所属项目的原型入口
+// 若已是 <a> 标签（有独立 terminal_urls），浏览器原生处理即可
 document.addEventListener('click', (e) => {
   const tag = e.target.closest('.terminal-tag');
   if (!tag) return;
+  // <a> 标签已有自己的 href，不拦截
+  if (tag.tagName === 'A') return;
   const card = tag.closest('.project-card');
   if (!card) return;
   const protoBtn = card.querySelector('.btn-primary[href]');

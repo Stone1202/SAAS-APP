@@ -1,7 +1,7 @@
 {
-  "version": "v3.0.0",
-  "comment": "V3.0.2 — SAAS PRD 链接修正为 SAAS-v1.0.0-S1.html，终端标签支持点击跳转",
-  "generated_at": "2026-07-29T16:30+08:00",
+  "version": "v4.0.0",
+  "comment": "V4.0.0 — SAAS 三入口多页构建 (admin.html/tenant.html/h5.html)，终端标签可点击跳转",
+  "generated_at": "2026-07-29T19:45+08:00",
   "members": [
     {
       "id": "jojo",
@@ -24,23 +24,16 @@
           "name": "SAAS直播内容审查系统",
           "framework": "Vue",
           "terminals": ["租户后台PC", "运营后台PC", "观众端H5"],
+          "terminal_urls": {
+            "运营后台PC": "./jojo/SAAS/v1.0.0/admin.html",
+            "租户后台PC": "./jojo/SAAS/v1.0.0/tenant.html",
+            "观众端H5": "./jojo/SAAS/v1.0.0/h5.html"
+          },
           "versions": [
             {
               "version": "v1.0.0",
               "url": "./jojo/SAAS/v1.0.0/",
               "prd_doc_url": "./jojo/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"
-            }
-          ]
-        },
-        {
-          "slug": "SugarMate",
-          "name": "SugarMate 糖伴健康平台",
-          "framework": "React+TS",
-          "terminals": ["PC后台", "小程序", "APP", "直播端"],
-          "versions": [
-            {
-              "version": "v3.1.1",
-              "url": "./jojo/SugarMate/main/v3.1.1/"
             }
           ]
         }
@@ -67,6 +60,11 @@
           "name": "SAAS直播内容审查系统",
           "framework": "Vue",
           "terminals": ["租户后台PC", "运营后台PC", "观众端H5"],
+          "terminal_urls": {
+            "运营后台PC": "./Eltonliz/SAAS/v1.0.0/admin.html",
+            "租户后台PC": "./Eltonliz/SAAS/v1.0.0/tenant.html",
+            "观众端H5": "./Eltonliz/SAAS/v1.0.0/h5.html"
+          },
           "versions": [
             {
               "version": "v1.0.0",
@@ -98,6 +96,11 @@
           "name": "SAAS直播内容审查系统",
           "framework": "Vue",
           "terminals": ["租户后台PC", "运营后台PC", "观众端H5"],
+          "terminal_urls": {
+            "运营后台PC": "./fuyongjian/SAAS/v1.0.0/admin.html",
+            "租户后台PC": "./fuyongjian/SAAS/v1.0.0/tenant.html",
+            "观众端H5": "./fuyongjian/SAAS/v1.0.0/h5.html"
+          },
           "versions": [
             {
               "version": "v1.0.0",
@@ -129,6 +132,11 @@
           "name": "SAAS直播内容审查系统",
           "framework": "Vue",
           "terminals": ["租户后台PC", "运营后台PC", "观众端H5"],
+          "terminal_urls": {
+            "运营后台PC": "./jiangrubin/SAAS/v1.0.0/admin.html",
+            "租户后台PC": "./jiangrubin/SAAS/v1.0.0/tenant.html",
+            "观众端H5": "./jiangrubin/SAAS/v1.0.0/h5.html"
+          },
           "versions": [
             {
               "version": "v1.0.0",
@@ -147,6 +155,11 @@
           "name": "SAAS直播内容审查系统",
           "framework": "Vue",
           "terminals": ["租户后台PC", "运营后台PC", "观众端H5"],
+          "terminal_urls": {
+            "运营后台PC": "./linjinmei/SAAS/v1.0.0/admin.html",
+            "租户后台PC": "./linjinmei/SAAS/v1.0.0/tenant.html",
+            "观众端H5": "./linjinmei/SAAS/v1.0.0/h5.html"
+          },
           "versions": [
             {
               "version": "v1.0.0",
@@ -165,6 +178,11 @@
           "name": "SAAS直播内容审查系统",
           "framework": "Vue",
           "terminals": ["租户后台PC", "运营后台PC", "观众端H5"],
+          "terminal_urls": {
+            "运营后台PC": "./zhuangjingxiang/SAAS/v1.0.0/admin.html",
+            "租户后台PC": "./zhuangjingxiang/SAAS/v1.0.0/tenant.html",
+            "观众端H5": "./zhuangjingxiang/SAAS/v1.0.0/h5.html"
+          },
           "versions": [
             {
               "version": "v1.0.0",

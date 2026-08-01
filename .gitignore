@@ -6,8 +6,7 @@
 node_modules/
 **/node_modules/
 
-# Deploy artifacts（聚合部署产物，运行时生成）
-deploy/artifacts/
+# Deploy artifacts — 提交到 Git，EdgeOne Pages 自动部署需要
 
 # Build output — projects/*/dist 需要提交（EdgeOne 端依赖）
 # 仅排除 scripts 下的临时 dist

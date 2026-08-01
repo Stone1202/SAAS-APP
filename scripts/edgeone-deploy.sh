@@ -46,6 +46,21 @@ else
   echo "  ⚠ AI-SCRM dist 目录为空，跳过"
 fi
 
+# ── 3. 复制 SugarMate 项目 dist ──
+echo "[3/3] 复制 SugarMate 项目"
+SUGARMATE_SRC="projects/SugarMate/dist"
+SUGARMATE_VERSIONS="v3.1.1"
+if [ -d "$SUGARMATE_SRC" ] && [ -n "$(ls -A $SUGARMATE_SRC 2>/dev/null)" ]; then
+  for version in $SUGARMATE_VERSIONS; do
+    TARGET="$ARTIFACTS_DIR/jojo/SugarMate/main/$version"
+    mkdir -p "$TARGET"
+    cp -R $SUGARMATE_SRC/* "$TARGET/"
+    echo "  ✓ jojo/SugarMate/main/$version/"
+  done
+else
+  echo "  ⚠ SugarMate dist 目录为空，跳过"
+fi
+
 echo ""
 echo "=== EdgeOne 部署准备完成 ==="
 echo "产物目录: $ARTIFACTS_DIR/"
