@@ -187,7 +187,7 @@
         V5.3.0升级：项目性质判断从"目录存在与否"升级为基于知识库的三级判断。
         V4.2.1升级：骨架检测从"目录存在与否"升级为6项完整性校验。
         V4.2.0 重构：PM 按 interactive_inquiry V4.2.0 流程执行（自动检测，非交互式问答）：
-        1. 接收 /init 全部参数（--project/--type/--desc/--topic/--file/--api/--source/--priority）
+        1. 接收 /init 全部参数（--project/--type/--desc/--goal/--file/--api/--source/--priority）
         2. **V5.3.0三级判断项目性质（基于知识库）**：
            Level 1: 扫描 projects/{--project}/ 是否存在
              ├─ 不存在 → 新项目
@@ -226,20 +226,20 @@
               **铁律：即使 projects/{project}/ 目录存在，也必须运行 --check 校验，不可仅凭目录存在就跳过**
            b. 加载知识库PRD + 版本沉淀 + 经验库 + PO Backlog + 脑暴确认稿 + 领域知识 + 跨版本反馈
            c. V4.2.0新增加载 common/metrics-standards.yml 行业统计指标规则
-           d. **V2.0.0升级：--topic 统一迭代主题参数**：
-              - 若提供 --topic={topic}：
-                → 作为迭代线标识写入 state.json
-                → 路由路径注入 /{member}/{project}/{topic}/{version}/
-                → 加载 projects/{--project}/docs/00-brainstorm/{topic}/confirmed/BR-脑暴文档-确认稿.md（如果存在）
+           d. **V4.1.0升级：--goal 统一业务目标参数**：
+              - 若提供 --goal={goal}：
+                → 作为业务目标标识写入 state.json
+                → 路由路径注入 /{member}/{project}/{goal}/{version}/
+                → 加载 projects/{--project}/docs/00-brainstorm/{goal}/confirmed/BR-脑暴文档-确认稿.md（如果存在）
                 → 提取领域知识清单 → 注入BA上下文
                 → 提取API分析清单（如有）→ 注入BA+Arch上下文
                 → 提取三流草图+BO/BG映射 → 注入BA需求分析参考
-              - 若未提供 --topic：
-                → 扫描 00-brainstorm/ 下议题子目录
-                → 只有1个议题 → 自动加载并写入 state.json
-                → 多个议题 → 提示用户选择或通过 --topic 指定
-                → 无议题且未独立指定 → 提示必填（多人并行必须区分迭代线）
-              - 别名：--brainstorm-topic 保留向后兼容
+              - 若未提供 --goal：
+                → 扫描 00-brainstorm/ 下目标子目录
+                → 只有1个目标 → 自动加载并写入 state.json
+                → 多个目标 → 提示用户选择或通过 --goal 指定
+                → 无目标且未独立指定 → 提示必填（多人并行必须区分业务目标线）
+              - 别名：--topic、--scope 已废弃，保留向后兼容
         4. 新项目：运行 ensure-project.sh {--project} 创建骨架（含6项必选文件）
         5. **V4.2.1新增 state_guard**：PM 在任何操作前确保 state.json 存在（兜底机制）
         6. PM 组装「参数路由包」传递给 BA（含9项上下文+脑暴议题上下文+路由指令+版本链）
@@ -305,10 +305,11 @@
         - "项目骨架已在 stage-00 就绪（新建或复用），无需重复检查"
         - "**V4.2.1新增 state_guard**：PM 校验 state.json 存在且可解析，缺失则补建（兜底机制）"
         - "若 stage-00 已加载知识库上下文（已学 PRD），将其作为 BA 需求分析的背景输入"
-        - "版本自动链：取 streams 同 type 已 closed 最大版本 → 按 version_bump 生成"
-        - "创建需求流 STR-{PREFIX}-{nnn} 写入 state.json.streams[]，stage=requirement（V1.1.0：STR含项目前缀，避免跨项目冲突）"
+        - "版本自动链（V4.1.0 goal感知）：取 streams 同 type + 同 goal 已 closed 最大版本 → 按 version_bump 生成；新 goal 无历史 → v1.0.0"
+        - "创建需求流 STR-{PREFIX}-{nnn} 写入 state.json.streams[]，含 goal 字段；stage=requirement（V1.1.0：STR含项目前缀，避免跨项目冲突）"
+        - "**V4.1.0新增：创建 Git 分支 {member}/{project}-{goal}（scope分支），后续开发在此分支进行**"
         - "**V4.2.1新增：更新 PROJECT-INDEX.yml**——设置 active_project={project} + 更新对应项目 current_stream + last_activity"
-        - "PM 启动需求分析流程（→ requirement-flow），传递已学 PRD 上下文"
+        - "PM 启动需求分析流程（→ requirement-flow），传递：已学PRD上下文 + goal信息 + goal-title（V4.1.0新增）"
 
     - id: "stage-2"
       name: "需求分析（V5.1.0：BA大脑激活）"
@@ -788,20 +789,20 @@
       actions:
         - "**V2.0.0升级：全量聚合部署（deploy-manager.yml V2.0.0，9+1步流程）：**"
         - "  ① Step1 前置校验：确认 stage-8 版本快照已完成 + 域名非占位符 + 成员权限 + EdgeOne集成已连接"
-        - "  ② Step2 读取部署配置：deploy/edgeone-pages.json + .access-control.yml + 当前用户/项目/主题/版本"
-        - "  ③ Step3 构建与聚合：注入 VITE_BASE_PATH=/{member}/{project}/{topic}/{version}/ + VITE_PROJECT_ID={project} + VITE_MODE=sim → npm run build:sim → 复制到 deploy/artifacts/{member}/{project}/{topic}/{version}/"
+        - "  ② Step2 读取部署配置：deploy/edgeone-pages.json + .access-control.yml + 当前用户/项目/目标/版本"
+        - "  ③ Step3 构建与聚合：注入 VITE_BASE_PATH=/{member}/{project}/{goal}/{version}/ + VITE_PROJECT_ID={project} + VITE_MODE=sim → npm run build:sim → 复制到 deploy/artifacts/{member}/{project}/{goal}/{version}/"
         - "  ④ Step4 全量扫描：递归扫描 deploy/artifacts/ 下所有成员-项目-版本，构建部署索引"
         - "  ⑤ Step5 生成门户首页：基于 deploy/access-portal/index.html 模板 + 扫描结果 → 生成 deploy/artifacts/index.html"
         - "  ⑥ Step5.5 生成SPA回退页：复制 deploy/404-template.html → deploy/artifacts/404.html（子目录SPA fallback，详见 deploy/DEPLOY-GUIDE.md）"
         - "  ⑦ Step6 部署到 EdgeOne Pages：整个 deploy/artifacts/ 全量推送（含所有成员+项目+版本+门户+SPA回退）"
-        - "  ⑧ Step7 生成访问 URL：门户 https://{base_domain}/ + 项目 https://{base_domain}/{member}/{project}/{topic}/{version}/"
+        - "  ⑧ Step7 生成访问 URL：门户 https://{base_domain}/ + 项目 https://{base_domain}/{member}/{project}/{goal}/{version}/"
         - "  ⑨ Step8 更新部署记录：DEPLOY-MANIFEST.yml + deploy_history 追加"
         - "  ⑩ Step9 输出部署结果（门户URL + 项目URL + 摘要 + 域名绑定提示）"
         - "  ⑪ 部署失败处理：不阻断/close，标记status=failed+error_msg，提示 /deploy --retry 手动重试"
       output: "部署的全量聚合站点（自定义域名URL）+ 门户首页自动生成 + DEPLOY-MANIFEST.yml 更新 + PROJECT-INDEX.yml deploy字段更新"
       failure_handling:
         blocking: false
-        retry: "/deploy --project={project} --topic={topic} --retry"
+        retry: "/deploy --project={project} --goal={goal} --retry"
       deploy_target: "edgeone-pages"
       deploy_config: "deploy/edgeone-pages.json"
       domain_placeholder: "prototype.jycao.cn（部署前替换为实际域名）"
@@ -921,11 +922,11 @@
         - "  ④ 加载 Review模式库.md → 作为各阶段Review参考"
         - "  ⑤ **V5.1.0新增：加载跨项目大脑模式库（如有）→ 初始化各Agent大脑的基础模式**"
         # ↑↑↑ 沉淀+经验库加载结束 ↑↑↑
-        - "创建需求流 STR-{PREFIX}-{nnn} 写入 state.json.streams[]，stage=requirement（V1.1.0：STR含项目前缀）"
+        - "创建需求流 STR-{PREFIX}-{nnn} 写入 state.json.streams[]，含 goal 字段；stage=requirement（V1.1.0：STR含项目前缀）"
         - "**V4.2.1新增：更新 PROJECT-INDEX.yml**——设置 active_project={project} + 更新对应项目 current_stream + last_activity"
-        - "PM 启动需求分析流程，传递：已学PRD上下文 + 跨版本反馈 + 上一版本沉淀 + 经验库 + **PO Backlog优先级（V4.1.0，如有）**"
-      usage: "/init --project=X --type=Y --topic=迭代主题 --desc=需求描述 [--file=外部需求文件.md] [--api=外部接口文档.md] [--source=local-dir:./docs] [--source=http-url:https://...] [--priority=P0|P1|P2|P3]"
-      brain_storm_link: "**V2.0.0统一为--topic参数**：若 /init 提供 --topic=迭代主题，PM 按议题查找 projects/{project}/docs/00-brainstorm/{topic}/confirmed/BR-脑暴文档-确认稿.md 作为 BA 背景输入。同时加载脑暴 confirmed 中的领域知识清单（BA继承）+ API分析清单（BA+Arch继承）。若未提供 --topic 但 00-brainstorm/ 下只有一个议题子目录，自动加载该议题；多个议题时提示用户选择；无议题且未独立指定时提示必填。**来源**：①独立指定（需求明确时）②从brainstorm继承③自动匹配。V3.5.0：confirmed/ 为单文件覆盖式更新。**别名**：--brainstorm-topic 保留兼容。"
+        - "PM 启动需求分析流程，传递：已学PRD上下文 + 跨版本反馈 + 上一版本沉淀 + 经验库 + **PO Backlog优先级（V4.1.0，如有）** + goal信息（V4.1.0新增）"
+      usage: "/init --project=X --goal=业务目标 --type=Y --desc=需求描述 [--goal-title=中文标题] [--file=外部需求文件.md] [--api=外部接口文档.md] [--source=local-dir:./docs] [--source=http-url:https://...] [--priority=P0|P1|P2|P3]"
+      brain_storm_link: "**V4.1.0统一为--goal参数**：若 /init 提供 --goal=live-audit，PM 按目标查找 projects/{project}/docs/00-brainstorm/{goal}/confirmed/BR-脑暴文档-确认稿.md 作为 BA 背景输入。同时加载脑暴 confirmed 中的领域知识清单（BA继承）+ API分析清单（BA+Arch继承）。若未提供但 00-brainstorm/ 下只有一个目标子目录，自动加载该目标；多个目标时提示用户选择。**来源**：①独立指定（需求明确时）②从brainstorm继承③自动匹配。V3.5.0：confirmed/ 为单文件覆盖式更新。**V4.1.0改名**：--topic 废弃 → --goal。"
       knowledge_base_link: "存量项目在 /init 前自动匹配 .codebuddy/knowledge/projects/{project}/需求文档/ 下的已学 PRD（全部卷 + 学习报告），作为需求分析上下文。"
       sedimentation_base_link: "**V4.0.1新增**：存量项目在 /init 时自动加载 .codebuddy/knowledge/projects/{project}/版本沉淀/ 下最近版本的沉淀产物（需求快照+Review经验+lessons-learned+追溯链），以及 common/经验库/ 的跨项目经验，作为需求分析和全阶段背景知识。"
       domain_knowledge_link: "**V3.0.1新增，V3.0.3增强**：脑暴阶段（brainstorm.yml v3.2.0 stage-0c）已加载领域知识并产出领域知识清单写入 confirmed/，/init 时 BA 优先继承该清单（避免重复匹配）。若脑暴阶段未执行或清单缺失，BA 自行扫描 .codebuddy/knowledge/domains/ 领域知识库，通过关键词+AI语义匹配加载与需求相关的领域知识（如退款流/分账/进销存等），作为需求分析的行业标准方案参考。缺失时提示用户先执行 /learn-domain 学习。"
@@ -965,24 +966,29 @@
         # ↑↑↑ 版本沉淀学习结束（V5.3.0精简版，close提速50%）↑↑↑
         - "上线基线自动标记（strict_guard）：全 close + 无 open Bug + 无 pending feedback + PBL 全闭环 + Review报告全产出 + 追溯链通过 + **版本沉淀完成** + **自动部署完成（V1.0.0新增）**"
         # ↓↓↓ V2.0.3 升级：stage-9 全量聚合部署（门户动态化 + 全成员构建） ↓↓↓
-        - "**V2.0.3升级：全量聚合部署（stage-9，deploy-manager.yml V2.0.3，9+3步流程）：**"
+        - "**V4.1.0升级：全量聚合部署（stage-9，deploy-manager.yml V2.0.3，9+3步流程）：**"
         - "  ① Step1-2 前置校验+读取部署配置 deploy/edgeone-pages.json（含base_domain校验）"
         - "  ② Step3 注入环境变量 VITE_BASE_PATH=/{member}/{project}/{version}/ → npm run build:sim → 聚合到 deploy/artifacts/{member}/{project}/{version}/"
-        - "  ③ Step3.5 复制PRD HTML文档：docs/09-versions/{version}/prd-html/ → prd/ 子目录"
-        - "  ④ Step4 全量扫描 artifacts/ → 生成 manifest.json（成员×项目×版本结构，门户 V2.0.0 动态加载）"
-        - "  ⑤ Step5 复制门户模板 → deploy/artifacts/index.html（V2.0.0 动态版，fetch manifest.json 渲染）"
-        - "  ⑥ Step5.5 生成 SPA 回退页：复制 deploy/404-template.html → deploy/artifacts/404.html"
-        - "  ⑦ Step6-7 整个 deploy/artifacts/ 全量推送到 EdgeOne Pages → 生成访问 URL"
-        - "  ⑧ Step8-9 更新 DEPLOY-MANIFEST.yml + deploy_history → 输出部署结果"
-        - "  ⑨ 部署失败不阻断/close，提示 /deploy --retry 手动重试"
+        - "  ③ Step3.5 复制PRD HTML文档：docs/09-versions/{version}/prd-html/ → deploy/artifacts/{member}/{project}/{goal}/{version}/prd.html（V4.1.0：goal维度独立路径）"
+        - "  ④ Step3.6（V4.1.0新增）构建 main 聚合原型：从 main 分支 build → deploy/artifacts/{member}/{project}/main/{version}/（含所有已合并goal的功能）"
+        - "  ⑤ Step3.7（V4.1.0新增）生成 main PRD 聚合总览页 → deploy/artifacts/{member}/{project}/main/{version}/prd-overview.html（列出各goal PRD链接+终端矩阵）"
+        - "  ⑥ Step4 全量扫描 artifacts/ → 生成 manifest.json（成员×项目×goal×版本结构，门户 V2.0.0 动态加载）"
+        - "  ⑦ Step5 复制门户模板 → deploy/artifacts/index.html（V4.1.0 动态版，展示完整产品区+分支明细区）"
+        - "  ⑧ Step5.5 生成 SPA 回退页：复制 deploy/404-template.html → deploy/artifacts/404.html"
+        - "  ⑨ Step6-7 整个 deploy/artifacts/ 全量推送到 EdgeOne Pages → 生成访问 URL"
+        - "  ⑩ Step8-9 更新 DEPLOY-MANIFEST.yml + deploy_history → 输出部署结果（含goal维度）"
+        - "  ⑪ 部署失败不阻断/close，提示 /deploy --retry 手动重试"
         # ↑↑↑ stage-9 全量聚合部署结束 ↑↑↑
         # ↓↓↓ V1.1.0 新增：自动Git提交 ↓↓↓
-        - "**V1.1.0新增：自动Git提交（/close后自动，成员无需手动操作）：**"
+        - "**V4.1.0升级：自动Git提交 + goal分支合并（/close后自动，成员无需手动操作）：**"
         - "  ① git add projects/{project}/"
-        - "  ② git commit -m 'close: {project} {version} 版本关闭'"
-        - "  ③ git push origin {project}-v{version}"
-        - "  ④ 输出PR创建指引（成员在Gitee点合并即可）"
+        - "  ② git commit -m 'close: {project} {goal} {version} 版本关闭'"
+        - "  ③ git checkout main && git merge {member}/{project}-{goal}（goal分支合并到main）"
+        - "  ④ git push origin main && git push origin {member}/{project}-{goal}（保留本地scope分支不删除）"
+        - "  ⑤ 输出PR创建指引（成员在Gitee点合并按钮）"
         # ↑↑↑ 自动Git提交结束 ↑↑↑
+        # V4.1.0 main聚合版本递增
+        - "**V4.1.0新增：main聚合版本自动递增**：检查 goal 合并情况 → 若为首次合并（新goal）→ main minor+1；若为已有goal迭代合并 → main patch+1"
         # V4.1.0 敏捷递归闭环
         - "**V4.1.0新增：PM询问PO Agent下一版本规划（敏捷递归闭环）：**"
         - "  版本沉淀完成后，PM 自动询问 PO Agent「v{version} 已交付，下一版本规划？」"
@@ -990,7 +996,7 @@
         - "  PO Agent 产出：PROD-BACKLOG-{project}-v{next}.yml（下一版本需求清单+优先级）"
         - "  PM 执行 /init --type=迭代，BA 基于 PO Backlog 优先级进行需求分析"
         - "  形成 Sprint Planning 自动化：Review→Retrospective(沉淀)→Planning(PO Backlog)→/init v2"
-      usage: "/close --project=X [--topic=迭代主题] [--type=Y]"
+      usage: "/close --project=X [--goal=业务目标] [--type=Y]"
 
     handoff:
       command: "/handoff"
@@ -1013,7 +1019,7 @@
       "streams": [
         {
           "id": "STR-001",
-          "topic": "subscription-migration",
+          "goal": "subscription-migration",
           "type": "新增",
           "version": "v1.1.0",
           "prev_closed_version": "v1.0.0",

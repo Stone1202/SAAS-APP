@@ -1,56 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, Table, Button, Tag, Space, Modal, Form, Input, message, Tooltip } from 'antd';
-import { PlusOutlined, ReloadOutlined, StopOutlined, SyncOutlined } from '@ant-design/icons';
+import { PlusOutlined, ReloadOutlined, StopOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-
-// PG-TNT-PC-020 企微授权管理（FN-WX-PC-001）
-interface WeChatAccount {
-  id: string;
-  corpId: string;
-  corpName: string;
-  employeeCount: number;
-  customerCount: number;
-  groupCount: number;
-  syncStatus: 'PENDING' | 'SYNCING' | 'AUTHORIZED' | 'EXPIRED' | 'REVOKED';
-  syncAt: string;
-  createdAt: string;
-}
-
-const mockData: WeChatAccount[] = [
-  {
-    id: 'W001',
-    corpId: 'ww1234567890abcdef',
-    corpName: '九天科技销售部',
-    employeeCount: 35,
-    customerCount: 1280,
-    groupCount: 12,
-    syncStatus: 'AUTHORIZED',
-    syncAt: '2026-07-23 09:30:00',
-    createdAt: '2026-01-15',
-  },
-  {
-    id: 'W002',
-    corpId: 'ww0987654321fedcba',
-    corpName: '九天科技客服部',
-    employeeCount: 18,
-    customerCount: 560,
-    groupCount: 6,
-    syncStatus: 'SYNCING',
-    syncAt: '2026-07-23 10:00:00',
-    createdAt: '2026-03-20',
-  },
-  {
-    id: 'W003',
-    corpId: 'wwabcdef1234567890',
-    corpName: '九天科技市场部',
-    employeeCount: 12,
-    customerCount: 0,
-    groupCount: 1,
-    syncStatus: 'EXPIRED',
-    syncAt: '2026-06-15 08:00:00',
-    createdAt: '2026-02-01',
-  },
-];
+import { useWeChatStore } from '../../stores/useWeChatStore';
+import type { WeChatAccount } from '../../contracts/schemas';
 
 const statusMap: Record<string, { color: string; label: string }> = {
   PENDING: { color: 'default', label: '待授权' },
@@ -61,63 +14,39 @@ const statusMap: Record<string, { color: string; label: string }> = {
 };
 
 export default function WeChatAuthManagement() {
-  const [dataSource, setDataSource] = useState<WeChatAccount[]>(mockData);
+  const { accounts, loading, loadAccounts, authorizeAccount, reSyncAccount, revokeAccount } = useWeChatStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [form] = Form.useForm();
   const [syncLoading, setSyncLoading] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadAccounts();
+  }, [loadAccounts]);
 
   const handleAdd = () => setModalOpen(true);
 
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      const newAccount: WeChatAccount = {
-        id: `W${Date.now()}`,
-        corpId: values.corpId,
-        corpName: values.corpName,
-        employeeCount: 0,
-        customerCount: 0,
-        groupCount: 0,
-        syncStatus: 'PENDING',
-        syncAt: '',
-        createdAt: new Date().toISOString().split('T')[0],
-      };
-      setDataSource(prev => [...prev, newAccount]);
+      await authorizeAccount(values);
       setModalOpen(false);
       form.resetFields();
-      message.success('已发起企微授权，待管理员在企业微信后台确认');
-      // 模拟授权确认后开始同步
-      setTimeout(() => {
-        setDataSource(prev => prev.map(a =>
-          a.id === newAccount.id && a.syncStatus === 'PENDING'
-            ? { ...a, syncStatus: 'SYNCING', syncAt: new Date().toISOString().replace('T', ' ').slice(0, 19) }
-            : a
-        ));
-      }, 3000);
-      setTimeout(() => {
-        setDataSource(prev => prev.map(a =>
-          a.id === newAccount.id && a.syncStatus === 'SYNCING'
-            ? { ...a, syncStatus: 'AUTHORIZED', employeeCount: 5, customerCount: 42 }
-            : a
-        ));
-      }, 8000);
+      message.success('企微授权已发起，正在同步客户数据...');
     } catch {
       // validation failed
     }
   };
 
-  const handleReSync = (record: WeChatAccount) => {
+  const handleReSync = async (record: WeChatAccount) => {
     setSyncLoading(record.id);
-    message.info('正在重新同步客户数据...');
-    setTimeout(() => {
-      setDataSource(prev => prev.map(a =>
-        a.id === record.id
-          ? { ...a, syncStatus: 'AUTHORIZED', syncAt: new Date().toISOString().replace('T', ' ').slice(0, 19) }
-          : a
-      ));
-      setSyncLoading(null);
+    try {
+      await reSyncAccount(record.id);
       message.success('数据同步完成');
-    }, 2000);
+    } catch {
+      message.error('同步失败，请重试');
+    } finally {
+      setSyncLoading(null);
+    }
   };
 
   const handleRevoke = (record: WeChatAccount) => {
@@ -127,10 +56,8 @@ export default function WeChatAuthManagement() {
       okText: '确认解除',
       okType: 'danger',
       cancelText: '取消',
-      onOk: () => {
-        setDataSource(prev => prev.map(a =>
-          a.id === record.id ? { ...a, syncStatus: 'REVOKED' } : a
-        ));
+      onOk: async () => {
+        await revokeAccount(record.id);
         message.success('已解除企微授权');
       },
     });
@@ -242,8 +169,9 @@ export default function WeChatAuthManagement() {
       >
         <Table
           columns={columns}
-          dataSource={dataSource}
+          dataSource={accounts}
           rowKey="id"
+          loading={loading}
           pagination={false}
           locale={{ emptyText: '暂无授权企微账号，点击「添加授权」绑定您的企业微信' }}
           size="middle"

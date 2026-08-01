@@ -258,15 +258,15 @@ workflow:
           → 组装「参数路由包」传递给 BA
       param_route_package_structure: |
         param_route_package:
-          project, project_type, requirement_type, priority, version
+          project, project_type, requirement_type, priority, version, goal, goal_title
           demand_sources: { desc, files, api_docs, knowledge_sources }
           context: { project_skeleton, knowledge_prd, version_sediment,
                      experience_library, po_backlog, brainstorm_confirmed,
                      domain_knowledge_list, metrics_standards }
           route: { analysis_depth, run_impact_analysis, run_domain_fusion,
                    run_config_identification, run_metric_identification }
-          version_chain: { previous_closed_version, current_version, version_bump_strategy }
-      note: "PM 完成路由后，将参数路由包传递给 BA，BA 从 §0.5 开始深度分析"
+          version_chain: { previous_closed_version, current_version, version_bump_strategy, goal }  # V4.1.0：version_chain 含 goal 维度
+      note: "PM 完成路由后（V4.1.0：含 goal 信息），将参数路由包传递给 BA，BA 从 §0.5 开始深度分析"
 
     # ---- §0.5 需求理解+影响分析+融合分析（V3.5.0：引用公共流程 demand-impact-fusion-flow.yml）----
     - id: "0.5"

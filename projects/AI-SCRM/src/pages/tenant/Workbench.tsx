@@ -14,7 +14,7 @@ import { useCommunicationStore } from '../../stores/useCommunicationStore';
 export default function Workbench() {
   const navigate = useNavigate();
   const { tenantStats, loading, loadTenantStats } = useDashboardStore();
-  const { todos, loadAll: loadTodos } = useTodoStore();
+  const { todos, loadAll: loadTodos, complete: completeTodo } = useTodoStore();
   const { records, loadRecords } = useCommunicationStore();
 
   useEffect(() => {
@@ -97,8 +97,8 @@ export default function Workbench() {
                   {todo.title}
                 </div>
                 <a
-                  onClick={() => {
-                    useTodoStore.getState().complete(todo.id);
+                  onClick={async () => {
+                    await completeTodo(todo.id);
                     message.success('待办已标记完成');
                   }}
                 >

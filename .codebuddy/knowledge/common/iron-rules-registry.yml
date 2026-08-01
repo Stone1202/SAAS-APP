@@ -94,7 +94,7 @@ agents:
       - id: "BS-10"
         rule: "同一项目允许多次脑暴，按议题子目录组织产物"
         enforcement: "hard"
-        workflow_check: "brainstorm.yml --topic参数"
+        workflow_check: "brainstorm.yml --goal参数"
 
   # ============================================
   # BA Agent（业务分析师）— 编号冲突已修复

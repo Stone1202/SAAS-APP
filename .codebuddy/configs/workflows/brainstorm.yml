@@ -16,9 +16,9 @@
 #   4. Stage 7增加"补充"分支：用户选择补充时，将补充资料注入脑暴流程重新讨论
 #   5. 版本号从v3.4.0→v3.5.0
 #
-# V3.4.0 优化调整：
-#   1. 新增--topic参数（议题名，必填）：同一项目同一议题允许多次脑暴，产物按议题子目录组织
-#   2. 产物路径调整：00-brainstorm/{topic}/process/ + 00-brainstorm/{topic}/confirmed/
+  # V4.1.0 统一命名（goal驱动）：
+  #   1. 脑暴和 /init 统一使用 --goal 参数
+  #   2. 产物路径：00-brainstorm/{goal}/process/ + 00-brainstorm/{goal}/confirmed/
 #   3. 新增Stage 1.5 API分析与注入：脑暴过程中识别到API文档/接口时，引用common/api-learner.yml执行API分析
 #      （参数深度提取+参数流转图+参数级校验），将分析结果注入专家讨论，使方案更深入
 #   4. 门禁新增：API分析完整性检查（如识别到API但未执行分析则不通过）
@@ -58,7 +58,7 @@ workflow:
   id: "brainstorm"
   name: "脑暴会议"
   version: "3.5.1"
-  trigger_command: "/brainstorm --brainstorm-type=strategic|planning|regular --topic=议题名"
+  trigger_command: "/brainstorm --brainstorm-type=strategic|planning|regular --goal=业务目标"
   owner: "bs-agent"
   gates_reference: ".codebuddy/knowledge/common/gates-registry.yml#stages.brainstorm"
   iron_rules_reference: ".codebuddy/knowledge/common/iron-rules-registry.yml#agents.bs_agent"
@@ -109,9 +109,9 @@ workflow:
     - type: "http_url"
       flag: "--source=http-url:https://..."
       description: "HTTP 内容，BS Agent 自动抓取并解析"
-    - type: "topic"
-      flag: "--topic=议题名"
-      description: "脑暴议题名（v3.4.0新增，必填）。同一项目同一议题允许多次脑暴，产物按议题子目录组织。例如：--topic=直播音频审核 或 --topic=退款流程优化"
+    - type: "goal"
+      flag: "--goal=业务目标"
+      description: "业务目标标识（V4.1.0统一命名，必填）。同一项目同一目标允许多次脑暴，产物按目标子目录组织。例如：--goal=live-audit 或 --goal=refund-flow。与 /init --goal 对应。"
       required: true
 
   # ============================================
@@ -144,15 +144,15 @@ workflow:
             label: "常规型（功能优化/中版本迭代，输出脑暴）"
             action: "build_project_skeleton"
         note: "脑暴类型决定后续流程：strategic/planning→PO Agent；regular→PM直接立项"
-      - step: "ask_topic"
-        question: "请提供本次脑暴的议题名称（v3.4.0 新增）"
+      - step: "ask_goal"
+        question: "请提供本次脑暴的业务目标名称（v3.4.0 新增）"
         condition: "脑暴类型已确认"
         description: |
-          议题名用于产物子目录组织。同一项目允许对同一议题多次脑暴，
-          每次脑暴产物在 00-brainstorm/{topic}/ 下独立组织。
-          议题名应简明扼要，如"直播音频审核""退款流程优化""分销佣金重构"。
+          目标名用于产物子目录组织。同一项目允许对同一目标多次脑暴，
+          每次脑暴产物在 00-brainstorm/{goal}/ 下独立组织。
+          目标名应简明扼要，如"直播音频审核""退款流程优化""分销佣金重构"。
         action: "build_project_skeleton"
-        note: "议题名将作为产物子目录名，支持中文（自动转为拼音或保留中文目录名）"
+        note: "目标名将作为产物子目录名，支持中文（自动转为拼音或保留中文目录名）"
       - step: "ask_project_name"
         question: "请提供项目名称（例如：AI-SCRM）"
         condition: "选择了「存量项目」"
@@ -243,14 +243,14 @@ workflow:
       name: "脑暴产物落盘准备（v3.1.0 增强，v3.4.0 议题子目录）"
       agent: "bs-agent"
       action: |
-        确认产物输出目录 projects/{project}/docs/00-brainstorm/{topic}/ 已就绪：
+        确认产物输出目录 projects/{project}/docs/00-brainstorm/{goal}/ 已就绪：
         1. 存量项目（骨架已存在）：直接使用现有目录，无需重复创建
         2. 存量项目（骨架刚创建）：目录已由 stage-0a 创建完毕
         3. 新项目：目录已由 stage-0a 创建完毕
-        4. v3.4.0新增：按议题创建子目录 {topic}/process/ 和 {topic}/confirmed/
-        确保 {topic}/process/ 和 {topic}/confirmed/ 子目录存在
-      output: "脑暴产物落盘路径确认（含议题子目录）"
-      gate: "projects/{project}/docs/00-brainstorm/{topic}/process/ 和 confirmed/ 目录存在"
+        4. v3.4.0新增：按目标创建子目录 {goal}/process/ 和 {goal}/confirmed/
+        确保 {goal}/process/ 和 {goal}/confirmed/ 子目录存在
+      output: "脑暴产物落盘路径确认（含目标子目录）"
+      gate: "projects/{project}/docs/00-brainstorm/{goal}/process/ 和 confirmed/ 目录存在"
 
     - id: "0c"
       name: "领域知识加载（v3.2.0 新增）"
@@ -466,7 +466,7 @@ workflow:
       output:
         - "BR-脑暴文档（process/ 过程稿）：讨论过程、冲突记录、备选方案、领域知识引用记录、API分析引用记录"
         - "BR-脑暴文档（confirmed/ 确认稿）：最终方案、BO/BG映射、决策冻结、领域知识清单（传递给BA）、API分析清单（传递给BA+Arch）、版本概要"
-      path: "projects/{project}/docs/00-brainstorm/{topic}/process/ + projects/{project}/docs/00-brainstorm/{topic}/confirmed/"
+      path: "projects/{project}/docs/00-brainstorm/{goal}/process/ + projects/{project}/docs/00-brainstorm/{goal}/confirmed/"
       gate: "三流草图齐全 + 决策冻结 + BO/BG 映射 + 命名/版本追溯 + 领域知识清单完整（v3.2.0）+ API分析完整性（v3.4.0：如识别到API须有分析清单）"
       methodology: |
         二分落盘：
@@ -488,7 +488,7 @@ workflow:
 
           v3.2.0 新增：confirmed/ 须包含「领域知识清单」章节
           v3.4.0 新增：confirmed/ 须包含「API分析清单」章节（如Stage 1.5触发）
-          v3.4.0 新增：产物按议题子目录 {topic}/ 组织
+          v3.4.0 新增：产物按目标子目录 {goal}/ 组织
 
         v3.5.0 confirmed/单文件策略的优势：
         - /init 阶段BA只需读取一份confirmed稿，无需判断最新版本
@@ -561,7 +561,7 @@ workflow:
         - "领域知识清单已加载或用户确认无领域知识可加载（v3.2.0 新增）"
         - "confirmed/ 包含领域知识清单章节（v3.2.0 新增）"
         - "API分析完整性检查（v3.4.0 新增：如识别到API须执行分析且confirmed/包含API分析清单章节；未识别到API则跳过此项）"
-        - "议题子目录组织正确（v3.4.0 新增：产物在 {topic}/ 子目录下）"
+        - "目标子目录组织正确（v3.4.0 新增：产物在 {goal}/ 子目录下）"
 
   # ============================================
   # 脑暴标准引用
@@ -578,7 +578,7 @@ workflow:
     📋 脑暴完成确认
 
     **项目**：{project}（{项目性质：新项目 / 存量项目}）
-    **议题**：{topic}
+    **目标**：{goal}
     **脑暴类型**：{brainstorm_type}
     **行业**：{industry}
     **干系人**：{数量} 个角色
@@ -603,8 +603,8 @@ workflow:
     {方案核心摘要，3-5句话概述推荐方案}
 
     **产出文件**：
-    - 过程稿：projects/{project}/docs/00-brainstorm/{topic}/process/BR-脑暴文档-过程稿-v{version}.md
-    - 确认稿：projects/{project}/docs/00-brainstorm/{topic}/confirmed/BR-脑暴文档-确认稿.md（v3.5.0单文件覆盖式更新）
+    - 过程稿：projects/{project}/docs/00-brainstorm/{goal}/process/BR-脑暴文档-过程稿-v{version}.md
+    - 确认稿：projects/{project}/docs/00-brainstorm/{goal}/confirmed/BR-脑暴文档-确认稿.md（v3.5.0单文件覆盖式更新）
 
     **清单传递**：
     - 领域知识清单 → /init 阶段 BA 直接继承

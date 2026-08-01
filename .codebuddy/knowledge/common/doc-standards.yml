@@ -236,7 +236,7 @@ doc_standard:
     description: "所有项目文档按 项目→版本→Sprint 组织"
     directory_structure: |
       projects/{project}/docs/
-      ├── 00-brainstorm/{topic}/confirmed/
+      ├── 00-brainstorm/{goal}/confirmed/
       ├── 01-requirements/{域编号}-{域名}-PRD-v{version}.md
       ├── 02-design/设计文档-{module}-v{version}.md
       ├── 03-architecture/架构设计-{module}-v{version}.md

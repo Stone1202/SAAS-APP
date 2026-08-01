@@ -52,7 +52,8 @@ export const useCommunicationStore = create<CommunicationState>((set) => ({
   },
 
   createRecord: async (data) => {
-    await communicationService.create(data);
+    const record = await communicationService.create(data);
+    set((s) => ({ records: [record, ...s.records] }));
   },
 
   createScript: async (data) => {

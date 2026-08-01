@@ -7,6 +7,7 @@ import {
   segmentRepository,
   getTenantDashboardStats,
   aiScriptSuggestionRepository,
+  weChatRepository,
 } from '../adapters/factory';
 
 // ============================================
@@ -81,4 +82,14 @@ export const aiSuggestionService = {
 // ============================================
 export const dashboardService = {
   getTenantStats: getTenantDashboardStats,
+};
+
+// ============================================
+// WeChat Service
+// ============================================
+export const weChatService = {
+  getAll: weChatRepository.getAll,
+  authorize: weChatRepository.authorize,
+  reSync: weChatRepository.reSync,
+  revoke: weChatRepository.revoke,
 };

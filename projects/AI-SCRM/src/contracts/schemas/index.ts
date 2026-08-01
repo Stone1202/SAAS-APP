@@ -276,6 +276,7 @@ export type Intent = z.infer<typeof IntentSchema>;
 
 // ============================================
 // 质检记录 (QualityCheck) - ENT-TNT-010
+// @deprecated 完整定义但零引用，暂无对应页面。待二期实现质检功能时启用。
 // ============================================
 export const QualityCheckSchema = z.object({
   id: z.string(),
@@ -308,8 +309,9 @@ export const WeChatAccountSchema = z.object({
   customerCount: z.number().default(0),
   groupCount: z.number().default(0),
   syncStatus: z.enum(['PENDING', 'SYNCING', 'AUTHORIZED', 'EXPIRED', 'REVOKED']).default('PENDING'),
-  status: z.enum(['PENDING', 'SYNCING', 'AUTHORIZED', 'EXPIRED', 'REVOKED']).default('PENDING'),
+  syncAt: z.string().optional(),
   createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
 });
 
 export type WeChatAccount = z.infer<typeof WeChatAccountSchema>;

@@ -3,7 +3,6 @@ import { Card, Input, Button, Tabs, Tag, Space, message } from 'antd';
 import { SendOutlined, SmileOutlined, PaperClipOutlined } from '@ant-design/icons';
 import { useCustomerStore } from '../../stores/useCustomerStore';
 import { useCommunicationStore } from '../../stores/useCommunicationStore';
-import { useDashboardStore } from '../../stores/useDashboardStore';
 
 const AiAssistPanel = () => {
   const { aiSuggestions, loadAiSuggestions } = useCommunicationStore();

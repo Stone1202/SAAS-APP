@@ -60,6 +60,11 @@ function upgradeDB(db: any) {
   if (!db.objectStoreNames.contains('aiScriptSuggestions')) {
     db.createObjectStore('aiScriptSuggestions', { keyPath: 'id' });
   }
+  if (!db.objectStoreNames.contains('wechatAccounts')) {
+    const wcStore = db.createObjectStore('wechatAccounts', { keyPath: 'id' });
+    wcStore.createIndex('corpId', 'corpId');
+    wcStore.createIndex('syncStatus', 'syncStatus');
+  }
 }
 
 // V4.0.0: 一次性旧数据迁移（仅从旧库名迁移到新库名）
@@ -92,6 +97,7 @@ async function migrateOldDBIfNeeded(): Promise<void> {
     'customers', 'tagGroups', 'tags', 'communicationRecords',
     'scripts', 'todos', 'segments', 'tenants',
     'versionFeatures', 'subscriptionOrders', 'aiScriptSuggestions',
+    'wechatAccounts',
   ];
 
   let totalMigrated = 0;

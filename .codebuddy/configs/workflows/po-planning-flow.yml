@@ -111,11 +111,11 @@ ai_brain:
 # ============================================
 inputs:
   brainstorm_artifacts:
-    - "projects/{project}/docs/00-brainstorm/{topic}/confirmed/BR-脑暴文档-确认稿.md"
-    - "projects/{project}/docs/00-brainstorm/{topic}/confirmed/STRATEGY-分析.md（仅strategic型）"
-    - "projects/{project}/docs/00-brainstorm/{topic}/confirmed/BUSINESS-分析.md（仅strategic型）"
-    - "projects/{project}/docs/00-brainstorm/{topic}/confirmed/domain-knowledge-list.yml"
-    - "projects/{project}/docs/00-brainstorm/{topic}/confirmed/api-analysis-list.yml（如有）"
+    - "projects/{project}/docs/00-brainstorm/{goal}/confirmed/BR-脑暴文档-确认稿.md"
+    - "projects/{project}/docs/00-brainstorm/{goal}/confirmed/STRATEGY-分析.md（仅strategic型）"
+    - "projects/{project}/docs/00-brainstorm/{goal}/confirmed/BUSINESS-分析.md（仅strategic型）"
+    - "projects/{project}/docs/00-brainstorm/{goal}/confirmed/domain-knowledge-list.yml"
+    - "projects/{project}/docs/00-brainstorm/{goal}/confirmed/api-analysis-list.yml（如有）"
   
   iteration_artifacts:         # 迭代场景（/close后下一版本规划）
     - "上一版本沉淀产物（knowledge/projects/{project}/版本沉淀/{version}/）"

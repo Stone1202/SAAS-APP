@@ -238,35 +238,35 @@ commands:
   # ---------- 核心生命周期指令（受 PM 管控，需求流级别） ----------
   brainstorm:
     command: "/brainstorm"
-    description: "【阶段1·脑暴V3.5.0】启动脑暴会议，产出脑暴文档。V3.5.0优化：①反馈模板从通过/补充/驳回改为多选项交互（确认→/init、补充→重新脑暴、调整方案→局部修改），移除驳回；②confirmed/只保留一份确认稿覆盖式更新+版本概要表格，历史版本归档到process/。V3.4.0：--topic议题参数+Stage 1.5 API分析注入。V3.3.0分层类型。V3.2.0领域知识整合。"
+    description: "【阶段1·脑暴V3.5.0/V4.1.0】启动脑暴会议，产出脑暴文档。V3.5.0优化：①反馈模板从通过/补充/驳回改为多选项交互（确认→/init、补充→重新脑暴、调整方案→局部修改），移除驳回；②confirmed/只保留一份确认稿覆盖式更新+版本概要表格，历史版本归档到process/。V4.1.0：--goal业务目标参数统一命名+Stage 1.5 API分析注入。V3.3.0分层类型。V3.2.0领域知识整合。"
     lifecycle: "stage-1"
     pm_controlled: false
     workflow: "brainstorm"
     workflow_file: ".codebuddy/configs/workflows/brainstorm.yml"
-    usage: "/brainstorm --industry=行业 --brainstorm-type=strategic|planning|regular --topic=议题名 [--project=项目名] [--source=local-dir:./docs] [--source=http-url:https://...] [--stakeholders=干系人清单.md]"
-    example: "/brainstorm --industry=live --brainstorm-type=regular --topic=直播音频审核 --project=SAAS --source=http-url:https://cloud.tencent.com/..."
-    required_args: ["--industry", "--brainstorm-type", "--topic"]
-    optional_args: ["--project", "--source", "--stakeholders"]
+    usage: "/brainstorm --industry=行业 --brainstorm-type=strategic|planning|regular --goal=业务目标 [--project=项目名] [--goal-title=中文标题] [--source=local-dir:./docs] [--source=http-url:https://...] [--stakeholders=干系人清单.md]"
+    example: "/brainstorm --industry=live --brainstorm-type=regular --goal=live-audit --goal-title=直播音频审核 --project=SAAS --source=http-url:https://cloud.tencent.com/..."
+    required_args: ["--industry", "--brainstorm-type", "--goal"]
+    optional_args: ["--project", "--goal-title", "--source", "--stakeholders"]
     interactive_flow:
       description: "V4.2.0对齐：保留参数说明展示+必填项缺失指引。项目性质由--project参数自动检测。"
       auto_detect: "扫描 projects/{--project}/ 是否存在 → 存在=存量项目(加载知识库PRD) / 不存在=新项目(构建骨架)"
 
   init:
     command: "/init"
-    description: "【开启需求流V2.0.0】PM 接管，针对某项目某类型开启一条需求流（自动生成版本号），进入需求分析。PM 组装参数路由包传递给 BA，BA 从§0.5需求深度分析整合开始（6维需求分析+8维影响扫描+融合全景图），再进入旅行地图。支持外部文档(--source)和HTTP内容作为需求输入补充。影响范围由 BA 在§0.5b自动识别。V2.0.0统一--topic参数：迭代主题，支持独立指定或从brainstorm继承，路由注入/member/project/topic/version/。别名--brainstorm-topic保留兼容。"
+    description: "【开启需求流V4.1.0】PM 接管，针对某项目某类型开启一条需求流（自动生成版本号，V4.1.0：goal维度隔离版本链），进入需求分析。PM 组装参数路由包传递给 BA，BA 从§0.5需求深度分析整合开始（6维需求分析+8维影响扫描+融合全景图），再进入旅行地图。支持外部文档(--source)和HTTP内容作为需求输入补充。V4.1.0：--goal替代--topic，必填参数。"
     lifecycle: "stream-start"
     pm_controlled: true
     orchestrator: "pm-agent"
     workflow: "project-lifecycle"
     workflow_file: ".codebuddy/configs/workflows/project-lifecycle.yml"
-    usage: "/init --project=X --type=新增|变更|迭代|修复 --desc=需求描述 [--topic=迭代主题] [--file=外部需求文件.md] [--api=外部接口文档.md] [--source=local-dir:./docs] [--source=http-url:https://...] [--priority=P0|P1|P2|P3]"
-    example: "/init --project=SAAS --type=新增 --desc=直播音频违禁词检测与静音处理 --topic=直播音频审核 --priority=P0"
-    required_args: ["--project", "--type", "--desc"]
-    optional_args: ["--topic", "--file", "--api", "--source", "--priority"]
+    usage: "/init --project=X --goal=业务目标 --type=新增|变更|迭代|修复 --desc=需求描述 [--goal-title=中文标题] [--file=外部需求文件.md] [--api=外部接口文档.md] [--source=local-dir:./docs] [--source=http-url:https://...] [--priority=P0|P1|P2|P3]"
+    example: "/init --project=SAAS --goal=live-audit --type=新增 --desc=直播音频违禁词检测与静音处理 --goal-title=直播音频审核 --priority=P0"
+    required_args: ["--project", "--goal", "--type", "--desc"]
+    optional_args: ["--goal-title", "--file", "--api", "--source", "--priority"]
     interactive_flow:
-      description: "取消交互式问答，改为自动检测+参数路由包。保留参数说明展示+必填项缺失指引。V2.0.0统一--topic参数，别名--brainstorm-topic保留。"
+      description: "取消交互式问答，改为自动检测+参数路由包。保留参数说明展示+必填项缺失指引。V4.1.0：--goal替代--topic，必填。"
       auto_detect: "扫描 projects/{--project}/ 是否存在 → 存在=存量项目 / 不存在=新项目"
-      brainstorm_topic_link: "若提供--topic，PM按议题查找 projects/{--project}/docs/00-brainstorm/{topic}/confirmed/BR-脑暴文档-确认稿.md 作为BA背景输入；同时加载脑暴confirmed中的领域知识清单+API分析清单传递给BA和Arch；topic写入state.json作为迭代线标识。若未提供--topic但00-brainstorm/下只有一个议题子目录，自动加载该议题；多个议题时提示用户选择。"
+      brainstorm_goal_link: "若提供--goal，PM按目标查找 projects/{--project}/docs/00-brainstorm/{goal}/confirmed/BR-脑暴文档-确认稿.md 作为BA背景输入；同时加载脑暴confirmed中的领域知识清单+API分析清单传递给BA和Arch；goal写入state.json作为业务目标标识（V4.1.0）。若未提供但00-brainstorm/下只有一个目标子目录，自动加载该目标；多个目标时提示用户选择。"
 
   feedback:
     command: "/feedback"
@@ -289,10 +289,10 @@ commands:
     orchestrator: "pm-agent"
     workflow: "project-lifecycle"
     workflow_file: ".codebuddy/configs/workflows/project-lifecycle.yml"
-    usage: "/close --project=X [--type=Y]   （--type 可省略，自动选当前进行中需求流）"
-    example: "/close --project=AI-SCRM --type=新增"
+    usage: "/close --project=X [--goal=业务目标] [--type=Y]   （--type 可省略，自动选当前进行中需求流）"
+    example: "/close --project=SAAS --goal=live-audit --type=新增"
     required_args: ["--project"]
-    optional_args: ["--type"]
+    optional_args: ["--goal", "--type"]
 
   handoff:
     command: "/handoff"
@@ -645,17 +645,26 @@ lifecycle:
       sla: "下迭代"
       description: "锦上添花，可排入下个迭代"
   # 版本号策略（用户绝不输入版本号，系统自动生成）
+  # V4.1.0：新增 goal 维度——每个业务目标（goal）有独立版本链，互不干扰
   versioning:
     scheme: "v{主}.{次}.{修订}"
     init: "v1.0.0"
-    # 自动链算法：init 开启需求流时 →
-    #  取 streams 中同 type 且已 closed 的最大版本 → 按 version_bump 生成新版本；
-    #  若无历史 → 继承 released_baseline(+1) 或 init 派生。
+    # 自动链算法（V4.1.0 goal 感知）：
+    #  取 streams 中同 type + 同 goal 且已 closed 的最大版本 → 按 version_bump 生成新版本；
+    #  若无历史（新 goal）→ 使用 init 值 v1.0.0。
+    #  goal 为空（老项目）→ 兼容原有逻辑：仅按 type 匹配。
     auto_chain: true
+    auto_chain_filter: "[type, goal]"   # V4.1.0：版本扫描条件从 [type] 扩展为 [type, goal]
     bump:
       major: "重大重构（手动触发，罕见）"
       minor: "新增 / 迭代（次版本+1）"
       patch: "变更 / 修复（修订号+1）"
+    # V4.1.0新增：main聚合版本策略
+    # 每次任意 goal close 并 merge 到 main 后，main 版本自动递增。
+    # 仅一个 goal 合并 → patch+1；新 goal 首次合并 → minor+1。
+    main_aggregation:
+      init: "v1.0.0"
+      auto_chain: true
   # 上线基线自动标记（用户已确认：自动，但必须准确）
   released_baseline:
     auto_mark: true

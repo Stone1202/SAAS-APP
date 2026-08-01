@@ -422,6 +422,68 @@ export const subscriptionOrderRepository = {
 };
 
 // ============================================
+// WeChat Account Repository
+// ============================================
+export const weChatRepository = {
+  async getAll() {
+    await initializeSim();
+    const db = await getDB();
+    return db.getAll('wechatAccounts');
+  },
+
+  async authorize(data: { corpId: string; corpName: string; corpSecret: string }) {
+    await initializeSim();
+    const db = await getDB();
+    const now = new Date().toISOString();
+    const account = {
+      id: genId(),
+      corpId: data.corpId,
+      corpName: data.corpName,
+      corpSecretEnc: '[encrypted]',
+      employeeCount: Math.floor(Math.random() * 50) + 5,
+      customerCount: Math.floor(Math.random() * 500),
+      groupCount: Math.floor(Math.random() * 20),
+      syncStatus: 'AUTHORIZED' as const,
+      syncAt: now,
+      createdAt: now,
+      updatedAt: now,
+    };
+    await db.put('wechatAccounts', account);
+    return account;
+  },
+
+  async reSync(id: string) {
+    await initializeSim();
+    const db = await getDB();
+    const existing = await db.get('wechatAccounts', id);
+    if (!existing) throw new Error('WeChat account not found');
+    const now = new Date().toISOString();
+    existing.syncStatus = 'SYNCING';
+    await db.put('wechatAccounts', existing);
+    await new Promise((r) => setTimeout(r, 500));
+    existing.syncStatus = 'AUTHORIZED';
+    existing.syncAt = now;
+    existing.updatedAt = now;
+    existing.employeeCount = Math.floor(Math.random() * 50) + 5;
+    existing.customerCount = Math.floor(Math.random() * 500);
+    existing.groupCount = Math.floor(Math.random() * 20);
+    await db.put('wechatAccounts', existing);
+    return existing;
+  },
+
+  async revoke(id: string) {
+    await initializeSim();
+    const db = await getDB();
+    const existing = await db.get('wechatAccounts', id);
+    if (!existing) throw new Error('WeChat account not found');
+    existing.syncStatus = 'REVOKED';
+    existing.updatedAt = new Date().toISOString();
+    await db.put('wechatAccounts', existing);
+    return existing;
+  },
+};
+
+// ============================================
 // AI Script Suggestion Repository
 // ============================================
 export const aiScriptSuggestionRepository = {
