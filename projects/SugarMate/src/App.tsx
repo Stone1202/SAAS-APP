@@ -18,9 +18,9 @@ import zhCN from 'antd/locale/zh_CN';
 import { useUserStore } from '@/stores/userStore';
 import AppLayout from './components/AppLayout';
 
-// Vite base → React Router basename 映射：dev 模式（./ /) → /，生产模式使用 VITE_BASE_PATH
-const BASE = import.meta.env.BASE_URL;
-const ROUTER_BASENAME = BASE === './' || BASE === '/' ? '/' : BASE;
+// HashRouter 的 basename 必须固定为 /，不能跟随 Vite base path。
+// Vite base path 只影响静态资源加载路径；hash 路由的匹配与文档路径无关。
+const ROUTER_BASENAME = '/';
 
 // ============ 首页 & 登录 & 入驻 & 门户 ============
 import HomePage from './pages/HomePage';
