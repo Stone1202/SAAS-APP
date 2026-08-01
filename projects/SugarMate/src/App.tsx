@@ -12,7 +12,7 @@
  * 路由变更日志：V4.0.0 基于 BA+UX 联合排查报告，补齐 90+ 缺失路由
  */
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider, App as AntApp } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import { useUserStore } from '@/stores/userStore';
@@ -285,7 +285,7 @@ const App: React.FC = () => {
       }}
     >
       <AntApp>
-        <BrowserRouter basename={ROUTER_BASENAME}>
+        <HashRouter basename={ROUTER_BASENAME}>
           <Routes>
             {/* ============ 首页 & 登录 & 入驻 & 门户（无 AppLayout 包裹） ============ */}
             <Route path="/" element={<HomePage />} />
@@ -563,7 +563,7 @@ const App: React.FC = () => {
             <Route path="live/knowledge/:sessionId" element={<KnowledgeLivePage />} />
 
           </Routes>
-        </BrowserRouter>
+        </HashRouter>
       </AntApp>
     </ConfigProvider>
   );

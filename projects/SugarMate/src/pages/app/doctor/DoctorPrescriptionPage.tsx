@@ -7,7 +7,7 @@ import type { ConsultationOrder } from '@contracts/consultation';
 
 const DoctorPrescriptionPage: React.FC = () => {
   const navigate = useNavigate();
-  const searchParams = new URLSearchParams(window.location.search);
+  const searchParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
   const orderId = searchParams.get('orderId') || '';
 
   const { loadOrderDetail, currentOrder, createPrescription, init } = useConsultationStore();

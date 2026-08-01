@@ -6,10 +6,12 @@
 export type Terminal = 'PC' | 'MP' | 'APP' | 'LIVE' | 'UNKNOWN';
 
 /**
- * 从 URL pathname 自动检测当前终端
+ * 从 URL hash（HashRouter）自动检测当前终端
  */
 export function detectTerminal(pathname?: string): Terminal {
-  const p = pathname || window.location.pathname;
+  // HashRouter 下实际路由在 hash 中：/#/live-mgmt/stream?roomId=xxx
+  const hash = pathname || window.location.hash.replace(/^#/, '') || '/';
+  const p = hash.split('?')[0];
   if (p.startsWith('/mp/')) return 'MP';
   if (p.startsWith('/app/')) return 'APP';
   if (p.startsWith('/live/')) return 'LIVE';

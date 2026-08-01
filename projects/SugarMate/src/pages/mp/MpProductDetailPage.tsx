@@ -29,7 +29,7 @@ const formatSales = (count: number): string => {
 
 const MpProductDetailPage: React.FC = () => {
   const nav = useNavigate();
-  const searchParams = new URLSearchParams(window.location.search);
+  const searchParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
   const productId = searchParams.get('productId') || 'p-001';
 
   const { products, loading, loadProducts } = useProductStore();

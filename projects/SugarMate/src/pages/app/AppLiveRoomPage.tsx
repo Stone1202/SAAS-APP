@@ -179,7 +179,7 @@ const AppLiveRoomPage: React.FC = () => {
 // ==================== AppLiveWatchPage — 观众看播页 ====================
 const AppLiveWatchPage: React.FC = () => {
   const navigate = useNavigate();
-  const roomId = window.location.pathname.split('/').pop() || '';
+  const roomId = (window.location.hash.split('/').pop() || '').split('?')[0];
 
   // ========== 全部数据从 liveStore 消费 ==========
   const {
