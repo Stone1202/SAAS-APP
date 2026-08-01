@@ -18,6 +18,10 @@ import zhCN from 'antd/locale/zh_CN';
 import { useUserStore } from '@/stores/userStore';
 import AppLayout from './components/AppLayout';
 
+// Vite base → React Router basename 映射：dev 模式（./ /) → /，生产模式使用 VITE_BASE_PATH
+const BASE = import.meta.env.BASE_URL;
+const ROUTER_BASENAME = BASE === './' || BASE === '/' ? '/' : BASE;
+
 // ============ 首页 & 登录 & 入驻 & 门户 ============
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -281,7 +285,7 @@ const App: React.FC = () => {
       }}
     >
       <AntApp>
-        <BrowserRouter>
+        <BrowserRouter basename={ROUTER_BASENAME}>
           <Routes>
             {/* ============ 首页 & 登录 & 入驻 & 门户（无 AppLayout 包裹） ============ */}
             <Route path="/" element={<HomePage />} />
