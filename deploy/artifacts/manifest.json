@@ -1,0 +1,179 @@
+{
+  "version": "v3.0.0",
+  "comment": "V3.0.2 — SAAS PRD 链接修正为 SAAS-v1.0.0-S1.html，终端标签支持点击跳转",
+  "generated_at": "2026-07-29T16:30+08:00",
+  "members": [
+    {
+      "id": "jojo",
+      "projects": [
+        {
+          "slug": "AI-SCRM",
+          "name": "AI-SCRM 智能SCRM平台",
+          "framework": "React+TS",
+          "terminals": ["运营后台PC", "租户后台PC", "H5移动端"],
+          "versions": [
+            {
+              "version": "v1.0.0",
+              "url": "./jojo/AI-SCRM/v1.0.0/",
+              "prd_doc_url": "./jojo/AI-SCRM/v1.0.0/prd.html"
+            }
+          ]
+        },
+        {
+          "slug": "SAAS",
+          "name": "SAAS直播内容审查系统",
+          "framework": "Vue",
+          "terminals": ["租户后台PC", "运营后台PC", "观众端H5"],
+          "versions": [
+            {
+              "version": "v1.0.0",
+              "url": "./jojo/SAAS/v1.0.0/",
+              "prd_doc_url": "./jojo/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"
+            }
+          ]
+        },
+        {
+          "slug": "SugarMate",
+          "name": "SugarMate 糖伴健康平台",
+          "framework": "React+TS",
+          "terminals": ["PC后台", "小程序", "APP", "直播端"],
+          "versions": [
+            {
+              "version": "v3.1.1",
+              "url": "./jojo/SugarMate/main/v3.1.1/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Eltonliz",
+      "projects": [
+        {
+          "slug": "AI-SCRM",
+          "name": "AI-SCRM 智能SCRM平台",
+          "framework": "React+TS",
+          "terminals": ["运营后台PC", "租户后台PC", "H5移动端"],
+          "versions": [
+            {
+              "version": "v1.0.0",
+              "url": "./jojo/AI-SCRM/v1.0.0/",
+              "prd_doc_url": "./jojo/AI-SCRM/v1.0.0/prd.html"
+            }
+          ]
+        },
+        {
+          "slug": "SAAS",
+          "name": "SAAS直播内容审查系统",
+          "framework": "Vue",
+          "terminals": ["租户后台PC", "运营后台PC", "观众端H5"],
+          "versions": [
+            {
+              "version": "v1.0.0",
+              "url": "./Eltonliz/SAAS/v1.0.0/",
+              "prd_doc_url": "./Eltonliz/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fuyongjian",
+      "projects": [
+        {
+          "slug": "AI-SCRM",
+          "name": "AI-SCRM 智能SCRM平台",
+          "framework": "React+TS",
+          "terminals": ["运营后台PC", "租户后台PC", "H5移动端"],
+          "versions": [
+            {
+              "version": "v1.0.0",
+              "url": "./jojo/AI-SCRM/v1.0.0/",
+              "prd_doc_url": "./jojo/AI-SCRM/v1.0.0/prd.html"
+            }
+          ]
+        },
+        {
+          "slug": "SAAS",
+          "name": "SAAS直播内容审查系统",
+          "framework": "Vue",
+          "terminals": ["租户后台PC", "运营后台PC", "观众端H5"],
+          "versions": [
+            {
+              "version": "v1.0.0",
+              "url": "./fuyongjian/SAAS/v1.0.0/",
+              "prd_doc_url": "./fuyongjian/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "jiangrubin",
+      "projects": [
+        {
+          "slug": "AI-SCRM",
+          "name": "AI-SCRM 智能SCRM平台",
+          "framework": "React+TS",
+          "terminals": ["运营后台PC", "租户后台PC", "H5移动端"],
+          "versions": [
+            {
+              "version": "v1.0.0",
+              "url": "./jojo/AI-SCRM/v1.0.0/",
+              "prd_doc_url": "./jojo/AI-SCRM/v1.0.0/prd.html"
+            }
+          ]
+        },
+        {
+          "slug": "SAAS",
+          "name": "SAAS直播内容审查系统",
+          "framework": "Vue",
+          "terminals": ["租户后台PC", "运营后台PC", "观众端H5"],
+          "versions": [
+            {
+              "version": "v1.0.0",
+              "url": "./jiangrubin/SAAS/v1.0.0/",
+              "prd_doc_url": "./jiangrubin/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "linjinmei",
+      "projects": [
+        {
+          "slug": "SAAS",
+          "name": "SAAS直播内容审查系统",
+          "framework": "Vue",
+          "terminals": ["租户后台PC", "运营后台PC", "观众端H5"],
+          "versions": [
+            {
+              "version": "v1.0.0",
+              "url": "./linjinmei/SAAS/v1.0.0/",
+              "prd_doc_url": "./linjinmei/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "zhuangjingxiang",
+      "projects": [
+        {
+          "slug": "SAAS",
+          "name": "SAAS直播内容审查系统",
+          "framework": "Vue",
+          "terminals": ["租户后台PC", "运营后台PC", "观众端H5"],
+          "versions": [
+            {
+              "version": "v1.0.0",
+              "url": "./zhuangjingxiang/SAAS/v1.0.0/",
+              "prd_doc_url": "./zhuangjingxiang/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

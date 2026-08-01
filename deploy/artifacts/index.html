@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<!-- build:v3.7.31 cache-bust -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>九天科技 — 原型门户</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #f0f2f5;
+    color: #1a1a1a;
+    min-height: 100vh;
+  }
+  /* 顶部导航 */
+  .topbar {
+    background: linear-gradient(135deg, #1677ff 0%, #0958d9 100%);
+    padding: 16px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  }
+  .topbar .brand {
+    color: #fff; font-size: 20px; font-weight: 700;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .topbar .subtitle { color: rgba(255,255,255,.75); font-size: 14px; }
+
+  .container { max-width: 1120px; margin: 0 auto; padding: 24px 20px 60px; }
+
+  /* 成员选择器 */
+  .member-tabs {
+    display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;
+  }
+  .member-tab {
+    padding: 8px 20px; border-radius: 20px; border: 1px solid #d9d9d9;
+    background: #fff; cursor: pointer; font-size: 14px; font-weight: 500;
+    transition: all .2s; color: #555;
+  }
+  .member-tab:hover { border-color: #1677ff; color: #1677ff; }
+  .member-tab.active { background: #1677ff; color: #fff; border-color: #1677ff; }
+
+  /* 项目卡片 */
+  .project-card {
+    background: #fff; border-radius: 12px; margin-bottom: 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    overflow: hidden;
+  }
+
+  /* 完整产品区（Main聚合） */
+  .main-section {
+    padding: 24px 28px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .main-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px; flex-wrap: wrap; gap: 12px;
+  }
+  .main-title-row {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .main-title {
+    font-size: 20px; font-weight: 700; color: #1a1a1a;
+  }
+  .framework-badge {
+    display: inline-block; padding: 2px 10px; border-radius: 4px;
+    background: #e6f4ff; color: #1677ff; font-size: 12px; font-weight: 600;
+  }
+  .main-version {
+    font-size: 13px; color: #888; background: #fafafa;
+    padding: 2px 10px; border-radius: 4px; border: 1px solid #f0f0f0;
+  }
+  .main-links {
+    display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+  }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 18px; background: #1677ff; color: #fff;
+    border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 500;
+    transition: background .2s;
+  }
+  .btn-primary:hover { background: #4096ff; }
+  .btn-outline {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 18px; border: 1px solid #d9d9d9; background: #fff;
+    color: #555; border-radius: 6px; text-decoration: none;
+    font-size: 14px; transition: all .2s;
+  }
+  .btn-outline:hover { border-color: #1677ff; color: #1677ff; }
+
+  .terminal-list {
+    display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px;
+  }
+  .terminal-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 12px; background: #f6ffed; border: 1px solid #b7eb8f;
+    border-radius: 12px; font-size: 12px; color: #52c41a;
+    cursor: pointer; user-select: none; transition: all .2s;
+  }
+  .terminal-tag:hover {
+    background: #d9f7be; border-color: #95de64;
+  }
+  .terminal-icon { width: 14px; height: 14px; }
+
+  /* 分隔线 */
+  .section-divider {
+    padding: 8px 28px; background: #fafafa;
+    font-size: 12px; color: #999; font-weight: 600;
+    letter-spacing: .5px; border-bottom: 1px solid #f0f0f0;
+  }
+
+  /* 分支明细区 */
+  .goal-section {
+    padding: 0 28px;
+  }
+  .goal-item {
+    padding: 16px 0;
+    border-bottom: 1px solid #f5f5f5;
+  }
+  .goal-item:last-child { border-bottom: none; }
+  .goal-item summary {
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+    color: #333; list-style: none;
+    user-select: none;
+  }
+  .goal-item summary::-webkit-details-marker { display: none; }
+  .goal-arrow { transition: transform .2s; font-size: 10px; color: #999; }
+  details[open] .goal-arrow { transform: rotate(90deg); }
+  .goal-branch {
+    font-size: 11px; color: #999; font-family: "SF Mono", Monaco, monospace;
+    background: #f5f5f5; padding: 2px 8px; border-radius: 4px;
+  }
+  .goal-detail {
+    padding: 12px 0 4px 24px;
+  }
+  .version-row {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .version-tag {
+    display: inline-block; padding: 1px 8px; background: #fff7e6;
+    border: 1px solid #ffd591; border-radius: 4px;
+    font-size: 12px; color: #d46b08; font-weight: 600;
+  }
+  .link-mini {
+    font-size: 13px; color: #1677ff; text-decoration: none;
+    margin-right: 12px; display: inline-flex; align-items: center; gap: 4px;
+  }
+  .link-mini:hover { text-decoration: underline; }
+  .goal-terminals { margin-top: 6px; }
+
+  /* 通用 */
+  .empty-state {
+    text-align: center; padding: 60px 20px; color: #999;
+    font-size: 14px;
+  }
+  .icon-sm { width: 16px; height: 16px; opacity: .6; }
+
+  @media (max-width: 640px) {
+    .container { padding: 16px 12px; }
+    .main-section, .goal-section { padding: 16px; }
+    .main-header { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="6" fill="rgba(255,255,255,.2)"/><path d="M7 8h10M7 12h8M7 16h6" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+    九天科技
+  </div>
+  <div class="subtitle">原型交付门户</div>
+</div>
+
+<div class="container">
+  <!-- 成员选择器（动态渲染） -->
+  <div class="member-tabs" id="memberTabs"></div>
+
+  <!-- 项目列表（动态渲染） -->
+  <div id="projectList">
+    <div class="empty-state">加载中...</div>
+  </div>
+</div>
+
+<script>
+// ── 渲染引擎 ──
+// 内嵌清单（优先使用，避免 manifest.json 加载失败/版本不一致）
+// 项目部署 URL 映射（以实际 EdgeOne 部署为准）
+const PROJECT_URLS = {
+  // 所有项目统一走用户域名 prototype.jycao.cn 下的子目录
+  'AI-SCRM':   'https://prototype.jycao.cn',
+  'SAAS':      'https://prototype.jycao.cn',
+  'SugarMate': 'https://prototype.jycao.cn'
+};
+const EMBEDDED_MANIFEST = {
+  "version":"v3.0.0","generated_at":"2026-07-29T16:30+08:00",
+  "members":[
+    {"id":"jojo","projects":[{"slug":"AI-SCRM","name":"AI-SCRM 智能SCRM平台","framework":"React+TS","terminals":["运营后台PC","租户后台PC","H5移动端"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/prd.html"}]},{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]},{"slug":"SugarMate","name":"SugarMate 糖伴健康平台","framework":"React+TS","terminals":["PC后台","小程序","APP","直播端"],"versions":[{"version":"v3.1.1","url":"https://prototype.jycao.cn/jojo/SugarMate/main/v3.1.1/"}]}}]},
+    {"id":"Eltonliz","projects":[{"slug":"AI-SCRM","name":"AI-SCRM 智能SCRM平台","framework":"React+TS","terminals":["运营后台PC","租户后台PC","H5移动端"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/prd.html"}]},{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/Eltonliz/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/Eltonliz/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]}]},
+    {"id":"fuyongjian","projects":[{"slug":"AI-SCRM","name":"AI-SCRM 智能SCRM平台","framework":"React+TS","terminals":["运营后台PC","租户后台PC","H5移动端"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/prd.html"}]},{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/fuyongjian/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/fuyongjian/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]}]},
+    {"id":"jiangrubin","projects":[{"slug":"AI-SCRM","name":"AI-SCRM 智能SCRM平台","framework":"React+TS","terminals":["运营后台PC","租户后台PC","H5移动端"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jojo/AI-SCRM/v1.0.0/prd.html"}]},{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/jiangrubin/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/jiangrubin/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]}]},
+    {"id":"linjinmei","projects":[{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/linjinmei/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/linjinmei/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]}]},
+    {"id":"zhuangjingxiang","projects":[{"slug":"SAAS","name":"SAAS直播内容审查系统","framework":"Vue","terminals":["租户后台PC","运营后台PC","观众端H5"],"versions":[{"version":"v1.0.0","url":"https://prototype.jycao.cn/zhuangjingxiang/SAAS/v1.0.0/","prd_doc_url":"https://prototype.jycao.cn/zhuangjingxiang/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"}]}]}
+  ]
+};
+
+// 终端图标映射
+const TERM_ICONS = {
+  'PC': '🖥', 'H5': '📱', '小程序': '🟩', 'APP': '📲', '后台': '🖥',
+  '管理': '⚙', '运营': '🔧', '租户': '🏢', '观众': '👤', '报表': '📊'
+};
+function getTermIcon(name) {
+  for (const [k, v] of Object.entries(TERM_ICONS)) {
+    if (name.includes(k)) return v;
+  }
+  return '📄';
+}
+
+async function init() {
+  let manifest = null;
+  // 优先加载外部 manifest.json（允许动态更新）
+  try {
+    const resp = await fetch('./manifest.json');
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data.members && data.members.length > 0) {
+        manifest = data;
+      }
+    }
+  } catch(e) { /* 忽略，使用内嵌数据 */ }
+  if (!manifest) manifest = EMBEDDED_MANIFEST;
+  render(manifest);
+}
+
+function render(manifest) {
+  const members = manifest.members || [];
+  if (members.length === 0) {
+    document.getElementById('projectList').innerHTML =
+      '<div class="empty-state">暂无部署项目</div>';
+    return;
+  }
+
+  // 成员选择器
+  renderMemberTabs(members);
+
+  // 默认展示第一个成员
+  if (members.length > 0) {
+    renderMemberProjects(members[0]);
+  }
+}
+
+function renderMemberTabs(members) {
+  const tabEl = document.getElementById('memberTabs');
+  tabEl.innerHTML = members.map((m, i) =>
+    `<button class="member-tab${i === 0 ? ' active' : ''}" data-idx="${i}">${m.id}</button>`
+  ).join('');
+
+  tabEl.querySelectorAll('.member-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabEl.querySelectorAll('.member-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const idx = parseInt(btn.dataset.idx);
+      renderMemberProjects(members[idx]);
+    });
+  });
+}
+
+function renderMemberProjects(member) {
+  const projects = member.projects || [];
+  if (projects.length === 0) {
+    document.getElementById('projectList').innerHTML =
+      '<div class="empty-state">该成员暂无项目</div>';
+    return;
+  }
+
+  document.getElementById('projectList').innerHTML = projects.map(p => renderProjectCard(p, member)).join('');
+}
+
+function renderProjectCard(project, member) {
+  // 兼容旧版 manifest（只有 versions[]，没有 goals/main）
+  if (!project.goals && project.versions) {
+    return renderLegacyProjectCard(project, member);
+  }
+
+  const goals = project.goals || [];
+  const main = project.main || {};
+  const framework = project.framework || 'Static';
+  const projectName = project.name || project.slug || '未命名项目';
+
+  // 全部终端（从 main.terminals 取，或从各 goal 汇总）
+  const allTerminals = main.terminals ||
+    [...new Set(goals.flatMap(g => g.terminals || []))];
+
+  return `
+  <div class="project-card">
+    <!-- 完整产品区 -->
+    <div class="main-section">
+      <div class="main-header">
+        <div class="main-title-row">
+          <span class="main-title">${projectName}</span>
+          <span class="framework-badge">${framework}</span>
+          ${main.version ? `<span class="main-version">聚合 ${main.version}</span>` : ''}
+        </div>
+        <div class="main-links">
+          ${main.proto_url ? `
+            <a href="${main.proto_url}" class="btn-primary" target="_blank">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+              完整原型
+            </a>` : ''}
+          ${main.prd_overview_url ? `
+            <a href="${main.prd_overview_url}" class="btn-outline" target="_blank">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              PRD 总览
+            </a>` : ''}
+        </div>
+      </div>
+      ${allTerminals.length > 0 ? `
+        <div class="terminal-list">
+          ${allTerminals.map(t => `<span class="terminal-tag">${getTermIcon(t)} ${t}</span>`).join('')}
+        </div>` : ''}
+    </div>
+
+    <!-- 分支明细区 -->
+    ${goals.length > 0 ? `
+      <div class="section-divider">分支明细</div>
+      <div class="goal-section">
+        ${goals.map(g => renderGoalItem(g)).join('')}
+      </div>
+    ` : ''}
+  </div>`;
+}
+
+function renderGoalItem(goal) {
+  const versions = goal.versions || [];
+  const terminals = goal.terminals || [];
+  const latestVer = versions.length > 0 ? versions[versions.length - 1] : null;
+
+  return `
+  <div class="goal-item">
+    <details>
+      <summary>
+        <span class="goal-arrow">▶</span>
+        ${goal.title || goal.goal}
+        <span class="goal-branch">${goal.branch || '—'}</span>
+      </summary>
+      <div class="goal-detail">
+        ${latestVer ? `
+          <div class="version-row">
+            <span class="version-tag">${latestVer.version}</span>
+            ${latestVer.prd_doc_url ? `
+              <a href="${latestVer.prd_doc_url}" class="link-mini" target="_blank">
+                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+                PRD 文档
+              </a>` : ''}
+            ${latestVer.scope_only_proto_url ? `
+              <a href="${latestVer.scope_only_proto_url}" class="link-mini" target="_blank">
+                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                纯净原型
+              </a>` : ''}
+          </div>
+        ` : '<div class="version-row"><span style="color:#999;font-size:13px;">暂无版本</span></div>'}
+
+        ${terminals.length > 0 ? `
+          <div class="terminal-list goal-terminals">
+            ${terminals.map(t => `<span class="terminal-tag">${getTermIcon(t)} ${t}</span>`).join('')}
+          </div>` : ''}
+      </div>
+    </details>
+  </div>`;
+}
+
+// 兼容旧版 manifest 渲染（versions[] 结构，支持字符串数组或对象数组）
+function renderLegacyProjectCard(project, member) {
+  const rawVersions = project.versions || [];
+  const memberId = member && member.id ? member.id : '';
+  const projectSlug = project.slug || '';
+  // 为字符串版本补齐默认 URL（对齐实际产物路径 {member}/{project}/{version}/）
+  const versions = rawVersions.map(v => {
+    if (typeof v === 'string') {
+      const ver = v;
+      return {
+        version: ver,
+        url: memberId && projectSlug ? `./${memberId}/${projectSlug}/${ver}/` : '',
+        prd_doc_url: memberId && projectSlug ? `./${memberId}/${projectSlug}/${ver}/prd.html` : ''
+      };
+    }
+    return v;
+  });
+  const framework = project.framework || 'Static';
+  const projectName = project.name || project.slug || '未命名项目';
+  const terminals = project.terminals || [];
+  const latest = versions.length > 0 ? versions[versions.length - 1] : null;
+
+  return `
+  <div class="project-card">
+    <div class="main-section">
+      <div class="main-header">
+        <div class="main-title-row">
+          <span class="main-title">${projectName}</span>
+          <span class="framework-badge">${framework}</span>
+          ${latest && (latest.version || latest.name) ? `<span class="main-version">${latest.version || latest.name}</span>` : ''}
+        </div>
+        <div class="main-links">
+          ${latest && latest.url ? `
+            <a href="${latest.url}" class="btn-primary" target="_blank">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+              进入原型
+            </a>` : ''}
+          ${latest && latest.prd_doc_url ? `
+            <a href="${latest.prd_doc_url}" class="btn-outline" target="_blank">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              PRD 文档
+            </a>` : ''}
+        </div>
+      </div>
+      ${terminals.length > 0 ? `
+        <div class="terminal-list">
+          ${terminals.map(t => `<span class="terminal-tag">${getTermIcon(t)} ${t}</span>`).join('')}
+        </div>` : ''}
+    </div>
+
+    ${versions.length > 0 ? `
+      <div class="section-divider">历史版本</div>
+      <div class="goal-section">
+        ${versions.map(v => `
+          <div class="goal-item">
+            <div class="version-row">
+              <span class="version-tag">${v.version || v.name || '未命名版本'}</span>
+              ${v.prd_doc_url ? `
+                <a href="${v.prd_doc_url}" class="link-mini" target="_blank">
+                  <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+                  PRD 文档
+                </a>` : ''}
+              ${v.url ? `
+                <a href="${v.url}" class="link-mini" target="_blank">
+                  <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                  原型
+                </a>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    ` : ''}
+  </div>`;
+}
+
+// 启动
+init();
+
+// 终端标签点击：跳转到所属项目的原型入口（解决"入口点击没有效果"）
+document.addEventListener('click', (e) => {
+  const tag = e.target.closest('.terminal-tag');
+  if (!tag) return;
+  const card = tag.closest('.project-card');
+  if (!card) return;
+  const protoBtn = card.querySelector('.btn-primary[href]');
+  const url = protoBtn ? protoBtn.getAttribute('href') : '#';
+  if (url && url !== '#') {
+    window.open(url, '_blank', 'noopener');
+  }
+});
+</script>
+</body>
+</html>
