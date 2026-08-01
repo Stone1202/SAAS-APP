@@ -1,0 +1,428 @@
+# ============================================
+# SugarMate 事件总线定义 v1.0.0
+# 跨模块领域事件·解耦通信·确保数据同步
+# ============================================
+version: "1.0.0"
+project: "SugarMate"
+date: "2026-07-29"
+owner: "Arch Agent"
+reference: "module-boundaries §四 事件通信矩阵"
+
+---
+
+## 一、事件总线架构
+
+```
+  ┌─────────────┐
+  │   gateway    │
+  │  (不处理事件) │
+  └─────────────┘
+        
+  各模块 → 发布领域事件 → [Event Bus · 消息队列] → 各订阅方消费
+        
+       实现方案: 阶段1·React CustomEvent / EventEmitter（单SPA原型）
+                阶段2·生产环境·Redis Streams / RabbitMQ / NATS
+```
+
+---
+
+## 二、事件分类与定义
+
+### 2.1 用户身份域（user:*）
+
+#### user.identity.created
+```
+发布方: user (用户中心)
+触发时机: 新用户注册成功
+载荷:
+{
+  identity_id: string,
+  role: "PATIENT" | "DOCTOR" | "NUTRITIONIST" | "HM" | "PH_ADMIN",
+  platform: "APP" | "MP" | "PC",
+  timestamp: number
+}
+订阅方:
+  - trade: 初始化用户交易上下文
+  - marketing: 新用户欢迎积分发放
+  - content: 初始化内容偏好
+```
+
+#### user.identity.switched
+```
+发布方: user
+触发时机: 用户APP内切换角色视图
+载荷:
+{
+  account_id: string,
+  from_identity: string,
+  to_identity: string,
+  to_role: string,
+  timestamp: number
+}
+订阅方:
+  - 所有模块: 清理上个身份状态·加载新身份数据
+  - communication: 刷新未读通知·切换IM连接
+```
+
+#### user.onboarding.submitted
+```
+发布方: user
+触发时机: 商家提交入驻申请
+载荷:
+{
+  application_id: string,
+  merchant_type: "PH" | "DR" | "PR" | "NT" | "HM",
+  business_name: string,
+  operator: string,
+  timestamp: number
+}
+订阅方:
+  - operation: 触发入驻审核流程(SM-02)
+  - communication: 通知平台审核人员(SLA计时开始)
+```
+
+#### user.onboarding.status_changed
+```
+发布方: operation (审核完成→回写)
+触发时机: 入驻审核完成（通过/驳回/补充）
+载荷:
+{
+  application_id: string,
+  old_status: "PENDING" | "UNDER_REVIEW" | "SUPPLEMENT",
+  new_status: "APPROVED" | "REJECTED" | "SUPPLEMENT",
+  reviewer: string,
+  reason?: string,
+  timestamp: number
+}
+订阅方:
+  - user: 更新入驻状态
+  - communication: 通知申请人结果
+  - trade: 通过后初始化商家交易能力
+  - content: 通过后开通内容发布权限
+```
+
+---
+
+### 2.2 交易域（trade:*）
+
+#### trade.order.created
+```
+发布方: trade
+触发时机: 用户下单成功（库存预占完成）
+载荷:
+{
+  order_id: string,
+  user_id: string,
+  items: { product_id, sku_id, quantity, needs_cold_chain }[],
+  total_amount: number,
+  has_prescription_drug: boolean,
+  timestamp: number
+}
+订阅方:
+  - coldchain: 冷链商品→启动冷链追踪
+  - communication: 订单创建通知
+```
+
+#### trade.order.paid
+```
+发布方: trade
+触发时机: 支付成功回调
+载荷:
+{
+  order_id: string,
+  channel: "YEEPAY" | "WECHAT",
+  transaction_id: string,
+  amount: number,
+  timestamp: number
+}
+订阅方:
+  - marketing: 积分发放+优惠券核销
+  - communication: 支付成功通知·推送发货提醒给药房
+  - coldchain: 冷链订单→确认冷链计划
+```
+
+#### trade.order.status_changed
+```
+发布方: trade
+触发时机: 订单状态任何变更
+载荷:
+{
+  order_id: string,
+  old_status: string,     // SM-05/06/07/15 状态值
+  new_status: string,
+  actor: string,           // 操作者
+  reason?: string,
+  timestamp: number
+}
+订阅方:
+  - communication: 全终端订单状态推送
+  - coldchain: SHIPPED→温度监控阶段·DELIVERED→结束追踪
+```
+
+#### trade.refund.issued
+```
+发布方: trade
+触发时机: 退款执行
+载荷:
+{
+  refund_id: string,
+  order_id: string,
+  amount: number,
+  reason: string,
+  timestamp: number
+}
+订阅方:
+  - marketing: 积分回退+优惠券恢复
+  - coldchain: 清理冷链追踪
+```
+
+---
+
+### 2.3 处方域（prescription:*）
+
+#### prescription.issued
+```
+发布方: prescription
+触发时机: 医生开具处方
+载荷:
+{
+  prescription_id: string,
+  doctor_id: string,
+  patient_id: string,
+  drug_count: number,
+  timestamp: number
+}
+订阅方:
+  - communication: 通知患者处方已生成
+```
+
+#### prescription.signed
+```
+发布方: prescription
+触发时机: CA签名完成
+载荷:
+{
+  prescription_id: string,
+  signer_id: string,
+  ca_cert_hash: string,
+  timestamp: number
+}
+订阅方:
+  - communication: 通知药房待审核
+
+  - trade: 处方药可用·解锁购买资格
+  - user: 写入患者处方历史
+```
+
+#### prescription.audited
+```
+发布方: prescription
+触发时机: 药房审核处方
+载荷:
+{
+  prescription_id: string,
+  auditor: string,
+  decision: "APPROVED" | "REJECTED",
+  reason?: string,
+  timestamp: number
+}
+订阅方:
+  - communication: 通知医生+患者审核结果
+```
+
+#### prescription.dispensed
+```
+发布方: prescription
+触发时机: 药品调配完成
+载荷:
+{
+  prescription_id: string,
+  dispenser: string,
+  drugs: { drug_name, batch_no, trace_code }[],
+  timestamp: number
+}
+订阅方:
+  - coldchain: 需要冷链⇢启动追踪
+  - trade: 关联订单发货
+```
+
+---
+
+### 2.4 冷链域（coldchain:*）
+
+#### coldchain.shipment.start
+```
+发布方: coldchain
+触发时机: 冷链包裹出库
+载荷:
+{
+  shipment_id: string,
+  order_id: string,
+  device_id: string,
+  temperature_range: { min, max },
+  timestamp: number
+}
+订阅方:
+  - trade: 更新订单物流信息
+  - communication: 通知患者冷链已发货
+```
+
+#### coldchain.temperature.alert
+```
+发布方: coldchain
+触发时机: 温度超限·持续≥5min
+载荷:
+{
+  alert_id: string,
+  shipment_id: string,
+  order_id: string,
+  current_temp: number,
+  threshold: number,
+  exceeded_duration_seconds: number,
+  timestamp: number
+}
+订阅方:
+  - communication: 紧急通知药房+平台·短信+APP推送+企微
+  - trade: 准备补发/退款流程
+```
+
+#### coldchain.shipment.complete
+```
+发布方: coldchain
+触发时机: 包裹签收
+载荷:
+{
+  shipment_id: string,
+  order_id: string,
+  temperature_summary: { min, max, avg, alert_count },
+  timestamp: number
+}
+订阅方:
+  - trade: 订单完成·触发结算
+  - user: 患者冷链报告
+```
+
+---
+
+### 2.5 营销域（marketing:*）
+
+#### marketing.points.earned
+```
+发布方: marketing
+触发时机: 积分变动（订单完成/签到/活动）
+载荷:
+{
+  user_id: string,
+  points: number,
+  reason: "ORDER_PAID" | "DAILY_CHECKIN" | "CAMPAIGN" ...,
+  batch_id: string,        // 积分批次·FIFO
+  expires_at: number,
+  timestamp: number
+}
+```
+
+#### marketing.level.upgraded
+```
+发布方: marketing
+触发时机: 会员等级变更
+载荷:
+{
+  user_id: string,
+  old_level: string,
+  new_level: string,
+  reason: string,
+  timestamp: number
+}
+订阅方:
+  - communication: 通知用户等级变更+新权益
+  - trade: 等级折扣重新计算
+```
+
+---
+
+### 2.6 内容域（content:*）
+
+#### content.live.started
+```
+发布方: content
+触发时机: 主播开播
+载荷:
+{
+  live_id: string,
+  streamer_id: string,
+  streamer_role: "DOCTOR" | "NUTRITIONIST",
+  title: string,
+  cover_url: string,
+  room_id: string,
+  timestamp: number
+}
+订阅方:
+  - communication: 推送给订阅用户+APP live tab更新
+```
+
+#### content.live.ended
+```
+发布方: content
+触发时机: 直播结束
+载荷:
+{
+  live_id: string,
+  duration_seconds: number,
+  peak_viewers: number,
+  products_sold: string[],
+  timestamp: number
+}
+订阅方:
+  - content: 触发转码+回放生成
+  - trade: 直播带货订单统计
+```
+
+---
+
+## 三、事件可靠性保障
+
+| 层级 | 措施 | 说明 |
+|:--:|------|------|
+| L1·发布 | 事件持久化·先写EventLog再发消息 | 确保事件不丢失 |
+| L2·投递 | at-least-once | 消费者做幂等处理 |
+| L3·消费 | 消费者记录消费位置(offset) | 断点续传 |
+| L4·重试 | 失败3次退避重试(1s/5s/30s)→死信队列 | 避免雪崩 |
+| L5·监控 | 事件积压告警·消费延迟告警 | 运维可观测 |
+| L6·顺序 | 同一聚合根的事件有序·全局无序 | 按entity_id分区 |
+
+---
+
+## 四、事件版本策略
+
+| 规则 | 说明 |
+|------|------|
+| 新增字段 | 向前兼容·旧消费者忽略新字段·不需要升级 |
+| 删除字段 | 保留6个月·先标记deprecated→6个月后删除 |
+| 修改字段类型 | ❌ 禁止·必须新增字段·6个月后删除旧字段 |
+| 事件废弃 | 标记deprecated→6个月后停止发布·1年后停止消费处理 |
+
+---
+
+## 五、事件编号一览
+
+| 事件ID | 事件名 | 发布方 | 消费方 | 优先级 |
+|:-----|--------|:----:|--------|:----:|
+| EVT-001 | user.identity.created | user | trade,marketing,content | 🟡 |
+| EVT-002 | user.identity.switched | user | all | 🔴 |
+| EVT-003 | user.onboarding.submitted | user | operation,communication | 🔴 |
+| EVT-004 | user.onboarding.status_changed | operation | user,communication,trade,content | 🔴 |
+| EVT-005 | trade.order.created | trade | coldchain,communication | 🔴 |
+| EVT-006 | trade.order.paid | trade | marketing,communication,coldchain | 🔴 |
+| EVT-007 | trade.order.status_changed | trade | communication,coldchain | 🔴 |
+| EVT-008 | trade.refund.issued | trade | marketing,coldchain | 🟡 |
+| EVT-009 | prescription.issued | prescription | communication | 🔴 |
+| EVT-010 | prescription.signed | prescription | communication,trade,user | 🔴 |
+| EVT-011 | prescription.audited | prescription | communication | 🔴 |
+| EVT-012 | prescription.dispensed | prescription | coldchain,trade | 🔴 |
+| EVT-013 | coldchain.shipment.start | coldchain | trade,communication | 🔴 |
+| EVT-014 | coldchain.temperature.alert | coldchain | communication,trade | 🔴 |
+| EVT-015 | coldchain.shipment.complete | coldchain | trade,user | 🟡 |
+| EVT-016 | marketing.points.earned | marketing | - | 🟡 |
+| EVT-017 | marketing.level.upgraded | marketing | communication,trade | 🟡 |
+| EVT-018 | content.live.started | content | communication | 🟡 |
+| EVT-019 | content.live.ended | content | content,trade | 🟡 |

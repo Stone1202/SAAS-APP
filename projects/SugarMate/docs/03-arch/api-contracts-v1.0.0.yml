@@ -1,0 +1,347 @@
+# ============================================
+# SugarMate API契约定义 v1.0.0
+# 10模块×核心API×Zod Schema概要
+# ============================================
+version: "1.0.0"
+project: "SugarMate"
+date: "2026-07-29"
+owner: "Arch Agent"
+reference: "module-boundaries v1.0.0 + PRD FN映射"
+
+---
+
+## 一、API版本策略
+
+| 规则 | 说明 |
+|------|------|
+| 版本路径 | `/api/v{major}.{minor}/` → 如 `/api/v1/` |
+| 兼容承诺 | 同大版本向后兼容·废弃字段保留3个月 |
+| 中断变更 | 升级大版本·旧版本保留6个月 |
+| API文档 | Swagger/OpenAPI 3.0自动生成 |
+
+---
+
+## 二、通用请求/响应Schema
+
+### 2.1 通用请求头
+
+```typescript
+// CommonRequestHeaders
+{
+  "Authorization": "Bearer {jwt_token}",      // JWT Token
+  "X-Request-Id": "uuid",                      // 请求ID·全链路追踪
+  "X-Timestamp": "1690123456",                  // 13位毫秒时间戳
+  "X-Nonce": "random_string",                   // 随机数·防重放
+  "X-Platform": "APP|MP|LIVE|PC",              // 终端标识
+  "X-Role-View": "PATIENT|DOCTOR|NUTRITIONIST|HM|PH|OPS",  // 当前活跃角色
+  "X-Device-Id": "device_uuid"                  // 设备指纹
+}
+```
+
+### 2.2 通用响应体
+
+```typescript
+// CommonResponse<T>
+type CommonResponse<T> = {
+  code: number;           // 业务状态码·0=成功
+  message: string;         // 提示信息
+  data: T | null;          // 响应数据
+  request_id: string;      // 回显请求ID
+  timestamp: number;       // 服务端时间戳
+  pagination?: {           // 分页信息·列表接口使用
+    page: number;
+    page_size: number;
+    total: number;
+    total_pages: number;
+  }
+}
+```
+
+### 2.3 业务状态码
+
+| 范围 | 含义 |
+|-----|------|
+| 0 | 成功 |
+| 1000-1999 | 参数校验错误 |
+| 2000-2999 | 鉴权/授权错误 |
+| 3000-3999 | 业务逻辑错误 |
+| 4000-4999 | 外部服务调用失败 |
+| 5000-5999 | 系统内部错误 |
+
+---
+
+## 三、用户中心 API
+
+### 3.1 统一登录
+```
+POST /api/v1/user/auth/login
+```
+- **请求体**：`{ phone, sms_code | wx_code, platform, device_id }`
+- **响应体**：`{ access_token, refresh_token, expires_in, temp_identities[] }`
+- ⚠️ 返回临时身份列表·用户选择活跃身份后调用激活接口
+
+### 3.2 身份激活与切换
+```
+POST /api/v1/user/auth/activate-identity
+```
+- **请求体**：`{ identity_id }`
+- **响应体**：`{ identity_role, view_menu[], permissions[], safe_session_token }`
+- **后置**：清理上个身份状态·加载新身份配置
+
+### 3.3 入驻申请提交
+```
+POST /api/v1/user/onboarding/submit
+```
+- **请求体**：
+```typescript
+{
+  merchant_type: "PH" | "DR" | "PR" | "NT" | "HM",
+  business_name: string,
+  qualifications: QualificationFile[],  // 资质证照文件
+  contact_info: { name, phone, email },
+  payment_info?: {                       // 仅PH/DR/NT需要
+    bank_account: string,
+    bank_name: string,
+    settlement_type: "T1" | "D1"
+  }
+}
+```
+- **响应体**：`{ application_id, status: "PENDING", sla_deadline }`
+
+### 3.4 健康档案读取/写入
+```
+GET  /api/v1/user/profile/health?patient_id=xxx
+POST /api/v1/user/profile/health/update
+```
+- **写入请求体**：`{ basic_info, medical_history[], allergies[], medications[], complications[] }`
+- **权限**：患者→编辑自己·HM→编辑托管患者·家属→只读
+
+### 3.5 家属绑定
+```
+POST /api/v1/user/family/bind
+GET  /api/v1/user/family/monitored?patient_id=xxx
+```
+- **绑定请求体**：`{ patient_id, relation, access_level: "READ" | "ALERT_ONLY" }`
+
+---
+
+## 四、交易中心 API
+
+### 4.1 下单
+```
+POST /api/v1/trade/order/create
+```
+- **请求体**：
+```typescript
+{
+  items: { product_id, sku_id, quantity, prescription_ref?: string }[],
+  address_id: string,
+  coupon_code?: string,
+  use_point?: number,
+  remark?: string
+}
+```
+- **响应体**：`{ order_id, total_amount, pay_channel[] }`
+- **前置校验**：库存预占·处方有效性（处方药）·冷链资格检查
+
+### 4.2 发起支付
+```
+POST /api/v1/trade/payment/pay
+```
+- **请求体**：`{ order_id, channel: "YEEPAY" | "WECHAT", return_url }`
+- **响应体**：`{ pay_url, transaction_id, expires_in }` 或 `{ wechat_pay_params }`
+- ⚠️ 易宝和微信的响应格式不同·前端按channel区分处理
+
+### 4.3 申请退款
+```
+POST /api/v1/trade/refund/apply
+```
+- **请求体**：`{ order_id, reason, images[], refund_amount }`
+- **金额≥500元**：需要双人复核·第一次创建退款工单·第二次确认执行
+- **响应体**：`{ refund_id, status, need_approval }`
+
+### 4.4 订单列表查询
+```
+GET  /api/v1/trade/order/list?status=&role=&page=&page_size=
+GET  /api/v1/trade/order/detail/{order_id}
+```
+
+---
+
+## 五、处方中心 API
+
+### 5.1 处方开具（医生端）
+```
+POST /api/v1/rx/prescription/issue
+```
+- **请求体**：
+```typescript
+{
+  patient_id: string,
+  diagnosis: { icd10_code, description },
+  drugs: { drug_name, specification, dosage, frequency, duration }[],
+  notes?: string
+}
+```
+- **响应体**：`{ prescription_id, drug_interaction_warnings[] }`
+- ⚠️ 药物相互作用检查为硬门禁·有warning时必须医生确认
+
+### 5.2 CA数字签名
+```
+POST /api/v1/rx/prescription/{prescription_id}/sign
+```
+- **请求体**：`{ signature_image_base64, position }`
+- **响应体**：`{ signature_id, ca_cert_hash, timestamp }`
+- **后置**：签名事件→处方状态更新→通知药房
+
+### 5.3 处方审核（药房端）
+```
+GET  /api/v1/rx/prescription/pending   // 待审核列表
+POST /api/v1/rx/prescription/{prescription_id}/audit
+```
+- **审核请求体**：`{ decision: "APPROVED" | "REJECTED", reason }`
+- **后置**：审核通过→处方可用购药·审核拒绝→状态变更通知医生
+
+### 5.4 处方调配（药房端）
+```
+POST /api/v1/rx/dispensing/{prescription_id}/dispense
+```
+- **请求体**：`{ drugs: { drug_name, batch_no, trace_code, quantity }[], operator }`
+- **后置**：GSP追溯记录·冷链关联·库存扣减
+
+---
+
+## 六、冷链中心 API
+
+### 6.1 冷链包裹绑定
+```
+POST /api/v1/coldchain/shipment/bind
+```
+- **请求体**：`{ order_id, device_id, temperature_range: { min, max, humidity_max } }`
+- **响应体**：`{ shipment_id, tracking_url }`
+
+### 6.2 温度数据查询
+```
+GET  /api/v1/coldchain/temperature/{shipment_id}?from=&to=
+GET  /api/v1/coldchain/alert/{shipment_id}/list
+```
+- **响应体**：`{ readings: TemperatureReading[], alerts: TemperatureAlert[], continuous_status }`
+
+### 6.3 超温处置
+```
+POST /api/v1/coldchain/alert/{alert_id}/resolve
+```
+- **请求体**：`{ action: "REDELIVER" | "REPORT_SAFE" | "FORCE_REFUND", operator, notes }`
+
+---
+
+## 七、内容中心 API
+
+### 7.1 直播管理
+```
+POST /api/v1/cms/live/create
+POST /api/v1/cms/live/{live_id}/start
+POST /api/v1/cms/live/{live_id}/stop
+GET  /api/v1/cms/live/current           // 获取当前直播
+GET  /api/v1/cms/live/schedule          // 直播预告列表
+GET  /api/v1/cms/live/replay/list       // 回放列表
+```
+- **创建请求体**：`{ title, cover_image, start_time, category, stream_type, products? }`
+
+### 7.2 内容审核回调
+```
+POST /api/v1/cms/audit/callback  （内部回调）
+```
+- **请求体**：`{ content_type, content_id, result: "PASS" | "REJECT", reason }`
+
+---
+
+## 八、运营中心 API
+
+### 8.1 入驻审核
+```
+GET  /api/v1/ops/onboarding/pending?page=&page_size=
+POST /api/v1/ops/onboarding/{application_id}/review
+```
+- **审核请求体**：`{ result: "APPROVED" | "REJECTED" | "SUPPLEMENT", reason, reviewer }`
+
+### 8.2 易宝入网状态查询
+```
+GET  /api/v1/ops/merchant/{merchant_id}/yeepay-status
+POST /api/v1/ops/merchant/{merchant_id}/yeepay-onboarding
+```
+- **入网请求体**：`{ merchant_info, bank_account, legal_person }`（继承入驻信息）
+
+### 8.3 配置管理
+```
+GET  /api/v1/ops/config/list?group=&key=
+POST /api/v1/ops/config/update
+```
+- **可配置项**：分账比例·审核SLA·冷链告警阈值·积分规则·会员等级门槛·优惠券模板·支付通道权重
+
+---
+
+## 九、通信中心 API
+
+### 9.1 IM WebSocket 协议
+```
+ws://host/ws/chat?token={jwt}&channel={consultation|service|live}
+```
+- **消息格式**：
+```typescript
+type IMMessage = {
+  type: "TEXT" | "IMAGE" | "PRESCRIPTION_CARD" | "LIVE_CARD" | "PRODUCT_CARD",
+  from: string,
+  to: string,
+  channel: string,
+  content: string | CardPayload,
+  timestamp: number,
+  message_id: string
+}
+```
+
+### 9.2 通知管理
+```
+GET  /api/v1/comm/notification/list?page=&unread_only=
+POST /api/v1/comm/notification/read     // 批量已读
+POST /api/v1/comm/notification/read-all // 全部已读
+```
+- **已读同步**：read操作后WebSocket广播·其他终端30s内更新
+
+---
+
+## 十、模块间内部API（Service2Service）
+
+> 以下API仅限模块间调用·不对前端公开·通过网关层内网接口访问
+
+| 调用方→被调用方 | 路径 | 说明 |
+|:--------|------|------|
+| trade→user | `GET /internal/v1/user/identity/{id}` | 获取身份信息（下单鉴权） |
+| trade→product | `POST /internal/v1/product/inventory/lock` + `release` | 库存预占/释放 |
+| trade→prescription | `POST /internal/v1/rx/prescription/validate` | 处方有效性验证 |
+| trade→coldchain | `POST /internal/v1/coldchain/shipment/create` | 创建冷链追踪 |
+| prescription→user | `GET /internal/v1/user/doctor-profile/{id}` | 获取医生信息 |
+| coldchain→communication | `POST /internal/v1/comm/alert/send` | 告警通知发送 |
+| content→operation | `POST /internal/v1/ops/audit/submit` | 内容审核提交 |
+
+---
+
+## 十一、API幂等性设计
+
+| 接口类型 | 幂等策略 | 幂等键 |
+|----------|----------|--------|
+| 入驻提交 | 数据库唯一约束·重复提交返回已存在ID | `merchant_type + business_license_no` |
+| 下单 | Redis去重·5min窗口 | `client_order_id`（前端生成UUID） |
+| 支付 | 后端out_trade_no去重 | `out_trade_no` |
+| 退款 | 退款ID唯一 | `refund_request_id` |
+| 处方签名 | CA签名ID唯一 | `prescription_id + signer_id` |
+
+---
+
+## 十二、API版本兼容规则
+
+| 规则 | 说明 |
+|------|------|
+| ✅ 安全 | 新增可选字段·新增接口·新增枚举值 |
+| ⚠️ 谨慎 | 修改字段默认值·增加校验规则 |
+| ❌ 禁止 | 删除字段·修改字段类型·修改枚举值含义·修改鉴权逻辑 |
