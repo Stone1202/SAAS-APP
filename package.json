@@ -1,0 +1,34 @@
+{
+  "name": "saas-app",
+  "version": "2.1.0",
+  "description": "SAAS-APP — 配置式装修电商 SaaS 高保真原型",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "build:sim": "vite build --mode sim && node -e \"const f=require('fs');let h=f.readFileSync('dist/index.html','utf8');h=h.replace(/ crossorigin/g,'');f.writeFileSync('dist/index.html',h);console.log('  crossorigin removed')\"",
+    "preview": "vite preview",
+    "test": "npx playwright test --config=tests/playwright.config.ts",
+    "test:coverage": "npx playwright test tests/uc-coverage.spec.ts --config=tests/playwright.config.ts",
+    "test:tab": "npx playwright test tests/uc-tab-switch.spec.ts --config=tests/playwright.config.ts",
+    "test:flow": "npx playwright test tests/uc-user-flow.spec.ts --config=tests/playwright.config.ts",
+    "test:report": "npx playwright show-report tests/test-reports/html"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "element-plus": "^2.6.3",
+    "mermaid": "^11.16.1",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.21",
+    "vue-router": "^4.3.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^26.1.1",
+    "@vitejs/plugin-vue": "^5.0.4",
+    "typescript": "^5.4.3",
+    "vite": "^5.2.6",
+    "vue-tsc": "^2.0.6"
+  }
+}

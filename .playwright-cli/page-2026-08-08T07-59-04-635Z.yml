@@ -1,0 +1,233 @@
+- generic [ref=f3e3]:
+  - complementary [ref=f3e4]:
+    - generic [ref=f3e7]:
+      - generic [ref=f3e8]: SAAS 运营后台
+      - generic [ref=f3e9]: 追伴 APP 配置
+    - menubar [ref=f3e10]:
+      - listitem [ref=f3e11]:
+        - generic [ref=f3e12]: APP首页配置
+        - list [ref=f3e13]:
+          - menuitem "搜索管理" [ref=f3e14] [cursor=pointer]:
+            - generic [ref=f3e15]:
+              - search
+          - menuitem "广告位管理" [ref=f3e17] [cursor=pointer]
+          - menuitem "金刚区管理" [ref=f3e20] [cursor=pointer]
+          - menuitem "直播推荐管理" [ref=f3e23] [cursor=pointer]
+          - menuitem "商品推荐管理" [ref=f3e26] [cursor=pointer]
+    - link [ref=f3e30] [cursor=pointer]:
+      - /url: javascript:void(0)
+  - main [ref=f3e32]:
+    - generic [ref=f3e33]:
+      - navigation "Breadcrumb" [ref=f3e35]:
+        - generic [ref=f3e36]:
+          - link "运营后台" [ref=f3e37]
+          - text: /
+        - link "直播推荐管理" [ref=f3e39]
+      - generic [ref=f3e40]: PC 运营后台
+    - generic [ref=f3e42]:
+      - navigation "Breadcrumb" [ref=f3e43]:
+        - generic [ref=f3e44]:
+          - link "运营后台" [ref=f3e45]
+          - text: /
+        - link "直播推荐管理" [ref=f3e47]
+      - generic [ref=f3e48]:
+        - generic [ref=f3e49]: 默认推荐规则（多维度排序链，固定一条，不可删除）
+        - generic [ref=f3e50]:
+          - alert [ref=f3e51]:
+            - paragraph [ref=f3e56]: 默认规则为系统必备规则，不可删除、不可新增其他规则。通过开关启用排序维度，多选维度支持拖拽调整优先级。无条数限制，对所有可见直播进行排序。手动推荐不足时，按此规则结果去重补足。
+          - generic [ref=f3e57]:
+            - generic [ref=f3e58]:
+              - generic [ref=f3e60]:
+                - generic [ref=f3e61]: "1"
+                - generic [ref=f3e62]: 按项目
+                - generic [ref=f3e63]:
+                  - switch
+                  - generic [ref=f3e64] [cursor=pointer]
+              - generic [ref=f3e67]:
+                - generic [ref=f3e68]: "2"
+                - generic [ref=f3e69]: 按主播类型
+                - generic [ref=f3e70]:
+                  - switch
+                  - generic [ref=f3e71] [cursor=pointer]
+              - generic [ref=f3e73]:
+                - generic [ref=f3e74]:
+                  - generic [ref=f3e75]: "3"
+                  - generic [ref=f3e76]: 按直播状态
+                  - generic [ref=f3e77]:
+                    - switch [checked]
+                    - generic [ref=f3e78] [cursor=pointer]
+                - generic [ref=f3e80]: 固定优先级：直播中 > 预告 > 回放 > 已结束
+              - generic [ref=f3e82]:
+                - generic [ref=f3e83]:
+                  - generic [ref=f3e84]: "4"
+                  - generic [ref=f3e85]: 按观看人数
+                  - generic [ref=f3e86]:
+                    - switch [checked]
+                    - generic [ref=f3e87] [cursor=pointer]
+                - generic [ref=f3e90]:
+                  - generic [ref=f3e91]: 排序方向：
+                  - radiogroup "radio-group" [ref=f3e92]:
+                    - generic [ref=f3e93]:
+                      - radio "降序（高→低）" [checked] [ref=f3e94]
+                      - generic [ref=f3e95] [cursor=pointer]: 降序（高→低）
+                    - generic [ref=f3e96]:
+                      - radio "升序（低→高）" [ref=f3e97]
+                      - generic [ref=f3e98] [cursor=pointer]: 升序（低→高）
+            - generic [ref=f3e99]:
+              - generic [ref=f3e100]: 叠加排序顺序（上→下为优先级从高到低）：
+              - generic [ref=f3e101]:
+                - generic [ref=f3e102]:
+                  - generic [ref=f3e103]: "1"
+                  - generic [ref=f3e104]: 按直播状态
+                  - generic [ref=f3e105]:
+                    - button "↑" [disabled] [ref=f3e106]
+                    - button "↓" [ref=f3e108] [cursor=pointer]
+                - generic [ref=f3e110]:
+                  - generic [ref=f3e111]: "2"
+                  - generic [ref=f3e112]: 按观看人数
+                  - generic [ref=f3e113]:
+                    - button "↑" [ref=f3e114] [cursor=pointer]
+                    - button "↓" [disabled] [ref=f3e116]
+              - generic [ref=f3e118]:
+                - generic [ref=f3e119]: 📋 排序逻辑说明
+                - generic [ref=f3e120]:
+                  - paragraph [ref=f3e121]: 最终排序结果 = 手动推荐（固定在前） + 默认规则排序结果（去重补足在后）
+                  - paragraph [ref=f3e122]: 默认规则排序逻辑（等价于 SQL ORDER BY 多级排序）：
+                  - paragraph [ref=f3e123]: 系统会按照上方维度的排列顺序，依次对每一条直播进行排序。排在前面的维度优先级最高，只有当高优先级维度无法区分先后时（值相同），才会使用下一个维度继续比较。
+                  - paragraph [ref=f3e124]: 各维度比较规则：
+                  - list [ref=f3e125]:
+                    - listitem [ref=f3e126]: 多选维度（按项目/按主播类型）：被选中的值按你设置的优先级顺序排在前，未选中的值排在后面。例如：选中"健康补给站 > 日用百货优选"，则健康项目的直播排最前，日用项目排第二，其他项目排最后。
+                    - listitem [ref=f3e127]: 按直播状态：固定优先级，直播中 > 预告 > 回放 > 已结束，无需配置。
+                    - listitem [ref=f3e128]: 按观看人数：按数值大小排序，降序=人数多的在前，升序=人数少的在前。
+                  - paragraph [ref=f3e129]: 叠加排序示例：若顺序为「①按项目 → ②按直播状态 → ③按观看人数」，则先按项目分组（选中项目在前），同项目内再按状态排序（直播中优先），同状态内再按观看人数降序。
+                  - paragraph [ref=f3e130]:
+                    - text: 开发说明：底层实现为稳定排序，从最后一个维度开始逐级排序，保证高优先级维度的排序结果不被低优先级维度破坏。数据结构：
+                    - code [ref=f3e131]: "rule.sort_dimensions: SortDimension[]"
+                    - text: ，每个维度含
+                    - code [ref=f3e132]: dim_type / direction / selected_values[]
+                    - text: 。
+            - generic [ref=f3e134]:
+              - generic [ref=f3e135]: 首页展示条数
+              - generic [ref=f3e136]:
+                - generic [ref=f3e137]:
+                  - button "decrease number" [ref=f3e138] [cursor=pointer]
+                  - button "increase number" [ref=f3e142] [cursor=pointer]
+                  - spinbutton "首页展示条数" [ref=f3e148]: "6"
+                - generic [ref=f3e149]: 仅首页推荐区生效，精选直播Tab不受限制（显示全部）
+      - generic [ref=f3e150]:
+        - generic [ref=f3e151]: 手动推荐直播（优先级高于默认规则）
+        - generic [ref=f3e152]:
+          - generic [ref=f3e153]:
+            - button "+ 添加推荐直播" [ref=f3e154] [cursor=pointer]
+            - button "批量删除 (0)" [disabled] [ref=f3e156]
+            - generic [ref=f3e158]: 手动推荐排序优先于默认规则结果；上移/下移调整展示顺序；勾选后可批量删除
+          - generic [ref=f3e160]:
+            - table [ref=f3e162]:
+              - rowgroup [ref=f3e172]:
+                - row [ref=f3e173]:
+                  - columnheader [ref=f3e174]:
+                    - generic "Select all rows" [ref=f3e176] [cursor=pointer]:
+                      - generic [ref=f3e177]:
+                        - checkbox "Select all rows"
+                  - columnheader "序号" [ref=f3e179]
+                  - columnheader "直播信息" [ref=f3e181]
+                  - columnheader "排序" [ref=f3e183]
+                  - columnheader "状态" [ref=f3e185]
+                  - columnheader "修改人" [ref=f3e187]
+                  - columnheader "修改时间" [ref=f3e189]
+                  - columnheader "操作" [ref=f3e191]
+            - table [ref=f3e197]:
+              - rowgroup [ref=f3e207]:
+                - row [ref=f3e208]:
+                  - cell [ref=f3e209]:
+                    - generic "Select this row" [ref=f3e211] [cursor=pointer]:
+                      - generic [ref=f3e212]:
+                        - checkbox "Select this row"
+                  - cell "1" [ref=f3e214]
+                  - 'cell "📺 【春季好物】日用品专场 限时5折 ID: live-001 · 优选主播小美 · 门店主播 · 12500人观看 直播中" [ref=f3e216]':
+                    - generic [ref=f3e218]:
+                      - generic [ref=f3e219]: 📺
+                      - generic [ref=f3e220]:
+                        - generic [ref=f3e221]: 【春季好物】日用品专场 限时5折
+                        - generic [ref=f3e222]: "ID: live-001 · 优选主播小美 · 门店主播 · 12500人观看"
+                      - generic: 直播中
+                  - cell [ref=f3e223]:
+                    - generic [ref=f3e224]:
+                      - button "↑ 上移" [disabled] [ref=f3e225]
+                      - button "↓ 下移" [ref=f3e227] [cursor=pointer]
+                  - cell [ref=f3e229]:
+                    - generic [ref=f3e231]:
+                      - switch [checked]
+                      - generic [ref=f3e232] [cursor=pointer]
+                  - cell "运营管理员" [ref=f3e234]
+                  - cell "2026-01-01T10:00:00" [ref=f3e236]
+                  - cell [ref=f3e238]:
+                    - button "删除" [ref=f3e240] [cursor=pointer]
+                - row [ref=f3e242]:
+                  - cell [ref=f3e243]:
+                    - generic "Select this row" [ref=f3e245] [cursor=pointer]:
+                      - generic [ref=f3e246]:
+                        - checkbox "Select this row"
+                  - cell "2" [ref=f3e248]
+                  - 'cell "📺 厨房好物分享 抽纸洗碗布特惠 ID: live-002 · 清洁达人老张 · 门店主播 · 8600人观看 直播中" [ref=f3e250]':
+                    - generic [ref=f3e252]:
+                      - generic [ref=f3e253]: 📺
+                      - generic [ref=f3e254]:
+                        - generic [ref=f3e255]: 厨房好物分享 抽纸洗碗布特惠
+                        - generic [ref=f3e256]: "ID: live-002 · 清洁达人老张 · 门店主播 · 8600人观看"
+                      - generic: 直播中
+                  - cell [ref=f3e257]:
+                    - generic [ref=f3e258]:
+                      - button "↑ 上移" [ref=f3e259] [cursor=pointer]
+                      - button "↓ 下移" [disabled] [ref=f3e261]
+                  - cell [ref=f3e263]:
+                    - generic [ref=f3e265]:
+                      - switch [checked]
+                      - generic [ref=f3e266] [cursor=pointer]
+                  - cell "运营管理员" [ref=f3e268]
+                  - cell "2026-01-01T10:00:00" [ref=f3e270]
+                  - cell [ref=f3e272]:
+                    - button "删除" [ref=f3e274] [cursor=pointer]
+      - generic [ref=f3e277]:
+        - generic [ref=f3e278]: 推荐效果预览（手动 + 默认规则叠加排序）
+        - generic [ref=f3e280]:
+          - generic [ref=f3e281]:
+            - generic [ref=f3e282]: "1"
+            - generic [ref=f3e283]: 📺
+            - generic [ref=f3e284]:
+              - generic [ref=f3e285]: 【春季好物】日用品专场 限时5折
+              - generic [ref=f3e286]: 优选主播小美 · 门店主播 · 12500人观看
+            - generic: 直播中
+            - generic: 手动
+          - generic [ref=f3e287]:
+            - generic [ref=f3e288]: "2"
+            - generic [ref=f3e289]: 📺
+            - generic [ref=f3e290]:
+              - generic [ref=f3e291]: 厨房好物分享 抽纸洗碗布特惠
+              - generic [ref=f3e292]: 清洁达人老张 · 门店主播 · 8600人观看
+            - generic: 直播中
+            - generic: 手动
+          - generic [ref=f3e293]:
+            - generic [ref=f3e294]: "3"
+            - generic [ref=f3e295]: 📺
+            - generic [ref=f3e296]:
+              - generic [ref=f3e297]: 营养专家直播：维生素怎么补？
+              - generic [ref=f3e298]: 营养师李博士 · 总部主播 · 15300人观看
+            - generic: 直播中
+            - generic: 规则
+          - generic [ref=f3e299]:
+            - generic [ref=f3e300]: "4"
+            - generic [ref=f3e301]: 📺
+            - generic [ref=f3e302]:
+              - generic [ref=f3e303]: 滋补养生好物推荐 礼盒装特惠
+              - generic [ref=f3e304]: 滋补专家王老师 · 供应商主播 · 4200人观看
+            - generic: 预告
+            - generic: 规则
+          - generic [ref=f3e305]:
+            - generic [ref=f3e306]: "5"
+            - generic [ref=f3e307]: 📺
+            - generic [ref=f3e308]:
+              - generic [ref=f3e309]: 益生菌专场 肠道健康大讲堂
+              - generic [ref=f3e310]: 健康主播Anna · 个人主播 · 6800人观看
+            - generic: 回放
+            - generic: 规则

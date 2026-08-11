@@ -1,0 +1,142 @@
+{
+  "doc_id": "UX-APP-DESIGN-v3.1.51",
+  "module": "APP端配置式装修电商",
+  "version": "v3.1.52",
+  "related_prd": "docs/01-requirements/17-APP端电商域-PRD-v3.1.0.md (v3.1.52)",
+  "related_brainstorm": "docs/00-brainstorm/APP端/confirmed/BR-脑暴文档-APP端-确认稿.md",
+  "design_flow_version": "V3.5.0",
+  "design_standard_version": "V3.0.0",
+  "output_standard_version": "V2.0.0",
+  "created": "2026-08-08",
+  "last_updated": "2026-08-11 (v3.1.51 商城名称全局唯一+不超过20汉字校验：运营后台+租户后台统一添加el-form validator)",
+  "designer": "UX Agent",
+  "reviewer": "BA Agent",
+  "platform": ["PC端(运营后台+租户后台)", "移动端APP(消费者)"],
+  "grid_system": {
+    "app": { "cols": 6, "design_language": "HIG/Material", "grid_unit": 8, "container": 375, "gutter": 8 },
+    "pc": { "cols": 24, "design_language": "Ant Design 5.x", "grid_unit": 4, "container": 1440, "gutter": 16 }
+  },
+  "design_tokens": {
+    "color": "语义化颜色(主色#FF6B35追伴橙+辅助紫+中性+功能色+渐变)",
+    "typography": "9级字体层级(11-24px)",
+    "spacing": "8点网格(4/8/12/16/24/32/48px)",
+    "border_radius": "6级圆角(4/8/12/16/9999/22px)",
+    "shadow": "5级阴影(none/sm/md/lg/tabbar)",
+    "icon": "SVG内联(15-42px)"
+  },
+  "pages": {
+    "app": [
+      { "id": "PG-SHP-APP-001", "name": "平台首页", "route": "/app/home", "uc": ["UC-SHP-HOME-001","UC-SHP-HOME-002","UC-SHP-HOME-003"], "fn": "FN-SHP-APP-001" },
+      { "id": "PG-SHP-APP-002", "name": "商城页", "route": "/app/mall", "uc": ["UC-SHP-MALL-001","UC-SHP-MALL-002","UC-SHP-MALL-003","UC-SHP-MALL-004"], "fn": "FN-SHP-APP-002" },
+      { "id": "PG-SHP-APP-003", "name": "娱乐页(占位)", "route": "/app/entertainment", "uc": ["UC-SHP-PLACEHOLDER-001"], "fn": "FN-SHP-APP-003" },
+      { "id": "PG-SHP-APP-004", "name": "消息页(占位)", "route": "/app/message", "uc": ["UC-SHP-PLACEHOLDER-002"], "fn": "FN-SHP-APP-004" },
+      { "id": "PG-SHP-APP-005", "name": "个人中心", "route": "/app/mine", "uc": ["UC-SHP-MINE-001","UC-SHP-MINE-002","UC-SHP-MINE-003"], "fn": "FN-SHP-APP-005" },
+      { "id": "PG-SHP-APP-005-M01", "name": "收货地址表单弹窗", "route": "(弹窗)", "uc": ["UC-SHP-MINE-003"], "fn": "FN-SHP-APP-005" },
+      { "id": "PG-SHP-APP-006", "name": "平台会员中心", "route": "/app/mine/member", "uc": ["UC-SHP-MEMBER-001","UC-SHP-MEMBER-002"], "fn": "FN-SHP-APP-006" },
+      { "id": "PG-SHP-APP-007", "name": "搜索页", "route": "/app/search", "uc": ["UC-SHP-SEARCH-001","UC-SHP-SEARCH-002","UC-SHP-SEARCH-003"], "fn": "FN-SHP-APP-007" },
+      { "id": "PG-SHP-APP-008", "name": "搜索结果页", "route": "/app/search/result", "uc": ["UC-SHP-SEARCH-004","UC-SHP-SEARCH-005","UC-SHP-SEARCH-006"], "fn": "FN-SHP-APP-008" },
+      { "id": "PG-SHP-APP-009", "name": "项目首页", "route": "/app/project/:projectId", "uc": ["UC-SHP-STORE-001"], "fn": "FN-SHP-APP-009" },
+      { "id": "PG-SHP-APP-009A", "name": "项目商城页", "route": "/app/project/:projectId/mall", "uc": ["UC-SHP-MALL-005","UC-SHP-MALL-006"], "fn": "FN-SHP-APP-009A" },
+      { "id": "PG-SHP-APP-010", "name": "项目门店页", "route": "/app/project/:projectId/stores", "uc": ["UC-SHP-STORE-002"], "fn": "FN-SHP-APP-010" },
+      { "id": "PG-SHP-APP-011", "name": "门店详情", "route": "/app/store/:storeId?projectId=xxx（独立页，脱离项目框架）", "uc": ["UC-SHP-STORE-003"], "fn": "FN-SHP-APP-011" },
+      { "id": "PG-SHP-APP-011A", "name": "门店商品/直播列表", "route": "/app/store/:storeId/items?projectId=xxx（独立页，脱离项目框架）", "uc": ["UC-SHP-STORE-004"], "fn": "FN-SHP-APP-011", "note": "v3.1.28：UC独立化，原复用011-01改为独立UC-011-02" },
+      { "id": "PG-SHP-APP-012", "name": "商品详情页", "route": "/app/product/:productId", "uc": ["UC-SHP-PRODUCT-001"], "fn": "FN-SHP-APP-012" },
+      { "id": "PG-SHP-APP-012A", "name": "更多商品分类页", "route": "/app/more-products?projectId=xxx（独立全屏）", "uc": ["UC-SHP-PRODUCT-002"], "fn": "FN-SHP-APP-012", "note": "v3.1.28：UC独立化，原复用012-01改为独立UC-012-02" },
+      { "id": "PG-SHP-APP-013", "name": "项目会员页", "route": "/app/project/:projectId/member", "uc": ["UC-SHP-MEMBER-003"], "fn": "FN-SHP-APP-013", "note": "v3.1.42修正：积分账单→我的积分、积分获取规则→会员权益任务、优惠券仅展示数量、积分跳转二级页；v3.1.42删除：优惠券二级页(PG-SHP-APP-013A)去除" },
+      { "id": "PG-SHP-APP-014", "name": "直播详情页", "route": "/app/live/:liveId", "uc": ["UC-SHP-LIVE-001"], "fn": "FN-SHP-APP-014" }
+    ],
+    "admin": [
+      { "id": "PG-OPS-PC-001", "name": "搜索管理", "route": "/admin/search", "uc": ["UC-OPS-SEARCH-001","UC-OPS-SEARCH-002","UC-OPS-SEARCH-003","UC-OPS-SEARCH-004"], "fn": "FN-OPS-PC-001" },
+      { "id": "PG-OPS-PC-002", "name": "广告位管理", "route": "/admin/ad", "uc": ["UC-OPS-CONFIG-001","UC-OPS-CONFIG-002","UC-OPS-CONFIG-003"], "fn": "FN-OPS-PC-002" },
+      { "id": "PG-OPS-PC-003", "name": "金刚区管理", "route": "/admin/kingkong", "uc": ["UC-OPS-CONFIG-004"], "fn": "FN-OPS-PC-003" },
+      { "id": "PG-OPS-PC-004", "name": "直播推荐管理(首页推荐Tab)", "route": "/admin/home-recommend", "uc": ["UC-OPS-RECOMMEND-001","UC-OPS-RECOMMEND-002","UC-OPS-RECOMMEND-003"], "fn": "FN-OPS-PC-004", "note": "v3.1.35合并至HomeRecommendManage首页推荐页直播Tab" },
+      { "id": "PG-OPS-PC-005", "name": "商品推荐管理(首页推荐Tab)", "route": "/admin/home-recommend", "uc": ["UC-OPS-RECOMMEND-004","UC-OPS-RECOMMEND-005","UC-OPS-RECOMMEND-006"], "fn": "FN-OPS-PC-005", "note": "v3.1.35合并至HomeRecommendManage首页推荐页商品Tab" },
+      { "id": "PG-OPS-PC-006", "name": "项目列表管理", "route": "/admin/projects", "uc": ["UC-OPS-CONFIG-005","UC-OPS-CONFIG-006","UC-OPS-CONFIG-007"], "fn": "FN-SHP-ADMIN-007", "note": "v3.1.51商城名称全局唯一+不超20汉字校验 | v3.1.50回退：项目名称/所属租户/行业恢复disabled只读 | v3.1.47增强：新增商城名称列+去掉品类/门店数/会员数+logo上传+核心字段只读+菜单归入运营管理子菜单" },
+      { "id": "PG-OPS-PC-007", "name": "商城管理", "route": "/admin/mall-manage", "uc": ["UC-OPS-RECOMMEND-007","UC-OPS-RECOMMEND-008","UC-OPS-RECOMMEND-009"], "fn": "FN-OPS-PC-008", "note": "v3.1.41新增：3Tab(商城列表/精选商品/精选直播)，使用ScenarioPanel组件管理3个推荐场景" },
+      { "id": "PG-OPS-PC-008", "name": "规则引擎管理", "route": "/admin/recommend-rule", "uc": ["UC-OPS-RECOMMEND-010","UC-OPS-RECOMMEND-011","UC-OPS-RECOMMEND-012"], "fn": "FN-OPS-PC-009", "note": "v3.1.41新增：规则实体CRUD+维度配置+模板快捷创建+引用计数" },
+      { "id": "PG-OPS-PC-009", "name": "功能页面管理", "route": "/admin/function-pages", "uc": ["UC-OPS-OPS-CONFIG-008"], "fn": "FN-OPS-PC-011", "note": "v3.1.44新增：白名单注册表替代自由输入URL，builtin不可删+business/activity可CRUD" }
+    ],
+    "tenant": [
+      { "id": "PG-TNT-PC-001", "name": "项目管理(项目选择器+当前项目)", "route": "/tenant/projects/:id/profile（v3.1.37：项目列表入口移至运营平台PG-OPS-PC-006）", "uc": ["UC-TNT-TENANT-001"], "fn": "FN-TNT-PC-001", "note": "v3.1.51商城名称全局唯一+不超20汉字校验 | v3.1.50：编辑弹窗新增所属租户字段(disabled只读)与运营平台展示方式完全对齐 | v3.1.48：编辑弹窗字段与运营平台项目列表编辑功能对齐（新增商城名称/行业列+去掉品类/门店数/会员数+Logo上传+核心字段只读）" },
+      { "id": "PG-TNT-PC-002", "name": "门店管理（忽略）", "route": "/tenant/projects/:id/stores", "uc": ["UC-TNT-TENANT-002","UC-TNT-TENANT-007"], "fn": "FN-TNT-PC-002", "note": "v3.1.47标注忽略：门店管理功能暂由租户后台内部维护，不在本次开发范围内" },
+      { "id": "PG-TNT-PC-003", "name": "项目首页配置(deprecated)", "route": "/tenant/projects/:id/home-config（已移除）", "uc": ["~~UC-TNT-PC-003-01~~"], "fn": "~~FN-TNT-PC-003~~", "status": "deprecated", "note": "v3.1.21移除，功能拆分为PG-TNT-PC-006(Banner)+PG-TNT-PC-007(金刚区)，编号保留不重用" },
+      { "id": "PG-TNT-PC-004", "name": "营销分类（忽略）", "route": "/tenant/projects/:id/marketing-categories", "uc": ["UC-TNT-TENANT-003"], "fn": "FN-TNT-PC-004", "note": "v3.1.47标注忽略：营销分类功能暂由租户后台内部维护，不在本次开发范围内" },
+      { "id": "PG-TNT-PC-005", "name": "项目信息管理", "route": "/tenant/projects/:id/profile", "uc": ["UC-TNT-TENANT-004"], "fn": "FN-TNT-PC-005", "note": "v3.1.19新增/v3.1.52补录：字段与运营后台编辑器一致——项目名称(disabled)/商城名称(带全局唯一校验)/所属租户(disabled)/行业(disabled)/LOGO上传/项目描述/排序/状态" },
+      { "id": "PG-TNT-PC-006", "name": "项目Banner管理", "route": "/tenant/projects/:id/banners", "uc": ["UC-TNT-TENANT-005"], "fn": "FN-TNT-PC-006", "note": "v3.1.19新增/v3.1.28补录：迁移运营后台AdManage完整功能+锁定项目ID+隐藏项目主页跳转" },
+      { "id": "PG-TNT-PC-007", "name": "项目金刚区管理", "route": "/tenant/projects/:id/kingkong", "uc": ["UC-TNT-TENANT-006"], "fn": "FN-TNT-PC-007", "note": "v3.1.19新增/v3.1.28补录：迁移运营后台KingKongManage完整功能+锁定项目ID" }
+    ]
+  },
+  "modals": [
+    { "id": "PG-SHP-APP-005-M01", "name": "收货地址表单弹窗", "trigger_page": "PG-SHP-APP-005" },
+    { "id": "PG-SHP-APP-005-M02", "name": "项目选择器弹窗(平台入口选项目)", "trigger_page": "PG-SHP-APP-005" },
+    { "id": "PG-OPS-PC-002-M01", "name": "广告编辑弹窗", "trigger_page": "PG-OPS-PC-002" },
+    { "id": "PG-OPS-PC-003-M01", "name": "金刚区编辑弹窗", "trigger_page": "PG-OPS-PC-003" },
+    { "id": "PG-TNT-PC-001-M01", "name": "项目编辑弹窗", "trigger_page": "PG-TNT-PC-001" },
+    { "id": "PG-TNT-PC-002-M01", "name": "门店编辑弹窗", "trigger_page": "PG-TNT-PC-002" },
+    { "id": "PG-TNT-PC-004-M01", "name": "营销分类编辑弹窗", "trigger_page": "PG-TNT-PC-004" },
+    { "id": "PG-OPS-PC-004-M01", "name": "直播列表选择器弹窗", "trigger_page": "PG-OPS-PC-004" },
+    { "id": "PG-OPS-PC-005-M01", "name": "商品列表选择器弹窗", "trigger_page": "PG-OPS-PC-005" },
+    { "id": "PG-TNT-PC-005-M01", "name": "项目信息编辑弹窗(LOGO上传)", "trigger_page": "PG-TNT-PC-005", "note": "v3.1.28补录" },
+    { "id": "PG-TNT-PC-006-M01", "name": "项目Banner编辑弹窗", "trigger_page": "PG-TNT-PC-006", "note": "v3.1.28补录：复用运营后台广告编辑弹窗逻辑" },
+    { "id": "PG-OPS-PC-006-M01", "name": "项目禁用确认弹窗(禁用原因输入)", "trigger_page": "PG-OPS-PC-006", "note": "v3.1.37新增：弹窗含禁用原因textarea+BR-SHP-043分层拦截说明" },
+    { "id": "PG-TNT-PC-007-M01", "name": "项目金刚区编辑弹窗", "trigger_page": "PG-TNT-PC-007", "note": "v3.1.28补录：复用运营后台金刚区编辑弹窗逻辑" }
+  ],
+  "features": {
+    "description": "v3.1.44: OPS-CONFIG 7→8(新增功能页面管理)，总计61UC",
+    "domains": [
+      { "code": "HOME", "name": "平台首页", "terminal": "APP", "uc_count": 3 },
+      { "code": "MALL", "name": "电商商城", "terminal": "APP", "uc_count": 6 },
+      { "code": "SEARCH", "name": "搜索体系", "terminal": "APP+OPS", "uc_count": 10 },
+      { "code": "PRODUCT", "name": "商品", "terminal": "APP", "uc_count": 2 },
+      { "code": "LIVE", "name": "直播", "terminal": "APP", "uc_count": 1 },
+      { "code": "STORE", "name": "门店", "terminal": "APP", "uc_count": 4 },
+      { "code": "MEMBER", "name": "会员", "terminal": "APP", "uc_count": 4 },
+      { "code": "MINE", "name": "个人中心", "terminal": "APP", "uc_count": 3 },
+      { "code": "RECOMMEND", "name": "推荐引擎", "terminal": "OPS", "uc_count": 12 },
+      { "code": "OPS-CONFIG", "name": "运营配置", "terminal": "OPS", "uc_count": 8 },
+      { "code": "TENANT", "name": "租户管理", "terminal": "TNT", "uc_count": 7 },
+      { "code": "PLACEHOLDER", "name": "占位", "terminal": "APP", "uc_count": 2 }
+    ]
+  },
+  "uc_coverage": {
+    "total_uc": 61,
+    "covered_uc": 61,
+    "coverage_rate": "100%",
+    "missing": 0,
+    "note": "v3.1.44: 新增UC-OPS-OPS-CONFIG-008(功能页面管理)，总数60→61"
+  },
+  "br_coverage": {
+    "sampled_br": 14,
+    "covered_br": 14,
+    "coverage_rate": "100%",
+    "total_br": 45,
+    "note": "v3.1.28：BR总数45(40SHP+2OPS+3TNT，含新增036-040)，采样14条全部覆盖"
+  },
+  "pm_redlines": {
+    "C-D1": "通过",
+    "C-D2": "通过",
+    "C-D3": "通过",
+    "C-D4": "通过",
+    "C-D5": "通过",
+    "C-D6": "通过",
+    "C-D7": "通过",
+    "C-D8": "通过",
+    "C-D9": "通过(联合评审)",
+    "C-D10": "通过(反向匹配)"
+  },
+  "review": {
+    "dimension_1_jump": { "severity": 0, "medium": 0, "result": "通过" },
+    "dimension_2_modal": { "severity": 0, "medium": 0, "result": "通过" },
+    "dimension_3_consistency": { "severity": 0, "medium": 0, "result": "通过" },
+    "conclusion": "通过"
+  },
+  "reverse_match": {
+    "flow_closure": "PASS",
+    "data_closure": "PASS",
+    "state_closure": "PASS",
+    "experience_closure": "PASS",
+    "bidirectional_coverage": "PASS",
+    "conclusion": "通过",
+    "v3.1.28_review_note": "全面审查修复：UC数量46→52校准，租户页面4→7(含deprecated 003标注)，独立页UC 011A/012A/013A由复用改为独立UC，BR总数40，ENT补全006A/006B"
+  }
+}

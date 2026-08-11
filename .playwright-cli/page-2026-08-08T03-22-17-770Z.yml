@@ -1,0 +1,265 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e7]:
+      - generic [ref=e8]: SAAS 运营后台
+      - generic [ref=e9]: 追伴 APP 配置
+    - menubar [ref=e10]:
+      - listitem [ref=e11]:
+        - generic [ref=e12]: APP首页配置
+        - list [ref=e13]:
+          - menuitem "搜索管理" [ref=e14] [cursor=pointer]:
+            - generic [ref=e15]:
+              - search
+          - menuitem "广告位管理" [ref=e17] [cursor=pointer]
+          - menuitem "金刚区管理" [ref=e20] [cursor=pointer]
+          - menuitem "直播推荐管理" [ref=e23] [cursor=pointer]
+          - menuitem "商品推荐管理" [ref=e26] [cursor=pointer]
+    - link [ref=e30] [cursor=pointer]:
+      - /url: javascript:void(0)
+  - main [ref=e32]:
+    - generic [ref=e33]:
+      - navigation "Breadcrumb" [ref=e35]:
+        - generic [ref=e36]:
+          - link "运营后台" [ref=e37]
+          - text: /
+        - link "搜索管理" [ref=e39]
+      - generic [ref=e40]: PC 运营后台
+    - generic [ref=e42]:
+      - navigation "Breadcrumb" [ref=e43]:
+        - generic [ref=e44]:
+          - link "运营后台" [ref=e45]
+          - text: /
+        - link "搜索管理" [ref=e47]
+      - generic [ref=e48]:
+        - generic [ref=e49]: 搜索底纹词
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - generic [ref=e53]: 底纹词
+            - textbox "底纹词" [ref=e57]:
+              - /placeholder: 搜索框提示文字
+              - text: 搜索商品、直播、项目
+          - button "保存" [ref=e60] [cursor=pointer]
+      - generic [ref=e62]:
+        - generic [ref=e63]: 热搜词管理
+        - generic [ref=e64]:
+          - button "+ 添加热搜词" [ref=e66] [cursor=pointer]
+          - generic [ref=e69]:
+            - table [ref=e71]:
+              - rowgroup [ref=e80]:
+                - row [ref=e81]:
+                  - columnheader "热搜词" [ref=e82]
+                  - columnheader "标签图标" [ref=e84]
+                  - columnheader "关联自定义结果" [ref=e86]
+                  - columnheader "固定排序" [ref=e88]
+                  - columnheader "权重" [ref=e90]
+                  - columnheader "状态" [ref=e92]
+                  - columnheader "操作" [ref=e94]
+            - table [ref=e100]:
+              - rowgroup [active] [ref=e109]:
+                - row [ref=e110]:
+                  - cell "娴嬭瘯淇敼鐨勭儹鎼滆瘝" [ref=e111]
+                  - cell "热门" [ref=e113]
+                  - cell "🔥 热卖爆款 — 竹纤维抽纸 解除" [ref=e116]:
+                    - generic [ref=e117]:
+                      - generic [ref=e454]: 🔥 热卖爆款 — 竹纤维抽纸
+                      - button "解除" [ref=e118] [cursor=pointer]
+                  - cell "是" [ref=e120]
+                  - cell "100" [ref=e122]
+                  - cell [ref=e124]:
+                    - generic [ref=e126]:
+                      - switch [checked]
+                      - generic [ref=e127] [cursor=pointer]
+                  - cell [ref=e129]:
+                    - generic [ref=e130]:
+                      - button "编辑" [ref=e131] [cursor=pointer]
+                      - button "删除" [ref=e133] [cursor=pointer]
+                - row [ref=e135]:
+                  - cell "便携榨汁机" [ref=e136]
+                  - cell "火爆" [ref=e138]
+                  - cell "✨ 网红同款 — 复合维生素片 解除" [ref=e141]:
+                    - generic [ref=e142]:
+                      - generic [ref=e458]: ✨ 网红同款 — 复合维生素片
+                      - button "解除" [ref=e143] [cursor=pointer]
+                  - cell "是" [ref=e145]
+                  - cell "95" [ref=e147]
+                  - cell [ref=e149]:
+                    - generic [ref=e151]:
+                      - switch [checked]
+                      - generic [ref=e152] [cursor=pointer]
+                  - cell [ref=e154]:
+                    - generic [ref=e155]:
+                      - button "编辑" [ref=e156] [cursor=pointer]
+                      - button "删除" [ref=e158] [cursor=pointer]
+                - row [ref=e160]:
+                  - cell "蓝牙耳机" [ref=e161]
+                  - cell "最新" [ref=e163]
+                  - cell "🎧 营养专家直播 — 维生素怎么补？ 解除" [ref=e166]:
+                    - generic [ref=e167]:
+                      - generic [ref=e462]: 🎧 营养专家直播 — 维生素怎么补？
+                      - button "解除" [ref=e168] [cursor=pointer]
+                  - cell "否" [ref=e170]
+                  - cell "90" [ref=e172]
+                  - cell [ref=e174]:
+                    - generic [ref=e176]:
+                      - switch [checked]
+                      - generic [ref=e177] [cursor=pointer]
+                  - cell [ref=e179]:
+                    - generic [ref=e180]:
+                      - button "编辑" [ref=e181] [cursor=pointer]
+                      - button "删除" [ref=e183] [cursor=pointer]
+                - row [ref=e185]:
+                  - cell "瑜伽垫" [ref=e186]
+                  - cell "人气" [ref=e188]
+                  - cell [ref=e191]:
+                    - button "关联自定义结果" [ref=e193] [cursor=pointer]
+                  - cell "否" [ref=e195]
+                  - cell "85" [ref=e197]
+                  - cell [ref=e199]:
+                    - generic [ref=e201]:
+                      - switch [checked]
+                      - generic [ref=e202] [cursor=pointer]
+                  - cell [ref=e204]:
+                    - generic [ref=e205]:
+                      - button "编辑" [ref=e206] [cursor=pointer]
+                      - button "删除" [ref=e208] [cursor=pointer]
+                - row [ref=e210]:
+                  - cell "围炉煮茶器具" [ref=e211]
+                  - cell "推荐" [ref=e213]
+                  - cell [ref=e216]:
+                    - button "关联自定义结果" [ref=e218] [cursor=pointer]
+                  - cell "否" [ref=e220]
+                  - cell "80" [ref=e222]
+                  - cell [ref=e224]:
+                    - generic [ref=e226]:
+                      - switch [checked]
+                      - generic [ref=e227] [cursor=pointer]
+                  - cell [ref=e229]:
+                    - generic [ref=e230]:
+                      - button "编辑" [ref=e231] [cursor=pointer]
+                      - button "删除" [ref=e233] [cursor=pointer]
+                - row [ref=e235]:
+                  - cell "保温壶" [ref=e236]
+                  - cell "-" [ref=e238]
+                  - cell [ref=e240]:
+                    - button "关联自定义结果" [ref=e242] [cursor=pointer]
+                  - cell "否" [ref=e244]
+                  - cell "75" [ref=e246]
+                  - cell [ref=e248]:
+                    - generic [ref=e250]:
+                      - switch [checked]
+                      - generic [ref=e251] [cursor=pointer]
+                  - cell [ref=e253]:
+                    - generic [ref=e254]:
+                      - button "编辑" [ref=e255] [cursor=pointer]
+                      - button "删除" [ref=e257] [cursor=pointer]
+                - row [ref=e259]:
+                  - cell "收纳盒" [ref=e260]
+                  - cell "热卖" [ref=e262]
+                  - cell [ref=e265]:
+                    - button "关联自定义结果" [ref=e267] [cursor=pointer]
+                  - cell "否" [ref=e269]
+                  - cell "70" [ref=e271]
+                  - cell [ref=e273]:
+                    - generic [ref=e275]:
+                      - switch [checked]
+                      - generic [ref=e276] [cursor=pointer]
+                  - cell [ref=e278]:
+                    - generic [ref=e279]:
+                      - button "编辑" [ref=e280] [cursor=pointer]
+                      - button "删除" [ref=e282] [cursor=pointer]
+                - row [ref=e284]:
+                  - cell "洗衣凝珠" [ref=e285]
+                  - cell "-" [ref=e287]
+                  - cell [ref=e289]:
+                    - button "关联自定义结果" [ref=e291] [cursor=pointer]
+                  - cell "否" [ref=e293]
+                  - cell "65" [ref=e295]
+                  - cell [ref=e297]:
+                    - generic [ref=e299]:
+                      - switch [checked]
+                      - generic [ref=e300] [cursor=pointer]
+                  - cell [ref=e302]:
+                    - generic [ref=e303]:
+                      - button "编辑" [ref=e304] [cursor=pointer]
+                      - button "删除" [ref=e306] [cursor=pointer]
+                - row [ref=e308]:
+                  - cell "便当盒" [ref=e309]
+                  - cell "最新" [ref=e311]
+                  - cell [ref=e314]:
+                    - button "关联自定义结果" [ref=e316] [cursor=pointer]
+                  - cell "否" [ref=e318]
+                  - cell "60" [ref=e320]
+                  - cell [ref=e322]:
+                    - generic [ref=e324]:
+                      - switch [checked]
+                      - generic [ref=e325] [cursor=pointer]
+                  - cell [ref=e327]:
+                    - generic [ref=e328]:
+                      - button "编辑" [ref=e329] [cursor=pointer]
+                      - button "删除" [ref=e331] [cursor=pointer]
+                - row [ref=e333]:
+                  - cell "跑鞋" [ref=e334]
+                  - cell "热门" [ref=e336]
+                  - cell [ref=e339]:
+                    - button "关联自定义结果" [ref=e341] [cursor=pointer]
+                  - cell "否" [ref=e343]
+                  - cell "55" [ref=e345]
+                  - cell [ref=e347]:
+                    - generic [ref=e349]:
+                      - switch [checked]
+                      - generic [ref=e350] [cursor=pointer]
+                  - cell [ref=e352]:
+                    - generic [ref=e353]:
+                      - button "编辑" [ref=e354] [cursor=pointer]
+                      - button "删除" [ref=e356] [cursor=pointer]
+      - generic [ref=e359]:
+        - generic [ref=e360]: 自定义搜索结果
+        - generic [ref=e361]:
+          - button "+ 添加自定义结果" [ref=e363] [cursor=pointer]
+          - generic [ref=e366]:
+            - table [ref=e368]:
+              - rowgroup [ref=e375]:
+                - row [ref=e376]:
+                  - columnheader "ID" [ref=e377]
+                  - columnheader "展示标题" [ref=e379]
+                  - columnheader "跳转类型" [ref=e381]
+                  - columnheader "状态" [ref=e383]
+                  - columnheader "操作" [ref=e385]
+            - table [ref=e391]:
+              - rowgroup [ref=e398]:
+                - row [ref=e399]:
+                  - cell "csr-001" [ref=e400]
+                  - cell "🔥 热卖爆款 — 竹纤维抽纸" [ref=e402]
+                  - cell "商品" [ref=e404]
+                  - cell [ref=e406]:
+                    - generic [ref=e408]:
+                      - switch [checked]
+                      - generic [ref=e409] [cursor=pointer]
+                  - cell [ref=e411]:
+                    - generic [ref=e412]:
+                      - button "编辑" [ref=e413] [cursor=pointer]
+                      - button "删除" [ref=e415] [cursor=pointer]
+                - row [ref=e417]:
+                  - cell "csr-002" [ref=e418]
+                  - cell "✨ 网红同款 — 复合维生素片" [ref=e420]
+                  - cell "商品" [ref=e422]
+                  - cell [ref=e424]:
+                    - generic [ref=e426]:
+                      - switch [checked]
+                      - generic [ref=e427] [cursor=pointer]
+                  - cell [ref=e429]:
+                    - generic [ref=e430]:
+                      - button "编辑" [ref=e431] [cursor=pointer]
+                      - button "删除" [ref=e433] [cursor=pointer]
+                - row [ref=e435]:
+                  - cell "csr-003" [ref=e436]
+                  - cell "🎧 营养专家直播 — 维生素怎么补？" [ref=e438]
+                  - cell "URL" [ref=e440]
+                  - cell [ref=e442]:
+                    - generic [ref=e444]:
+                      - switch [checked]
+                      - generic [ref=e445] [cursor=pointer]
+                  - cell [ref=e447]:
+                    - generic [ref=e448]:
+                      - button "编辑" [ref=e449] [cursor=pointer]
+                      - button "删除" [ref=e451] [cursor=pointer]

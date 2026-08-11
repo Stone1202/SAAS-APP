@@ -1,0 +1,94 @@
+- generic [ref=f1e3]:
+  - generic [ref=f1e4]:
+    - generic [ref=f1e5]: 11:15
+    - generic [ref=f1e6]:
+      - generic [ref=f1e7]: 📶
+      - generic [ref=f1e8]: 📡
+      - generic [ref=f1e9]: 🔋
+  - generic [ref=f1e11]:
+    - generic [ref=f1e12]:
+      - generic [ref=f1e13]:
+        - textbox "搜索商品、直播、项目" [active] [ref=f1e17]: 维生素
+        - generic [ref=f1e18] [cursor=pointer]
+      - generic [ref=f1e23] [cursor=pointer]: 取消
+    - generic [ref=f1e24]:
+      - generic [ref=f1e25] [cursor=pointer]:
+        - text: 综合
+        - generic [ref=f1e26]: "3"
+      - generic [ref=f1e27] [cursor=pointer]:
+        - text: 商品
+        - generic [ref=f1e28]: "2"
+      - generic [ref=f1e29] [cursor=pointer]: 项目
+      - generic [ref=f1e30] [cursor=pointer]:
+        - text: 直播
+        - generic [ref=f1e31]: "1"
+    - generic [ref=f1e32]:
+      - generic [ref=f1e33]: 推荐结果
+      - generic [ref=f1e35]:
+        - generic [ref=f1e36] [cursor=pointer]:
+          - generic [ref=f1e37]: 💊
+          - generic [ref=f1e39]:
+            - generic [ref=f1e40]: ✨ 网红同款 — 复合维生素片
+            - generic [ref=f1e41]: 每日1片，补充21种维生素矿物质 ¥89
+            - generic [ref=f1e42]: 查看商品 ›
+        - generic [ref=f1e43] [cursor=pointer]:
+          - generic [ref=f1e44]: 📺
+          - generic [ref=f1e46]:
+            - generic [ref=f1e47]: 🎧 营养专家直播 — 维生素怎么补？
+            - generic [ref=f1e48]: 营养师李博士在线解答，正在直播
+            - generic [ref=f1e49]: 进入直播间 ›
+    - generic [ref=f1e50]:
+      - generic [ref=f1e51]:
+        - generic [ref=f1e52]: 商品
+        - generic [ref=f1e53]:
+          - generic [ref=f1e54] [cursor=pointer]:
+            - generic [ref=f1e55]:
+              - generic [ref=f1e56]: 📦
+              - generic [ref=f1e57]: 每日营养
+              - generic "加入购物车" [ref=f1e58]
+            - generic [ref=f1e63]:
+              - generic [ref=f1e64]: 复合维生素片 60片/瓶
+              - generic [ref=f1e66]: 健康补给·国贸店
+              - generic [ref=f1e67]:
+                - generic [ref=f1e68]: ¥89
+                - generic [ref=f1e69]: ¥128
+              - generic [ref=f1e70]: 已售7k
+          - generic [ref=f1e75] [cursor=pointer]:
+            - generic [ref=f1e76]:
+              - generic [ref=f1e77]: 📦
+              - generic [ref=f1e78]: 补钙
+              - generic "加入购物车" [ref=f1e79]
+            - generic [ref=f1e84]:
+              - generic [ref=f1e85]: 钙+维生素D3片 90片
+              - generic [ref=f1e87]: 健康补给·望京店
+              - generic [ref=f1e88]: ¥69
+              - generic [ref=f1e90]: 已售6k
+      - generic [ref=f1e95]:
+        - generic [ref=f1e96]: 直播
+        - generic [ref=f1e98] [cursor=pointer]:
+          - generic [ref=f1e99]:
+            - generic [ref=f1e100]: 📺
+            - generic [ref=f1e101]: 直播中
+            - generic [ref=f1e104]: 1.5万
+          - generic [ref=f1e108]:
+            - generic [ref=f1e109]: 营养专家直播：维生素怎么补？
+            - generic [ref=f1e110]:
+              - generic [ref=f1e111]: 营
+              - generic [ref=f1e112]: 营养师李博士
+  - generic [ref=f1e113]:
+    - generic [ref=f1e114] [cursor=pointer]:
+      - generic [ref=f1e115]: 🏠
+      - generic [ref=f1e116]: 首页
+    - generic [ref=f1e117] [cursor=pointer]:
+      - generic [ref=f1e118]: 🛍️
+      - generic [ref=f1e119]: 商城
+    - generic [ref=f1e120] [cursor=pointer]:
+      - generic [ref=f1e121]: 🎮
+      - generic [ref=f1e122]: 娱乐
+    - generic [ref=f1e123] [cursor=pointer]:
+      - generic [ref=f1e124]: 💬
+      - generic [ref=f1e125]: 消息
+      - generic [ref=f1e126]: "2"
+    - generic [ref=f1e127] [cursor=pointer]:
+      - generic [ref=f1e128]: 👤
+      - generic [ref=f1e129]: 我的

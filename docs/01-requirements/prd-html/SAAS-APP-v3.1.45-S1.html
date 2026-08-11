@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAAS-APP APP端电商域 v3.1.45 — 需求文档</title>
+<!-- 五类图已预渲染为高清PNG，无需Mermaid JS运行时 -->
+<style>
+:root{--c-bg:#f8f9fa;--c-surface:#fff;--c-border:#e2e8f0;--c-text:#1a202c;--c-text-muted:#64748b;--c-accent:#FF6B35;--c-accent-light:#fff3ed;--c-accent-dark:#e85a2a;--c-red:#dc2626;--c-orange:#ea580c;--c-green:#16a34a;--c-gray:#94a3b8;--c-blue:#2563eb;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--c-bg);color:var(--c-text);line-height:1.7;}
+.container{max-width:1200px;margin:0 auto;padding:32px 24px 64px;}
+.doc-header{background:linear-gradient(135deg,#FF6B35 0%,#ff8a5b 100%);color:#fff;border-radius:16px;padding:32px 36px;margin-bottom:32px;box-shadow:0 10px 30px rgba(255,107,53,0.2);}
+.doc-header .title{font-size:26px;font-weight:700;margin-bottom:10px;}
+.doc-header .subtitle{font-size:14px;opacity:0.92;margin-bottom:16px;}
+.doc-header .meta{display:flex;flex-wrap:wrap;gap:10px 18px;font-size:13px;}
+.doc-header .meta span{display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.18);padding:4px 10px;border-radius:6px;}
+.doc-header .badge{display:inline-block;padding:2px 10px;border-radius:4px;font-size:12px;font-weight:600;background:rgba(255,255,255,0.25);}
+.toc-wrap{background:var(--c-surface);border:1px solid var(--c-border);border-radius:12px;padding:24px 28px;margin-bottom:32px;}
+.toc-title{font-size:16px;font-weight:700;margin-bottom:12px;}
+.toc{list-style:none;columns:2;column-gap:32px;}
+.toc li{padding:3px 0;font-size:14px;break-inside:avoid;}
+.toc a{color:var(--c-accent);text-decoration:none;}
+.toc a:hover{text-decoration:underline;color:var(--c-accent-dark);}
+.toc .sub{padding-left:18px;font-size:13px;color:var(--c-text-muted);}
+.section{background:var(--c-surface);border:1px solid var(--c-border);border-radius:12px;padding:28px 32px;margin-bottom:24px;}
+.section-title{font-size:20px;font-weight:700;color:var(--c-text);margin-bottom:18px;padding-bottom:10px;border-bottom:2px solid var(--c-accent);display:flex;align-items:center;gap:12px;}
+.section-title .num{background:var(--c-accent);color:#fff;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0;}
+.sub-title{font-size:16px;font-weight:600;color:var(--c-text);margin:20px 0 12px;padding-left:12px;border-left:4px solid var(--c-accent);}
+.sub-title-3{font-size:15px;font-weight:600;color:var(--c-text);margin:16px 0 10px;}
+p{margin-bottom:10px;font-size:14px;}
+ul,ol{padding-left:22px;margin-bottom:12px;font-size:14px;}
+li{margin-bottom:4px;}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px;}
+table:last-child{margin-bottom:0;}
+th,td{padding:8px 12px;text-align:left;border:1px solid var(--c-border);}
+th{background:#f8fafc;font-weight:600;color:var(--c-text-muted);font-size:12px;white-space:nowrap;}
+td{vertical-align:top;}
+tr:nth-child(even) td{background:#fafbfc;}
+.mermaid-wrap{background:#fafbfc;border:1px solid var(--c-border);border-radius:8px;padding:16px 20px;margin-bottom:16px;overflow-x:auto;}
+.mermaid-wrap .diagram-label{font-size:13px;font-weight:600;color:var(--c-text-muted);margin-bottom:10px;}
+.mermaid{text-align:center;}
+.uc-card{border:1px solid var(--c-border);border-left:4px solid var(--c-accent);border-radius:10px;padding:22px 26px;margin-bottom:20px;background:#fff;}
+.fn-header{background:var(--c-accent-light);border-radius:8px;padding:14px 18px;margin-bottom:16px;}
+.fn-header .fn-id{font-size:16px;font-weight:700;color:var(--c-accent-dark);}
+.fn-header .fn-name{font-size:14px;font-weight:600;color:var(--c-text);margin-top:4px;}
+.uc-header{display:flex;align-items:center;gap:12px;margin:14px 0 12px;padding-bottom:8px;border-bottom:1px dashed var(--c-border);}
+.uc-id{font-size:14px;font-weight:700;color:var(--c-accent);white-space:nowrap;}
+.uc-name{font-size:15px;font-weight:600;color:var(--c-text);}
+.uc-priority{margin-left:auto;}
+.badge-p0{background:#fef2f2;color:var(--c-red);}
+.badge-p1{background:#fff7ed;color:var(--c-orange);}
+.badge-p2{background:#f0fdf4;color:var(--c-green);}
+.badge-deprecated{background:#f1f5f9;color:var(--c-gray);text-decoration:line-through;}
+.badge-new{background:#dbeafe;color:var(--c-blue);}
+.uc-segment{margin-bottom:12px;}
+.uc-segment:last-child{margin-bottom:0;}
+.uc-segment-title{font-size:13px;font-weight:700;color:var(--c-text);margin-bottom:6px;padding:3px 8px;background:#f1f5f9;border-radius:4px;display:inline-block;}
+.uc-segment ol,.uc-segment ul{padding-left:22px;font-size:13px;}
+.uc-segment li{margin-bottom:4px;}
+.uc-segment .tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600;margin-right:4px;}
+.tag-manual{background:#dbeafe;color:#1e40af;}
+.tag-auto{background:#dcfce7;color:#166534;}
+.tag-event{background:#fef3c7;color:#92400e;}
+.module-list{background:#fafbfc;border:1px solid var(--c-border);border-radius:6px;padding:10px 14px;margin:8px 0;}
+.module-list table{margin:0;}
+.callout{background:#fffbeb;border:1px solid #fde68a;border-left:4px solid #f59e0b;border-radius:6px;padding:12px 16px;margin:12px 0;font-size:13px;}
+.callout-info{background:#eff6ff;border-color:#93c5fd;border-left-color:var(--c-blue);}
+.callout-deprecated{background:#f1f5f9;border-color:#cbd5e1;border-left-color:var(--c-gray);color:var(--c-text-muted);}
+.callout-new{background:#f0fdf4;border-color:#86efac;border-left-color:var(--c-green);}
+.br-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.br-item{padding:12px 16px;border:1px solid var(--c-border);border-radius:8px;font-size:13px;background:#fff;}
+.br-item .br-id{font-weight:700;color:var(--c-accent);}
+.br-item .br-text{color:var(--c-text);margin-top:4px;}
+.br-item.deprecated{background:#f8fafc;opacity:0.7;}
+.br-item.deprecated .br-id{color:var(--c-gray);text-decoration:line-through;}
+.ent-grid{display:grid;grid-template-columns:1fr;gap:8px;}
+.ent-item{padding:12px 16px;border:1px solid var(--c-border);border-radius:8px;font-size:13px;background:#fff;display:grid;grid-template-columns:160px 1fr;gap:12px;}
+.ent-item .ent-id{font-weight:700;color:var(--c-blue);}
+.accept-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.accept-stat{text-align:center;padding:18px 12px;background:var(--c-accent-light);border-radius:10px;}
+.accept-stat .val{font-size:30px;font-weight:700;color:var(--c-accent);}
+.accept-stat .lbl{font-size:12px;color:var(--c-text-muted);margin-top:4px;}
+.doc-footer{text-align:center;padding:24px;font-size:13px;color:var(--c-text-muted);}
+.terminal-matrix td{text-align:center;}
+.terminal-matrix .yes{color:var(--c-green);font-weight:600;}
+.terminal-matrix .no{color:var(--c-gray);}
+.terminal-matrix .dep{color:var(--c-gray);text-decoration:line-through;}
+@media (max-width:768px){.container{padding:16px 12px;}.section{padding:16px;}.toc{columns:1;}.br-grid{grid-template-columns:1fr;}.accept-stats{grid-template-columns:repeat(2,1fr);}.ent-item{grid-template-columns:1fr;}}
+/* Screenshot — 系统截图样式（参照SAAS-v1.0.0-S1.html输出标准） */
+.screenshot-wrap{margin:14px 0;border:1px solid var(--c-border);border-radius:8px;overflow:hidden;background:#fafbfc;}
+.screenshot-wrap img{width:100%;display:block;}
+.screenshot-caption{padding:8px 12px;font-size:12px;color:var(--c-text-muted);background:#f8fafc;border-top:1px solid var(--c-border);}
+.screenshot-caption .sc-level{font-weight:700;color:var(--c-accent);margin-right:6px;}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="doc-header">
+  <div class="title">SAAS-APP APP端电商域 — 产品需求文档</div>
+  <div class="subtitle">配置式装修电商平台 · 四层层级模型(平台→租户→项目→门店) · 三端协同(消费者APP + 运营后台 + 租户后台)</div>
+  <div class="meta">
+    <span>版本：v3.1.45</span>
+    <span>doc_id：REQ-APP-PRD-v3.1.0</span>
+    <span>需求流：STR-SAAS-002</span>
+    <span>类型：新增</span>
+    <span>日期：2026-08-07 ~ 2026-08-11</span>
+    <span class="badge">P0</span>
+    <span class="badge">27 FN · 54 UC · 45 BR · 20 ENT</span>
+    <span>策略：纯前端模拟 · localStorage 持久化 · 不对接后端 API</span>
+  </div>
+</div>
+
+<div class="toc-wrap">
+  <div class="toc-title">文档目录</div>
+  <ul class="toc">
+    <li><a href="#sec-0">§0 项目判定与终端冻结</a></li>
+    <li><a href="#sec-1">§1 背景与问题</a></li>
+    <li><a href="#sec-2">§2 目标与度量</a></li>
+    <li><a href="#sec-3">§3 范围</a></li>
+    <li><a href="#sec-4">§4 与既有模块关系</a></li>
+    <li><a href="#sec-5">§5 业务目标映射</a></li>
+    <li><a href="#sec-6">§6 用户故事</a></li>
+    <li><a href="#sec-7">§7 五类图</a></li>
+    <li><a href="#sec-8">§8 功能需求列表与用例（FN/UC）</a></li>
+    <li class="sub"><a href="#sec-8-1">8.1 电商平台·APP端（15 FN / 31 UC）</a></li>
+    <li class="sub"><a href="#sec-8-2">8.2 运营后台·PC端（6 FN / 17 UC）</a></li>
+    <li class="sub"><a href="#sec-8-3">8.3 租户后台·PC端（6 FN / 6 UC）</a></li>
+    <li><a href="#sec-9">§9 业务规则（BR）</a></li>
+    <li><a href="#sec-10">§10 集中配置清单（CONFIG）</a></li>
+    <li><a href="#sec-11">§11 数据实体（ENT）</a></li>
+    <li><a href="#sec-12">§12 统计指标清单（METRIC）</a></li>
+    <li><a href="#sec-13">§13 验收标准</a></li>
+    <li><a href="#sec-14">§14 外部接口</a></li>
+    <li><a href="#sec-15">§15 多端差异矩阵</a></li>
+    <li><a href="#sec-16">§16 需求深度分析摘要</a></li>
+    <li><a href="#sec-changelog">§0.1 变更记录</a></li>
+  </ul>
+</div>
+
+<!-- §0 -->
+<div class="section" id="sec-0">
+  <div class="section-title"><span class="num">0</span>项目判定与终端冻结</div>
+  <div class="sub-title">§0.0 终端冻结</div>
+  <table>
+    <tr><th>业务系统</th><th>建议终端</th><th>理由</th></tr>
+    <tr><td>SAAS运营后台</td><td>PC端</td><td>运营配置操作密集，需大屏表格/表单</td></tr>
+    <tr><td>SAAS租户后台</td><td>PC端</td><td>项目/门店管理 CRUD，需大屏表格</td></tr>
+    <tr><td>SAAS电商平台</td><td>移动端 APP</td><td>消费者浏览购物场景，移动优先</td></tr>
+  </table>
+  <div class="callout callout-info"><b>冻结声明：</b>后续 UX/Arch/FD/QA/AC 不得再询问「支持哪些端」。</div>
+  <div class="sub-title">§0 项目判定与需求路由</div>
+  <ul>
+    <li><b>项目性质：</b>存量项目（SAAS-APP，已有高保真原型 56 文件）</li>
+    <li><b>需求类型：</b>新增（v2.0.0+v2.1.0 为初始版本，此 PRD 为正式需求归档）</li>
+    <li><b>analysis_depth：</b>full</li>
+    <li><b>version_bump：</b>minor → v3.0.0</li>
+    <li><b>脑暴类型：</b>planning（规划型，已产出脑暴确认稿）</li>
+    <li><b>上下文加载：</b>脑暴确认稿 + 高保真原型代码 + Mock 数据体系</li>
+  </ul>
+</div>
+
+<!-- §1 -->
+<div class="section" id="sec-1">
+  <div class="section-title"><span class="num">1</span>背景与问题</div>
+  <div class="sub-title">1.1 业务背景</div>
+  <p>构建 SAAS 级「配置式装修」电商平台，为多租户提供统一的 APP 端电商能力。平台采用<b>四层层级模型</b>：平台 → 租户 → 项目 → 门店。消费者通过统一 APP 入口进入，可在平台首页浏览所有项目，也可进入项目维度查看门店、直播、会员。</p>
+  <div class="sub-title">1.2 问题现状</div>
+  <ul>
+    <li>多租户缺乏统一的 APP 端电商能力，各租户独立开发成本高</li>
+    <li>运营配置分散，广告/金刚区/推荐/搜索缺乏统一管理入口</li>
+    <li>搜索体系缺失，用户无法快速发现商品/项目/直播</li>
+    <li>前后端数据未打通，原型展示与后台配置脱节</li>
+  </ul>
+</div>
+
+<!-- §2 -->
+<div class="section" id="sec-2">
+  <div class="section-title"><span class="num">2</span>目标与度量</div>
+  <div class="sub-title">2.1 商业目标（BO）</div>
+  <table>
+    <tr><th>编号</th><th>目标</th><th>度量方式</th></tr>
+    <tr><td>BO-SAASAPP-001</td><td>租户快速上线电商能力</td><td>租户接入→APP上线周期 ≤ 7天</td></tr>
+    <tr><td>BO-SAASAPP-002</td><td>提升消费者留存与复购</td><td>APP DAU/MAU、会员转化率、复购率</td></tr>
+  </table>
+  <div class="sub-title">2.2 业务目标（BG）</div>
+  <table>
+    <tr><th>编号</th><th>目标</th><th>关联 BO</th></tr>
+    <tr><td>BG-SAASAPP-001</td><td>提供完整的 APP 端电商体验（浏览/搜索/项目/会员）</td><td>BO-SAASAPP-002</td></tr>
+    <tr><td>BG-SAASAPP-002</td><td>运营后台一站式配置 APP 展示内容</td><td>BO-SAASAPP-001</td></tr>
+    <tr><td>BG-SAASAPP-003</td><td>租户后台自主管理项目/门店/首页</td><td>BO-SAASAPP-001</td></tr>
+    <tr><td>BG-SAASAPP-004</td><td>搜索体系提升商品发现效率</td><td>BO-SAASAPP-002</td></tr>
+  </table>
+</div>
+
+<!-- §3 -->
+<div class="section" id="sec-3">
+  <div class="section-title"><span class="num">3</span>范围</div>
+  <div class="sub-title">3.1 In-Scope（本次版本）</div>
+  <ul>
+    <li><b>APP-平台端：</b>5 Tab 容器（首页/商城/娱乐/消息/我的）+ 搜索二级页 + 项目维度 4Tab（首页/商城/门店/会员）</li>
+    <li><b>APP-平台首页：</b>模块顺序「APPlogo → 搜索框 → BANNER 位 → 金刚区 → 直播推荐区 → 商品推荐区」共 6 模块固定顺序（BR-SHP-012）</li>
+    <li><b>APP-商城页：</b>默认 Tab 为项目列表，3 个 Tab（项目列表/精选商品/精选直播），精选商品/直播显示后台推荐的所有可见商品/直播</li>
+    <li><b>APP-个人中心：</b>基本信息 + 工作台入口 + APP 资质信息 + 我的订单 + 我的优惠券 + 我的积分 + 我的零钱 + 我的收货地址（8 模块，BR-SHP-018）。平台个人中心不展示平台会员等级</li>
+    <li><b>项目维度 4Tab：</b>首页/商城/门店/会员（独立底部导航）</li>
+    <li><b>项目首页：</b>项目 LOGO + BANNER 位 + 直播推荐 + 商品推荐（由租户后台管理，v3.1.29：项目首页搜索已删除）</li>
+    <li><b>项目商城页：</b>按当前项目的营销分类展示商品，点击商品进入商品详情页（FN-SHP-APP-012）</li>
+    <li><b>项目门店页：</b>门店列表按地理位置距离排序，点击进入门店详情</li>
+    <li><b>门店详情：</b>门店基本信息 + 门店位置 + 推荐直播 + 商品（可按分类展示）</li>
+    <li><b>项目会员页：</b>会员积分 + 会员优惠券 + 会员等级 + 会员零钱</li>
+    <li><b>商品详情页：</b>商品基本信息展示 + 门店/项目入口（FN-SHP-APP-012）</li>
+    <li><b>直播详情页：</b>直播间信息展示 + 回放观看入口（FN-SHP-APP-014）</li>
+    <li><b>运营后台：</b>搜索管理/广告位/金刚区/直播推荐/商品推荐 5 管理页</li>
+    <li><b>租户后台：</b>项目/门店/商品营销分类管理/项目信息/项目 Banner/项目金刚区 6 个活跃管理页（+1 deprecated：项目首页配置已于 v3.1.21 移除）</li>
+    <li><b>数据持久化：</b>localStorage + Pinia watch 自动同步</li>
+    <li><b>Mock 数据：</b>4 项目 + 10 门店 + 17 商品 + 5 直播 + 4 会员等级</li>
+  </ul>
+  <div class="sub-title">3.2 Out-of-Scope</div>
+  <ul>
+    <li>实时直播推流/观看（仅展示直播卡片+回放标记，不含实时流播放）</li>
+    <li>支付/下单/结算流程（"我的订单""我的优惠券"仅展示入口+计数，<b>订单详情/优惠券详情不在本次范围</b>）</li>
+    <li>后端 API 对接（纯前端 localStorage 模拟）</li>
+    <li>APP 娱乐 Tab/消息 Tab 完整功能（仅占位）</li>
+    <li>多语言/国际化</li>
+    <li>直播作为项目维度独立 Tab（直播内容融入项目首页推荐和门店详情推荐）</li>
+  </ul>
+</div>
+
+<!-- §4 -->
+<div class="section" id="sec-4">
+  <div class="section-title"><span class="num">4</span>与既有模块关系</div>
+  <p>本项目为独立新增域，不继承审查域代码。复用既有架构模式：</p>
+  <ul>
+    <li><b>五层架构：</b>services → contracts → stores → components → pages</li>
+    <li><b>多入口构建：</b>Vite rollupOptions.input（app/admin/tenant）</li>
+    <li><b>Hash 路由：</b>createWebHashHistory</li>
+    <li><b>Element Plus：</b>PC 后台 UI 组件</li>
+    <li><b>Zod Schema：</b>契约层类型安全</li>
+  </ul>
+</div>
+
+<!-- §5 -->
+<div class="section" id="sec-5">
+  <div class="section-title"><span class="num">5</span>业务目标映射（BO/BG）</div>
+  <table>
+    <tr><th>BG</th><th>涉及 FN</th><th>涉及 PG</th><th>度量指标</th></tr>
+    <tr><td>BG-SAASAPP-001</td><td>FN-SHP-APP-001~014（含 009A，不含 006 已合并说明）</td><td>PG-SHP-APP-001~014（含 009A）</td><td>APP DAU、页面 PV</td></tr>
+    <tr><td>BG-SAASAPP-002</td><td>FN-OPS-PC-001~005</td><td>PG-OPS-PC-001~005</td><td>配置操作次数、配置生效时长</td></tr>
+    <tr><td>BG-SAASAPP-003</td><td>FN-TNT-PC-001~007（不含 003，003 deprecated）</td><td>PG-TNT-PC-001~007（不含 003）</td><td>租户管理操作次数</td></tr>
+    <tr><td>BG-SAASAPP-004</td><td>FN-SHP-APP-007~008</td><td>PG-SHP-APP-007~008</td><td>搜索 PV、搜索结果点击率</td></tr>
+  </table>
+</div>
+
+<!-- §6 -->
+<div class="section" id="sec-6">
+  <div class="section-title"><span class="num">6</span>用户故事</div>
+  <div class="sub-title-3">US-01 消费者浏览购物</div>
+  <div class="callout callout-info">作为消费者，我想打开 APP 浏览平台首页的 Banner/金刚区/推荐商品/直播，进入项目查看门店和直播，搜索好物，享受会员折扣，以便快速发现和购买商品。</div>
+  <div class="sub-title-3">US-02 平台运营配置</div>
+  <div class="callout callout-info">作为平台运营人员，我想在运营后台统一配置搜索热词/广告位/金刚区/推荐，以便控制 APP 首页展示内容，无需开发介入。</div>
+  <div class="sub-title-3">US-03 租户管理项目</div>
+  <div class="callout callout-info">作为租户管理员，我想管理自己的项目信息、门店信息和项目首页配置，以便维护销售单元和门店详情。</div>
+</div>
+
+<!-- §7 五类图 -->
+<div class="section" id="sec-7">
+  <div class="section-title"><span class="num">7</span>五类图</div>
+  <div class="sub-title">7.1 业务流程图（flowchart）</div>
+  <div class="mermaid-wrap">
+    <div class="diagram-label">图1 — 业务流程图</div>
+    <img src="screenshots/DIAG-01-业务流程图.png" alt="业务流程图" style="width:100%;border-radius:6px;" loading="lazy">
+  </div>
+  <div class="sub-title">7.2 信息流转图</div>
+  <div class="mermaid-wrap">
+    <div class="diagram-label">图2 — 信息流转图</div>
+    <img src="screenshots/DIAG-02-信息流转图.png" alt="信息流转图" style="width:100%;border-radius:6px;" loading="lazy">
+  </div>
+  <div class="sub-title">7.3 状态机</div>
+  <div class="mermaid-wrap">
+    <div class="diagram-label">图3a — 广告位状态机</div>
+    <img src="screenshots/DIAG-03a-广告位状态机.png" alt="广告位状态机" style="width:100%;border-radius:6px;" loading="lazy">
+  </div>
+  <div class="mermaid-wrap">
+    <div class="diagram-label">图3b — 直播状态机</div>
+    <img src="screenshots/DIAG-03b-直播状态机.png" alt="直播状态机" style="width:100%;border-radius:6px;" loading="lazy">
+  </div>
+  <div class="mermaid-wrap">
+    <div class="diagram-label">图3c — 推荐配置状态机</div>
+    <img src="screenshots/DIAG-03c-推荐配置状态机.png" alt="推荐配置状态机" style="width:100%;border-radius:6px;" loading="lazy">
+  </div>
+  <div class="sub-title">7.4 业务时序图</div>
+  <div class="mermaid-wrap">
+    <div class="diagram-label">图4 — 业务时序图</div>
+    <img src="screenshots/DIAG-04-业务时序图.png" alt="业务时序图" style="width:100%;border-radius:6px;" loading="lazy">
+  </div>
+  <div class="sub-title">7.5 三方接口时序图</div>
+  <div class="callout">本项目纯前端原型，无三方接口调用。数据持久化通过 localStorage 本地完成。</div>
+</div>
+
+<!-- §8 FN/UC 详情 -->
+<div class="section" id="sec-8">
+  <div class="section-title"><span class="num">8</span>功能需求列表与用例（FN/UC）</div>
+  <div class="accept-stats">
+    <div class="accept-stat"><div class="val">27</div><div class="lbl">FN 总数</div></div>
+    <div class="accept-stat"><div class="val">54</div><div class="lbl">UC 总数</div></div>
+    <div class="accept-stat"><div class="val">30</div><div class="lbl">页面数</div></div>
+    <div class="accept-stat"><div class="val">13</div><div class="lbl">弹窗数</div></div>
+  </div>
+  <p><b>UC 功能域分布：</b>HOME(3) · MALL(6) · SEARCH(10) · PRODUCT(2) · LIVE(1) · STORE(4) · MEMBER(4) · MINE(3) · RECOMMEND(12) · OPS-CONFIG(8) · TENANT(7) · PLACEHOLDER(2) = 共 62 UC（含 1 个 deprecated UC 不计数，有效 61）</p>
+
+  <div class="sub-title" id="sec-8-1">8.1 电商平台·APP端（15 FN / 31 UC）</div>
+
+  <div class="uc-card" id="fn-001">
+    <div class="fn-header"><div class="fn-id">FN-SHP-APP-001 · 平台首页展示</div><div class="fn-name">PG-SHP-APP-001 · /app/home · 组件 PlatformHome · 信息密度 high</div></div>
+    <table>
+      <tr><th>所属模块</th><td>APP-平台首页</td><th>所属业务系统</th><td>SAAS电商平台</td></tr>
+      <tr><th>运行终端</th><td>APP端</td><th>所属业务流程</th><td>消费者浏览流程</td></tr>
+    </table>
+    <p><b>用户故事：</b>作为消费者，我想在平台首页从顶部往下依次看到 APPlogo、搜索框、BANNER 位、金刚区、直播推荐区、商品推荐区，以便快速发现内容。</p>
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-001-01</span><span class="uc-name">首页加载渲染</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-001-平台首页.png" alt="平台首页（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-SHP-APP-001 · 平台首页 · 2026-08-11 实时截取（390×844）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">前置条件</div><ol><li>用户已打开 APP</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol>
+      <li><span class="tag tag-auto">系统自动</span> 加载 app-config-store（localStorage:saas:app-config，Pinia 初始化）</li>
+      <li><span class="tag tag-auto">系统自动</span> 加载 project-store（localStorage:saas:project，获取项目/商品/直播数据）</li>
+      <li><span class="tag tag-auto">系统自动</span> 渲染顶部 APPlogo（模块1·品牌展示区）</li>
+      <li><span class="tag tag-auto">系统自动</span> 渲染搜索框（模块2·点击跳转搜索页）</li>
+      <li><span class="tag tag-auto">系统自动</span> 渲染 BANNER 广告位轮播（模块3·BannerCarousel 组件）</li>
+      <li><span class="tag tag-auto">系统自动</span> 渲染金刚区网格（模块4·KingKongGrid 组件）</li>
+      <li><span class="tag tag-auto">系统自动</span> 渲染直播推荐区（模块5·LiveCard 列表），叠加模式：手动推荐(sort_order升序) → 默认规则补足；"更多"跳转 /app/mall?tab=featuredLives</li>
+      <li><span class="tag tag-auto">系统自动</span> 渲染商品推荐区（模块6·ProductCard 列表），叠加模式：手动推荐(sort_order升序) → 默认规则补足；"更多"跳转 /app/mall?tab=featuredProducts</li>
+    </ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">备选流程</div><ul><li>无配置数据时各板块显示空状态</li></ul></div>
+    <div class="uc-segment"><div class="uc-segment-title">数据范围 (R/W)</div><p>R: AdBanner, KingKongEntry, RecommendItem, LiveRoom, Product</p></div>
+    <div class="uc-segment"><div class="uc-segment-title">后置条件</div><ol><li>首页完整渲染，用户可交互</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">关联 UC</div><p>UC-001-02, UC-001-03, UC-007-01</p></div>
+    <div class="callout callout-info"><b>模块顺序：</b>顶部从上到下依次为「APPlogo → 搜索框 → BANNER 位 → 金刚区 → 直播推荐区 → 商品推荐区」</div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-001-02</span><span class="uc-name">Banner 点击跳转</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-001-平台首页.png" alt="平台首页-Banner区域（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-SHP-APP-001 · Banner 点击跳转入口 · 同首页截图（交互触发点为 BANNER 区域）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol>
+      <li><span class="tag tag-manual">手动</span> 用户点击 Banner</li>
+      <li><span class="tag tag-auto">系统自动</span> 读取 jump_type：product/project_home/live_page/fixed_url</li>
+      <li><span class="tag tag-auto">系统自动</span> 跳转目标页，携带 jump_id/project_id</li>
+    </ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">数据范围 (R/W)</div><p>R: AdBanner</p></div>
+    <div class="uc-segment"><div class="uc-segment-title">关联 UC</div><p>UC-009-01, UC-014-01</p></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-001-03</span><span class="uc-name">金刚区点击跳转</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-001-平台首页.png" alt="平台首页-金刚区区域（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-SHP-APP-001 · 金刚区点击跳转入口 · 同首页截图（交互触发点为金刚区网格）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 用户点击金刚区入口 → 读取 link_type → 跳转目标页</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">数据范围 (R/W)</div><p>R: KingKongEntry</p></div>
+    <div class="uc-segment"><div class="uc-segment-title">关联 UC</div><p>UC-009-01</p></div>
+  </div>
+
+  <div class="uc-card" id="fn-002">
+    <div class="fn-header"><div class="fn-id">FN-SHP-APP-002 · 商城页</div><div class="fn-name">PG-SHP-APP-002 · /app/mall · 组件 MallPage</div></div>
+    <p><b>用户故事：</b>作为消费者，我想在商城页通过顶部 Tab 切换「项目列表」「精选商品」「精选直播」，默认展示项目列表。</p>
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-002-01</span><span class="uc-name">项目列表展示（默认 Tab）</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-002-商城-项目列表.png" alt="商城页-项目列表Tab（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-SHP-APP-002 · 商城页-项目列表(默认Tab) · 2026-08-11 实时截取</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-auto">系统自动</span> 加载项目数据 → 渲染 ProjectCard 网格</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">项目卡片内容</div><p>项目 logo 名称、主营类目、主要推荐的商品/直播</p></div>
+    <div class="uc-segment"><div class="uc-segment-title">品类筛选</div><p>支持按主营类目筛选，筛选项由项目的主营类目动态生成</p></div>
+    <div class="uc-segment"><div class="uc-segment-title">数据范围 (R/W)</div><p>R: Project, Product, LiveRoom</p></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-002-02</span><span class="uc-name">精选商品展示</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-002-商城-精选商品.png" alt="商城页-精选商品Tab（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L2 增量截图</span>PG-SHP-APP-002 · 商城页-精选商品Tab · Tab切换触发</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-auto">系统自动</span> 加载后台商品推荐的所有可见商品 → 渲染 ProductCard 列表（叠加模式排序，无上限）</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">分页</div><p>每页 20 条，"加载更多"按钮翻页</p></div>
+    <div class="uc-segment"><div class="uc-segment-title">数据范围 (R/W)</div><p>R: RecommendItem, Product</p></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-002-03</span><span class="uc-name">精选直播展示</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-002-商城-精选直播.png" alt="商城页-精选直播Tab（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L2 增量截图</span>PG-SHP-APP-002 · 商城页-精选直播Tab · Tab切换触发</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-auto">系统自动</span> 加载后台直播推荐的所有可见直播 → 渲染 LiveCard 列表（叠加模式排序，无上限）</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">分页</div><p>每页 20 条，"加载更多"按钮翻页</p></div>
+    <div class="uc-segment"><div class="uc-segment-title">数据范围 (R/W)</div><p>R: RecommendItem, LiveRoom</p></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-002-04</span><span class="uc-name">项目卡片点击跳转</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-002-商城-项目列表.png" alt="商城页-项目卡片点击（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-SHP-APP-002 · 项目卡片点击跳转入口 · 交互触发点为项目卡片</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 用户点击项目卡片 → 跳转 /app/project/:projectId</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">关联 UC</div><p>UC-009-01</p></div>
+  </div>
+
+  <div class="uc-card" id="fn-003">
+    <div class="fn-header"><div class="fn-id">FN-SHP-APP-003 · 娱乐页（占位）</div><div class="fn-name">PG-SHP-APP-003 · /app/entertainment</div></div>
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-003-01</span><span class="uc-name">娱乐页占位展示</span><span class="uc-priority"><span class="badge badge-p2">P2</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-003-娱乐页.png" alt="娱乐页占位（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-SHP-APP-003 · 娱乐页占位 · 2026-08-11 实时截取</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-auto">系统自动</span> 渲染占位页面（预留游戏/互动入口）</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">数据范围</div><p>无</p></div>
+  </div>
+
+  <div class="uc-card" id="fn-004">
+    <div class="fn-header"><div class="fn-id">FN-SHP-APP-004 · 消息页（占位）</div><div class="fn-name">PG-SHP-APP-004 · /app/message</div></div>
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-004-01</span><span class="uc-name">消息页占位展示</span><span class="uc-priority"><span class="badge badge-p2">P2</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-004-消息页.png" alt="消息页占位（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-SHP-APP-004 · 消息页占位 · 2026-08-11 实时截取</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-auto">系统自动</span> 渲染占位页面（预留消息列表+分类）</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">数据范围</div><p>无</p></div>
+  </div>
+
+  <div class="uc-card" id="fn-005">
+    <div class="fn-header"><div class="fn-id">FN-SHP-APP-005 · 个人中心</div><div class="fn-name">PG-SHP-APP-005 · /app/mine · 组件 PlatformMine</div></div>
+    <p><b>用户故事：</b>作为消费者，我想在个人中心查看基本信息、工作台入口、APP 资质信息、我的订单、我的优惠券、我的积分、我的零钱、我的收货地址。平台个人中心不展示会员等级。</p>
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-005-01</span><span class="uc-name">个人中心模块展示</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-005-个人中心.png" alt="个人中心（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-SHP-APP-005 · 个人中心 · 2026-08-11 实时截取（390×844）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-auto">系统自动</span> 加载用户数据 → 渲染个人中心模块列表</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">模块构成</div>
+    <div class="module-list"><table>
+      <tr><th>模块</th><th>说明</th><th>数据来源</th></tr>
+      <tr><td>基本信息</td><td>用户头像/昵称/手机号</td><td>AppUser(R)</td></tr>
+      <tr><td>工作台</td><td>工作台入口（二级页面后续迭代，本期仅入口）</td><td>—</td></tr>
+      <tr><td>APP 资质信息</td><td>APP 相关资质展示</td><td>AppUser(R)</td></tr>
+      <tr><td>我的订单</td><td>订单列表入口</td><td>AppUser(R)</td></tr>
+      <tr><td>我的优惠券</td><td>优惠券列表入口</td><td>AppUser(R)</td></tr>
+      <tr><td>我的积分</td><td>平台积分展示</td><td>AppUser(R)</td></tr>
+      <tr><td>我的零钱</td><td>零钱余额展示</td><td>AppUser(R)</td></tr>
+      <tr><td>我的收货地址</td><td>收货地址列表入口</td><td>ShippingAddress(R)</td></tr>
+    </table></div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">关联 UC</div><p>UC-005-02, UC-005-03</p></div>
+    <div class="callout callout-info"><b>会员等级说明：</b>平台个人中心不展示平台级会员等级，会员等级属于项目维度（FN-SHP-APP-013 各项目独立等级）。</div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-005-02</span><span class="uc-name">会员中心入口</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-005-个人中心.png" alt="个人中心-会员中心入口（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-SHP-APP-005 · 会员中心入口 · 同个人中心截图（交互触发点为会员中心入口）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 用户点击会员中心 → 跳转 /app/mine/member</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">关联 UC</div><p>UC-006-02</p></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-005-03</span><span class="uc-name">我的收货地址管理</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-005-M01-收货地址.png" alt="收货地址管理（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L2 增量截图</span>PG-SHP-APP-005-M01 · 收货地址管理弹窗 · 点击「我的收货地址」触发</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 用户点击我的收货地址 → 跳转收货地址列表页 → 可新增/编辑/删除收货地址</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">表单校验规则</div>
+    <table>
+      <tr><th>字段</th><th>校验规则</th><th>必填</th></tr>
+      <tr><td>recipient_name</td><td>1-20 字符，不含特殊符号</td><td>是</td></tr>
+      <tr><td>phone</td><td>中国大陆手机号格式 /^1[3-9]\d{9}$/</td><td>是</td></tr>
+      <tr><td>province</td><td>省市区联动选择，不可手动输入</td><td>是</td></tr>
+      <tr><td>city</td><td>省市区联动选择，依赖 province</td><td>是</td></tr>
+      <tr><td>district</td><td>省市区联动选择，依赖 city</td><td>是</td></tr>
+      <tr><td>detail_address</td><td>5-100 字符</td><td>是</td></tr>
+      <tr><td>is_default</td><td>布尔值，设为默认时其他地址自动取消默认</td><td>否</td></tr>
+    </table>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">业务约束</div><p>每个用户最多保存 20 条收货地址（CONFIG-SHP-011）</p></div>
+  </div>
+
+  <div class="uc-card" id="fn-006">
+    <div class="fn-header"><div class="fn-id">FN-SHP-APP-006 · 平台会员中心</div><div class="fn-name">PG-SHP-APP-006 · /app/mine/member · 组件 PlatformMember</div></div>
+    <div class="callout callout-info"><b>边界说明：</b>本功能为「平台级资产汇总+项目会员入口聚合」，与 FN-SHP-APP-013 项目会员中心为<b>不同层级</b>。<b>平台暂无独立会员等级体系</b>，006 不展示平台统一会员卡。</div>
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-006-01</span><span class="uc-name">平台级资产汇总展示</span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-006-平台会员中心.png" alt="平台会员中心（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-SHP-APP-006 · 平台会员中心 · 2026-08-11 实时截取</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">平台级资产汇总</div>
+    <table>
+      <tr><th>汇总项</th><th>说明</th><th>数据来源</th></tr>
+      <tr><td>平台总积分</td><td>用户在所有项目积分的汇总数字</td><td>AppUser(R), ProjectMember(R)</td></tr>
+      <tr><td>平台总优惠券</td><td>用户在所有项目优惠券数量的汇总</td><td>AppUser(R), ProjectMember(R)</td></tr>
+      <tr><td>平台总零钱</td><td>用户在所有项目零钱余额的汇总</td><td>AppUser(R), ProjectMember(R)</td></tr>
+    </table>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">关联 UC</div><p>UC-006-02</p></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-006-02</span><span class="uc-name">各项目会员入口</span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-006-平台会员中心.png" alt="平台会员中心-项目入口（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-SHP-APP-006 · 各项目会员入口 · 同平台会员中心截图（交互触发点为项目列表项）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-auto">系统自动</span> 渲染项目会员入口列表 → 用户点击 → 跳转 /app/project/:id/member</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">关联 UC</div><p>UC-013-01</p></div>
+  </div>
+
+  <div class="uc-card" id="fn-007">
+    <div class="fn-header"><div class="fn-id">FN-SHP-APP-007 · 搜索页</div><div class="fn-name">PG-SHP-APP-007 · /app/search · 组件 SearchPage</div></div>
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-007-01</span><span class="uc-name">搜索页加载</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-007-搜索页.png" alt="搜索页（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-SHP-APP-007 · 搜索页 · 2026-08-11 实时截取（390×844）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-auto">系统自动</span> 渲染搜索输入框 → 加载搜索历史(localStorage) → 加载热搜词(带图标标签)</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">数据范围 (R/W)</div><p>R: HotWord, localStorage:search-history</p></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-007-02</span><span class="uc-name">热搜词点击跳转</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-007-搜索页.png" alt="搜索页-热搜词（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-SHP-APP-007 · 热搜词点击跳转 · 同搜索页截图（交互触发点为热搜词标签）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol>
+      <li><span class="tag tag-manual">手动</span> 用户点击热搜词</li>
+      <li><span class="tag tag-auto">系统自动</span> 检查 csr_id 关联</li>
+      <li><span class="tag tag-auto">系统自动</span> 有关联 → 直接跳转目标页；无关联 → 跳转搜索结果页</li>
+    </ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">关联 UC</div><p>UC-008-01</p></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-007-03</span><span class="uc-name">搜索历史展示与清除</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-007-搜索页.png" alt="搜索页-搜索历史（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-SHP-APP-007 · 搜索历史展示与清除 · 同搜索页截图（交互触发点为历史记录区域）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-auto">系统自动</span> 展示搜索历史(最多 12 条) → 用户可点击历史词搜索 → 用户可清除历史</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">数据范围 (R/W)</div><p>R/W: localStorage:search-history</p></div>
+  </div>
+
+  <div class="uc-card" id="fn-008">
+    <div class="fn-header"><div class="fn-id">FN-SHP-APP-008 · 搜索结果页</div><div class="fn-name">PG-SHP-APP-008 · /app/search/result · 组件 SearchResultPage</div></div>
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-008-01</span><span class="uc-name">搜索结果加载</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-008-搜索结果页.png" alt="搜索结果页（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-SHP-APP-008 · 搜索结果页 · 2026-08-11 实时截取（390×844）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol>
+      <li><span class="tag tag-auto">系统自动</span> 读取 q 参数</li>
+      <li><span class="tag tag-auto">系统自动</span> 匹配自定义搜索结果（按标题/描述匹配，手动配置优先）</li>
+      <li><span class="tag tag-auto">系统自动</span> 匹配引擎结果（搜索商品/项目/直播）</li>
+      <li><span class="tag tag-auto">系统自动</span> 渲染 Tab(综合/商品/项目/直播)</li>
+      <li><span class="tag tag-auto">系统自动</span> 自定义结果优先展示（置顶）</li>
+    </ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">数据范围 (R/W)</div><p>R: CustomSearchResult, Product, Project, LiveRoom</p></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-008-02</span><span class="uc-name">Tab 切换过滤</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-008-搜索结果页.png" alt="搜索结果页-Tab切换（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L2 增量截图</span>PG-SHP-APP-008 · Tab 切换过滤 · Tab切换触发内容过滤</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 用户切换 Tab(综合/商品/项目/直播) → 过滤对应类型结果</li></ol></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-008-03</span><span class="uc-name">搜索结果点击跳转</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-008-搜索结果页.png" alt="搜索结果页-结果点击（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L2 增量截图</span>PG-SHP-APP-008 · 搜索结果点击跳转 · 点击结果项触发跳转</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 用户点击结果项 → 跳转目标页(商品详情页/项目首页/直播详情页)</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">关联 UC</div><p>UC-012-01, UC-014-01, UC-009-01</p></div>
+  </div>
+
+  <div class="uc-card" id="fn-009">
+    <div class="fn-header"><div class="fn-id">FN-SHP-APP-009 · 项目首页</div><div class="fn-name">PG-SHP-APP-009 · /app/project/:projectId · 组件 ProjectHome</div></div>
+    <p><b>用户故事：</b>作为消费者，我想进入项目首页看到项目 LOGO、金刚区快捷入口、BANNER 位、直播推荐、商品推荐，项目首页有独立的底部导航（首页/商城/门店/会员）。（v3.1.29：项目首页搜索已删除）</p>
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-009-01</span><span class="uc-name">项目首页加载</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-009-项目首页.png" alt="项目首页（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-SHP-APP-009 · 项目首页 · 2026-08-11 实时截取（390×844）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">项目首页内容</div>
+    <div class="module-list"><table>
+      <tr><th>模块</th><th>说明</th><th>数据来源</th></tr>
+      <tr><td>项目 LOGO</td><td>项目 logo+名称展示</td><td>Project(R)</td></tr>
+      <tr><td>金刚区</td><td>快捷入口，由租户后台配置</td><td>ProjectHomeConfig(R)</td></tr>
+      <tr><td>BANNER 位</td><td>项目 Banner 轮播</td><td>ProjectHomeConfig(R)</td></tr>
+      <tr><td>直播推荐</td><td>项目直播推荐</td><td>ProjectHomeConfig(R), LiveRoom(R)</td></tr>
+      <tr><td>商品推荐</td><td>项目商品推荐</td><td>ProjectHomeConfig(R), Product(R)</td></tr>
+    </table></div>
+    </div>
+    <div class="callout callout-info"><b>管理说明：</b>项目首页的 BANNER 位、直播推荐、商品推荐由租户后台管理，与 APP 首页管理分离。</div>
+  </div>
+
+  <div class="uc-card" id="fn-009a">
+    <div class="fn-header"><div class="fn-id">FN-SHP-APP-009A · 项目商城页 <span class="badge badge-new">v3.1.0 新增</span></div><div class="fn-name">PG-SHP-APP-009A · /app/project/:projectId/mall · 组件 ProjectMall</div></div>
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-009A-01</span><span class="uc-name">项目商城页加载</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-009A-项目商城-商品.png" alt="项目商城页-商品Tab（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-SHP-APP-009A · 项目商城页(商品Tab) · 2026-08-11 实时截取</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol>
+      <li><span class="tag tag-auto">系统自动</span> 加载项目营销分类</li>
+      <li><span class="tag tag-auto">系统自动</span> 渲染分类导航</li>
+      <li><span class="tag tag-auto">系统自动</span> 加载每个分类下的商品</li>
+      <li><span class="tag tag-auto">系统自动</span> 渲染商品列表</li>
+    </ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">数据范围 (R/W)</div><p>R: Project, Product, MarketingCategory</p></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-009A-02</span><span class="uc-name">商品点击跳转</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-009A-项目商城-商品.png" alt="项目商城-商品点击（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L2 增量截图</span>PG-SHP-APP-009A · 商品点击跳转 · 点击商品卡片触发跳转</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 用户点击商品 → 跳转商品详情页(FN-SHP-APP-012)</li></ol></div>
+  </div>
+
+  <div class="uc-card" id="fn-010">
+    <div class="fn-header"><div class="fn-id">FN-SHP-APP-010 · 门店页</div><div class="fn-name">PG-SHP-APP-010 · /app/project/:projectId/stores · 组件 ProjectStores</div></div>
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-010-01</span><span class="uc-name">门店列表加载与排序</span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-010-项目门店.png" alt="项目门店页（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-SHP-APP-010 · 项目门店 · 2026-08-11 实时截取（390×844）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol>
+      <li><span class="tag tag-auto">系统自动</span> 获取用户当前位置（浏览器定位 API）</li>
+      <li><span class="tag tag-auto">系统自动</span> 加载项目门店数据</li>
+      <li><span class="tag tag-auto">系统自动</span> 计算各门店距离</li>
+      <li><span class="tag tag-auto">系统自动</span> 按距离升序排序</li>
+      <li><span class="tag tag-auto">系统自动</span> 渲染 StoreCard 列表</li>
+    </ol></div>
+    <div class="callout callout-info"><b>排序规则：</b>按地理位置距离排序，距离最近的显示在最前面</div>
+  </div>
+
+  <div class="uc-card" id="fn-011">
+    <div class="fn-header"><div class="fn-id">FN-SHP-APP-011 · 门店详情</div><div class="fn-name">PG-SHP-APP-011 · /app/store/:storeId?projectId=xxx（独立页面）· 组件 StoreDetail</div></div>
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-011-01</span><span class="uc-name">门店详情加载</span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-011-门店详情.png" alt="门店详情（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-SHP-APP-011 · 门店详情 · 2026-08-11 实时截取（390×844）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">门店详情内容</div>
+    <div class="module-list"><table>
+      <tr><th>模块</th><th>说明</th><th>数据来源</th></tr>
+      <tr><td>门店基本信息</td><td>名称/电话/营业时间/联系人/电话拨打(tel:链接)</td><td>Store(R)</td></tr>
+      <tr><td>门店位置</td><td>地图+地址展示</td><td>Store(R)</td></tr>
+      <tr><td>推荐直播</td><td>门店关联的直播推荐</td><td>LiveRoom(R)</td></tr>
+      <tr><td>门店商品</td><td>商品列表，可按分类展示</td><td>Product(R)</td></tr>
+    </table></div>
+    </div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-011-02</span><span class="uc-name">门店商品/直播列表加载 <span class="badge badge-new">v3.1.28 新增</span></span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-011A-门店商品列表.png" alt="门店商品列表二级页（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L2 增量截图</span>PG-SHP-APP-011A · 门店商品/直播二级页 · 点击「更多商品/直播」触发</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol>
+      <li><span class="tag tag-manual">手动</span> 用户点击"更多商品"或"更多直播"</li>
+      <li><span class="tag tag-auto">系统自动</span> 跳转 /app/store/:storeId/items（独立全屏页）</li>
+      <li><span class="tag tag-auto">系统自动</span> 商品 Tab：左侧营销分类+右侧商品列表</li>
+      <li><span class="tag tag-auto">系统自动</span> 直播 Tab：门店关联直播列表</li>
+    </ol></div>
+    <div class="callout callout-info"><b>页面说明：</b>独立全屏页(无底部导航)，projectId 从 route.query 获取</div>
+  </div>
+
+  <div class="uc-card" id="fn-012">
+    <div class="fn-header"><div class="fn-id">FN-SHP-APP-012 · 商品详情页 <span class="badge badge-new">v3.1.1 补充</span></div><div class="fn-name">PG-SHP-APP-012 · /app/product/:productId · 组件 ProductDetail</div></div>
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-012-01</span><span class="uc-name">商品详情页加载</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-012-商品详情.png" alt="商品详情页（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-SHP-APP-012 · 商品详情页 · 2026-08-11 实时截取（390×844）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol>
+      <li><span class="tag tag-auto">系统自动</span> 解析路由参数，获取 productId</li>
+      <li><span class="tag tag-auto">系统自动</span> 加载 Product 数据</li>
+      <li><span class="tag tag-auto">系统自动</span> 渲染商品主图（支持多图轮播）</li>
+      <li><span class="tag tag-auto">系统自动</span> 渲染商品标题/价格/原价/销量</li>
+      <li><span class="tag tag-auto">系统自动</span> 渲染商品描述</li>
+      <li><span class="tag tag-auto">系统自动</span> 渲染所属门店入口（点击跳转门店详情 FN-011）</li>
+      <li><span class="tag tag-auto">系统自动</span> 渲染所属项目入口（点击跳转项目首页 FN-009）</li>
+    </ol></div>
+    <div class="callout callout-info"><b>范围说明：</b>本次仅展示商品信息+门店/项目入口，<b>不含加购/下单/结算/评论功能</b></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-012-02</span><span class="uc-name">更多商品分类页加载 <span class="badge badge-new">v3.1.28 新增</span></span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-012A-更多商品.png" alt="更多商品分类页（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L2 增量截图</span>PG-SHP-APP-012A · 更多商品分类页 · 点击「更多商品」触发</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol>
+      <li><span class="tag tag-manual">手动</span> 用户点击"更多商品"</li>
+      <li><span class="tag tag-auto">系统自动</span> 跳转更多商品页，按分类展示全部商品</li>
+      <li><span class="tag tag-auto">系统自动</span> 加载分类列表和当前分类商品</li>
+    </ol></div>
+  </div>
+
+  <div class="uc-card" id="fn-013">
+    <div class="fn-header"><div class="fn-id">FN-SHP-APP-013 · 项目会员中心</div><div class="fn-name">PG-SHP-APP-013 · /app/project/:projectId/member · 组件 ProjectMember</div></div>
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-013-01</span><span class="uc-name">项目会员中心展示</span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-013-项目会员.png" alt="项目会员中心（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-SHP-APP-013 · 项目会员中心 · 2026-08-11 实时截取（390×844）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">会员中心内容</div>
+    <div class="module-list"><table>
+      <tr><th>模块</th><th>说明</th><th>数据来源</th></tr>
+      <tr><td>会员资产卡</td><td>头像+等级徽章+三列资产(积分/优惠券/零钱)+升级进度条</td><td>ProjectMember(R), MemberLevelConfig(R)</td></tr>
+      <tr><td>签到</td><td>7 天周期格子+奖励+立即签到按钮</td><td>SignInState(R/W)</td></tr>
+      <tr><td>会员等级</td><td>卡片式横向滚动(渐变色+徽章+达成状态)+当前等级权益标签</td><td>MemberLevelConfig(R), ProjectMember(R)</td></tr>
+      <tr><td>积分板块</td><td>积分余额+三入口(积分账单/兑换/明细)+积分获取规则</td><td>ProjectMember(R)</td></tr>
+    </table></div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">锚点导航</div><p>sticky 锚点导航(签到/等级/积分)，支持 query.tab 初始化滚动定位</p></div>
+    <div class="uc-segment"><div class="uc-segment-title">平台入口跳转</div><p>平台个人中心各入口点击 → 弹出项目选择器 → 选中项目跳转 /app/project/:id/member?tab=xxx</p></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-013-02</span><span class="uc-name">优惠券二级页加载 <span class="badge badge-new">v3.1.28 新增</span></span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-013A-项目优惠券.png" alt="项目优惠券二级页（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L2 增量截图</span>PG-SHP-APP-013A · 项目优惠券二级页 · 点击资产卡优惠券触发</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol>
+      <li><span class="tag tag-manual">手动</span> 用户点击资产卡优惠券</li>
+      <li><span class="tag tag-auto">系统自动</span> 跳转 /app/project/:projectId/coupons（独立全屏页）</li>
+      <li><span class="tag tag-auto">系统自动</span> 渲染筛选 Tab(全部/未使用/已使用/已过期)</li>
+      <li><span class="tag tag-auto">系统自动</span> 渲染优惠券卡片列表（满减红/折扣黄/兑换蓝）</li>
+    </ol></div>
+  </div>
+
+  <div class="uc-card" id="fn-014">
+    <div class="fn-header"><div class="fn-id">FN-SHP-APP-014 · 直播详情页 <span class="badge badge-new">v3.1.1 补充</span></div><div class="fn-name">PG-SHP-APP-014 · /app/live/:liveId · 组件 LiveDetail</div></div>
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-014-01</span><span class="uc-name">直播详情页加载</span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-SHP-APP-014-直播详情.png" alt="直播详情页（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-SHP-APP-014 · 直播详情页 · 2026-08-11 实时截取（390×844）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol>
+      <li><span class="tag tag-auto">系统自动</span> 解析路由参数，获取 liveId</li>
+      <li><span class="tag tag-auto">系统自动</span> 加载 LiveRoom 数据</li>
+      <li><span class="tag tag-auto">系统自动</span> 渲染直播封面/标题/主播名/状态标签/观看人数</li>
+      <li><span class="tag tag-auto">系统自动</span> 根据状态显示回放观看入口（仅 replay 状态可观看）</li>
+    </ol></div>
+    <div class="callout callout-info"><b>范围说明：</b>仅展示直播信息+回放入口，<b>不含实时直播推流/观看功能</b></div>
+  </div>
+
+  <!-- §8.2 运营后台 -->
+  <div class="sub-title" id="sec-8-2">8.2 运营后台·PC端（6 FN / 17 UC）</div>
+
+  <div class="uc-card" id="fn-ops-001">
+    <div class="fn-header"><div class="fn-id">FN-OPS-PC-001 · 搜索管理</div><div class="fn-name">PG-OPS-PC-001 · /admin/search · 组件 SearchManage</div></div>
+    <div class="uc-header"><span class="uc-id">UC-OPS-PC-001-01</span><span class="uc-name">底纹词设置</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-OPS-PC-001-搜索管理-热搜词.png" alt="搜索管理-热搜词Tab（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-OPS-PC-001 · 运营后台-搜索管理(热搜词Tab) · 2026-08-11 实时截取（1440×900）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 编辑底纹词 → 保存到 app-config-store</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">后置条件</div><ol><li>底纹词更新，APP 搜索栏显示</li></ol></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-OPS-PC-001-02</span><span class="uc-name">热搜词 CRUD</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-OPS-PC-001-搜索管理-热搜词.png" alt="搜索管理-热搜词CRUD（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L2 增量截图</span>PG-OPS-PC-001 · 热搜词CRUD · 同热搜词Tab（交互触发点为增删改操作）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 新增/编辑/删除热搜词 → 设置图标标签(hot/fire/new/popular/recommend/sale) → 设置权重/状态 → 保存 → 自动记录修改人/修改时间</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">数据范围 (R/W)</div><p>R/W: HotWord</p></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-OPS-PC-001-03</span><span class="uc-name">热搜词关联自定义结果</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-OPS-PC-001-搜索管理-热搜词.png" alt="搜索管理-关联自定义结果（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L2 增量截图</span>PG-OPS-PC-001 · 热搜词关联自定义结果 · 同热搜词Tab</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 点击关联自定义结果 → 选择已有 CustomSearchResult → 保存 csr_id → 自动记录修改人/修改时间</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">后置条件</div><ol><li>热搜词关联自定义结果，APP 点击直接跳转</li></ol></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-OPS-PC-001-04</span><span class="uc-name">自定义搜索结果 CRUD</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-OPS-PC-001-搜索管理-自定义结果.png" alt="搜索管理-自定义结果Tab（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L2 增量截图</span>PG-OPS-PC-001 · 自定义搜索结果Tab · Tab切换触发</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 新增/编辑/删除自定义结果 → 设置标题/描述/跳转类型(jump_type)/跳转目标(jump_id) → 保存 → 自动记录修改人/修改时间</li></ol></div>
+  </div>
+
+  <div class="uc-card" id="fn-ops-002">
+    <div class="fn-header"><div class="fn-id">FN-OPS-PC-002 · 广告位管理</div><div class="fn-name">PG-OPS-PC-002 · /admin/ad · 组件 AdManage</div></div>
+    <div class="uc-header"><span class="uc-id">UC-OPS-PC-002-01</span><span class="uc-name">广告位列表查看</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-OPS-PC-002-广告位管理.png" alt="广告位管理（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-OPS-PC-002 · 运营后台-广告位管理 · 2026-08-11 实时截取（1440×900）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-auto">系统自动</span> 加载广告列表 → 表格展示(ID/标题/位置/跳转/展示时间(精确到时分秒)/排序/状态/修改人/修改时间)</li></ol></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-OPS-PC-002-02</span><span class="uc-name">广告位新增/编辑</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-OPS-PC-002-广告位管理.png" alt="广告位编辑（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L2 增量截图</span>PG-OPS-PC-002 · 广告位新增/编辑 · 点击编辑触发表单</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 填写标题 → 上传图片(base64) → 选择位置 → 配置跳转(JumpTargetPicker) → 设置展示时间(start_time/end_time，精确到时分秒) → 设置排序 → 保存 → 自动记录修改人/修改时间</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">后置条件</div><ol><li>广告列表更新，APP 首页 Banner 展示</li></ol></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-OPS-PC-002-03</span><span class="uc-name">广告位删除</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-OPS-PC-002-广告位管理.png" alt="广告位删除（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L2 增量截图</span>PG-OPS-PC-002 · 广告位删除 · 点击删除+二次确认</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 点击删除 → 确认 → 从列表移除</li></ol></div>
+  </div>
+
+  <div class="uc-card" id="fn-ops-003">
+    <div class="fn-header"><div class="fn-id">FN-OPS-PC-003 · 金刚区管理</div><div class="fn-name">PG-OPS-PC-003 · /admin/kingkong · 组件 KingKongManage</div></div>
+    <div class="uc-header"><span class="uc-id">UC-OPS-PC-003-01</span><span class="uc-name">金刚区 CRUD</span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-OPS-PC-003-金刚区管理.png" alt="金刚区管理（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-OPS-PC-003 · 运营后台-金刚区管理 · 2026-08-11 实时截取（1440×900）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 新增/编辑/删除金刚区入口 → 设置名称/图标/渐变色/跳转类型(jump_type)/跳转目标(jump_id) → 保存 → 自动记录修改人/修改时间</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">状态切换</div><p>列表状态列支持开关直接切换（active/disabled），切换时自动记录修改人/修改时间</p></div>
+    <div class="uc-segment"><div class="uc-segment-title">跳转类型统一</div><p>使用 JumpTargetPicker 组件（与广告位/搜索管理统一），jump_type 为 product/project/live/url</p></div>
+  </div>
+
+  <div class="uc-card" id="fn-ops-004">
+    <div class="fn-header"><div class="fn-id">FN-OPS-PC-004 · 直播推荐管理（首页推荐 Tab）</div><div class="fn-name">PG-OPS-PC-004 · /admin/home-recommend · 组件 HomeRecommendManage（直播 Tab）</div></div>
+    <div class="uc-header"><span class="uc-id">UC-OPS-PC-004-01</span><span class="uc-name">手动推荐配置</span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-OPS-PC-004-首页推荐-直播.png" alt="首页推荐-直播Tab（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-OPS-PC-004 · 运营后台-首页推荐(直播Tab) · 2026-08-11 实时截取（1440×900）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 点击"添加推荐直播" → 弹出列表选择器（搜索+多选） → 勾选目标直播 → 批量添加 → 上移/下移调整排序 → 切换状态/删除</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">后置条件</div><ol><li>推荐配置更新，手动推荐按 sort_order 升序优先于默认规则</li></ol></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-OPS-PC-004-02</span><span class="uc-name">默认规则配置</span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-OPS-PC-004-首页推荐-直播.png" alt="直播推荐-默认规则（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L2 增量截图</span>PG-OPS-PC-004 · 默认规则配置 · 同直播Tab（默认规则卡片区域）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 在"默认推荐规则"区域编辑规则类型(status/viewer_count) → 设置参数(TOP N) → 保存。默认规则固定一条(is_default=true)，不可删除、不可新增其他规则</li></ol></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-OPS-PC-004-03</span><span class="uc-name">推荐效果预览</span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-OPS-PC-004-首页推荐-直播.png" alt="直播推荐-效果预览（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L2 增量截图</span>PG-OPS-PC-004 · 推荐效果预览 · 同直播Tab（预览区域）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-auto">系统自动</span> 加载推荐结果 → 渲染 LiveCard 列表预览（叠加模式：手动推荐在前 + 默认规则补足，标注来源"手动/规则"）</li></ol></div>
+  </div>
+
+  <div class="uc-card" id="fn-ops-005">
+    <div class="fn-header"><div class="fn-id">FN-OPS-PC-005 · 商品推荐管理（首页推荐 Tab）</div><div class="fn-name">PG-OPS-PC-005 · /admin/home-recommend · 组件 HomeRecommendManage（商品 Tab）</div></div>
+    <div class="uc-header"><span class="uc-id">UC-OPS-PC-005-01</span><span class="uc-name">手动推荐配置</span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-OPS-PC-005-首页推荐-商品.png" alt="首页推荐-商品Tab（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-OPS-PC-005 · 运营后台-首页推荐(商品Tab) · 2026-08-11 实时截取（1440×900）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 点击"添加推荐商品" → 弹出列表选择器（搜索+多选） → 勾选目标商品 → 批量添加 → 上移/下移调整排序 → 切换状态/删除</li></ol></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-OPS-PC-005-02</span><span class="uc-name">默认规则配置</span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-OPS-PC-005-首页推荐-商品.png" alt="商品推荐-默认规则（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L2 增量截图</span>PG-OPS-PC-005 · 默认规则配置 · 同商品Tab</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 编辑规则类型(sales/category/created_at/fixed) → 设置参数 → 保存。默认规则固定一条(is_default=true)</li></ol></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-OPS-PC-005-03</span><span class="uc-name">推荐效果预览</span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-OPS-PC-005-首页推荐-商品.png" alt="商品推荐-效果预览（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L2 增量截图</span>PG-OPS-PC-005 · 推荐效果预览 · 同商品Tab</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-auto">系统自动</span> 加载推荐结果 → 渲染 ProductCard 列表预览（叠加模式：手动推荐在前 + 默认规则补足，标注来源）</li></ol></div>
+  </div>
+
+  <div class="uc-card" id="fn-ops-006">
+    <div class="fn-header"><div class="fn-id">FN-SHP-ADMIN-007 · 项目列表管理 <span class="badge badge-new">v3.1.37 新增</span></div><div class="fn-name">PG-OPS-PC-006 · /admin/projects · 组件 ProjectListManage</div></div>
+    <div class="callout callout-new"><b>v3.1.37 新增：</b>从租户后台迁移项目列表管理至运营平台，并增强为支持项目启用/禁用操作的项目全生命周期管理入口。租户后台不再展示项目列表。</div>
+    <div class="uc-header"><span class="uc-id">UC-OPS-PC-006-01</span><span class="uc-name">项目 CRUD + 启用/禁用</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-OPS-PC-006-项目列表管理.png" alt="项目列表管理（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-OPS-PC-006 · 运营后台-项目列表管理 · 2026-08-11 实时截取（1440×900）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 新增/编辑/删除项目 → 设置名称/商城名/所属租户/行业/品类/logo/描述/排序 → 保存；列表支持按名称/ID搜索、按状态筛选(运营中/已停用)、按租户筛选、分页(每页10条)</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">后置条件</div><ol><li>项目列表更新，禁用操作触发 BR-SHP-043 分层拦截</li></ol></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-OPS-PC-006-02</span><span class="uc-name">项目禁用</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-OPS-PC-006-项目列表管理.png" alt="项目禁用弹窗（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L2 增量截图</span>PG-OPS-PC-006 · 项目禁用弹窗 · 点击禁用按钮+填写禁用原因</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 点击"禁用" → 弹出禁用确认弹窗 → 填写禁用原因(可选) → 确认禁用 → 项目 status 改为 inactive → BR-SHP-043 分层拦截生效</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">后置条件</div><ol><li>项目及关联内容在前端隐藏，历史订单售后不受影响</li></ol></div>
+  </div>
+
+  <div class="uc-card">
+    <div class="uc-header"><span class="uc-id">UC-OPS-PC-006-03</span><span class="uc-name">项目启用</span><span class="uc-priority"><span class="badge badge-p0">P0</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-OPS-PC-006-项目列表管理.png" alt="项目启用（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L2 增量截图</span>PG-OPS-PC-006 · 项目启用 · 点击启用按钮自动恢复</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 点击"启用" → 项目 status 改为 active → 所有层自动恢复（商品/直播重新出现在列表/推荐/搜索）</li></ol></div>
+  </div>
+
+  <!-- §8.3 租户后台 -->
+  <div class="sub-title" id="sec-8-3">8.3 租户后台·PC端（6 FN / 6 UC）</div>
+
+  <div class="uc-card" id="fn-tnt-001">
+    <div class="fn-header"><div class="fn-id">FN-TNT-PC-001 · 项目管理（v3.1.37 修订）</div><div class="fn-name">PG-TNT-PC-001 · /tenant/projects/:projectId/profile · 组件 TenantLayout（项目选择器）+ ProjectProfileManage</div></div>
+    <div class="callout callout-info"><b>v3.1.37 变更说明：</b>项目列表入口从租户后台移至运营平台（FN-SHP-ADMIN-007），租户后台不再展示项目列表页。租户后台通过 header-bar 顶部项目下拉选择器（el-select）切换当前项目，选中后导航到 /tenant/projects/:projectId/profile 管理当前项目信息。项目启用/禁用操作由运营平台统一管理。</div>
+    <div class="uc-header"><span class="uc-id">UC-TNT-PC-001-01</span><span class="uc-name">当前项目管理（v3.1.37 修订）</span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-TNT-PC-005-项目管理.png" alt="租户后台-项目管理（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-TNT-PC-001 · 租户后台-项目管理 · 2026-08-11 实时截取（1440×900）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 选择项目 → 编辑当前项目名称/logo/品类/描述 → 保存（不可修改项目状态，状态由运营平台管理）</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">数据范围 (R/W)</div><p>R/W: Project（仅当前选中项目，status 字段只读）</p></div>
+  </div>
+
+  <div class="uc-card" id="fn-tnt-002">
+    <div class="fn-header"><div class="fn-id">FN-TNT-PC-002 · 门店管理</div><div class="fn-name">PG-TNT-PC-002 · /tenant/projects/:projectId/stores · 组件 StoreManage</div></div>
+    <div class="uc-header"><span class="uc-id">UC-TNT-PC-002-01</span><span class="uc-name">门店 CRUD</span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-TNT-PC-002-门店管理.png" alt="租户后台-门店管理（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-TNT-PC-002 · 租户后台-门店管理 · 2026-08-11 实时截取（1440×900）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 新增/编辑/删除门店 → 设置名称/类型(pickup/sales/both)/地址/电话/营业时间/经纬度 → 保存</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">数据范围 (R/W)</div><p>R/W: Store</p></div>
+  </div>
+
+  <div class="uc-card" id="fn-tnt-003">
+    <div class="fn-header"><div class="fn-id">~~FN-TNT-PC-003 · 项目首页配置~~ <span class="badge badge-deprecated">deprecated</span></div><div class="fn-name">~~PG-TNT-PC-003~~ · ~~/tenant/projects/:id/home-config~~（已移除）</div></div>
+    <div class="callout callout-deprecated"><b>废弃说明（v3.1.21）：</b>原功能"项目首页配置(ProjectHomeConfig)"已从租户后台移除，首页 Banner 和金刚区改由独立的 FN-TNT-PC-006(项目 Banner 管理) 和 FN-TNT-PC-007(项目金刚区管理) 承担。本编号保留不重用，仅作历史记录。</div>
+    <div class="uc-header"><span class="uc-id">~~UC-TNT-PC-003-01~~</span><span class="uc-name">首页配置编辑 <span class="badge badge-deprecated">deprecated</span></span><span class="uc-priority"><span class="badge badge-deprecated">废弃</span></span></div>
+    <div class="uc-segment"><div class="uc-segment-title">废弃说明</div><p>已废弃，功能拆分为 UC-TNT-PC-006-01(Banner 管理) 和 UC-TNT-PC-007-01(金刚区管理)</p></div>
+  </div>
+
+  <div class="uc-card" id="fn-tnt-004">
+    <div class="fn-header"><div class="fn-id">FN-TNT-PC-004 · 商品营销分类管理 <span class="badge badge-new">v3.1.1 补充</span></div><div class="fn-name">PG-TNT-PC-004 · /tenant/projects/:projectId/marketing-categories · 组件 MarketingCategoryManage</div></div>
+    <div class="uc-header"><span class="uc-id">UC-TNT-PC-004-01</span><span class="uc-name">营销分类 CRUD</span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-TNT-PC-004-营销分类管理.png" alt="租户后台-营销分类管理（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-TNT-PC-004 · 租户后台-营销分类管理 · 2026-08-11 实时截取（1440×900）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 新增/编辑/删除营销分类 → 设置名称/图标/排序/状态 → 保存</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">后置条件</div><ol><li>营销分类列表更新，APP 项目商城页分类展示</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">业务约束</div><p>分类名称在同一项目内唯一；删除分类时若关联商品未清空，需提示"请先移除商品关联"</p></div>
+  </div>
+
+  <div class="uc-card" id="fn-tnt-005">
+    <div class="fn-header"><div class="fn-id">FN-TNT-PC-005 · 项目信息管理 <span class="badge badge-new">v3.1.19 新增</span></div><div class="fn-name">PG-TNT-PC-005 · /tenant/projects/:projectId/profile · 组件 ProjectProfileManage</div></div>
+    <div class="uc-header"><span class="uc-id">UC-TNT-PC-005-01</span><span class="uc-name">项目信息编辑</span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-TNT-PC-005-项目管理.png" alt="租户后台-项目信息管理（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-TNT-PC-005 · 租户后台-项目信息管理 · 2026-08-11 实时截取（1440×900）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol>
+      <li><span class="tag tag-auto">系统自动</span> 加载项目详情（名称/LOGO/商城名称/品类等）</li>
+      <li><span class="tag tag-manual">手动</span> 编辑项目名称（文本输入）</li>
+      <li><span class="tag tag-manual">手动</span> 上传项目 LOGO（el-upload+FileReader 转 base64+预览，80×80px 虚线框，JPG/PNG≤2MB，建议 200×200px）</li>
+      <li><span class="tag tag-manual">手动</span> 编辑商城名称（文本输入）</li>
+      <li><span class="tag tag-manual">手动</span> 点击保存（校验后写入）</li>
+    </ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">备选流程</div><ul><li>LOGO 上传超 2MB 时提示"图片大小不能超过 2MB"</li></ul></div>
+    <div class="uc-segment"><div class="uc-segment-title">业务约束</div><p>LOGO 支持 JPG/PNG 格式，大小 ≤2MB，建议尺寸 200×200px（BR-SHP-040）</p></div>
+  </div>
+
+  <div class="uc-card" id="fn-tnt-006">
+    <div class="fn-header"><div class="fn-id">FN-TNT-PC-006 · 项目 Banner 管理 <span class="badge badge-new">v3.1.19 新增</span></div><div class="fn-name">PG-TNT-PC-006 · /tenant/projects/:projectId/banners · 组件 ProjectBannerManage</div></div>
+    <div class="uc-header"><span class="uc-id">UC-TNT-PC-006-01</span><span class="uc-name">项目 Banner CRUD</span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-TNT-PC-006-项目Banner管理.png" alt="租户后台-项目Banner管理（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-TNT-PC-006 · 租户后台-项目Banner管理 · 2026-08-11 实时截取（1440×900）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol>
+      <li><span class="tag tag-auto">系统自动</span> 加载项目 Banner 列表（AdBanner position=project_home, project_id=当前项目）</li>
+      <li><span class="tag tag-manual">手动</span> 新增/编辑/删除 Banner（同运营后台 AdManage 完整功能）</li>
+      <li><span class="tag tag-manual">手动</span> 上传图片(base64)+配置跳转（JumpTargetPicker 隐藏"项目主页"跳转+锁定 project_id）</li>
+      <li><span class="tag tag-manual">手动</span> 设置展示时间(精确到时分秒)+排序+启用开关</li>
+      <li><span class="tag tag-manual">手动</span> 保存（自动记录修改人/修改时间）</li>
+    </ol></div>
+    <div class="callout callout-info"><b>功能说明：</b>严格照搬运营后台 AdManage 完整功能，唯一区别为隐藏"项目主页"跳转类型+锁定 project_id（仅可配置当前项目的商品/直播）</p></div>
+  </div>
+
+  <div class="uc-card" id="fn-tnt-007">
+    <div class="fn-header"><div class="fn-id">FN-TNT-PC-007 · 项目金刚区管理 <span class="badge badge-new">v3.1.19 新增</span></div><div class="fn-name">PG-TNT-PC-007 · /tenant/projects/:projectId/kingkong · 组件 ProjectKingKongManage</div></div>
+    <div class="uc-header"><span class="uc-id">UC-TNT-PC-007-01</span><span class="uc-name">项目金刚区 CRUD</span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-TNT-PC-007-项目金刚区管理.png" alt="租户后台-项目金刚区管理（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-TNT-PC-007 · 租户后台-项目金刚区管理 · 2026-08-11 实时截取（1440×900）</div>
+    </div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol>
+      <li><span class="tag tag-auto">系统自动</span> 加载项目金刚区列表（KingKongEntry project_id=当前项目）</li>
+      <li><span class="tag tag-manual">手动</span> 新增/编辑/删除入口（同运营后台 KingKongManage 完整功能）</li>
+      <li><span class="tag tag-manual">手动</span> 设置名称/图标/渐变色/跳转配置（JumpTargetPicker 隐藏"项目主页"跳转+锁定 project_id）</li>
+      <li><span class="tag tag-manual">手动</span> 设置排序+启用开关（列表状态列开关切换）</li>
+      <li><span class="tag tag-manual">手动</span> 保存（自动记录修改人/修改时间）</li>
+    </ol></div>
+  </div>
+
+</div>
+
+<!-- §9 业务规则 -->
+<div class="section" id="sec-9">
+  <div class="section-title"><span class="num">9</span>业务规则（BR）</div>
+  <p>共 45 条 BR（40 SAAS-APP + 2 OPS + 3 TNT），其中 BR-SHP-029 已 deprecated。</p>
+
+  <div class="sub-title">9.1 SAAS-APP 电商域规则（BR-SHP-001 ~ 044）</div>
+  <div class="br-grid">
+    <div class="br-item"><div class="br-id">BR-SHP-001</div><div class="br-text">搜索范围仅限商品/项目/直播，不含门店</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-002</div><div class="br-text">热搜词关联自定义结果后，点击直接跳转目标页</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-003</div><div class="br-text">自定义搜索结果按标题/描述匹配关键词</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-004</div><div class="br-text">搜索历史最多 12 条，存储于 localStorage</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-005</div><div class="br-text">广告 Banner 按 sort 排序，仅展示 status=enabled 且在 start_time~end_time 区间内</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-006</div><div class="br-text">金刚区按 sort 排序，仅展示 status=enabled</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-007</div><div class="br-text">推荐叠加模式：手动推荐(sort_order升序)在前，默认规则结果去重补足</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-008</div><div class="br-text">直播推荐规则：多维度排序链，维度=按项目/按主播类型/按直播状态/按观看人数</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-009</div><div class="br-text">商品推荐规则：多维度排序链，维度=按项目/按商品类目/按销量/按上架时间</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-010</div><div class="br-text">会员四级：青铜(0)/白银(500)/黄金(2000)/铂金(5000)</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-011</div><div class="br-text">项目首页 Banner 由租户后台管理，平台首页 Banner 由运营后台管理，必须分离</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-012</div><div class="br-text">APP 首页模块顺序固定：APPlogo→搜索框→BANNER 位→金刚区→直播推荐→商品推荐</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-013</div><div class="br-text">项目维度 4Tab：首页/商城/门店/会员，独立底部导航</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-014</div><div class="br-text">项目商城页按营销分类展示商品，点击进入商品详情页(FN-012)</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-015</div><div class="br-text">门店列表按地理位置距离排序，最近的在前</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-016</div><div class="br-text">门店详情：基本信息+位置+推荐直播+商品（可按分类）</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-017</div><div class="br-text">项目会员页展示：会员积分+优惠券+等级+零钱</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-018</div><div class="br-text">个人中心 8 模块，不展示平台会员等级</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-019</div><div class="br-text">商城页项目卡片：logo 名称+主营类目+推荐商品+推荐直播</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-020</div><div class="br-text">热门搜索词可在运营后台管理，可排序/修改/配置搜索结果</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-021</div><div class="br-text">搜索结果默认按搜索引擎搜索，也可手动配置搜索结果</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-022</div><div class="br-text">BANNER 跳转目标可配置：商品详情页/项目首页/直播详情页/固定 url</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-023</div><div class="br-text">商品详情页仅展示商品信息+门店/项目入口，不含加购/下单/结算/评论</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-024</div><div class="br-text">直播详情页仅展示直播信息+回放入口，不含实时直播推流/观看</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-025</div><div class="br-text">商品营销分类为租户级配置，分类名称在同一项目内唯一</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-026</div><div class="br-text">精选内容聚合规则：独立 Tab 展示，按叠加模式排序，无上限+分页(每页20条)</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-027</div><div class="br-text">收货地址表单校验：手机号格式、省市区联动、每用户最多 20 条</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-028</div><div class="br-text">平台个人中心不展示平台会员等级，会员等级仅在项目维度各项目独立存在</div></div>
+    <div class="br-item deprecated"><div class="br-id">BR-SHP-029</div><div class="br-text">⚠️ deprecated（v3.1.29）：项目首页搜索已删除，编号保留不重用</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-030</div><div class="br-text">推荐引擎叠加模式：手动推荐在前+默认规则去重补足；默认规则固定一条不可删除；支持列表选择器+上下移排序+多选批量删除</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-031</div><div class="br-text">商城页默认 Tab 为"项目列表"，3 Tab（项目列表/精选商品/精选直播）</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-032</div><div class="br-text">首页直播推荐"更多"跳转精选直播 Tab，"为你推荐"更多跳转精选商品 Tab</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-033</div><div class="br-text">运营后台推荐管理列表分页(每页 10 条)</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-034</div><div class="br-text">首页推荐区按 display_limit 截取展示（默认 6 条），精选 Tab 不受限</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-035</div><div class="br-text">主播类型枚举：headquarters/store/supplier/personal，默认 personal</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-036</div><div class="br-text">门店联系人字段：StoreCard 展示联系人+电话+拨打电话按钮(tel:链接)</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-037</div><div class="br-text">门店详情页独立化：脱离项目框架独立全屏，projectId 从 route.query 获取</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-038</div><div class="br-text">项目会员页卡片式展示：会员等级卡片+签到 7 天周期+积分板块合并</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-039</div><div class="br-text">优惠券二级页独立化：ProjectCoupons 独立全屏+筛选 Tab+卡片列表</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-040</div><div class="br-text">项目 LOGO 上传校验：JPG/PNG 格式，大小 ≤2MB，建议 200×200px</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-041</div><div class="br-text">项目维度推荐直播默认规则：live→upcoming→replay+started_at 倒序，排除 ended，默认前 4 条</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-042</div><div class="br-text">平台首页直播推荐脱离规则引擎：默认规则排序+手动推荐叠加+display_limit 截取</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-043</div><div class="br-text">项目禁用分层拦截：5 层（数据层/路由层/详情层/交易层/会员层）"软停用"策略</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-044</div><div class="br-text">规则引用生效状态：pending(待生效)→active(已生效)，异步处理 2 秒模拟</div></div>
+  </div>
+
+  <div class="sub-title">9.2 运营后台规则（BR-OPS）</div>
+  <div class="br-grid">
+    <div class="br-item"><div class="br-id">BR-OPS-001</div><div class="br-text">数据持久化通过 localStorage，3 个 key：saas:app-config / saas:project / saas:user</div></div>
+    <div class="br-item"><div class="br-id">BR-OPS-002</div><div class="br-text">Pinia store 使用 watch(deep) 自动同步 localStorage</div></div>
+  </div>
+
+  <div class="sub-title">9.3 租户后台规则（BR-TNT）</div>
+  <div class="br-grid">
+    <div class="br-item"><div class="br-id">BR-TNT-001</div><div class="br-text">门店类型：pickup(提货点)/sales(销售点)/both(两者兼备)</div></div>
+    <div class="br-item"><div class="br-id">BR-TNT-002</div><div class="br-text">直播状态：live(直播中)/replay(回放)/ended(已结束)/upcoming(预告)</div></div>
+    <div class="br-item"><div class="br-id">BR-TNT-003</div><div class="br-text">项目首页管理在租户后台，APP 首页管理在运营后台，必须分开</div></div>
+  </div>
+</div>
+
+<!-- §10 集中配置清单 -->
+<div class="section" id="sec-10">
+  <div class="section-title"><span class="num">10</span>集中配置清单（CONFIG）</div>
+  <table>
+    <tr><th>编号</th><th>名称</th><th>类型</th><th>默认值</th><th>可配者</th><th>校验</th></tr>
+    <tr><td>CONFIG-SHP-001</td><td>搜索历史最大条数</td><td>全局参数</td><td>12</td><td>平台运营</td><td>&gt;0</td></tr>
+    <tr><td>CONFIG-SHP-002</td><td>热搜词图标标签枚举</td><td>枚举字典</td><td>hot/fire/new/popular/recommend/sale</td><td>平台运营</td><td>枚举值</td></tr>
+    <tr><td>CONFIG-SHP-003</td><td>推荐好物固定数量</td><td>全局参数</td><td>8</td><td>平台运营</td><td>&gt;0</td></tr>
+    <tr><td>CONFIG-SHP-004</td><td>会员等级阈值</td><td>规则引擎</td><td>0/500/2000/5000</td><td>平台运营</td><td>递增</td></tr>
+    <tr><td>CONFIG-SHP-005</td><td>会员折扣率</td><td>规则引擎</td><td>无/98折/95折/9折</td><td>平台运营</td><td>0~1</td></tr>
+    <tr><td>CONFIG-SHP-006</td><td>搜索结果跳转类型枚举</td><td>枚举字典</td><td>product/project_home/live_page/fixed_url</td><td>平台运营</td><td>枚举值</td></tr>
+    <tr><td>CONFIG-SHP-007</td><td>BANNER 跳转类型枚举</td><td>枚举字典</td><td>product/project_home/live_page/fixed_url</td><td>平台运营</td><td>枚举值</td></tr>
+    <tr><td>CONFIG-SHP-008</td><td>门店默认排序方式</td><td>全局参数</td><td>distance</td><td>平台运营</td><td>枚举值</td></tr>
+    <tr><td>CONFIG-SHP-009</td><td>商品营销分类管理</td><td>租户级配置</td><td>(由租户后台 CRUD)</td><td>租户管理员</td><td>唯一性(project_id+name)</td></tr>
+    <tr class="dep"><td>~~CONFIG-SHP-010~~</td><td class="dep">~~精选内容商品:直播比例~~</td><td class="dep">~~全局参数~~</td><td class="dep">~~7:3~~</td><td class="dep">~~平台运营~~</td><td class="dep">~~deprecated（v3.1.9）~~</td></tr>
+    <tr><td>CONFIG-SHP-011</td><td>每用户收货地址最大数量</td><td>全局参数</td><td>20</td><td>平台运营</td><td>&gt;0</td></tr>
+    <tr><td>CONFIG-OPS-001</td><td>广告位置枚举</td><td>枚举字典</td><td>platform_home/mall_top/project_home</td><td>平台运营</td><td>枚举值</td></tr>
+    <tr><td>CONFIG-OPS-002</td><td>推荐规则类型枚举</td><td>枚举字典</td><td>status/viewer_count/sales/category/created_at/fixed</td><td>平台运营</td><td>枚举值</td></tr>
+    <tr><td>CONFIG-TNT-001</td><td>门店类型枚举</td><td>枚举字典</td><td>pickup/sales/both</td><td>租户管理员</td><td>枚举值</td></tr>
+    <tr><td>CONFIG-TNT-002</td><td>直播状态枚举</td><td>枚举字典</td><td>live/replay/ended/upcoming</td><td>租户管理员</td><td>枚举值</td></tr>
+  </table>
+</div>
+
+<!-- §11 数据实体 -->
+<div class="section" id="sec-11">
+  <div class="section-title"><span class="num">11</span>数据实体（ENT）</div>
+  <p>共 20 个 ENT（含 1 个 deprecated ENT-APP-006），按业务域分组：</p>
+  <div class="sub-title">11.1 项目域实体（ENT-PROJECT）</div>
+  <div class="ent-grid">
+    <div class="ent-item"><div class="ent-id">ENT-PROJECT-001</div><div><b>Project</b>：project_id, name, logo, category, <b>industry</b>(daily_necessities/health_products/food_beverage/home_appliance/beauty_care), store_count, member_count, status · Schema: project-schemas.ts</div></div>
+    <div class="ent-item"><div class="ent-id">ENT-PROJECT-002</div><div><b>Store</b>：store_id, project_id, name, type(pickup/sales/both), address, phone, <b>contact_name</b>, business_hours, lat, lng, distance · Schema: project-schemas.ts</div></div>
+    <div class="ent-item"><div class="ent-id">ENT-PROJECT-003</div><div><b>Product</b>：product_id, project_id, store_id, name, image, price, original_price, sales, stock, category, tags, status, marketing_category · Schema: project-schemas.ts</div></div>
+    <div class="ent-item"><div class="ent-id">ENT-PROJECT-004</div><div><b>LiveRoom</b>：live_id, project_id, title, cover, anchor_name, <b>anchor_type</b>(headquarters/store/supplier/personal), viewer_count, status(live/replay/ended/upcoming), replay_url · Schema: project-schemas.ts</div></div>
+    <div class="ent-item"><div class="ent-id">ENT-PROJECT-005</div><div><b>MemberLevelConfig</b>：level, name, points_threshold, discount, privileges, icon · Schema: project-schemas.ts</div></div>
+    <div class="ent-item"><div class="ent-id">ENT-PROJECT-006</div><div><b>ProjectMember</b>：member_id, project_id, level, points, total_spent, current_level_points, next_level_points, coupons, balance · Schema: project-schemas.ts</div></div>
+    <div class="ent-item"><div class="ent-id">ENT-PROJECT-006A <span class="badge badge-new">v3.1.24</span></div><div><b>Coupon</b>：coupon_id, project_id, user_id, type(满减/折扣/兑换), status(unused/used/expired), amount, threshold, discount, valid_end, tag · Schema: project-schemas.ts</div></div>
+    <div class="ent-item"><div class="ent-id">ENT-PROJECT-006B <span class="badge badge-new">v3.1.24</span></div><div><b>SignInState</b>：project_id, user_id, month_sign_days, week_signed(boolean[7]), week_rewards(number[7]), continuous_reward · Schema: project-schemas.ts</div></div>
+    <div class="ent-item"><div class="ent-id">ENT-PROJECT-007</div><div><b>ProjectHomeConfig</b>：project_id, banners[], quick_entries[], recommend_products[], live_recommend[], notice · Schema: project-schemas.ts</div></div>
+    <div class="ent-item"><div class="ent-id">ENT-PROJECT-008</div><div><b>Tenant</b>：tenant_id, name, contact, status, created_at · Schema: project-schemas.ts</div></div>
+    <div class="ent-item"><div class="ent-id">ENT-PROJECT-009</div><div><b>MarketingCategory</b>：category_id, project_id, name, icon, sort_order, status, created_at · Schema: project-schemas.ts</div></div>
+  </div>
+  <div class="sub-title">11.2 APP 配置域实体（ENT-APP）</div>
+  <div class="ent-grid">
+    <div class="ent-item"><div class="ent-id">ENT-APP-001</div><div><b>AdBanner</b>：ad_id, title, image_url, position, jump_type(product/project/live/url), jump_id, project_id, start_time(精确到时分秒), end_time, sort, sort_order, status, updated_by, updated_at · Schema: app-schemas.ts</div></div>
+    <div class="ent-item"><div class="ent-id">ENT-APP-002</div><div><b>KingKongEntry</b>：entry_id, name, icon, gradient, jump_type(product/project/live/url), jump_id, project_id, sort, sort_order, status, updated_by, updated_at · Schema: app-schemas.ts</div></div>
+    <div class="ent-item"><div class="ent-id">ENT-APP-003</div><div><b>HotWord</b>：word, badge(hot/fire/new/popular/recommend/sale), weight, csr_id, status, updated_by, updated_at · Schema: app-config-store.ts</div></div>
+    <div class="ent-item"><div class="ent-id">ENT-APP-004</div><div><b>CustomSearchResult</b>：csr_id, title, description, jump_type(product/project/live/url), jump_id, project_id, status, updated_by, updated_at · Schema: app-config-store.ts</div></div>
+    <div class="ent-item"><div class="ent-id">ENT-APP-005</div><div><b>RecommendItem</b>：recommend_id, type(manual/rule), target_id, project_id, rule.sort_dimensions[], status, sort_order, is_default, <b>display_limit</b>, updated_by, updated_at · Schema: app-config-store.ts</div></div>
+    <div class="ent-item"><div class="ent-id">~~ENT-APP-006~~</div><div><b>~~FloorConfig~~</b> ⚠️ deprecated：楼层管理功能下线，实体编号保留不重用</div></div>
+    <div class="ent-item"><div class="ent-id">ENT-APP-007</div><div><b>AppUser</b>：user_id, nickname, avatar, phone, points, coupon_count, order_count, balance, qualification_info · Schema: app-schemas.ts</div></div>
+    <div class="ent-item"><div class="ent-id">ENT-APP-008</div><div><b>AppMessage</b>：message_id, type(order/marketing/system/project/live), title, content, is_read · Schema: app-schemas.ts</div></div>
+    <div class="ent-item"><div class="ent-id">ENT-APP-009</div><div><b>ShippingAddress</b>：address_id, user_id, recipient_name, phone, province, city, district, detail_address, is_default · Schema: app-schemas.ts</div></div>
+  </div>
+</div>
+
+<!-- §12 统计指标 -->
+<div class="section" id="sec-12">
+  <div class="section-title"><span class="num">12</span>统计指标清单（METRIC）</div>
+  <table>
+    <tr><th>编号</th><th>名称</th><th>类型</th><th>实体</th><th>公式</th><th>维度</th><th>展示于</th></tr>
+    <tr><td>METRIC-SHP-001</td><td>APP DAU</td><td>计数</td><td>AppUser</td><td>COUNT(DISTINCT user_id WHERE login_date=today)</td><td>按日期</td><td>运营看板(预留)</td></tr>
+    <tr><td>METRIC-SHP-002</td><td>搜索 PV</td><td>计数</td><td>HotWord</td><td>COUNT(search_event)</td><td>按关键词/日期</td><td>运营看板(预留)</td></tr>
+    <tr><td>METRIC-SHP-003</td><td>搜索结果点击率</td><td>比率</td><td>HotWord</td><td>COUNT(result_click)/COUNT(search_event)</td><td>按关键词</td><td>运营看板(预留)</td></tr>
+    <tr><td>METRIC-SHP-004</td><td>Banner 点击率</td><td>比率</td><td>AdBanner</td><td>COUNT(banner_click)/COUNT(banner_view)</td><td>按 Banner/日期</td><td>运营看板(预留)</td></tr>
+    <tr><td>METRIC-SHP-005</td><td>会员转化率</td><td>比率</td><td>ProjectMember</td><td>COUNT(member)/COUNT(visitor)</td><td>按项目</td><td>运营看板(预留)</td></tr>
+    <tr><td>METRIC-OPS-001</td><td>配置操作次数</td><td>计数</td><td>AppConfig</td><td>COUNT(config_change_event)</td><td>按配置类型/操作人</td><td>运营看板(预留)</td></tr>
+  </table>
+  <div class="callout"><b>注：</b>当前版本为前端原型，指标预留接口，实际统计需后端支持。</div>
+</div>
+
+<!-- §13 验收标准 -->
+<div class="section" id="sec-13">
+  <div class="section-title"><span class="num">13</span>验收标准</div>
+  <div class="sub-title">13.1 功能验收矩阵</div>
+  <table>
+    <tr><th>FN</th><th>验收点</th><th>验收方式</th><th>优先级</th></tr>
+    <tr><td>FN-SHP-APP-001</td><td>首页模块顺序正确(APPlogo→搜索框→BANNER→金刚区→直播推荐→商品推荐)</td><td>人工验证 APP 首页</td><td>P0</td></tr>
+    <tr><td>FN-SHP-APP-002</td><td>商城页精选内容 Tab(商品+直播)+项目列表 Tab</td><td>人工验证商城页</td><td>P0</td></tr>
+    <tr><td>FN-SHP-APP-003</td><td>娱乐页占位展示</td><td>占位页无需验收</td><td>—</td></tr>
+    <tr><td>FN-SHP-APP-004</td><td>消息页占位展示</td><td>占位页无需验收</td><td>—</td></tr>
+    <tr><td>FN-SHP-APP-005</td><td>个人中心展示 8 模块，不展示平台会员等级</td><td>人工验证个人中心</td><td>P0</td></tr>
+    <tr><td>FN-SHP-APP-006</td><td>平台会员中心展示平台级资产汇总+各项目会员入口(无平台会员卡)</td><td>人工验证会员中心入口</td><td>P1</td></tr>
+    <tr><td>FN-SHP-APP-007</td><td>搜索页展示历史+热搜词，点击跳转正确</td><td>人工验证搜索流程</td><td>P0</td></tr>
+    <tr><td>FN-SHP-APP-008</td><td>搜索结果按 Tab 过滤，自定义结果优先</td><td>人工验证搜索结果</td><td>P0</td></tr>
+    <tr><td>FN-SHP-APP-009</td><td>项目首页独立底部导航+项目 LOGO/金刚区/BANNER/直播推荐/商品推荐</td><td>人工验证项目首页</td><td>P0</td></tr>
+    <tr><td>FN-SHP-APP-009A</td><td>项目商城页按营销分类展示商品，点击进入商品详情</td><td>人工验证项目商城页</td><td>P0</td></tr>
+    <tr><td>FN-SHP-APP-010</td><td>门店列表按地理位置距离排序，最近的在前</td><td>人工验证门店列表</td><td>P1</td></tr>
+    <tr><td>FN-SHP-APP-011</td><td>门店详情展示基本信息+位置+推荐直播+商品(按分类)</td><td>人工验证门店详情</td><td>P1</td></tr>
+    <tr><td>FN-SHP-APP-012</td><td>商品详情页展示商品信息+门店/项目入口(不含加购下单)</td><td>人工验证商品详情页</td><td>P0</td></tr>
+    <tr><td>FN-SHP-APP-013</td><td>项目会员页展示会员积分/优惠券/等级/零钱</td><td>人工验证项目会员页</td><td>P1</td></tr>
+    <tr><td>FN-SHP-APP-014</td><td>直播详情页展示直播信息+回放入口(不含实时流)</td><td>人工验证直播详情页</td><td>P1</td></tr>
+    <tr><td>FN-OPS-PC-001</td><td>搜索管理 CRUD+热搜词关联自定义结果</td><td>人工验证后台配置→APP 生效</td><td>P0</td></tr>
+    <tr><td>FN-OPS-PC-002</td><td>广告位 CRUD+图片上传+跳转配置</td><td>人工验证广告配置→APP Banner 展示</td><td>P0</td></tr>
+    <tr><td>FN-OPS-PC-003</td><td>金刚区 CRUD+跳转配置，APP 首页金刚区展示</td><td>人工验证金刚区配置→APP 展示</td><td>P1</td></tr>
+    <tr><td>FN-OPS-PC-004</td><td>直播推荐手动+规则配置+预览</td><td>人工验证推荐配置→APP 推荐展示</td><td>P1</td></tr>
+    <tr><td>FN-OPS-PC-005</td><td>商品推荐手动+规则配置+预览</td><td>人工验证商品推荐→APP 展示</td><td>P1</td></tr>
+    <tr><td>FN-SHP-ADMIN-007</td><td>项目列表 CRUD+启用/禁用+分层拦截</td><td>人工验证项目管理</td><td>P0</td></tr>
+    <tr><td>FN-TNT-PC-001</td><td>项目下拉选择器+当前项目编辑(status 只读)</td><td>人工验证项目管理</td><td>P1</td></tr>
+    <tr><td>FN-TNT-PC-002</td><td>门店 CRUD(名称/类型/地址/经纬度)</td><td>人工验证门店管理</td><td>P1</td></tr>
+    <tr class="dep"><td>~~FN-TNT-PC-003~~</td><td>~~项目首页配置~~ ⚠️ deprecated</td><td>~~无需验收~~</td><td>—</td></tr>
+    <tr><td>FN-TNT-PC-004</td><td>商品营销分类 CRUD→APP 项目商城页分类展示</td><td>人工验证分类管理→商城页展示</td><td>P1</td></tr>
+    <tr><td>FN-TNT-PC-005</td><td>项目信息编辑(名称/LOGO 上传/商城名称)</td><td>人工验证项目信息管理</td><td>P1</td></tr>
+    <tr><td>FN-TNT-PC-006</td><td>项目 Banner CRUD(迁移运营后台功能+锁定项目)</td><td>人工验证项目 Banner 配置→项目首页展示</td><td>P1</td></tr>
+    <tr><td>FN-TNT-PC-007</td><td>项目金刚区 CRUD(迁移运营后台功能+锁定项目)</td><td>人工验证项目金刚区配置→项目首页展示</td><td>P1</td></tr>
+  </table>
+
+  <div class="sub-title">13.2 端到端验收场景</div>
+  <table>
+    <tr><th>场景</th><th>步骤</th><th>预期</th></tr>
+    <tr><td>SC-01 运营配置广告→APP 展示</td><td>运营后台新增广告→配置跳转→APP 首页展示 Banner→点击跳转</td><td>广告正确展示+跳转</td></tr>
+    <tr><td>SC-02 运营配置热搜词→APP 搜索</td><td>运营后台新增热搜词→关联自定义结果→APP 搜索页展示→点击直接跳转</td><td>热搜词展示+直接跳转</td></tr>
+    <tr><td>SC-03 租户配置项目首页→APP 展示</td><td>租户后台编辑项目首页 Banner→APP 项目首页展示</td><td>项目首页 Banner 更新</td></tr>
+    <tr><td>SC-04 数据持久化</td><td>运营修改配置→刷新页面→配置仍存在</td><td>localStorage 持久化生效</td></tr>
+    <tr><td>SC-05 项目商城页浏览</td><td>进入项目→切换到商城 Tab→按营销分类浏览商品→点击商品进入详情</td><td>分类展示正确+跳转正确</td></tr>
+    <tr><td>SC-06 门店列表排序</td><td>进入项目门店 Tab→获取定位→门店按距离排序→点击门店进入详情</td><td>距离排序正确+门店详情展示</td></tr>
+    <tr><td>SC-07 个人中心模块</td><td>进入个人中心→验证 8 个模块→确认无平台会员等级展示</td><td>模块完整展示+无平台等级</td></tr>
+    <tr><td>SC-08 项目会员页</td><td>进入项目会员 Tab→验证会员积分/优惠券/等级/零钱</td><td>会员模块完整展示</td></tr>
+    <tr><td>SC-09 商品详情页浏览</td><td>从任意入口点击商品→进入商品详情页→查看商品信息+门店/项目入口</td><td>商品详情展示正确+入口跳转正确</td></tr>
+    <tr><td>SC-10 直播详情页浏览</td><td>从任意入口点击直播→进入直播详情页→查看直播信息+回放入口</td><td>直播详情展示正确</td></tr>
+    <tr><td>SC-11 营销分类管理</td><td>租户后台新增营销分类→APP 项目商城页分类展示→删除分类(关联商品时拦截)</td><td>分类 CRUD+约束生效</td></tr>
+  </table>
+</div>
+
+<!-- §14 外部接口 -->
+<div class="section" id="sec-14">
+  <div class="section-title"><span class="num">14</span>外部接口</div>
+  <div class="callout">本项目纯前端原型，无外部 API 调用。数据通过 localStorage 本地持久化。后续后端对接时，需定义以下接口（预留）：</div>
+  <table>
+    <tr><th>接口</th><th>方法</th><th>路径(预留)</th><th>说明</th></tr>
+    <tr><td>获取 APP 配置</td><td>GET</td><td>/api/app/config</td><td>返回 app-config 全量</td></tr>
+    <tr><td>保存 APP 配置</td><td>POST</td><td>/api/app/config</td><td>运营保存配置</td></tr>
+    <tr><td>获取项目列表</td><td>GET</td><td>/api/projects</td><td>返回项目列表</td></tr>
+    <tr><td>获取门店列表</td><td>GET</td><td>/api/projects/:id/stores</td><td>返回门店列表</td></tr>
+    <tr><td>搜索</td><td>GET</td><td>/api/search?q=xxx</td><td>返回搜索结果</td></tr>
+  </table>
+</div>
+
+<!-- §15 多端差异矩阵 -->
+<div class="section" id="sec-15">
+  <div class="section-title"><span class="num">15</span>多端差异矩阵</div>
+  <table class="terminal-matrix">
+    <tr><th>功能</th><th>APP 端</th><th>运营后台 PC</th><th>租户后台 PC</th></tr>
+    <tr><td>平台首页展示(6 模块)</td><td class="yes">✅ 展示</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>商城页(精选内容+项目列表)</td><td class="yes">✅ 展示</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>个人中心(8 模块，无平台会员等级)</td><td class="yes">✅ 展示</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>项目首页展示(4Tab:首页/商城/门店/会员)</td><td class="yes">✅ 展示</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>项目商城页(按营销分类)</td><td class="yes">✅ 展示</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>门店列表(按距离排序)</td><td class="yes">✅ 展示</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>门店详情(信息/位置/直播/商品分类)</td><td class="yes">✅ 展示</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>项目会员页(积分/优惠券/等级/零钱)</td><td class="yes">✅ 展示</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>商品详情页(商品信息+门店/项目入口)</td><td class="yes">✅ 展示</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>直播详情页(直播信息+回放入口)</td><td class="yes">✅ 展示</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>搜索(搜索页+结果页)</td><td class="yes">✅ 搜索</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>广告位管理</td><td class="no">—</td><td class="yes">✅ CRUD</td><td class="no">—</td></tr>
+    <tr><td>金刚区管理</td><td class="no">—</td><td class="yes">✅ CRUD</td><td class="no">—</td></tr>
+    <tr><td>搜索管理(热搜词/自定义结果)</td><td class="no">—</td><td class="yes">✅ CRUD</td><td class="no">—</td></tr>
+    <tr><td>直播推荐管理</td><td class="no">—</td><td class="yes">✅ 配置</td><td class="no">—</td></tr>
+    <tr><td>商品推荐管理</td><td class="no">—</td><td class="yes">✅ 配置</td><td class="no">—</td></tr>
+    <tr><td>项目列表管理(启用/禁用)</td><td class="no">—</td><td class="yes">✅ CRUD</td><td class="no">—</td></tr>
+    <tr><td>项目管理(当前项目编辑)</td><td class="no">—</td><td class="no">—</td><td class="yes">✅ 编辑</td></tr>
+    <tr><td>项目信息管理(名称/LOGO 上传/商城名称)</td><td class="no">—</td><td class="no">—</td><td class="yes">✅ 编辑</td></tr>
+    <tr><td>门店管理</td><td class="no">—</td><td class="no">—</td><td class="yes">✅ CRUD</td></tr>
+    <tr class="dep"><td>~~项目首页配置~~</td><td class="no">—</td><td class="no">—</td><td class="dep">~~✅ 配置~~ ⚠️ deprecated</td></tr>
+    <tr><td>项目 Banner 管理(迁移运营后台+锁定项目)</td><td class="no">—</td><td class="no">—</td><td class="yes">✅ CRUD</td></tr>
+    <tr><td>项目金刚区管理(迁移运营后台+锁定项目)</td><td class="no">—</td><td class="no">—</td><td class="yes">✅ CRUD</td></tr>
+    <tr><td>商品营销分类管理</td><td class="no">—</td><td class="no">—</td><td class="yes">✅ CRUD</td></tr>
+  </table>
+</div>
+
+<!-- §16 需求深度分析 -->
+<div class="section" id="sec-16">
+  <div class="section-title"><span class="num">16</span>需求深度分析摘要</div>
+  <div class="sub-title">16.1 影响的流程清单</div>
+  <ul>
+    <li>消费者浏览流程（平台首页 6 模块→搜索→项目维度 4Tab→项目商城→门店列表排序→门店详情→项目会员→商品详情/直播详情）</li>
+    <li>运营配置流程（搜索/广告/金刚区/直播推荐/商品推荐）</li>
+    <li>租户管理流程（项目/门店/项目首页配置/营销分类管理）</li>
+    <li>数据持久化流程（localStorage 读写同步）</li>
+  </ul>
+  <div class="sub-title">16.2 影响的模块清单</div>
+  <table>
+    <tr><th>模块</th><th>影响级别</th></tr>
+    <tr><td>APP 端-平台首页(6 模块顺序)</td><td>UPDATED</td></tr>
+    <tr><td>APP 端-商城页(3 Tab+精选商品/直播独立)</td><td>UPDATED</td></tr>
+    <tr><td>APP 端-个人中心(8 模块+无平台会员等级)</td><td>UPDATED</td></tr>
+    <tr><td>APP 端-项目维度(4Tab:首页/商城/门店/会员)</td><td>UPDATED</td></tr>
+    <tr><td>APP 端-项目商城页(按营销分类)</td><td>NEW</td></tr>
+    <tr><td>APP 端-门店详情(独立全屏+联系人+电话拨打)</td><td>UPDATED</td></tr>
+    <tr><td>APP 端-项目会员页(资产卡+签到+等级卡片+积分)</td><td>UPDATED</td></tr>
+    <tr><td>APP 端-商品/直播详情页(脱离框架独立全屏)</td><td>UPDATED</td></tr>
+    <tr><td>运营后台-搜索/广告/金刚区/推荐管理</td><td>UPDATED</td></tr>
+    <tr><td>运营后台-项目列表管理(启用/禁用+分层拦截)</td><td>NEW</td></tr>
+    <tr><td>运营后台-首页推荐(2Tab 合并+展示条数配置)</td><td>UPDATED</td></tr>
+    <tr><td>租户后台-项目管理(下拉选择器+当前项目编辑)</td><td>UPDATED</td></tr>
+    <tr><td>租户后台-项目信息管理(名称/LOGO 上传/商城名称)</td><td>NEW</td></tr>
+    <tr><td>租户后台-项目 Banner/金刚区管理(迁移运营后台)</td><td>NEW</td></tr>
+    <tr class="dep"><td>~~租户后台-项目首页配置~~</td><td class="dep">DEPRECATED</td></tr>
+  </table>
+</div>
+
+<!-- §0.1 变更记录 -->
+<div class="section" id="sec-changelog">
+  <div class="section-title"><span class="num">§</span>变更记录（v3.0.0 → v3.1.45）</div>
+  <table>
+    <tr><th>版本</th><th>日期</th><th>变更摘要</th></tr>
+    <tr><td>v3.0.0</td><td>2026-08-07</td><td>初版需求归档：5Tab 平台首页+4Tab 项目首页+搜索体系+运营后台 6 页+租户后台 3 页</td></tr>
+    <tr><td>v3.1.0</td><td>2026-08-07</td><td>项目维度 Tab 改为「首页/商城/门店/会员」；新增项目商城页；个人中心扩充 8 模块；门店列表按地理位置排序</td></tr>
+    <tr><td>v3.1.1</td><td>2026-08-07</td><td>补充 FN-012 商品详情页、FN-014 直播详情页、ENT-PROJECT-008 MarketingCategory</td></tr>
+    <tr><td>v3.1.2</td><td>2026-08-08</td><td>决策点确认：修正 ENT 编号冲突；FN-009 项目首页补齐金刚区；FN-002 商城页补充品类筛选</td></tr>
+    <tr><td>v3.1.3</td><td>2026-08-08</td><td>交叉验证修复 20 项（数据层/交互层/逻辑层/清理）</td></tr>
+    <tr><td>v3.1.4</td><td>2026-08-08</td><td>设计阶段完成：产出完整设计交互文档(9 章+评审+反向匹配=12 章)</td></tr>
+    <tr><td>v3.1.5</td><td>2026-08-08</td><td>个人中心移除平台会员等级；新增工作台入口；项目首页搜索改为当前页内搜索</td></tr>
+    <tr><td>v3.1.6</td><td>2026-08-08</td><td>广告位展示时间精确到时分秒；新增修改人/修改时间；热搜词移除固定排序</td></tr>
+    <tr><td>v3.1.7</td><td>2026-08-08</td><td>金刚区管理：JumpTargetPicker 统一跳转配置；新增修改人/修改时间；列表状态改为开关</td></tr>
+    <tr><td>v3.1.8</td><td>2026-08-08</td><td>推荐引擎叠加模式重构：手动推荐+默认规则补足；默认规则固定一条不可删除</td></tr>
+    <tr><td>v3.1.9</td><td>2026-08-08</td><td>商城页三 Tab 重构+推荐管理分页：默认 Tab 改为项目列表；精选商品/直播独立 Tab 无上限+分页</td></tr>
+    <tr><td>v3.1.10</td><td>2026-08-08</td><td>推荐规则多维度排序链重构：sort_dimensions[]；直播新增按项目/按主播类型；商品新增按项目</td></tr>
+    <tr><td>v3.1.11</td><td>2026-08-08</td><td>推荐管理体验优化 3 项：手动推荐多选批量删除；排序逻辑说明面板；实时联动验证</td></tr>
+    <tr><td>v3.1.12</td><td>2026-08-08</td><td>后台分页统一+商城页 Tab 优化+直播状态同步</td></tr>
+    <tr><td>v3.1.13</td><td>2026-08-08</td><td>商城页三 Tab 筛选功能增强+Project 实体新增 industry 字段</td></tr>
+    <tr><td>v3.1.14</td><td>2026-08-08</td><td>项目首页布局优化 7 项</td></tr>
+    <tr><td>v3.1.15</td><td>2026-08-08</td><td>项目维度页面优化：项目首页名称居中+去搜索；项目商城页双 Tab；StoreCard 推荐直播</td></tr>
+    <tr><td>v3.1.16</td><td>2026-08-08</td><td>ProjectFrame 简化；StoreCard 去大图标+联系人+电话拨打；Store 实体新增 contact_name</td></tr>
+    <tr><td>v3.1.17</td><td>2026-08-08</td><td>门店详情页独立化+商品 Tab 左右分类</td></tr>
+    <tr><td>v3.1.19</td><td>2026-08-08</td><td>APP 端优化 5 项+租户后台 3 项+数据模型升级</td></tr>
+    <tr><td>v3.1.20</td><td>2026-08-08</td><td>项目首页热门直播"查看全部"跳转修正</td></tr>
+    <tr><td>v3.1.21</td><td>2026-08-08</td><td>租户后台 Banner/金刚区管理严格照搬运营后台逻辑+首页配置功能移除</td></tr>
+    <tr><td>v3.1.22</td><td>2026-08-08</td><td>平台 APP 个人中心 UI 升级复刻参考设计</td></tr>
+    <tr><td>v3.1.23</td><td>2026-08-09</td><td>个人中心常用功能新增"工作台"入口</td></tr>
+    <tr><td>v3.1.24</td><td>2026-08-09</td><td>项目会员页优化升级+平台入口选项目跳转；新增 Coupon/SignInState 实体</td></tr>
+    <tr><td>v3.1.25</td><td>2026-08-09</td><td>会员页优惠券改为二级页面</td></tr>
+    <tr><td>v3.1.26</td><td>2026-08-09</td><td>会员等级卡片式重设计+积分板块合并</td></tr>
+    <tr><td>v3.1.27</td><td>2026-08-09</td><td>租户后台项目列表去掉首页配置入口+项目管理 logo 改为上传图片</td></tr>
+    <tr><td>v3.1.28</td><td>2026-08-09</td><td>文档全面审查修复（BA/UX/PM 三方交叉审查+UC 补全）</td></tr>
+    <tr><td>v3.1.29</td><td>2026-08-09</td><td>交叉审核修复：删除 UC-009-02(项目首页搜索已删除)；BR-SHP-029 标注 deprecated</td></tr>
+    <tr><td>v3.1.30</td><td>2026-08-10</td><td>推荐规则引擎重构+邀请制私域运营+门店 Tab 移除</td></tr>
+    <tr><td>v3.1.31</td><td>2026-08-10</td><td>项目门店 Tab 恢复为"我的门店"+推荐规则引擎独立化</td></tr>
+    <tr><td>v3.1.32</td><td>2026-08-10</td><td>门店页"更多"二级页+门店位置+推荐数量限制+项目首页推荐走 fallback</td></tr>
+    <tr><td>v3.1.33</td><td>2026-08-10</td><td>详情页与框架分离+门店商品点击修复+会员页优化+商城 Tab 改名+门店更多按钮调整（6 项体验修复）</td></tr>
+    <tr><td>v3.1.34</td><td>2026-08-10</td><td>推荐引擎职责分离+使用场景独立化+商城管理页 3Tab</td></tr>
+    <tr><td>v3.1.35</td><td>2026-08-10</td><td>首页推荐合并+展示条数配置+菜单重组</td></tr>
+    <tr><td>v3.1.36</td><td>2026-08-10</td><td>推荐引擎脱离+项目维度直播推荐默认规则</td></tr>
+    <tr><td>v3.1.37</td><td>2026-08-10</td><td>项目禁用分层拦截+运营平台项目列表+租户后台项目选择器：BR-SHP-043 分层拦截 5 层机制</td></tr>
+    <tr><td>v3.1.38</td><td>2026-08-10</td><td>规则引用生效状态+商城列表场景缺失修复</td></tr>
+    <tr><td>v3.1.39</td><td>2026-08-10</td><td>文案统一+用例卡 v4+原型总览页+三方交叉验证</td></tr>
+    <tr><td>v3.1.40</td><td>2026-08-10</td><td>UC 编号体系功能维度重构+v4 字段全量填充（12 功能域）</td></tr>
+    <tr><td>v3.1.41</td><td>2026-08-10</td><td>商城管理页新增+规则引擎管理页新增+功能页面管理</td></tr>
+    <tr><td>v3.1.42</td><td>2026-08-10</td><td>项目会员页修正：积分账单→我的积分；积分获取规则→会员权益任务；优惠券仅展示数量</td></tr>
+    <tr><td>v3.1.43</td><td>2026-08-10</td><td>状态用语统一+筛选/重置按钮+用例卡文档同步</td></tr>
+    <tr><td>v3.1.44</td><td>2026-08-10</td><td>功能页面管理新增(白名单注册表替代自由输入 URL)</td></tr>
+    <tr><td>v3.1.45</td><td>2026-08-11</td><td>跳转体系全面修复：14 代码+1 测试+2 文档；48 用例 E2E 测试方案 6 Phase</td></tr>
+  </table>
+</div>
+
+<div class="doc-footer">
+  <p>SAAS-APP APP端电商域 · 产品需求文档 v3.1.45 · 由 BA Agent 生成 · 2026-08-11</p>
+  <p>需求流：STR-SAAS-002 · 类型：新增 · 优先级：P0 · 策略：纯前端模拟</p>
+</div>
+
+</div>
+</body>
+</html>

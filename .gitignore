@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+dist-*/
+!dist-ship/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.suo
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+vite-err.log
+vite-out.log
+
+# Test outputs
+test-results/
+test-results*/
+test-out*/
+playwright-report/
+test-reports/
+coverage/
+
+# Environment
+.env
+.env.*
+
+# Build output cache
+build-output.txt
+
+# Admin/test snapshots
+admin-snap.yaml
+admin-search.yaml
+
+# Screenshots (for debugging)
+accept-*.png
+admin-page.png
+
+# PRD shot output
+prd-shot-out/
+
+# Null file from PowerShell
+$null
