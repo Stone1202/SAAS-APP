@@ -108,6 +108,24 @@
               "prd_doc_url": "./fuyongjian/SAAS/v1.0.0/SAAS-v1.0.0-S1.html"
             }
           ]
+        },
+        {
+          "slug": "SAAS-APP",
+          "name": "SAAS-APP 配置式装修电商 SaaS 平台",
+          "framework": "Vue3+TS",
+          "terminals": ["APP端", "运营后台PC", "租户后台PC"],
+          "terminal_urls": {
+            "APP端": "./fuyongjian/SAAS-APP/v1.0.0/app.html",
+            "运营后台PC": "./fuyongjian/SAAS-APP/v1.0.0/admin.html",
+            "租户后台PC": "./fuyongjian/SAAS-APP/v1.0.0/tenant.html"
+          },
+          "versions": [
+            {
+              "version": "v1.0.0",
+              "url": "./fuyongjian/SAAS-APP/v1.0.0/app.html",
+              "prd_doc_url": "./fuyongjian/SAAS-APP/v1.0.0/prd/SAAS-APP-v3.1.39.html"
+            }
+          ]
         }
       ]
     },

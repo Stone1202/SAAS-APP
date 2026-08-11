@@ -24,11 +24,25 @@ routing:
 
 # ---------- 聚合部署记录 ----------
 last_deploy:
-  timestamp: ""
-  deployed_by: ""
-  total_members: 0
-  total_projects: 0
-  members: {}
+  timestamp: "2026-08-11T00:00:00+08:00"
+  deployed_by: "fuyongjian"
+  total_members: 1
+  total_projects: 1
+  members:
+    fuyongjian:
+      projects:
+        SAAS-APP:
+          topics:
+            main:
+              versions:
+                - version: "v1.0.0"
+                  timestamp: "2026-08-11T00:00:00+08:00"
+                  url: "https://prototype.jycao.cn/fuyongjian/SAAS-APP/v1.0.0/app.html"
+                  prd_doc_url: "https://prototype.jycao.cn/fuyongjian/SAAS-APP/v1.0.0/prd/SAAS-APP-v3.1.39.html"
+                  terminals:
+                    APP端: "https://prototype.jycao.cn/fuyongjian/SAAS-APP/v1.0.0/app.html"
+                    运营后台PC: "https://prototype.jycao.cn/fuyongjian/SAAS-APP/v1.0.0/admin.html"
+                    租户后台PC: "https://prototype.jycao.cn/fuyongjian/SAAS-APP/v1.0.0/tenant.html"
   # 示例结构（运行时填充）：
   # members:
   #   jojo:
@@ -54,7 +68,17 @@ last_deploy:
   #                 url: "https://prototype.jycao.cn/jojo/SAAS/live-audit-panel/v1.0.0/"
 
 # ---------- 部署历史（追加，不覆盖） ----------
-deploy_history: []
+deploy_history:
+  - timestamp: "2026-08-11T00:00:00+08:00"
+    deployed_by: "fuyongjian"
+    event: "新增 SAAS-APP 项目部署（APP端+运营后台+租户后台三入口）"
+    members_count: 1
+    projects_count: 1
+    notes:
+      - "新增 fuyongjian/SAAS-APP/v1.0.0/ 产物（3入口 HTML + 167 assets + PRD HTML）"
+      - "更新 access-portal/manifest.json + artifacts/manifest.json 新增 SAAS-APP 条目"
+      - "更新 access-portal/app.html + artifacts/index.html 内嵌清单新增 SAAS-APP"
+      - "修复 fuyongjian/SAAS/v1.0.0/index.html 资源路径（/Jojo/SAAS/main/v1.0.0 → ./）"
   # - timestamp: "2026-07-23T10:00:00+08:00"
   #   deployed_by: "jojo"
   #   event: "全量聚合部署"
