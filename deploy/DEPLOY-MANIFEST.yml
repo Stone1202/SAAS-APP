@@ -38,7 +38,7 @@ last_deploy:
                 - version: "v1.0.0"
                   timestamp: "2026-08-11T00:00:00+08:00"
                   url: "https://prototype.jycao.cn/fuyongjian/SAAS-APP/v1.0.0/app.html"
-                  prd_doc_url: "https://prototype.jycao.cn/fuyongjian/SAAS-APP/v1.0.0/prd/SAAS-APP-v3.1.39.html"
+                  prd_doc_url: "https://prototype.jycao.cn/fuyongjian/SAAS-APP/v1.0.0/prd/index.html"
                   terminals:
                     APP端: "https://prototype.jycao.cn/fuyongjian/SAAS-APP/v1.0.0/app.html"
                     运营后台PC: "https://prototype.jycao.cn/fuyongjian/SAAS-APP/v1.0.0/admin.html"
