@@ -1,13 +1,14 @@
-version: 2.2.0
-active_project: SAAS
-current_stream: STR-SUGARMATE-001
-last_activity: 2026-07-27T19:00+08:00 (init)
+version: 2.3.0
+active_project: SAAS-APP
+current_stream: STR-SAAS-002
+last_activity: 2026-08-07T15:00+08:00 (activate SAAS-APP, deactivate SAAS)
 members:
 - id: jojo
   name: Jojo
   role: admin
   git_name: jojo
   accessible_projects:
+  - SAAS-APP
   - AI-SCRM
   - SAAS
   - SugarMate
@@ -16,6 +17,7 @@ members:
   role: member
   git_name: Eltonliz
   accessible_projects:
+  - SAAS-APP
   - SAAS
   - AI-SCRM
 - id: linjinmei
@@ -23,12 +25,14 @@ members:
   role: member
   git_name: linjinmei
   accessible_projects:
+  - SAAS-APP
   - SAAS
 - id: fuyongjian
   name: 付永健
   role: member
   git_name: fuyongjian
   accessible_projects:
+  - SAAS-APP
   - AI-SCRM
   - SAAS
   - SugarMate
@@ -37,6 +41,7 @@ members:
   role: member
   git_name: jiangrubin
   accessible_projects:
+  - SAAS-APP
   - AI-SCRM
   - SAAS
   - SugarMate
@@ -45,6 +50,7 @@ members:
   role: member
   git_name: zhuangjingxiang
   accessible_projects:
+  - SAAS-APP
   - SAAS
 projects:
 - id: AI-SCRM
@@ -56,7 +62,7 @@ projects:
   - Eltonliz
   - fuyongjian
   - jiangrubin
-  status: active
+  status: inactive
   stage: acceptance
   domain: SAAS/SCRM
   industries:
@@ -101,6 +107,53 @@ projects:
     stage: acceptance
     po_version: v2.0.0
     desc: AI-SCRM全面重构：双系统+AI沟通辅助闭环
+- id: SAAS-APP
+  name: SAAS-APP 配置式装修电商SaaS平台
+  path: projects/SAAS-APP
+  project_prefix: SAAS-APP
+  members:
+  - jojo
+  - Eltonliz
+  - linjinmei
+  - fuyongjian
+  - jiangrubin
+  - zhuangjingxiang
+  status: active
+  stage: active
+  domain: SAAS/电商
+  industries:
+  - 日用百货
+  - 健康保健
+  keywords:
+  - SAAS-APP
+  - 配置式装修
+  - 电商平台
+  - APP端
+  - 运营后台
+  - 租户后台
+  - 项目维度
+  - 门店
+  - 直播
+  - 会员
+  - 金刚区
+  - 广告位
+  - 搜索
+  - 推荐
+  - 楼层
+  - 追伴
+  - localStorage持久化
+  - JumpTargetPicker
+  brainstorm_topic: APP端配置式装修电商
+  brainstorm_type: planning
+  brainstorm_confirmed: true
+  dev_port: 5174
+  streams:
+  - id: STR-SAAS-002
+    version: v2.1.0
+    type: 新增
+    priority: P0
+    stage: active
+    desc: APP端配置式装修电商——平台首页+项目维度+运营后台+租户后台+搜索体系+数据持久化
 - id: SAAS
   name: SAAS直播内容审查系统
   path: projects/SAAS
@@ -112,7 +165,7 @@ projects:
   - fuyongjian
   - jiangrubin
   - zhuangjingxiang
-  status: active
+  status: inactive
   stage: closed
   domain: SAAS
   industries:
@@ -158,5 +211,6 @@ projects:
   - 糖友
   - 血糖
   stage: init
+  status: inactive
   owner: jojo
   created_at: 2026-07-27T19:00+08:00

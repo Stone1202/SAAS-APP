@@ -1,0 +1,1811 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Users\\STONE\\.workbuddy\\binaries\\node\\versions\\20.18.0\\node.exe",
+      "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--config=tests/playwright.config.ts",
+      "--project=chromium"
+    ],
+    "configFile": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\playwright.config.ts",
+    "rootDir": "C:/Users/STONE/CodeBuddy/SAAS-APP/pom-workspace/projects/SAAS-APP/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/STONE/CodeBuddy/SAAS-APP/pom-workspace/projects/SAAS-APP/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/Users/STONE/CodeBuddy/SAAS-APP/pom-workspace/projects/SAAS-APP/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "html",
+        {
+          "outputFolder": "test-reports/html",
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-reports/json/results.json"
+        }
+      ],
+      [
+        "list",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:5174/app.html",
+      "reuseExistingServer": true,
+      "timeout": 30000
+    }
+  },
+  "suites": [
+    {
+      "title": "uc-coverage.spec.ts",
+      "file": "uc-coverage.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "用例卡全量覆盖扫描",
+          "file": "uc-coverage.spec.ts",
+          "line": 48,
+          "column": 6,
+          "specs": [
+            {
+              "title": "页面「平台首页」 — HelpButton渲染 + UC数量=2",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 3835,
+                      "error": {
+                        "message": "Error: 页面「平台首页」预期 2 个UC，实际 3 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m3\u001b[39m",
+                        "stack": "Error: 页面「平台首页」预期 2 个UC，实际 3 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m3\u001b[39m\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:79:10",
+                        "location": {
+                          "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                          "column": 10,
+                          "line": 79
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 77 |\u001b[39m       \u001b[90m// 8. 验证UC数量\u001b[39m\n \u001b[90m 78 |\u001b[39m       expect(cardCount\u001b[33m,\u001b[39m \u001b[32m`页面「${page.name}」预期 ${page.expectedCount} 个UC，实际 ${cardCount} 个`\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 79 |\u001b[39m         \u001b[33m.\u001b[39mtoBe(page\u001b[33m.\u001b[39mexpectedCount)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 80 |\u001b[39m\n \u001b[90m 81 |\u001b[39m       console\u001b[33m.\u001b[39mlog(\u001b[32m`✅ ${page.name}: ${cardCount}/${page.expectedCount} UCs`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 82 |\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                            "column": 10,
+                            "line": 79
+                          },
+                          "message": "Error: 页面「平台首页」预期 2 个UC，实际 3 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m3\u001b[39m\n\n  77 |       // 8. 验证UC数量\n  78 |       expect(cardCount, `页面「${page.name}」预期 ${page.expectedCount} 个UC，实际 ${cardCount} 个`)\n> 79 |         .toBe(page.expectedCount);\n     |          ^\n  80 |\n  81 |       console.log(`✅ ${page.name}: ${cardCount}/${page.expectedCount} UCs`);\n  82 |\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:79:10"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:33:30.893Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「平台首页」-—-HelpButton渲染-UC数量-2-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「平台首页」-—-HelpButton渲染-UC数量-2-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                        "column": 10,
+                        "line": 79
+                      }
+                    },
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 5171,
+                      "error": {
+                        "message": "Error: 页面「平台首页」预期 2 个UC，实际 3 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m3\u001b[39m",
+                        "stack": "Error: 页面「平台首页」预期 2 个UC，实际 3 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m3\u001b[39m\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:79:10",
+                        "location": {
+                          "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                          "column": 10,
+                          "line": 79
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 77 |\u001b[39m       \u001b[90m// 8. 验证UC数量\u001b[39m\n \u001b[90m 78 |\u001b[39m       expect(cardCount\u001b[33m,\u001b[39m \u001b[32m`页面「${page.name}」预期 ${page.expectedCount} 个UC，实际 ${cardCount} 个`\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 79 |\u001b[39m         \u001b[33m.\u001b[39mtoBe(page\u001b[33m.\u001b[39mexpectedCount)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 80 |\u001b[39m\n \u001b[90m 81 |\u001b[39m       console\u001b[33m.\u001b[39mlog(\u001b[32m`✅ ${page.name}: ${cardCount}/${page.expectedCount} UCs`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 82 |\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                            "column": 10,
+                            "line": 79
+                          },
+                          "message": "Error: 页面「平台首页」预期 2 个UC，实际 3 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m3\u001b[39m\n\n  77 |       // 8. 验证UC数量\n  78 |       expect(cardCount, `页面「${page.name}」预期 ${page.expectedCount} 个UC，实际 ${cardCount} 个`)\n> 79 |         .toBe(page.expectedCount);\n     |          ^\n  80 |\n  81 |       console.log(`✅ ${page.name}: ${cardCount}/${page.expectedCount} UCs`);\n  82 |\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:79:10"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2026-08-09T09:33:40.140Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「平台首页」-—-HelpButton渲染-UC数量-2-chromium-retry1\\test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「平台首页」-—-HelpButton渲染-UC数量-2-chromium-retry1\\error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「平台首页」-—-HelpButton渲染-UC数量-2-chromium-retry1\\trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                        "column": 10,
+                        "line": 79
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "e729b9036e04ccb345f4-2e485cf100d269e763b8",
+              "file": "uc-coverage.spec.ts",
+              "line": 50,
+              "column": 5
+            },
+            {
+              "title": "页面「商城页(项目列表Tab)」 — HelpButton渲染 + UC数量=2",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4954,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✅ 商城页(项目列表Tab): 2/2 UCs\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:33:52.774Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「商城页-项目列表Tab-」-—-HelpButton渲染-UC数量-2-chromium\\test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "e729b9036e04ccb345f4-7648b8727b7a152b7809",
+              "file": "uc-coverage.spec.ts",
+              "line": 50,
+              "column": 5
+            },
+            {
+              "title": "页面「商城页(精选商品Tab)」 — HelpButton渲染 + UC数量=1",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 3606,
+                      "error": {
+                        "message": "Error: 页面「商城页(精选商品Tab)」预期 1 个UC，实际 2 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m2\u001b[39m",
+                        "stack": "Error: 页面「商城页(精选商品Tab)」预期 1 个UC，实际 2 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m2\u001b[39m\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:79:10",
+                        "location": {
+                          "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                          "column": 10,
+                          "line": 79
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 77 |\u001b[39m       \u001b[90m// 8. 验证UC数量\u001b[39m\n \u001b[90m 78 |\u001b[39m       expect(cardCount\u001b[33m,\u001b[39m \u001b[32m`页面「${page.name}」预期 ${page.expectedCount} 个UC，实际 ${cardCount} 个`\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 79 |\u001b[39m         \u001b[33m.\u001b[39mtoBe(page\u001b[33m.\u001b[39mexpectedCount)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 80 |\u001b[39m\n \u001b[90m 81 |\u001b[39m       console\u001b[33m.\u001b[39mlog(\u001b[32m`✅ ${page.name}: ${cardCount}/${page.expectedCount} UCs`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 82 |\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                            "column": 10,
+                            "line": 79
+                          },
+                          "message": "Error: 页面「商城页(精选商品Tab)」预期 1 个UC，实际 2 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m2\u001b[39m\n\n  77 |       // 8. 验证UC数量\n  78 |       expect(cardCount, `页面「${page.name}」预期 ${page.expectedCount} 个UC，实际 ${cardCount} 个`)\n> 79 |         .toBe(page.expectedCount);\n     |          ^\n  80 |\n  81 |       console.log(`✅ ${page.name}: ${cardCount}/${page.expectedCount} UCs`);\n  82 |\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:79:10"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:33:58.469Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「商城页-精选商品Tab-」-—-HelpButton渲染-UC数量-1-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「商城页-精选商品Tab-」-—-HelpButton渲染-UC数量-1-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                        "column": 10,
+                        "line": 79
+                      }
+                    },
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 4373,
+                      "error": {
+                        "message": "Error: 页面「商城页(精选商品Tab)」预期 1 个UC，实际 2 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m2\u001b[39m",
+                        "stack": "Error: 页面「商城页(精选商品Tab)」预期 1 个UC，实际 2 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m2\u001b[39m\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:79:10",
+                        "location": {
+                          "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                          "column": 10,
+                          "line": 79
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 77 |\u001b[39m       \u001b[90m// 8. 验证UC数量\u001b[39m\n \u001b[90m 78 |\u001b[39m       expect(cardCount\u001b[33m,\u001b[39m \u001b[32m`页面「${page.name}」预期 ${page.expectedCount} 个UC，实际 ${cardCount} 个`\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 79 |\u001b[39m         \u001b[33m.\u001b[39mtoBe(page\u001b[33m.\u001b[39mexpectedCount)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 80 |\u001b[39m\n \u001b[90m 81 |\u001b[39m       console\u001b[33m.\u001b[39mlog(\u001b[32m`✅ ${page.name}: ${cardCount}/${page.expectedCount} UCs`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 82 |\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                            "column": 10,
+                            "line": 79
+                          },
+                          "message": "Error: 页面「商城页(精选商品Tab)」预期 1 个UC，实际 2 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m2\u001b[39m\n\n  77 |       // 8. 验证UC数量\n  78 |       expect(cardCount, `页面「${page.name}」预期 ${page.expectedCount} 个UC，实际 ${cardCount} 个`)\n> 79 |         .toBe(page.expectedCount);\n     |          ^\n  80 |\n  81 |       console.log(`✅ ${page.name}: ${cardCount}/${page.expectedCount} UCs`);\n  82 |\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:79:10"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2026-08-09T09:34:05.796Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「商城页-精选商品Tab-」-—-HelpButton渲染-UC数量-1-chromium-retry1\\test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「商城页-精选商品Tab-」-—-HelpButton渲染-UC数量-1-chromium-retry1\\error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「商城页-精选商品Tab-」-—-HelpButton渲染-UC数量-1-chromium-retry1\\trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                        "column": 10,
+                        "line": 79
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "e729b9036e04ccb345f4-2a209a222bed28904c0e",
+              "file": "uc-coverage.spec.ts",
+              "line": 50,
+              "column": 5
+            },
+            {
+              "title": "页面「商城页(精选直播Tab)」 — HelpButton渲染 + UC数量=1",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 4707,
+                      "error": {
+                        "message": "Error: 页面「商城页(精选直播Tab)」预期 1 个UC，实际 2 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m2\u001b[39m",
+                        "stack": "Error: 页面「商城页(精选直播Tab)」预期 1 个UC，实际 2 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m2\u001b[39m\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:79:10",
+                        "location": {
+                          "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                          "column": 10,
+                          "line": 79
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 77 |\u001b[39m       \u001b[90m// 8. 验证UC数量\u001b[39m\n \u001b[90m 78 |\u001b[39m       expect(cardCount\u001b[33m,\u001b[39m \u001b[32m`页面「${page.name}」预期 ${page.expectedCount} 个UC，实际 ${cardCount} 个`\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 79 |\u001b[39m         \u001b[33m.\u001b[39mtoBe(page\u001b[33m.\u001b[39mexpectedCount)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 80 |\u001b[39m\n \u001b[90m 81 |\u001b[39m       console\u001b[33m.\u001b[39mlog(\u001b[32m`✅ ${page.name}: ${cardCount}/${page.expectedCount} UCs`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 82 |\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                            "column": 10,
+                            "line": 79
+                          },
+                          "message": "Error: 页面「商城页(精选直播Tab)」预期 1 个UC，实际 2 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m2\u001b[39m\n\n  77 |       // 8. 验证UC数量\n  78 |       expect(cardCount, `页面「${page.name}」预期 ${page.expectedCount} 个UC，实际 ${cardCount} 个`)\n> 79 |         .toBe(page.expectedCount);\n     |          ^\n  80 |\n  81 |       console.log(`✅ ${page.name}: ${cardCount}/${page.expectedCount} UCs`);\n  82 |\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:79:10"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:34:16.739Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「商城页-精选直播Tab-」-—-HelpButton渲染-UC数量-1-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「商城页-精选直播Tab-」-—-HelpButton渲染-UC数量-1-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                        "column": 10,
+                        "line": 79
+                      }
+                    },
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 5971,
+                      "error": {
+                        "message": "Error: 页面「商城页(精选直播Tab)」预期 1 个UC，实际 2 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m2\u001b[39m",
+                        "stack": "Error: 页面「商城页(精选直播Tab)」预期 1 个UC，实际 2 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m2\u001b[39m\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:79:10",
+                        "location": {
+                          "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                          "column": 10,
+                          "line": 79
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 77 |\u001b[39m       \u001b[90m// 8. 验证UC数量\u001b[39m\n \u001b[90m 78 |\u001b[39m       expect(cardCount\u001b[33m,\u001b[39m \u001b[32m`页面「${page.name}」预期 ${page.expectedCount} 个UC，实际 ${cardCount} 个`\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 79 |\u001b[39m         \u001b[33m.\u001b[39mtoBe(page\u001b[33m.\u001b[39mexpectedCount)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 80 |\u001b[39m\n \u001b[90m 81 |\u001b[39m       console\u001b[33m.\u001b[39mlog(\u001b[32m`✅ ${page.name}: ${cardCount}/${page.expectedCount} UCs`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 82 |\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                            "column": 10,
+                            "line": 79
+                          },
+                          "message": "Error: 页面「商城页(精选直播Tab)」预期 1 个UC，实际 2 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m2\u001b[39m\n\n  77 |       // 8. 验证UC数量\n  78 |       expect(cardCount, `页面「${page.name}」预期 ${page.expectedCount} 个UC，实际 ${cardCount} 个`)\n> 79 |         .toBe(page.expectedCount);\n     |          ^\n  80 |\n  81 |       console.log(`✅ ${page.name}: ${cardCount}/${page.expectedCount} UCs`);\n  82 |\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:79:10"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2026-08-09T09:34:26.079Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「商城页-精选直播Tab-」-—-HelpButton渲染-UC数量-1-chromium-retry1\\test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「商城页-精选直播Tab-」-—-HelpButton渲染-UC数量-1-chromium-retry1\\error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「商城页-精选直播Tab-」-—-HelpButton渲染-UC数量-1-chromium-retry1\\trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                        "column": 10,
+                        "line": 79
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "e729b9036e04ccb345f4-9c7912f76f7755584486",
+              "file": "uc-coverage.spec.ts",
+              "line": 50,
+              "column": 5
+            },
+            {
+              "title": "页面「搜索页」 — HelpButton渲染 + UC数量=3",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4002,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✅ 搜索页: 3/3 UCs\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:34:39.831Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「搜索页」-—-HelpButton渲染-UC数量-3-chromium\\test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "e729b9036e04ccb345f4-8aa3a14e269ef403f74a",
+              "file": "uc-coverage.spec.ts",
+              "line": 50,
+              "column": 5
+            },
+            {
+              "title": "页面「个人中心」 — HelpButton渲染 + UC数量=6",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 5064,
+                      "error": {
+                        "message": "Error: 页面「个人中心」预期 6 个UC，实际 2 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m6\u001b[39m\nReceived: \u001b[31m2\u001b[39m",
+                        "stack": "Error: 页面「个人中心」预期 6 个UC，实际 2 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m6\u001b[39m\nReceived: \u001b[31m2\u001b[39m\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:79:10",
+                        "location": {
+                          "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                          "column": 10,
+                          "line": 79
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 77 |\u001b[39m       \u001b[90m// 8. 验证UC数量\u001b[39m\n \u001b[90m 78 |\u001b[39m       expect(cardCount\u001b[33m,\u001b[39m \u001b[32m`页面「${page.name}」预期 ${page.expectedCount} 个UC，实际 ${cardCount} 个`\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 79 |\u001b[39m         \u001b[33m.\u001b[39mtoBe(page\u001b[33m.\u001b[39mexpectedCount)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 80 |\u001b[39m\n \u001b[90m 81 |\u001b[39m       console\u001b[33m.\u001b[39mlog(\u001b[32m`✅ ${page.name}: ${cardCount}/${page.expectedCount} UCs`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 82 |\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                            "column": 10,
+                            "line": 79
+                          },
+                          "message": "Error: 页面「个人中心」预期 6 个UC，实际 2 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m6\u001b[39m\nReceived: \u001b[31m2\u001b[39m\n\n  77 |       // 8. 验证UC数量\n  78 |       expect(cardCount, `页面「${page.name}」预期 ${page.expectedCount} 个UC，实际 ${cardCount} 个`)\n> 79 |         .toBe(page.expectedCount);\n     |          ^\n  80 |\n  81 |       console.log(`✅ ${page.name}: ${cardCount}/${page.expectedCount} UCs`);\n  82 |\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:79:10"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:34:44.375Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「个人中心」-—-HelpButton渲染-UC数量-6-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「个人中心」-—-HelpButton渲染-UC数量-6-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                        "column": 10,
+                        "line": 79
+                      }
+                    },
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 6591,
+                      "error": {
+                        "message": "Error: 页面「个人中心」预期 6 个UC，实际 2 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m6\u001b[39m\nReceived: \u001b[31m2\u001b[39m",
+                        "stack": "Error: 页面「个人中心」预期 6 个UC，实际 2 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m6\u001b[39m\nReceived: \u001b[31m2\u001b[39m\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:79:10",
+                        "location": {
+                          "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                          "column": 10,
+                          "line": 79
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 77 |\u001b[39m       \u001b[90m// 8. 验证UC数量\u001b[39m\n \u001b[90m 78 |\u001b[39m       expect(cardCount\u001b[33m,\u001b[39m \u001b[32m`页面「${page.name}」预期 ${page.expectedCount} 个UC，实际 ${cardCount} 个`\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 79 |\u001b[39m         \u001b[33m.\u001b[39mtoBe(page\u001b[33m.\u001b[39mexpectedCount)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 80 |\u001b[39m\n \u001b[90m 81 |\u001b[39m       console\u001b[33m.\u001b[39mlog(\u001b[32m`✅ ${page.name}: ${cardCount}/${page.expectedCount} UCs`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 82 |\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                            "column": 10,
+                            "line": 79
+                          },
+                          "message": "Error: 页面「个人中心」预期 6 个UC，实际 2 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m6\u001b[39m\nReceived: \u001b[31m2\u001b[39m\n\n  77 |       // 8. 验证UC数量\n  78 |       expect(cardCount, `页面「${page.name}」预期 ${page.expectedCount} 个UC，实际 ${cardCount} 个`)\n> 79 |         .toBe(page.expectedCount);\n     |          ^\n  80 |\n  81 |       console.log(`✅ ${page.name}: ${cardCount}/${page.expectedCount} UCs`);\n  82 |\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:79:10"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2026-08-09T09:34:53.450Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「个人中心」-—-HelpButton渲染-UC数量-6-chromium-retry1\\test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「个人中心」-—-HelpButton渲染-UC数量-6-chromium-retry1\\error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「个人中心」-—-HelpButton渲染-UC数量-6-chromium-retry1\\trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                        "column": 10,
+                        "line": 79
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "e729b9036e04ccb345f4-4c555d0fc7bf3b8e56bc",
+              "file": "uc-coverage.spec.ts",
+              "line": 50,
+              "column": 5
+            },
+            {
+              "title": "页面「收货地址管理页」 — HelpButton渲染 + UC数量=1",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4209,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✅ 收货地址管理页: 1/1 UCs\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:35:06.546Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「收货地址管理页」-—-HelpButton渲染-UC数量-1-chromium\\test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "e729b9036e04ccb345f4-d43ef735faae52d13462",
+              "file": "uc-coverage.spec.ts",
+              "line": 50,
+              "column": 5
+            },
+            {
+              "title": "页面「平台会员中心」 — HelpButton渲染 + UC数量=2",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 7929,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-testid=\"help-button\"]')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-testid=\"help-button\"]')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-testid=\"help-button\"]')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-testid=\"help-button\"]')\u001b[22m\n\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:57:29",
+                        "location": {
+                          "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                          "column": 29,
+                          "line": 57
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 55 |\u001b[39m       \u001b[90m// 2. 验证HelpButton存在\u001b[39m\n \u001b[90m 56 |\u001b[39m       \u001b[36mconst\u001b[39m helpBtn \u001b[33m=\u001b[39m pwPage\u001b[33m.\u001b[39mlocator(\u001b[32m'[data-testid=\"help-button\"]'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 57 |\u001b[39m       \u001b[36mawait\u001b[39m expect(helpBtn)\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m5000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 58 |\u001b[39m\n \u001b[90m 59 |\u001b[39m       \u001b[90m// 3. 截图（页面初始状态）\u001b[39m\n \u001b[90m 60 |\u001b[39m       \u001b[36mawait\u001b[39m pwPage\u001b[33m.\u001b[39mscreenshot({ path\u001b[33m:\u001b[39m \u001b[32m`test-reports/screenshots/${page.name.replace(/[()\\/]/g, '_')}-initial.png`\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                            "column": 29,
+                            "line": 57
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-testid=\"help-button\"]')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-testid=\"help-button\"]')\u001b[22m\n\n\n  55 |       // 2. 验证HelpButton存在\n  56 |       const helpBtn = pwPage.locator('[data-testid=\"help-button\"]');\n> 57 |       await expect(helpBtn).toBeVisible({ timeout: 5000 });\n     |                             ^\n  58 |\n  59 |       // 3. 截图（页面初始状态）\n  60 |       await pwPage.screenshot({ path: `test-reports/screenshots/${page.name.replace(/[()\\/]/g, '_')}-initial.png` });\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:57:29"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:35:11.543Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「平台会员中心」-—-HelpButton渲染-UC数量-2-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「平台会员中心」-—-HelpButton渲染-UC数量-2-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                        "column": 29,
+                        "line": 57
+                      }
+                    },
+                    {
+                      "workerIndex": 9,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 8175,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-testid=\"help-button\"]')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-testid=\"help-button\"]')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-testid=\"help-button\"]')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-testid=\"help-button\"]')\u001b[22m\n\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:57:29",
+                        "location": {
+                          "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                          "column": 29,
+                          "line": 57
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 55 |\u001b[39m       \u001b[90m// 2. 验证HelpButton存在\u001b[39m\n \u001b[90m 56 |\u001b[39m       \u001b[36mconst\u001b[39m helpBtn \u001b[33m=\u001b[39m pwPage\u001b[33m.\u001b[39mlocator(\u001b[32m'[data-testid=\"help-button\"]'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 57 |\u001b[39m       \u001b[36mawait\u001b[39m expect(helpBtn)\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m5000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 58 |\u001b[39m\n \u001b[90m 59 |\u001b[39m       \u001b[90m// 3. 截图（页面初始状态）\u001b[39m\n \u001b[90m 60 |\u001b[39m       \u001b[36mawait\u001b[39m pwPage\u001b[33m.\u001b[39mscreenshot({ path\u001b[33m:\u001b[39m \u001b[32m`test-reports/screenshots/${page.name.replace(/[()\\/]/g, '_')}-initial.png`\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                            "column": 29,
+                            "line": 57
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-testid=\"help-button\"]')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-testid=\"help-button\"]')\u001b[22m\n\n\n  55 |       // 2. 验证HelpButton存在\n  56 |       const helpBtn = pwPage.locator('[data-testid=\"help-button\"]');\n> 57 |       await expect(helpBtn).toBeVisible({ timeout: 5000 });\n     |                             ^\n  58 |\n  59 |       // 3. 截图（页面初始状态）\n  60 |       await pwPage.screenshot({ path: `test-reports/screenshots/${page.name.replace(/[()\\/]/g, '_')}-initial.png` });\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:57:29"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2026-08-09T09:35:23.400Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「平台会员中心」-—-HelpButton渲染-UC数量-2-chromium-retry1\\test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「平台会员中心」-—-HelpButton渲染-UC数量-2-chromium-retry1\\error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「平台会员中心」-—-HelpButton渲染-UC数量-2-chromium-retry1\\trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                        "column": 29,
+                        "line": 57
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "e729b9036e04ccb345f4-b612cd49ec4daef34b3a",
+              "file": "uc-coverage.spec.ts",
+              "line": 50,
+              "column": 5
+            },
+            {
+              "title": "页面「项目首页」 — HelpButton渲染 + UC数量=1",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4071,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✅ 项目首页: 1/1 UCs\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:35:38.502Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「项目首页」-—-HelpButton渲染-UC数量-1-chromium\\test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "e729b9036e04ccb345f4-9fda39c130764a8da07f",
+              "file": "uc-coverage.spec.ts",
+              "line": 50,
+              "column": 5
+            },
+            {
+              "title": "页面「项目商城(商品Tab)」 — HelpButton渲染 + UC数量=2",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4176,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✅ 项目商城(商品Tab): 2/2 UCs\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:35:43.467Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「项目商城-商品Tab-」-—-HelpButton渲染-UC数量-2-chromium\\test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "e729b9036e04ccb345f4-70ae8da1588ea3d83e82",
+              "file": "uc-coverage.spec.ts",
+              "line": 50,
+              "column": 5
+            },
+            {
+              "title": "页面「项目商城(直播Tab)」 — HelpButton渲染 + UC数量=1",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4847,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✅ 项目商城(直播Tab): 1/1 UCs\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:35:47.682Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「项目商城-直播Tab-」-—-HelpButton渲染-UC数量-1-chromium\\test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "e729b9036e04ccb345f4-8ca7ac4f8229b11eacb1",
+              "file": "uc-coverage.spec.ts",
+              "line": 50,
+              "column": 5
+            },
+            {
+              "title": "页面「项目门店页」 — HelpButton渲染 + UC数量=2",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 3598,
+                      "error": {
+                        "message": "Error: 页面「项目门店页」预期 2 个UC，实际 1 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m1\u001b[39m",
+                        "stack": "Error: 页面「项目门店页」预期 2 个UC，实际 1 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:79:10",
+                        "location": {
+                          "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                          "column": 10,
+                          "line": 79
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 77 |\u001b[39m       \u001b[90m// 8. 验证UC数量\u001b[39m\n \u001b[90m 78 |\u001b[39m       expect(cardCount\u001b[33m,\u001b[39m \u001b[32m`页面「${page.name}」预期 ${page.expectedCount} 个UC，实际 ${cardCount} 个`\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 79 |\u001b[39m         \u001b[33m.\u001b[39mtoBe(page\u001b[33m.\u001b[39mexpectedCount)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 80 |\u001b[39m\n \u001b[90m 81 |\u001b[39m       console\u001b[33m.\u001b[39mlog(\u001b[32m`✅ ${page.name}: ${cardCount}/${page.expectedCount} UCs`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 82 |\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                            "column": 10,
+                            "line": 79
+                          },
+                          "message": "Error: 页面「项目门店页」预期 2 个UC，实际 1 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n\n  77 |       // 8. 验证UC数量\n  78 |       expect(cardCount, `页面「${page.name}」预期 ${page.expectedCount} 个UC，实际 ${cardCount} 个`)\n> 79 |         .toBe(page.expectedCount);\n     |          ^\n  80 |\n  81 |       console.log(`✅ ${page.name}: ${cardCount}/${page.expectedCount} UCs`);\n  82 |\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:79:10"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:35:52.552Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「项目门店页」-—-HelpButton渲染-UC数量-2-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「项目门店页」-—-HelpButton渲染-UC数量-2-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                        "column": 10,
+                        "line": 79
+                      }
+                    },
+                    {
+                      "workerIndex": 11,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 4483,
+                      "error": {
+                        "message": "Error: 页面「项目门店页」预期 2 个UC，实际 1 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m1\u001b[39m",
+                        "stack": "Error: 页面「项目门店页」预期 2 个UC，实际 1 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:79:10",
+                        "location": {
+                          "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                          "column": 10,
+                          "line": 79
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 77 |\u001b[39m       \u001b[90m// 8. 验证UC数量\u001b[39m\n \u001b[90m 78 |\u001b[39m       expect(cardCount\u001b[33m,\u001b[39m \u001b[32m`页面「${page.name}」预期 ${page.expectedCount} 个UC，实际 ${cardCount} 个`\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 79 |\u001b[39m         \u001b[33m.\u001b[39mtoBe(page\u001b[33m.\u001b[39mexpectedCount)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 80 |\u001b[39m\n \u001b[90m 81 |\u001b[39m       console\u001b[33m.\u001b[39mlog(\u001b[32m`✅ ${page.name}: ${cardCount}/${page.expectedCount} UCs`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 82 |\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                            "column": 10,
+                            "line": 79
+                          },
+                          "message": "Error: 页面「项目门店页」预期 2 个UC，实际 1 个\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n\n  77 |       // 8. 验证UC数量\n  78 |       expect(cardCount, `页面「${page.name}」预期 ${page.expectedCount} 个UC，实际 ${cardCount} 个`)\n> 79 |         .toBe(page.expectedCount);\n     |          ^\n  80 |\n  81 |       console.log(`✅ ${page.name}: ${cardCount}/${page.expectedCount} UCs`);\n  82 |\n    at C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts:79:10"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2026-08-09T09:36:00.026Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「项目门店页」-—-HelpButton渲染-UC数量-2-chromium-retry1\\test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「项目门店页」-—-HelpButton渲染-UC数量-2-chromium-retry1\\error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「项目门店页」-—-HelpButton渲染-UC数量-2-chromium-retry1\\trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\uc-coverage.spec.ts",
+                        "column": 10,
+                        "line": 79
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "e729b9036e04ccb345f4-1444cf9ad2a0cdbb5b69",
+              "file": "uc-coverage.spec.ts",
+              "line": 50,
+              "column": 5
+            },
+            {
+              "title": "页面「项目会员页」 — HelpButton渲染 + UC数量=1",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4050,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✅ 项目会员页: 1/1 UCs\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:36:11.129Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-页面「项目会员页」-—-HelpButton渲染-UC数量-1-chromium\\test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "e729b9036e04ccb345f4-3a75e51102c32153833c",
+              "file": "uc-coverage.spec.ts",
+              "line": 50,
+              "column": 5
+            },
+            {
+              "title": "回归验证：已删除功能UC不出现在任何页面",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3748,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✅ 已删除UC确认移除: UC-SHP-APP-009-02\n"
+                        },
+                        {
+                          "text": "✅ Planned UC已过滤: UC-SHP-APP-012-02\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:36:15.871Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-回归验证：已删除功能UC不出现在任何页面-chromium\\test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "e729b9036e04ccb345f4-8b11a5fb7dde18380186",
+              "file": "uc-coverage.spec.ts",
+              "line": 92,
+              "column": 3
+            },
+            {
+              "title": "综合回归：所有页面的抽屉可正常打开和关闭",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 21562,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✅ 首页: 抽屉打开/关闭正常\n"
+                        },
+                        {
+                          "text": "✅ 商城: 抽屉打开/关闭正常\n"
+                        },
+                        {
+                          "text": "✅ 搜索: 抽屉打开/关闭正常\n"
+                        },
+                        {
+                          "text": "✅ 个人中心: 抽屉打开/关闭正常\n"
+                        },
+                        {
+                          "text": "✅ 项目首页: 抽屉打开/关闭正常\n"
+                        },
+                        {
+                          "text": "✅ 项目商城: 抽屉打开/关闭正常\n"
+                        },
+                        {
+                          "text": "✅ 项目门店: 抽屉打开/关闭正常\n"
+                        },
+                        {
+                          "text": "✅ 项目会员: 抽屉打开/关闭正常\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:36:19.658Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-coverage-用例卡全量覆盖扫描-综合回归：所有页面的抽屉可正常打开和关闭-chromium\\test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "e729b9036e04ccb345f4-58372cd258c014b5ae33",
+              "file": "uc-coverage.spec.ts",
+              "line": 129,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "uc-tab-switch.spec.ts",
+      "file": "uc-tab-switch.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "MallPage 三Tab——UC卡片Tab感知切换",
+          "file": "uc-tab-switch.spec.ts",
+          "line": 15,
+          "column": 6,
+          "specs": [
+            {
+              "title": "默认Tab（项目列表）→ UC-SHP-APP-002-01 + UC-SHP-APP-002-04 可见",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5025,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✅ 项目列表Tab: 2个UC正确显示 (002-01, 002-04)\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:36:41.280Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-tab-switch-MallPage-三Ta-18acb-002-01-UC-SHP-APP-002-04-可见-chromium\\test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "887516f2e2e464e545eb-49fad2826b57909ec7c7",
+              "file": "uc-tab-switch.spec.ts",
+              "line": 16,
+              "column": 3
+            },
+            {
+              "title": "切换到精选商品Tab → 仅 UC-SHP-APP-002-02 可见",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6028,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✅ 精选商品Tab: 2个UC正确显示\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:36:46.322Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-tab-switch-MallPage-三Ta-59e78-ab-→-仅-UC-SHP-APP-002-02-可见-chromium\\test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "887516f2e2e464e545eb-0e191e4427c373b8672f",
+              "file": "uc-tab-switch.spec.ts",
+              "line": 48,
+              "column": 3
+            },
+            {
+              "title": "切换到精选直播Tab → 仅 UC-SHP-APP-002-03 可见",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5452,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✅ 精选直播Tab: 2个UC正确显示\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:36:52.371Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-tab-switch-MallPage-三Ta-9149d-ab-→-仅-UC-SHP-APP-002-03-可见-chromium\\test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "887516f2e2e464e545eb-0e8cf7701d165e09fd6a",
+              "file": "uc-tab-switch.spec.ts",
+              "line": 97,
+              "column": 3
+            },
+            {
+              "title": "Tab间切换——UC列表随Tab变化",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6942,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "  ✅ 项目列表Tab: 2个UC\n"
+                        },
+                        {
+                          "text": "  ⚠️ 精选直播Tab (URL导航): SPA保活模式，Tab未刷新\n"
+                        },
+                        {
+                          "text": "✅ Tab切换路由验证完成\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:36:57.861Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-tab-switch-MallPage-三Tab——UC卡片Tab感知切换-Tab间切换——UC列表随Tab变化-chromium\\test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "887516f2e2e464e545eb-1c1c31f0e2427a4e2c8e",
+              "file": "uc-tab-switch.spec.ts",
+              "line": 129,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "ProjectMall 双Tab——UC卡片Tab感知切换",
+          "file": "uc-tab-switch.spec.ts",
+          "line": 174,
+          "column": 6,
+          "specs": [
+            {
+              "title": "默认商品Tab → 2个UC可见（009A-01通用 + 009A-02商品）",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4037,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✅ 商品Tab: 2个UC正确显示 (009A-01通用, 009A-02商品)\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:37:04.832Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-tab-switch-ProjectMall--16046-2个UC可见（009A-01通用-009A-02商品）-chromium\\test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "887516f2e2e464e545eb-995f9383dec0eea2c19f",
+              "file": "uc-tab-switch.spec.ts",
+              "line": 175,
+              "column": 3
+            },
+            {
+              "title": "切换到直播Tab → 仅1个通用UC可见（URL导航）",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4767,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✅ 直播Tab: 1个通用UC正确显示 (009A-01)\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:37:08.898Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-tab-switch-ProjectMall--938f9-切换到直播Tab-→-仅1个通用UC可见（URL导航）-chromium\\test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "887516f2e2e464e545eb-ecca936df2f3fbf9affd",
+              "file": "uc-tab-switch.spec.ts",
+              "line": 202,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "uc-user-flow.spec.ts",
+      "file": "uc-user-flow.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "真人路径模拟——端到端测试",
+          "file": "uc-user-flow.spec.ts",
+          "line": 47,
+          "column": 6,
+          "specs": [
+            {
+              "title": "路径1：消费者浏览 → 商城页 → 搜索页 → 返回首页",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11133,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🚀 路径1开始：消费者购物浏览流\n"
+                        },
+                        {
+                          "text": "  📋 01-平台首页: 3 个UC\n"
+                        },
+                        {
+                          "text": "  📋 02-商城页(项目列表): 2 个UC\n"
+                        },
+                        {
+                          "text": "  📋 03-商城页(精选商品): 2 个UC\n"
+                        },
+                        {
+                          "text": "  📋 04-商城页(精选直播): 2 个UC\n"
+                        },
+                        {
+                          "text": "  📋 05-搜索页: 3 个UC\n"
+                        },
+                        {
+                          "text": "✅ 路径1完成：首页→商城(3Tab)→搜索，全部页面UC抽屉正常\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:37:13.733Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-user-flow-真人路径模拟——端到端测试-路径1：消费者浏览-→-商城页-→-搜索页-→-返回首页-chromium\\test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "001064041d19657d52e9-8d5f299deaea2b0718b7",
+              "file": "uc-user-flow.spec.ts",
+              "line": 48,
+              "column": 3
+            },
+            {
+              "title": "路径2：消费者 → 项目首页 → 项目商城 → 项目会员 → 返回平台",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 15281,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🚀 路径2开始：项目维度深度浏览\n"
+                        },
+                        {
+                          "text": "  📋 01-项目首页: 1 个UC\n"
+                        },
+                        {
+                          "text": "  📋 02-项目商城(商品Tab): 2 个UC\n"
+                        },
+                        {
+                          "text": "  📋 03-项目商城(直播Tab): 2 个UC\n"
+                        },
+                        {
+                          "text": "  📋 04-项目门店: 1 个UC\n"
+                        },
+                        {
+                          "text": "  📋 05-项目会员: 1 个UC\n"
+                        },
+                        {
+                          "text": "  📋 06-返回平台商城: 2 个UC\n"
+                        },
+                        {
+                          "text": "✅ 路径2完成：项目首页→商城→门店→会员→平台，全部页面UC抽屉正常\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:37:24.890Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-user-flow-真人路径模拟——端到端测试-532c5-→-项目首页-→-项目商城-→-项目会员-→-返回平台-chromium\\test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "001064041d19657d52e9-1018476bb0e7da57b397",
+              "file": "uc-user-flow.spec.ts",
+              "line": 85,
+              "column": 3
+            },
+            {
+              "title": "路径3：用户 → 个人中心 → 地址管理 → 会员中心 → 返回",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10009,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🚀 路径3开始：用户服务流\n"
+                        },
+                        {
+                          "text": "  📋 01-个人中心: 2 个UC\n"
+                        },
+                        {
+                          "text": "  📋 02-收货地址管理: 1 个UC\n"
+                        },
+                        {
+                          "text": "  ⚠️ 03-平台会员中心: HelpButton未渲染，跳过UC验证\n"
+                        },
+                        {
+                          "text": "✅ 路径3完成：个人中心→地址管理→会员中心→返回，全部页面UC抽屉正常\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:37:40.200Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-user-flow-真人路径模拟——端到端测试-路径3：用户-→-个人中心-→-地址管理-→-会员中心-→-返回-chromium\\test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "001064041d19657d52e9-67ef135b489d64ce6ac1",
+              "file": "uc-user-flow.spec.ts",
+              "line": 124,
+              "column": 3
+            },
+            {
+              "title": "回归验证：首页→项目首页 来回导航，UC列表不混淆",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8988,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔄 回归验证：跨页面UC不串扰\n"
+                        },
+                        {
+                          "text": "  ✅ 平台首页: UC-SHP-APP-001-01 存在\n"
+                        },
+                        {
+                          "text": "  ✅ 项目首页: 搜索UC已删除，加载UC存在\n"
+                        },
+                        {
+                          "text": "  ✅ 平台首页(返回): UC-SHP-APP-001-01 仍存在\n"
+                        },
+                        {
+                          "text": "✅ 回归验证通过：跨页面UC不串扰\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T09:37:50.237Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-results\\uc-user-flow-真人路径模拟——端到端测试-回归验证：首页→项目首页-来回导航，UC列表不混淆-chromium\\test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "001064041d19657d52e9-4b352948eba1f2672cdf",
+              "file": "uc-user-flow.spec.ts",
+              "line": 149,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-08-09T09:33:25.897Z",
+    "duration": 275156.89900000003,
+    "expected": 19,
+    "skipped": 0,
+    "unexpected": 6,
+    "flaky": 0
+  }
+}

@@ -19,37 +19,37 @@ members:
     name: "Jojo"
     git_name: "jojo"
     role: "admin"
-    accessible_projects: ["AI-SCRM"]    # V1.2.0: 可访问的项目列表（支持跨项目协作）
+    accessible_projects: ["SAAS-APP", "AI-SCRM", "SAAS", "SugarMate"]    # V1.2.0: 可访问的项目列表（支持跨项目协作）
 
   - id: "Eltonliz"
     name: "李政"
     git_name: "Eltonliz"
     role: "member"
-    accessible_projects: ["SAAS", "AI-SCRM"]
+    accessible_projects: ["SAAS-APP", "SAAS", "AI-SCRM"]
 
   - id: "linjinmei"
     name: "林金梅"
     git_name: "linjinmei"
     role: "member"
-    accessible_projects: ["SAAS"]
+    accessible_projects: ["SAAS-APP", "SAAS"]
 
   - id: "fuyongjian"
     name: "付永健"
     git_name: "fuyongjian"
     role: "member"
-    accessible_projects: ["AI-SCRM", "SAAS", "SugarMate"]
+    accessible_projects: ["SAAS-APP", "AI-SCRM", "SAAS", "SugarMate"]
 
   - id: "jiangrubin"
     name: "江如彬"
     git_name: "jiangrubin"
     role: "member"
-    accessible_projects: ["AI-SCRM", "SAAS", "SugarMate"]
+    accessible_projects: ["SAAS-APP", "AI-SCRM", "SAAS", "SugarMate"]
 
   - id: "zhuangjingxiang"
     name: "庄景翔"
     git_name: "zhuangjingxiang"
     role: "member"
-    accessible_projects: ["SAAS"]
+    accessible_projects: ["SAAS-APP", "SAAS"]
 
 # ============================================
 # 权限边界定义

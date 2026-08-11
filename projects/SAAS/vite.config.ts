@@ -16,11 +16,12 @@ export default defineConfig({
         admin: resolve(__dirname, 'admin.html'),
         tenant: resolve(__dirname, 'tenant.html'),
         h5: resolve(__dirname, 'h5.html'),
+        app: resolve(__dirname, 'app.html'),
       },
     },
   },
   server: {
     port: 5174,
-    open: '/admin.html',
+    open: '/app.html',
   },
 })

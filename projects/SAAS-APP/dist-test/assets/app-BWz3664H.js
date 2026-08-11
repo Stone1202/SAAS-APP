@@ -1,0 +1,1 @@
+import{c as o,_ as e,a as n,r as s,e as i}from"./index-Dt_wZCnL.js";const t="real";console.log(`[SAAS-APP] 运行模式: ${t} | 终端: APP端`);(window.location.hash===""||window.location.hash==="#/"||window.location.hash==="#/index.html")&&(window.location.hash="#/app/home");const a=o(e),c=n();a.use(c);a.use(s);a.use(i);a.mount("#app");

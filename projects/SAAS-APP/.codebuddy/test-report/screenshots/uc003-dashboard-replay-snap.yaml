@@ -1,0 +1,97 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - tablist [ref=e8]:
+      - tab "直播管理" [ref=e10]:
+        - generic [ref=e11]:
+          - text: 直播管理
+          - button "查看「直播管理/回放管理」Tab用例说明" [ref=e12] [cursor=pointer]:
+            - img [ref=e13]
+      - tab "回放管理" [active] [selected] [ref=e16] [cursor=pointer]:
+        - generic [ref=e17]:
+          - text: 回放管理
+          - button "查看「直播管理/回放管理」Tab用例说明" [ref=e18]:
+            - img [ref=e19]
+    - generic:
+      - tabpanel "回放管理"
+  - generic [ref=e193]:
+    - generic [ref=e195]:
+      - generic [ref=e196]: 回放管理
+      - generic [ref=e198]: 待核对 1
+    - generic [ref=e201]:
+      - table [ref=e203]:
+        - rowgroup [ref=e212]:
+          - row "场次ID 场次名称 主播 直播状态 擦音状态 发布状态 操作" [ref=e213]:
+            - columnheader "场次ID" [ref=e214]:
+              - generic [ref=e215]: 场次ID
+            - columnheader "场次名称" [ref=e216]:
+              - generic [ref=e217]: 场次名称
+            - columnheader "主播" [ref=e218]:
+              - generic [ref=e219]: 主播
+            - columnheader "直播状态" [ref=e220]:
+              - generic [ref=e221]: 直播状态
+            - columnheader "擦音状态" [ref=e222]:
+              - generic [ref=e224]:
+                - text: 擦音状态
+                - button "查看「擦音状态标签」用例说明" [ref=e225] [cursor=pointer]:
+                  - img [ref=e226]
+            - columnheader "发布状态" [ref=e229]:
+              - generic [ref=e231]:
+                - text: 发布状态
+                - button "查看「发布状态标签」用例说明" [ref=e232] [cursor=pointer]:
+                  - img [ref=e233]
+            - columnheader "操作" [ref=e236]:
+              - generic [ref=e238]:
+                - text: 操作
+                - button "查看「操作」列用例说明" [ref=e239] [cursor=pointer]:
+                  - img [ref=e240]
+      - table [ref=e247]:
+        - rowgroup [ref=e256]:
+          - row "LIVE-003 周末娱乐专场 娱乐达人 已结束 已完成 待核对 核对并发布" [ref=e257]:
+            - cell "LIVE-003" [ref=e258]:
+              - generic [ref=e259]: LIVE-003
+            - cell "周末娱乐专场" [ref=e260]:
+              - generic [ref=e261]: 周末娱乐专场
+            - cell "娱乐达人" [ref=e262]:
+              - generic [ref=e263]: 娱乐达人
+            - cell "已结束" [ref=e264]:
+              - generic [ref=e267]: 已结束
+            - cell "已完成" [ref=e268]:
+              - generic [ref=e270]:
+                - generic [ref=e272]: 已完成
+                - button "查看「擦音状态标签」用例说明" [ref=e273] [cursor=pointer]:
+                  - img [ref=e274]
+            - cell "待核对" [ref=e277]:
+              - generic [ref=e279]:
+                - generic [ref=e281]: 待核对
+                - button "查看「发布状态标签」用例说明" [ref=e282] [cursor=pointer]:
+                  - img [ref=e283]
+            - cell "核对并发布" [ref=e286]:
+              - generic [ref=e288]:
+                - button "核对并发布" [ref=e289] [cursor=pointer]:
+                  - generic [ref=e290]: 核对并发布
+                - button "查看「核对并发布」按钮用例说明" [ref=e291] [cursor=pointer]:
+                  - img [ref=e292]
+          - row "LIVE-004 知识付费公开课 教育博士 已结束 擦音中 待核对 擦音处理中..." [ref=e295]:
+            - cell "LIVE-004" [ref=e296]:
+              - generic [ref=e297]: LIVE-004
+            - cell "知识付费公开课" [ref=e298]:
+              - generic [ref=e299]: 知识付费公开课
+            - cell "教育博士" [ref=e300]:
+              - generic [ref=e301]: 教育博士
+            - cell "已结束" [ref=e302]:
+              - generic [ref=e305]: 已结束
+            - cell "擦音中" [ref=e306]:
+              - generic [ref=e308]:
+                - generic [ref=e310]: 擦音中
+                - button "查看「擦音状态标签」用例说明" [ref=e311] [cursor=pointer]:
+                  - img [ref=e312]
+            - cell "待核对" [ref=e315]:
+              - generic [ref=e317]:
+                - generic [ref=e319]: 待核对
+                - button "查看「发布状态标签」用例说明" [ref=e320] [cursor=pointer]:
+                  - img [ref=e321]
+            - cell "擦音处理中..." [ref=e324]:
+              - generic [ref=e327]: 擦音处理中...
+  - button "用例卡" [ref=e188] [cursor=pointer]:
+    - img [ref=e189]
+    - generic [ref=e192]: 用例卡

@@ -1,0 +1,1 @@
+import{c as o,_ as n,a as e,r as s,e as t}from"./index-76qm7AXx.js";const i="real";console.log(`[SAAS-APP] 运行模式: ${i} | 终端: 租户后台`);(window.location.hash===""||window.location.hash==="#/"||window.location.hash==="#/index.html")&&(window.location.hash="#/tenant/projects");const a=o(n),c=e();a.use(c);a.use(s);a.use(t);a.mount("#app");
