@@ -3,11 +3,11 @@
 > **doc_id**: REQ-APP-PRD-v3.1.0
 > **module**: APP端配置式装修电商
 > **business_system**: SAAS电商平台 / SAAS运营后台 / SAAS租户后台
-> **version**: v3.1.39
+> **version**: v3.1.46
 > **platform**: PC端(运营后台+租户后台) + 移动端APP(消费者)
 > **author**: BA Agent
 > **created**: 2026-08-07
-> **last_updated**: 2026-08-10 (v3.1.39 文案统一+用例卡v4+原型总览页+三方交叉验证)
+> **last_updated**: 2026-08-12 (v3.1.46 商品卡去收藏按钮+去门店标签+直播详情页改空展位)
 > **source_brainstorm**: docs/00-brainstorm/APP端/confirmed/BR-脑暴文档-APP端-确认稿.md
 > **需求流**: STR-SAAS-002 | **类型**: 新增 | **优先级**: P0
 
@@ -50,6 +50,7 @@
 | v3.1.36 | 2026-08-10 | 推荐引擎脱离+项目维度直播推荐默认规则（4项）：①平台APP首页直播推荐脱离规则引擎——改为按默认规则排序(BR-SHP-042：状态排序live→upcoming→replay+同状态按started_at倒序，排除ended)，保留手动推荐叠加(手动在前+默认规则补足)+展示条数配置；②运营后台首页推荐页直播Tab移除"规则引用"区域——新增showRuleSelector prop(默认true)，直播Tab传false改为显示"按默认规则读取"说明卡片，商品Tab保留规则引用不变；③项目维度(项目首页+门店首页)推荐直播采用默认规则(BR-SHP-041：状态排序live→upcoming→replay+同状态按started_at倒序，排除ended)，默认展示前4条；④商城精选直播Tab仍走规则引擎不变，首页直播推荐"更多"跳转精选直播Tab不变 |
 | v3.1.37 | 2026-08-10 | 项目禁用分层拦截+运营平台项目列表+租户后台项目选择器：①运营平台新增"项目管理"菜单分组(独立分组，位于"运营管理"上方)，含"项目列表"一项(/admin/projects)，从租户后台迁移ProjectManage并增强——新增启用/禁用操作(切换status字段)+禁用原因输入+搜索筛选(按名称/ID/状态/租户)+分页(每页10条)+所属租户列+行业列；②租户后台移除"项目列表"入口(菜单和路由)，header-bar右侧新增项目下拉选择器(el-select绑定currentProjectId，切换项目跳转/tenant/projects/:id/profile)，未选项目时显示"请在顶部选择项目"提示；③新增BR-SHP-043项目禁用分层拦截规则——采用"软停用"策略(数据保留+前端隐藏+交易拦截+历史不受影响)，5层拦截：Layer1数据层过滤(activeProjects computed+filterByActiveProject过滤inactive项目的商品/直播)+Layer2路由层拦截(ProjectFrame进入时checkProjectActive+inactive弹窗返回)+Layer3详情层拦截(商品/直播/门店详情onMounted检查所属项目状态)+Layer4交易层拦截(下单/支付前后端二次校验，前端按钮禁用)+Layer5会员层处理(签到/下单/券使用禁用，积分/券/余额仍可查看)；④新增FN-SHP-ADMIN-007运营平台项目管理(项目列表CRUD+启用/禁用)；⑤修订FN-TNT-PC-001(移除项目列表，改为项目下拉选择器+当前项目功能)；⑥新增useProjectStatusFilter composable(过滤inactive项目内容)+useProjectActiveCheck composable(弹窗拦截inactive项目)；⑦ProjectMember/ProjectHome增加项目停用提示条+签到按钮禁用 |
 | v3.1.38 | 2026-08-10 | 规则引用生效状态+商城列表场景缺失修复：①RecommendScenario新增effect_status字段(pending=数据同步中/active=已生效)，关联规则后自动进入pending异步处理完成后自动active，pending期间规则照常执行(状态仅作视觉提示)；②RuleEffectStatus类型定义(pending/active)；③Store层setScenarioRule触发2秒异步模拟(pending→active)，新增syncingScenarios记录+setScenarioEffectStatus方法；④ScenarioPanel规则引用卡片展示生效状态标签(待生效warning/已生效success)；⑤新增BR-SHP-044规则引用生效状态规则；⑥修复商城管理-商城列表选择规则提示"场景不存在"bug——recommendScenarios从localStorage加载旧数据时缺失新增场景(如sc-mall-projects)，增加默认场景合并+effect_status迁移逻辑 |
+| v3.1.46 | 2026-08-12 | 商品卡精简+直播详情页空展位：①ProductCard.vue移除收藏按钮(心形图标.pc-like)——覆盖全部商品列表展示位置(平台首页/商城页/项目首页/项目商城页/搜索结果/门店商品列表，6处复用全局生效)；②ProductCard.vue移除商品名称下方门店标签(.pc-store-line/.pc-store-tag)——同步删除storeName computed与useProjectStore依赖；③LiveDetail.vue全部内容移除改为空页展位——删除封面/直播信息/回放入口/直播商品/所属项目入口，保留手机壳容器+顶部状态栏+返回按钮+用例卡，中间显示"直播详情页/页面建设中，敬请期待"占位说明，路由/app/live/:liveId及LiveCard跳转入口不变 |
 
 ---
 

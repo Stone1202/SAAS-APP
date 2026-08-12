@@ -11,9 +11,6 @@
       <div class="pc-name">
         <span class="pc-name-text">{{ product.name }}</span>
       </div>
-      <div class="pc-store-line" v-if="storeName">
-        <span class="pc-store-tag">{{ storeName }}</span>
-      </div>
       <div class="pc-price-row">
         <span class="pc-price">
           <span class="pc-price-sym">¥</span>{{ product.price }}
@@ -22,11 +19,6 @@
       </div>
       <div class="pc-meta">
         <span class="pc-sold">已售{{ soldText }}</span>
-        <span class="pc-like">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-          </svg>
-        </span>
       </div>
     </div>
   </div>
@@ -34,7 +26,6 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useProjectStore } from '../../../stores/project-store';
 import type { Product } from '../../../contracts';
 
 const props = defineProps<{
@@ -45,14 +36,6 @@ const props = defineProps<{
 defineEmits<{
   click: [];
 }>();
-
-const store = useProjectStore();
-
-// 门店名称
-const storeName = computed(() => {
-  const s = store.getStoreById(props.product.store_id || '');
-  return s?.name || '';
-});
 
 // 商品emoji
 const emoji = computed(() => {
@@ -128,16 +111,6 @@ const soldText = computed(() => {
   overflow: hidden;
   font-weight: 500;
 }
-.pc-store-line {
-  margin-bottom: 4px;
-}
-.pc-store-tag {
-  font-size: 10px;
-  color: #FF6B35;
-  background: rgba(255,107,53,0.08);
-  padding: 1px 6px;
-  border-radius: 3px;
-}
 .pc-price-row {
   display: flex;
   align-items: baseline;
@@ -162,5 +135,4 @@ const soldText = computed(() => {
   margin-top: 6px;
 }
 .pc-sold { font-size: 10px; color: #bbb; }
-.pc-like { display: flex; align-items: center; }
 </style>

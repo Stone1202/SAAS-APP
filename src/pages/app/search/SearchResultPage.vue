@@ -64,13 +64,15 @@
             class="srbl-item"
             @click="$router.push(`/app/project/${p.project_id}`)"
           >
-            <div class="srbl-logo" :style="{ background: projectGradient(p) }">
-              <span>{{ p.name?.charAt(0) || '项' }}</span>
-            </div>
+            <img
+              :src="p.logo || projectLogoPlaceholder"
+              :alt="p.name"
+              class="srbl-logo"
+            />
             <div class="srbl-info">
               <div class="srbl-name">{{ p.name }}</div>
               <div class="srbl-desc">{{ p.description }}</div>
-              <div class="srbl-meta">{{ p.store_count || 0 }}家门店 · {{ productCountByProject(p) }}件商品</div>
+              <div class="srbl-meta">{{ productCountByProject(p) }}件商品</div>
             </div>
             <span class="srbl-arrow">›</span>
           </div>
@@ -179,13 +181,8 @@ function tabCount(key: string) {
   return 0;
 }
 
-function projectGradient(p: any) {
-  if (p.name?.includes('日用')) return 'linear-gradient(135deg,#FF6B35,#FF8F35)';
-  if (p.name?.includes('厨房')) return 'linear-gradient(135deg,#667eea,#764ba2)';
-  if (p.name?.includes('运动')) return 'linear-gradient(135deg,#11998e,#38ef7d)';
-  if (p.name?.includes('数码')) return 'linear-gradient(135deg,#0F2027,#203A43)';
-  return 'linear-gradient(135deg,#FF6B35,#FF8F35)';
-}
+// 项目 logo 占位图（logo 字段缺失时使用）
+const projectLogoPlaceholder = 'https://picsum.photos/seed/project-placeholder/100/100';
 
 function productCountByProject(p: any) {
   return projectStore.productsByProject(p.project_id).length;
@@ -281,8 +278,8 @@ onMounted(() => {
 }
 .srbl-item:active { background: #f0f0f0; }
 .srbl-logo {
-  width: 42px; height: 42px; border-radius: 10px; display: flex;
-  align-items: center; justify-content: center; color: #fff; font-size: 18px; font-weight: 700; flex-shrink: 0;
+  width: 42px; height: 42px; border-radius: 10px;
+  object-fit: cover; flex-shrink: 0;
 }
 .srbl-info { flex: 1; min-width: 0; }
 .srbl-name { font-size: 14px; font-weight: 600; color: #222; }
