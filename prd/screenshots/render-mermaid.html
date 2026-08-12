@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<script src="./mermaid.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #fff; padding: 40px; }
+.diagram { margin-bottom: 60px; padding: 30px; border: 1px solid #e5e5e5; border-radius: 8px; background: #fafafa; }
+.diagram-label { font-size: 20px; font-weight: 700; margin-bottom: 20px; color: #1a1a1a; }
+.mermaid { text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="diagram" id="d1">
+<div class="diagram-label">图1 — 业务流程图</div>
+<div class="mermaid">
+flowchart TD
+    A[消费者打开APP] --> B[平台首页5Tab]
+    B --> C{Tab选择}
+    C -->|首页| D[APPlogo/搜索框/BANNER/金刚区/直播推荐/商品推荐]
+    C -->|商城| E[项目列表/精选商品/精选直播Tab]
+    C -->|娱乐| E1[娱乐占位页]
+    C -->|消息| E2[消息占位页]
+    C -->|我的| G[个人中心8模块]
+    D --> H{点击元素}
+    H -->|金刚区| I[跳转目标页]
+    H -->|商品| J[商品详情页 FN-012]
+    H -->|直播| K[直播详情页 FN-014]
+    H -->|搜索框| F[搜索页]
+    E --> L[项目卡片:logo/主营类目/推荐商品/推荐直播]
+    L --> M[项目首页4Tab:首页/商城/门店/会员]
+    F --> N[搜索历史/热门搜索词]
+    N --> O{关联自定义结果?}
+    O -->|是| P[直接跳转目标页]
+    O -->|否| Q[搜索结果页]
+    Q --> R[综合/商品/项目/直播Tab]
+    M --> M1{项目Tab选择}
+    M1 -->|首页| M2[项目LOGO/BANNER/直播推荐/商品推荐]
+    M1 -->|商城| M3[项目商城:按营销分类显示商品]
+    M1 -->|门店| M4[门店列表:按距离排序]
+    M1 -->|会员| M5[会员中心:积分/优惠券/等级/零钱]
+    M4 --> T[门店详情:基本信息/位置/推荐直播/商品按分类]
+</div>
+</div>
+
+<div class="diagram" id="d2">
+<div class="diagram-label">图2 — 信息流转图</div>
+<div class="mermaid">
+flowchart LR
+    subgraph 运营后台
+        OP1[搜索/广告/金刚区/直播推荐/商品推荐配置]
+    end
+    subgraph 租户后台
+        TN1[项目/门店/项目首页配置/营销分类管理]
+    end
+    subgraph localStorage
+        LS1[saas:app-config]
+        LS2[saas:project]
+        LS3[saas:user]
+    end
+    subgraph APP端
+        AP1[平台首页/商城/搜索/项目维度/个人中心]
+    end
+    OP1 -->|watch deep| LS1
+    TN1 -->|watch deep| LS2
+    LS1 -->|load| AP1
+    LS2 -->|load| AP1
+    AP1 -->|用户数据| LS3
+</div>
+</div>
+
+<div class="diagram" id="d3a">
+<div class="diagram-label">图3a — 广告位状态机</div>
+<div class="mermaid">
+stateDiagram-v2
+    [*] --> 待上线: 新建
+    待上线 --> 展示中: 到达start_time
+    展示中 --> 已下线: 到达end_time
+    展示中 --> 已下线: 手动下架
+    待上线 --> 已下线: 手动下架
+    已下线 --> 待上线: 重新编辑
+    已下线 --> [*]: 删除
+</div>
+</div>
+
+<div class="diagram" id="d3b">
+<div class="diagram-label">图3b — 直播状态机</div>
+<div class="mermaid">
+stateDiagram-v2
+    [*] --> 预告: 创建直播
+    预告 --> 直播中: 到达开播时间
+    直播中 --> 已结束: 主播结束
+    已结束 --> 回放中: 生成回放
+    回放中 --> [*]: 过期删除
+</div>
+</div>
+
+<div class="diagram" id="d3c">
+<div class="diagram-label">图3c — 推荐配置状态机</div>
+<div class="mermaid">
+stateDiagram-v2
+    [*] --> 已启用: 新建/配置
+    已启用 --> 已禁用: 关闭
+    已禁用 --> 已启用: 开启
+    已启用 --> [*]: 删除
+    已禁用 --> [*]: 删除
+</div>
+</div>
+
+<div class="diagram" id="d4">
+<div class="diagram-label">图4 — 业务时序图</div>
+<div class="mermaid">
+sequenceDiagram
+    participant 消费者
+    participant APP端
+    participant PiniaStore
+    participant localStorage
+    participant 运营后台
+    消费者->>APP端: 打开APP首页
+    APP端->>PiniaStore: 加载app-config
+    PiniaStore->>localStorage: read saas:app-config
+    localStorage-->>PiniaStore: 返回配置JSON
+    PiniaStore-->>APP端: 注入响应式数据
+    APP端-->>消费者: 渲染首页(Banner/金刚区/推荐)
+    Note over 运营后台,localStorage: 运营修改配置
+    运营后台->>PiniaStore: 修改广告配置
+    PiniaStore->>localStorage: watch deep → write saas:app-config
+    Note over 消费者,APP端: 下次打开APP生效
+</div>
+</div>
+
+<script>
+mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose', fontSize: 16 });
+mermaid.run({ querySelector: '.mermaid' }).then(function() {
+  document.body.setAttribute('data-rendered', 'true');
+});
+</script>
+</body>
+</html>
