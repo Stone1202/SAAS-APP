@@ -77,7 +77,7 @@
     <!-- 编辑弹窗 -->
     <el-dialog v-model="dialogVisible" :title="editingId ? '编辑广告' : '新增广告'" width="600px">
       <el-form :model="form" label-width="90px" size="small">
-        <el-form-item label="广告标题"><el-input v-model="form.title" placeholder="如: 新品首发 — 全场低至5折" /></el-form-item>
+        <el-form-item label="广告标题"><el-input v-model="form.title" maxlength="30" show-word-limit placeholder="如: 新品首发 — 全场低至5折" /></el-form-item>
 
         <el-form-item label="广告图片">
           <el-upload class="ad-uploader" action="#" :auto-upload="false" :show-file-list="false" :on-change="onImageChange">

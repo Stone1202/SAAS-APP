@@ -29,7 +29,8 @@
       <el-table-column prop="id" label="入口ID" width="120" show-overflow-tooltip />
       <el-table-column label="图标" width="80" align="center">
         <template #default="{ row }">
-          <span style="font-size: 24px">{{ row.icon }}</span>
+          <img v-if="isImageUrl(row.icon)" :src="row.icon" class="kk-thumb" />
+          <span v-else style="font-size: 24px">{{ row.icon }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="name" label="入口名称" width="140" />
@@ -66,10 +67,24 @@
     <el-dialog v-model="dialogVisible" :title="editing ? '编辑入口' : '新增入口'" width="560px">
       <el-form :model="form" label-width="90px">
         <el-form-item label="入口名称">
-          <el-input v-model="form.name" />
+          <el-input v-model="form.name" maxlength="10" show-word-limit />
         </el-form-item>
         <el-form-item label="图标">
-          <el-input v-model="form.icon" placeholder="emoji或图片URL" />
+          <el-upload
+            class="kk-uploader"
+            action="#"
+            :auto-upload="false"
+            :show-file-list="false"
+            :on-change="onIconChange"
+            :before-upload="() => false"
+          >
+            <div class="kk-upload-box" v-if="!form.icon">
+              <el-icon class="kk-upload-icon"><Plus /></el-icon>
+              <span class="kk-upload-text">上传图标</span>
+            </div>
+            <img v-else :src="form.icon" class="kk-upload-preview" />
+          </el-upload>
+          <span class="kk-upload-tip">建议尺寸 48×48px，大小不超过 200KB</span>
         </el-form-item>
         <el-divider content-position="left">跳转配置</el-divider>
         <JumpTargetPicker
@@ -105,6 +120,7 @@ import { useRoute } from 'vue-router';
 import { useProjectStore } from '../../stores/project-store';
 import { useAppConfigStore } from '../../stores/app-config-store';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { Plus } from '@element-plus/icons-vue';
 import JumpTargetPicker from '../../components/admin/JumpTargetPicker.vue';
 
 const route = useRoute();
@@ -182,6 +198,27 @@ const form = reactive({
   project_id: '',
   sort_order: 0,
 });
+
+// v3.1.47 调整4: 图标改为上传图片，限制大小200KB
+function onIconChange(file: any) {
+  const raw = file.raw;
+  if (!raw) return;
+  // 校验图片大小（200KB）
+  const MAX_SIZE = 200 * 1024;
+  if (raw.size > MAX_SIZE) {
+    ElMessage.warning('图标图片大小不能超过 200KB');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => { form.icon = e.target?.result as string; };
+  reader.readAsDataURL(raw);
+}
+
+/** 判断icon值是否为图片URL（http/data:开头） */
+function isImageUrl(icon: string): boolean {
+  if (!icon) return false;
+  return icon.startsWith('http') || icon.startsWith('data:') || icon.startsWith('/');
+}
 
 function jumpTypeTag(t: string) {
   // v3.1.45: 新增 function_page 分支
@@ -314,4 +351,13 @@ function remove(row: any) {
 .page-title { font-size: 20px; margin: 0 0 4px; color: #333; }
 .page-desc { font-size: 13px; color: #999; }
 .toolbar { margin-bottom: 16px; }
+/* v3.1.47 调整4: 金刚区图标上传样式 */
+.kk-thumb { width: 36px; height: 36px; object-fit: cover; border-radius: 8px; }
+.kk-uploader { display: inline-block; }
+.kk-upload-box { width: 48px; height: 48px; border: 1px dashed #d9d9d9; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
+.kk-upload-box:hover { border-color: #FF6B35; }
+.kk-upload-icon { font-size: 18px; color: #bbb; }
+.kk-upload-text { font-size: 9px; color: #bbb; margin-top: 2px; }
+.kk-upload-preview { width: 48px; height: 48px; object-fit: cover; border-radius: 8px; }
+.kk-upload-tip { margin-left: 8px; font-size: 10px; color: #999; }
 </style>

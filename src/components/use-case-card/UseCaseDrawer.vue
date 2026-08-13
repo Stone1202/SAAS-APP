@@ -511,7 +511,7 @@ const PG_NAMES: Record<string, string> = {
   'PG-TNT-PC-002': '门店管理',
   'PG-TNT-PC-004': '营销分类',
   'PG-TNT-PC-005': '项目信息管理',
-  'PG-TNT-PC-006': 'Banner管理',
+  'PG-TNT-PC-006': '广告位管理',
   'PG-TNT-PC-007': '金刚区管理',
   '—': '—',
 };

@@ -129,7 +129,7 @@
     >
       <el-form :model="editingRule" label-width="100px" size="small">
         <el-form-item label="规则名称" required>
-          <el-input v-model="editingRule.name" placeholder="如：直播热度优先" style="width:360px" />
+          <el-input v-model="editingRule.name" maxlength="20" show-word-limit placeholder="如：直播热度优先" style="width:360px" />
         </el-form-item>
         <el-form-item label="适用类型" required>
           <el-radio-group v-model="editingRule.target_type" @change="onTargetTypeChange">
@@ -143,6 +143,8 @@
             v-model="editingRule.description"
             type="textarea"
             :rows="2"
+            maxlength="100"
+            show-word-limit
             placeholder="规则用途说明"
             style="width:480px"
           />

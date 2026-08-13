@@ -30,7 +30,7 @@
           </el-menu-item>
           <el-menu-item :index="bannersPath" @click="navigate(bannersPath)">
             <el-icon><Picture /></el-icon>
-            <span>Banner管理</span>
+            <span>广告位管理</span>
           </el-menu-item>
           <el-menu-item :index="kingkongPath" @click="navigate(kingkongPath)">
             <el-icon><Grid /></el-icon>
@@ -159,7 +159,7 @@ const activeMenu = computed(() => {
 const menuTitleMap: Record<string, string> = {
   profile: '项目管理',
   stores: '门店管理（忽略）',
-  banners: 'Banner管理',
+  banners: '广告位管理',
   kingkong: '金刚区管理',
   'marketing-categories': '营销分类（忽略）',
 };
@@ -168,7 +168,7 @@ const currentTitle = computed(() => {
   const path = route.path;
   // 动态匹配面包屑
   if (path.includes('/profile') || route.name === 'TenantProjectProfile') return '项目管理';
-  if (path.includes('/banners') || route.name === 'TenantProjectBanners') return 'Banner管理';
+  if (path.includes('/banners') || route.name === 'TenantProjectBanners') return '广告位管理';
   if (path.includes('/kingkong') || route.name === 'TenantProjectKingKong') return '金刚区管理';
   if (path.includes('/stores') || route.name === 'TenantProjectStores') return '门店管理（忽略）';
   if (path.includes('/marketing-categories') || route.name === 'TenantMarketingCategory') return '营销分类（忽略）';

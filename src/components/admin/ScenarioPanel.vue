@@ -49,7 +49,7 @@
             <el-input-number
               v-model="displayLimitValue"
               :min="1"
-              :max="50"
+              :max="displayLimitMax"
               size="small"
               placeholder="留空=无上限"
               @change="onDisplayLimitChange"
@@ -97,7 +97,7 @@
             <el-input-number
               v-model="displayLimitValue"
               :min="1"
-              :max="50"
+              :max="displayLimitMax"
               size="small"
               placeholder="留空=无上限"
               @change="onDisplayLimitChange"
@@ -271,10 +271,13 @@ const props = withDefaults(defineProps<{
    *  false 时隐藏规则引用区域，改为显示"按默认规则读取"说明卡片，
    *  预览逻辑改用 sortLivesByDefaultRule 排序（仅首页直播推荐使用） */
   showRuleSelector?: boolean;
+  /** v3.1.47 调整5&6：展示条数上限（默认50，直播推荐10，商品推荐100） */
+  displayLimitMax?: number;
 }>(), {
   pageSize: 10,
   showDisplayLimitEditor: false,
   showRuleSelector: true,
+  displayLimitMax: 50,
 });
 
 const router = useRouter();

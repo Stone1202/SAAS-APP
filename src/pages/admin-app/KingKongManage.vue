@@ -33,7 +33,8 @@
       <el-table-column prop="entry_id" label="入口ID" width="120" />
       <el-table-column label="图标" width="80" align="center">
         <template #default="{ row }">
-          <span style="font-size: 24px">{{ row.icon }}</span>
+          <img v-if="isImageUrl(row.icon)" :src="row.icon" class="kk-thumb" />
+          <span v-else style="font-size: 24px">{{ row.icon }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="name" label="入口名称" width="140" />
@@ -81,13 +82,24 @@
     <el-dialog v-model="dialogVisible" :title="editing ? '编辑入口' : '新增入口'" width="560px">
       <el-form :model="form" label-width="90px">
         <el-form-item label="入口名称">
-          <el-input v-model="form.name" />
+          <el-input v-model="form.name" maxlength="10" show-word-limit />
         </el-form-item>
         <el-form-item label="图标">
-          <el-input v-model="form.icon" placeholder="emoji或图片URL" />
-        </el-form-item>
-        <el-form-item label="渐变色">
-          <el-input v-model="form.gradient" placeholder="如: linear-gradient(135deg, #FF6B6B, #EE5A24)" />
+          <el-upload
+            class="kk-uploader"
+            action="#"
+            :auto-upload="false"
+            :show-file-list="false"
+            :on-change="onIconChange"
+            :before-upload="() => false"
+          >
+            <div class="kk-upload-box" v-if="!form.icon">
+              <el-icon class="kk-upload-icon"><Plus /></el-icon>
+              <span class="kk-upload-text">上传图标</span>
+            </div>
+            <img v-else :src="form.icon" class="kk-upload-preview" />
+          </el-upload>
+          <span class="kk-upload-tip">建议尺寸 48×48px，大小不超过 200KB</span>
         </el-form-item>
         <JumpTargetPicker
           v-model:jump-type="form.jump_type"
@@ -118,6 +130,7 @@ const { ucDrawerVisible, ucCards, ucDrawerTitle } = useUseCaseCard('PG-OPS-PC-00
 import { ref, computed, reactive } from 'vue';
 import { useAppConfigStore } from '../../stores/app-config-store';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { Plus } from '@element-plus/icons-vue';
 import JumpTargetPicker from '../../components/admin/JumpTargetPicker.vue';
 
 const store = useAppConfigStore();
@@ -193,13 +206,33 @@ const form = reactive({
   entry_id: '',
   name: '',
   icon: '',
-  gradient: '',
   // v3.1.45: 默认从 'url' 改为 'function_page'（url 已废弃）
   jump_type: 'function_page' as string,
   jump_id: '',
   project_id: '',
   sort: 0,
 });
+
+// v3.1.47 调整4: 图标改为上传图片，限制大小200KB
+function onIconChange(file: any) {
+  const raw = file.raw;
+  if (!raw) return;
+  // 校验图片大小（200KB）
+  const MAX_SIZE = 200 * 1024;
+  if (raw.size > MAX_SIZE) {
+    ElMessage.warning('图标图片大小不能超过 200KB');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => { form.icon = e.target?.result as string; };
+  reader.readAsDataURL(raw);
+}
+
+/** 判断icon值是否为图片URL（http/data:开头） */
+function isImageUrl(icon: string): boolean {
+  if (!icon) return false;
+  return icon.startsWith('http') || icon.startsWith('data:') || icon.startsWith('/');
+}
 
 function jumpTypeTag(t: string) {
   // v3.1.45: 新增 function_page 分支
@@ -222,7 +255,7 @@ function formatJumpTarget(row: any): string {
 function openAdd() {
   editing.value = false;
   // v3.1.45: 默认 jump_type 从 'url' 改为 'function_page'
-  Object.assign(form, { entry_id: '', name: '', icon: '', gradient: '', jump_type: 'function_page', jump_id: '', project_id: '', sort: 0 });
+  Object.assign(form, { entry_id: '', name: '', icon: '', jump_type: 'function_page', jump_id: '', project_id: '', sort: 0 });
   dialogVisible.value = true;
 }
 
@@ -232,7 +265,6 @@ function openEdit(row: any) {
     entry_id: row.entry_id,
     name: row.name || '',
     icon: row.icon || '',
-    gradient: row.gradient || '',
     // v3.1.45: 旧 url 数据回退为 function_page（url 已废弃）
     jump_type: row.jump_type === 'url' ? 'function_page' : (row.jump_type || 'function_page'),
     jump_id: row.jump_id || '',
@@ -261,7 +293,6 @@ function save() {
       Object.assign(store.kingKongs[idx], {
         name: form.name,
         icon: form.icon,
-        gradient: form.gradient,
         jump_type: form.jump_type,
         jump_id: form.jump_id,
         project_id: form.project_id,
@@ -282,7 +313,6 @@ function save() {
       entry_id: `kk-${Date.now()}`,
       name: form.name,
       icon: form.icon,
-      gradient: form.gradient,
       jump_type: form.jump_type as any,
       jump_id: form.jump_id,
       project_id: form.project_id,
@@ -324,4 +354,13 @@ function remove(row: any) {
 .page-title { font-size: 20px; margin: 0 0 4px; color: #333; }
 .page-desc { font-size: 13px; color: #999; }
 .toolbar { margin-bottom: 16px; }
+/* v3.1.47 调整4: 金刚区图标上传样式 */
+.kk-thumb { width: 36px; height: 36px; object-fit: cover; border-radius: 8px; }
+.kk-uploader { display: inline-block; }
+.kk-upload-box { width: 48px; height: 48px; border: 1px dashed #d9d9d9; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
+.kk-upload-box:hover { border-color: #FF6B35; }
+.kk-upload-icon { font-size: 18px; color: #bbb; }
+.kk-upload-text { font-size: 9px; color: #bbb; margin-top: 2px; }
+.kk-upload-preview { width: 48px; height: 48px; object-fit: cover; border-radius: 8px; }
+.kk-upload-tip { margin-left: 8px; font-size: 10px; color: #999; }
 </style>

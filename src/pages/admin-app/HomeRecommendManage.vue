@@ -21,6 +21,7 @@
           :page-size="10"
           :show-display-limit-editor="true"
           :show-rule-selector="false"
+          :display-limit-max="10"
         />
       </el-tab-pane>
       <el-tab-pane label="商品推荐" name="product">
@@ -30,6 +31,7 @@
           content-type-label="商品"
           :page-size="10"
           :show-display-limit-editor="true"
+          :display-limit-max="100"
         />
       </el-tab-pane>
     </el-tabs>

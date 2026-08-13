@@ -45,11 +45,11 @@
         <h3>{{ editingId ? '编辑分类' : '新增分类' }}</h3>
         <div class="cmm-field">
           <label>分类名称</label>
-          <input v-model="form.name" placeholder="如：限时秒杀/新品首发" />
+          <input v-model="form.name" maxlength="10" placeholder="如：限时秒杀/新品首发" />
         </div>
         <div class="cmm-field">
           <label>图标（Emoji）</label>
-          <input v-model="form.icon" placeholder="如：⚡🆕🔥" />
+          <input v-model="form.icon" maxlength="6" placeholder="如：⚡🆕🔥" />
         </div>
         <div class="cmm-field">
           <label>排序（数字越小越靠前）</label>

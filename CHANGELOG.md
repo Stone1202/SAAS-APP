@@ -4,6 +4,46 @@
 
 ---
 
+## [v3.1.47] — 2026-08-12 ✅ 功能页面管理只读化+金刚区图标上传+输入框字符限制+展示条数上限调整
+
+**需求流**: STR-SAAS-002 | **阶段**: 开发 | **PRD版本**: v3.1.47
+
+### Changed（功能页面管理改造）
+1. **FunctionPageManage.vue 完全改造为只读+启用/禁用模式**：删除"新增功能页面"按钮和新增/编辑弹窗，列表"操作"列改为 el-switch 启用/禁用开关，筛选区增加"筛选"和"重置"按钮（工作副本模式，参考 AdManage.vue 模式）。页面内容不允许修改，只允许启用/禁用。
+
+### Changed（金刚区图标改上传图片+去渐变色）
+2. **KingKongManage.vue + ProjectKingKongManage.vue 图标输入框改为 el-upload**：限制图片大小 200KB，FileReader 转 base64 存储，删除"渐变色"输入框及 form.gradient
+3. **KingKongGrid.vue 图标渲染优化**：icon 值以 http/data:/开头时显示 `<img>`，否则保留 emoji 兼容旧数据；去掉 gradient 背景应用改为白色 #f5f5f5
+
+### Changed（输入框字符长度限制）
+4. **11 个管理页所有新增/编辑表单输入框添加 maxlength + show-word-limit**：
+   - 运营平台：AdManage(广告标题30) / KingKongManage(入口名称10) / SearchManage(底纹词15/热搜词15/自定义结果标题30/描述100) / RecommendRuleManage(规则名称20/描述100) / ProjectListManage(项目描述200/禁用原因200)
+   - 租户平台：ProjectBannerManage(广告标题30) / ProjectKingKongManage(入口名称10) / MarketingCategoryManage(分类名称10/图标6) / ProjectManage(项目名称20/项目描述200) / ProjectProfileManage(项目描述200) / StoreManage(门店名称20/地址50/营业时间20/联系人10/电话11/邀请人姓名10/手机号11)
+
+### Changed（首页推荐展示条数上限）
+5. **ScenarioPanel.vue 新增 displayLimitMax prop**（默认50），两处 el-input-number 的 :max 绑定该 prop
+6. **HomeRecommendManage.vue 直播推荐 Tab 传 :display-limit-max="10"，商品推荐 Tab 传 :display-limit-max="100"**
+7. **app-config-store.ts updateScenarioDisplayLimit 校验逻辑改为按 scenarioId 动态判断上限**：sc-home-live → 10，sc-home-product → 100，其他 → 50
+
+### Changed（租户后台 Banner 管理改名）
+8. **"Banner管理"改名为"广告位管理"**：ProjectBannerManage.vue 标题+描述 / TenantLayout.vue 菜单文字+menuTitleMap+currentTitle / UseCaseDrawer.vue pgNameMap / router/index.ts 路由 meta.description+头部注释 / ProjectHomeConfig.vue 引导跳转按钮文字
+
+### 修改文件清单（13 代码 + 2 用例卡数据源 + 2 文档 = 17 个）
+- 运营后台：`FunctionPageManage.vue` + `KingKongManage.vue` + `AdManage.vue` + `SearchManage.vue` + `RecommendRuleManage.vue` + `ProjectListManage.vue` + `HomeRecommendManage.vue`
+- 租户后台：`ProjectBannerManage.vue` + `ProjectKingKongManage.vue` + `MarketingCategoryManage.vue` + `ProjectManage.vue` + `ProjectProfileManage.vue` + `StoreManage.vue`
+- 公共组件：`ScenarioPanel.vue` + `KingKongGrid.vue` + `TenantLayout.vue` + `UseCaseDrawer.vue`
+- 路由：`router/index.ts`
+- Store：`app-config-store.ts`
+- 页面：`ProjectHomeConfig.vue`
+- 用例卡：`admin-use-cases.ts` + `tenant-use-cases.ts`
+- 文档：`CHANGELOG.md` + `design-map.json`
+
+### 质量验证
+- TypeScript 类型检查：0错误 ✅
+- IDE Lint：0错误 ✅
+
+---
+
 ## [v3.1.45] — 2026-08-11 ✅ 跳转体系全面修复：link 自动同步+旧 url 数据迁移+composable 统一
 
 **需求流**: STR-SAAS-002 | **阶段**: 开发 | **PRD版本**: v3.1.45

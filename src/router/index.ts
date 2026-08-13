@@ -36,7 +36,7 @@
  *   /tenant/projects/:projectId/stores       | 租户后台-门店管理（v3.1.37：项目列表入口移至运营后台）
  *   /tenant/projects/:projectId/marketing-categories | 租户后台-营销分类管理
  *   /tenant/projects/:projectId/profile        | 租户后台-项目管理
- *   /tenant/projects/:projectId/banners        | 租户后台-Banner管理
+ *   /tenant/projects/:projectId/banners        | 租户后台-广告位管理
  *   /tenant/projects/:projectId/kingkong       | 租户后台-金刚区管理
  */
 
@@ -281,7 +281,7 @@ const routes: RouteRecordRaw[] = [
         path: 'projects/:projectId/banners',
         name: 'TenantProjectBanners',
         component: ProjectBannerManage,
-        meta: { terminal: 'pc-tenant', system: 'SAAS租户后台', description: 'Banner管理' },
+        meta: { terminal: 'pc-tenant', system: 'SAAS租户后台', description: '广告位管理' },
       },
       {
         path: 'projects/:projectId/kingkong',

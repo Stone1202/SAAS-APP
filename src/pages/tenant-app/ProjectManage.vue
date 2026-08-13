@@ -60,7 +60,7 @@
     <el-dialog v-model="dialogVisible" :title="editing ? '编辑项目' : '新增项目'" width="560px">
       <el-form :model="form" label-width="90px" ref="formRef" :rules="formRules">
         <el-form-item label="项目名称">
-          <el-input v-model="form.name" :disabled="editing" />
+          <el-input v-model="form.name" :disabled="editing" maxlength="20" show-word-limit />
         </el-form-item>
         <el-form-item label="商城名称" prop="mall_name">
           <el-input v-model="form.mall_name" placeholder="商城展示名称（可选，全局唯一，不超过20汉字）" maxlength="20" show-word-limit />
@@ -100,7 +100,7 @@
           </div>
         </el-form-item>
         <el-form-item label="项目描述">
-          <el-input v-model="form.description" type="textarea" :rows="3" />
+          <el-input v-model="form.description" type="textarea" :rows="3" maxlength="200" show-word-limit />
         </el-form-item>
         <el-form-item label="排序">
           <el-input-number v-model="form.sort" :min="0" />

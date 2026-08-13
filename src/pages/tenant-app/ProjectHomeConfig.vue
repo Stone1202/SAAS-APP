@@ -31,7 +31,7 @@
         <template #header>🖼️ Banner & 金刚区</template>
         <div class="migrate-tip">
           <p>Banner轮播和金刚区快捷入口已迁移到独立管理页面，功能更完善。</p>
-          <el-button type="primary" size="small" @click="router.push(`/tenant/projects/${projectId}/banners`)">前往 Banner管理</el-button>
+          <el-button type="primary" size="small" @click="router.push(`/tenant/projects/${projectId}/banners`)">前往广告位管理</el-button>
           <el-button type="primary" size="small" style="margin-left:8px" @click="router.push(`/tenant/projects/${projectId}/kingkong`)">前往 金刚区管理</el-button>
         </div>
       </el-card>

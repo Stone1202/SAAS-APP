@@ -105,7 +105,7 @@
     <el-dialog v-model="dialogVisible" :title="editing ? '编辑门店' : '新增门店'" width="560px">
       <el-form :model="form" label-width="90px">
         <el-form-item label="门店名称">
-          <el-input v-model="form.name" />
+          <el-input v-model="form.name" maxlength="20" show-word-limit />
         </el-form-item>
         <el-form-item label="门店类型">
           <el-select v-model="form.type" style="width: 100%">
@@ -115,19 +115,19 @@
           </el-select>
         </el-form-item>
         <el-form-item label="门店地址">
-          <el-input v-model="form.address" />
+          <el-input v-model="form.address" maxlength="50" show-word-limit />
         </el-form-item>
         <el-form-item label="营业时间">
-          <el-input v-model="form.business_hours" placeholder="如 09:00-21:00" />
+          <el-input v-model="form.business_hours" maxlength="20" show-word-limit placeholder="如 09:00-21:00" />
         </el-form-item>
         <el-form-item label="联系人">
-          <el-input v-model="form.contact_name" />
+          <el-input v-model="form.contact_name" maxlength="10" show-word-limit />
         </el-form-item>
         <el-form-item label="联系电话">
-          <el-input v-model="form.phone" />
+          <el-input v-model="form.phone" maxlength="11" show-word-limit />
         </el-form-item>
         <el-form-item label="封面图URL">
-          <el-input v-model="form.cover_image" />
+          <el-input v-model="form.cover_image" maxlength="500" />
         </el-form-item>
         <el-form-item label="经度">
           <el-input-number v-model="form.longitude" :precision="4" :step="0.01" />
@@ -154,7 +154,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="姓名" required>
-          <el-input v-model="inviterForm.name" />
+          <el-input v-model="inviterForm.name" maxlength="10" show-word-limit />
         </el-form-item>
         <el-form-item label="角色">
           <el-select v-model="inviterForm.role" style="width: 100%">
@@ -163,7 +163,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="手机号">
-          <el-input v-model="inviterForm.phone" />
+          <el-input v-model="inviterForm.phone" maxlength="11" show-word-limit />
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="inviterForm.status" style="width: 100%">

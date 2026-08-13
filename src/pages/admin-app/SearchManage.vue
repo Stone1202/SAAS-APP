@@ -7,7 +7,7 @@
     <el-card class="card" header="搜索底纹词">
       <el-form :inline="true" size="small">
         <el-form-item label="底纹词">
-          <el-input v-model="store.searchHint" placeholder="搜索框提示文字" style="width:300px" />
+          <el-input v-model="store.searchHint" placeholder="搜索框提示文字" maxlength="15" show-word-limit style="width:300px" />
         </el-form-item>
         <el-form-item><el-button type="primary" @click="saveHint">保存</el-button></el-form-item>
       </el-form>
@@ -142,7 +142,7 @@
     <!-- 热搜词弹窗 -->
     <el-dialog v-model="hotDialog" :title="hotEditingIdx >= 0 ? '编辑热搜词' : '新增热搜词'" width="500px">
       <el-form :model="hotForm" label-width="100px" size="small">
-        <el-form-item label="热搜词"><el-input v-model="hotForm.word" /></el-form-item>
+        <el-form-item label="热搜词"><el-input v-model="hotForm.word" maxlength="15" show-word-limit /></el-form-item>
         <el-form-item label="标签图标">
           <el-select v-model="hotForm.badge" style="width:100%" clearable placeholder="不设置图标">
             <el-option v-for="b in badgeOptions" :key="b.value" :label="b.label" :value="b.value" />
@@ -182,8 +182,8 @@
     <!-- 自定义结果弹窗 -->
     <el-dialog v-model="csrDialog" :title="csrEditingId ? '编辑自定义结果' : '新增自定义结果'" width="600px">
       <el-form :model="csrForm" label-width="90px" size="small">
-        <el-form-item label="展示标题"><el-input v-model="csrForm.title" /></el-form-item>
-        <el-form-item label="描述"><el-input v-model="csrForm.description" type="textarea" :rows="2" /></el-form-item>
+        <el-form-item label="展示标题"><el-input v-model="csrForm.title" maxlength="30" show-word-limit /></el-form-item>
+        <el-form-item label="描述"><el-input v-model="csrForm.description" type="textarea" :rows="2" maxlength="100" show-word-limit /></el-form-item>
 
         <el-divider content-position="left">跳转配置</el-divider>
         <JumpTargetPicker

@@ -970,15 +970,24 @@ export const useAppConfigStore = defineStore('app-config', () => {
   }
 
   /** 更新场景的展示条数（display_limit）— v3.1.35 新增
-   *  limit 传 undefined 表示无上限（展示全部） */
+   *  limit 传 undefined 表示无上限（展示全部）
+   *  v3.1.47 调整5&6：根据 scenarioId 动态校验上限（直播推荐10、商品推荐100、其他50） */
   function updateScenarioDisplayLimit(
     scenarioId: string,
     limit: number | undefined
   ): { success: boolean; message?: string } {
     const scenario = recommendScenarios.value.find(s => s.scenario_id === scenarioId);
     if (!scenario) return { success: false, message: '场景不存在' };
-    if (limit !== undefined && (limit < 1 || limit > 50)) {
-      return { success: false, message: '展示条数需在 1-50 之间' };
+    if (limit !== undefined) {
+      if (limit < 1) return { success: false, message: '展示条数需≥1' };
+      // v3.1.47 调整5&6：按场景动态判断上限
+      const maxLimit = scenarioId === 'sc-home-live' ? 10
+        : scenarioId === 'sc-home-product' ? 100
+        : 50;
+      if (limit > maxLimit) {
+        const label = scenarioId === 'sc-home-live' ? '直播推荐' : scenarioId === 'sc-home-product' ? '商品推荐' : '当前场景';
+        return { success: false, message: `${label}展示条数不能超过 ${maxLimit} 条` };
+      }
     }
     scenario.display_limit = limit;
     scenario.updated_by = '运营管理员';

@@ -52,7 +52,7 @@
           <div class="ppm-hint">建议尺寸 200×200px，支持 JPG/PNG，大小 ≤ 2MB</div>
         </el-form-item>
         <el-form-item label="项目描述">
-          <el-input v-model="form.description" type="textarea" :rows="3" placeholder="项目描述" />
+          <el-input v-model="form.description" type="textarea" :rows="3" maxlength="200" show-word-limit placeholder="项目描述" />
         </el-form-item>
         <el-form-item label="排序">
           <el-input-number v-model="form.sort" :min="0" />

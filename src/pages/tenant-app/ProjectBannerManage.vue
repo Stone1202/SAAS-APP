@@ -1,9 +1,9 @@
 <template>
-  <!-- 租户后台 — 项目Banner管理（严格照搬运营后台 AdManage.vue 逻辑） -->
+  <!-- 租户后台 — 项目广告位管理（v3.1.47 调整3：Banner管理改名为广告位管理） -->
   <div class="page-admin">
     <div class="page-header-bar">
-      <h2 class="page-title">Banner管理</h2>
-      <span class="page-desc">配置项目首页Banner轮播图（仅限当前项目）</span>
+      <h2 class="page-title">广告位管理</h2>
+      <span class="page-desc">配置项目首页广告位轮播图（仅限当前项目）</span>
     </div>
 
     <div class="toolbar">
@@ -78,7 +78,7 @@
     <!-- 编辑弹窗 -->
     <el-dialog v-model="dialogVisible" :title="editingId ? '编辑广告' : '新增广告'" width="600px">
       <el-form :model="form" label-width="90px" size="small">
-        <el-form-item label="广告标题"><el-input v-model="form.title" placeholder="如: 新品首发 — 全场低至5折" /></el-form-item>
+        <el-form-item label="广告标题"><el-input v-model="form.title" maxlength="30" show-word-limit placeholder="如: 新品首发 — 全场低至5折" /></el-form-item>
 
         <el-form-item label="广告图片">
           <el-upload class="ad-uploader" action="#" :auto-upload="false" :show-file-list="false" :on-change="onImageChange">
@@ -125,7 +125,7 @@
 import HelpButton from '@/components/use-case-card/HelpButton.vue';
 import UseCaseDrawer from '@/components/use-case-card/UseCaseDrawer.vue';
 import { useUseCaseCard } from '@/composables/useUseCaseCard';
-const { ucDrawerVisible, ucCards, ucDrawerTitle } = useUseCaseCard('PG-TNT-PC-006', '项目Banner管理');
+const { ucDrawerVisible, ucCards, ucDrawerTitle } = useUseCaseCard('PG-TNT-PC-006', '项目广告位管理');
 import { ref, reactive, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useProjectStore } from '../../stores/project-store';
