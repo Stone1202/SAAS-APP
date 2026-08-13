@@ -1,0 +1,1 @@
+import{u}from"./project-store-BVIhZvuB.js";function j(){const r=u();function c(t,e="project_id"){const s=r.activeProjectIds;return t.filter(n=>s.has(n[e]))}function i(t){return r.isProjectActive(t)}function o(t){return t.filter(e=>e.status==="active")}return{filterByActiveProject:c,isProjectActive:i,filterActiveProjects:o}}export{j as u};

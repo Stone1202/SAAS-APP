@@ -1,0 +1,1 @@
+import{a as o,b as n,e as s,f as e,g as i}from"./index-BicwKqDv.js";const t="real";console.log(`[SAAS-APP] 运行模式: ${t} | 终端: 运营后台`);(window.location.hash===""||window.location.hash==="#/"||window.location.hash==="#/index.html")&&(window.location.hash="#/admin/search");const a=o(i),c=n();a.use(c);a.use(s);a.use(e);a.mount("#app");
