@@ -1,0 +1,190 @@
+# ============================================
+# 业务领域知识库索引
+# 版本：v2.6.0
+# 最后更新：2026-07-27
+# V2.6.0 新增4个医疗领域知识：医药冷链v1.0.0+健康险v1.0.0+医疗器械注册v1.0.0+医学术语标准v1.0.0（基于全网最新标准搜集中英文献：GB/T 46204-2025+2025版GSP+NMPA CGM审评指导原则2023+ICD-11+LOINC+SNOMED CT）
+# V2.5.0 新增HIS医院信息系统领域知识V1.0.0（基于HIS业务架构建模详细文档V2.0——25+角色×五层产品架构×14业务域71子模块×20业务规则×15业务动作×12场景×6泳道×6业务流×6信息流×8状态机×8操作矩阵×11跨系统通道）
+# V2.4.0 处方外流政策深化：互联网药店 v1.1.0→v1.2.0（处方外流接收全链路重构——基于86号通知+电子处方中心技术规范，6阶段全流程：处方流入/验真/审方/授权/调配/核销回传，新增3实体/5业务规则/5业务动作/2场景/1主题），互联网医院 v1.2.0→v1.3.0（处方外流发起端补充——CA签章加密上传/外流药品目录管控/有效期管理/状态追踪/模板管理，新增4BR/3业务动作/2场景/1主题，7域32能力）
+# V2.2.0 新增：互联网药店领域知识 v1.0.0（传统模式：8大域DDD划分×8状态机×5角色×20操作×8场景×8业务规则），来源：互联网药店业务建模文档
+# V2.0.0 升级：场景驱动学习法（SDL）V1.0.0全领域重学——8个已学领域全部采用SDL五层结构（商业问题+场景地图+跨域衔接+角色视角+能力映射），learn-domain V4.0.0
+# V1.9.0 升级：新增火山引擎智能外呼领域知识v1.0.0（场景驱动学习法首例：6业务问题×5场景地图×5跨域衔接×4角色视角×41API，1518行68KB，10来源深度抓取）
+# V1.8.0 升级：新增企业微信领域知识v1.0.0（SAAS应用+第三方服务商对接，B端客户生命周期管理，6来源深度抓取，10项API参数字典+参数流转图）
+# V1.7.1 升级：Coze领域知识增量更新v1.1.0（Coze 3.0六大新特性+行业技能商店+Agent Team+项目空间，5来源增量）
+# V1.7.0 升级：新增Coze扣子智能体平台领域知识v1.0.0（9大主题×8大场景×5项API×SCRM集成参数流转图，10来源深度抓取）
+# V1.6.0 升级：微信账号体系领域知识v1.0.0（微信生态·账号身份子领域，5大平台×15+子场景+Token体系+账号合并痛点）
+# V1.4.1 升级：design分类从v1.0.0升级到v2.0.0（增量学习+国际标准+智能过滤）
+# V1.4.0 升级：新增design分类（设计资源与风格体系，非业务领域，供UX Agent参考）
+# V1.3.0 升级：新增thirdparty分类（第三方API文档学习）+易宝从payment迁移到thirdparty+领域匹配预检thirdparty跳过
+# ============================================
+# 本索引是所有领域知识的注册表。
+# BA 需求分析时，通过本索引查找相关领域知识。
+# 每次执行 /learn-domain 后自动更新本索引。
+# V2.0.0 新增：learning_method 字段（scenario_driven_v1.0.0 / traditional）
+#   支持按学习方式筛选领域
+# ============================================
+
+# 审查专家配置（所有领域统一：BA 主导 + Arch 参与）
+review_config:
+  review_lead: "ba-agent"
+  review_participant: "arch-agent"
+  thirdparty_skip_matching: true  # V1.3.0新增：--category=thirdparty 时跳过领域匹配预检，直接学习
+  review_checklist:
+    - { id: 1, name: "内容准确性", owner: "ba-agent" }
+    - { id: 2, name: "泳道完整性", owner: "ba-agent" }
+    - { id: 3, name: "流程完整性", owner: "ba-agent" }
+    - { id: 4, name: "信息流准确性", owner: "ba-agent" }
+    - { id: 5, name: "矩阵完整性", owner: "ba-agent" }
+    - { id: 6, name: "方案可行性", owner: "arch-agent" }
+    - { id: 7, name: "垃圾内容过滤", owner: "ba-agent" }
+    - { id: 8, name: "版本一致性", owner: "ba-agent" }
+
+domains:
+  # ============================================
+  # 账号（account）
+  # ============================================
+  - { category: "account", name: "微信账号体系", file: "account/wechat-account.yml", version: "v2.0.0", learning_method: "scenario_driven_v1.0.0", keywords: ["微信登录", "微信授权", "微信生态", "微信账号合并", "openid", "unionid", "网页授权", "OAuth2.0", "session_key", "access_token", "refresh_token", "scope", "snsapi_base", "snsapi_userinfo", "snsapi_login", "扫码登录", "静默授权", "跨平台用户识别", "code换token", "手机号授权", "wx.login", "code2Session", "开放平台绑定", "unionid机制", "token刷新", "授权撤销", "账号识别", "小程序登录", "服务号授权", "订阅号", "APP微信登录", "网站扫码登录", "账号体系", "多触点用户合并"] }
+  - { category: "account", name: "微信服务商", file: "account/wechat-service-provider.yml", version: "", keywords: ["服务商", "代开发", "代运营", "商户号"] }
+  - { category: "account", name: "OAuth认证", file: "account/oauth.yml", version: "", keywords: ["OAuth", "SSO", "单点登录", "第三方授权"] }
+
+  # ============================================
+  # 商品（product）
+  # ============================================
+  - { category: "product", name: "商品管理", file: "product/product-management.yml", version: "", keywords: ["商品", "SKU", "SPU", "类目", "属性"] }
+  - { category: "product", name: "价格管理", file: "product/price-management.yml", version: "", keywords: ["定价", "调价", "价格策略"] }
+
+  # ============================================
+  # 广告（ad）
+  # ============================================
+  - { category: "ad", name: "广告投放", file: "ad/ad-delivery.yml", version: "", keywords: ["广告", "投放", "DSP", "SSP", "程序化购买"] }
+  - { category: "ad", name: "广告位管理", file: "ad/ad-slot.yml", version: "", keywords: ["广告位", "banner", "开屏", "信息流"] }
+
+  # ============================================
+  # 支付（payment）
+  # ============================================
+  - { category: "payment", name: "聚合支付", file: "payment/aggregated-payment.yml", version: "", keywords: ["聚合支付", "统一支付", "多渠道"] }
+  - { category: "payment", name: "收银台", file: "payment/cashier.yml", version: "", keywords: ["收银台", "支付页面", "支付方式选择"] }
+  - { category: "payment", name: "微信支付", file: "payment/wechat-pay.yml", version: "", keywords: ["微信支付", "JSAPI", "Native", "APP支付"] }
+  - { category: "payment", name: "支付宝", file: "payment/alipay.yml", version: "", keywords: ["支付宝", "沙箱", "当面付"] }
+
+  # ============================================
+  # 交易（trade）
+  # ============================================
+  - { category: "trade", name: "订单流", file: "trade/order-flow.yml", version: "", keywords: ["订单", "下单", "购物车", "履约"] }
+  - { category: "trade", name: "购物车", file: "trade/cart.yml", version: "", keywords: ["购物车", "加购", "凑单"] }
+
+  # ============================================
+  # 售后（aftersale）
+  # ============================================
+  - { category: "aftersale", name: "退款流", file: "aftersale/refund-flow.yml", version: "", keywords: ["退款", "退货退款", "仅退款", "原路退回"] }
+  - { category: "aftersale", name: "退货流", file: "aftersale/return-flow.yml", version: "", keywords: ["退货", "换货", "维修"] }
+
+  # ============================================
+  # 结算（settlement）
+  # ============================================
+  - { category: "settlement", name: "分账", file: "settlement/split-payment.yml", version: "", keywords: ["分账", "分润", "利润分配"] }
+  - { category: "settlement", name: "结算", file: "settlement/settlement.yml", version: "", keywords: ["结算", "对账", "资金归集", "T+1"] }
+  - { category: "settlement", name: "对账", file: "settlement/reconciliation.yml", version: "", keywords: ["对账", "差异处理", "平账"] }
+
+  # ============================================
+  # 供应链（supplychain）
+  # ============================================
+  - { category: "supplychain", name: "进销存", file: "supplychain/inventory.yml", version: "", keywords: ["进销存", "库存", "入库", "出库", "盘点"] }
+  - { category: "supplychain", name: "采购", file: "supplychain/procurement.yml", version: "", keywords: ["采购", "供应商", "采购单"] }
+  - { category: "supplychain", name: "物流", file: "supplychain/logistics.yml", version: "", keywords: ["物流", "发货", "配送", "运单"] }
+
+  # ============================================
+  # 营销（marketing）
+  # ============================================
+  - { category: "marketing", name: "优惠券", file: "marketing/coupon.yml", version: "", keywords: ["优惠券", "满减券", "折扣券"] }
+  - { category: "marketing", name: "秒杀", file: "marketing/flash-sale.yml", version: "", keywords: ["秒杀", "限时抢购", "库存预占"] }
+  - { category: "marketing", name: "拼团", file: "marketing/group-buy.yml", version: "", keywords: ["拼团", "团长", "成团"] }
+  - { category: "marketing", name: "积分", file: "marketing/points.yml", version: "", keywords: ["积分", "积分商城", "积分兑换"] }
+
+  # ============================================
+  # 会员（member）
+  # ============================================
+  - { category: "member", name: "会员体系", file: "member/membership.yml", version: "", keywords: ["会员", "等级", "权益", "成长值"] }
+  - { category: "member", name: "用户画像", file: "member/user-profile.yml", version: "", keywords: ["画像", "标签", "分群"] }
+
+  # ============================================
+  # AI
+  # ============================================
+  - { category: "ai", name: "智能推荐", file: "ai/recommendation.yml", version: "", keywords: ["推荐", "个性化", "协同过滤"] }
+  - { category: "ai", name: "智能搜索", file: "ai/search.yml", version: "", keywords: ["搜索", "ES", "全文检索"] }
+  - { category: "ai", name: "智能客服", file: "ai/customer-service.yml", version: "", keywords: ["智能客服", "NLP", "意图识别"] }
+  - { category: "ai", name: "风控", file: "ai/risk-control.yml", version: "", keywords: ["风控", "反欺诈", "风险评估"] }
+  - { category: "ai", name: "腾讯云直播质检", file: "ai/tencent-live-moderation.yml", version: "v2.0.0", learning_method: "scenario_driven_v1.0.0", keywords: ["直播质检", "直播审核", "音频审核", "智能擦除", "鉴黄", "违禁词", "腾讯云CSS", "直播回调", "蜂鸣声", "静音擦除"] }
+
+  # ============================================
+  # 报表（report）
+  # ============================================
+  - { category: "report", name: "数据看板", file: "report/dashboard.yml", version: "", keywords: ["看板", "仪表盘", "数据可视化"] }
+  - { category: "report", name: "数据大屏", file: "report/data-screen.yml", version: "", keywords: ["大屏", "实时监控", "可视化"] }
+
+  # ============================================
+  # 财务（finance）
+  # ============================================
+  - { category: "finance", name: "会计", file: "finance/accounting.yml", version: "", keywords: ["会计", "凭证", "科目"] }
+  - { category: "finance", name: "账期管理", file: "finance/billing-period.yml", version: "", keywords: ["账期", "应收", "应付"] }
+
+  # ============================================
+  # 税务（tax）
+  # ============================================
+  - { category: "tax", name: "发票", file: "tax/invoice.yml", version: "", keywords: ["发票", "电子发票", "开票"] }
+  - { category: "tax", name: "税务申报", file: "tax/tax-declaration.yml", version: "", keywords: ["税务", "申报", "税率"] }
+
+  # ============================================
+  # 合规（compliance）
+  # ============================================
+  - { category: "compliance", name: "数据安全", file: "compliance/data-security.yml", version: "", keywords: ["数据安全", "加密", "脱敏"] }
+  - { category: "compliance", name: "隐私保护", file: "compliance/privacy.yml", version: "", keywords: ["隐私", "GDPR", "个人信息保护"] }
+  - { category: "compliance", name: "PCI-DSS", file: "compliance/pci-dss.yml", version: "", keywords: ["PCI-DSS", "支付安全", "卡组织"] }
+
+  # ============================================
+  # 第三方（thirdparty）← V1.3.0 新增大类
+  # 特殊性：来源为接口文档，API学习技能必然触发
+  # 领域匹配预检：--category=thirdparty 时跳过匹配直接学习
+  # ============================================
+  - { category: "thirdparty", name: "易宝服务商", file: "thirdparty/yeepay-service-provider.yml", version: "v3.0.0", learning_method: "scenario_driven_v1.0.0", keywords: ["易宝", "服务商", "特约商户入网", "fwssfk", "商户注册", "SaaS服务商", "RSA密钥", "绑卡", "开户", "聚合支付", "记账簿", "信用分", "渠道报备", "实名认证", "提现", "转账", "付款", "充值", "投诉处理", "银行转账", "网银支付", "花呗分期", "requestNo", "merchantNo", "applicationNo", "applicationStatus", "API参数字典", "参数流转"] }
+  - { category: "thirdparty", name: "微信支付 V2", file: "thirdparty/wechat-pay.yml", version: "v2.0.0", learning_method: "scenario_driven_v1.0.0", keywords: ["微信支付", "JSAPI支付", "Native支付", "APP支付", "H5支付", "小程序支付", "付款码支付", "统一下单", "prepay_id", "code_url", "mweb_url", "mch_id", "out_trade_no", "transaction_id", "退款", "分账", "撤销订单", "现金红包", "对账单", "异步通知", "支付场景", "接口调度", "openid", "trade_type", "USERPAYING", "关闭订单", "查询订单", "完结分账", "分账回退", "报关", "企业付款", "场景分析", "MWEB", "NATIVE", "JSAPI", "二次签名", "支付结果通知", "商户收款", "分账接收方"] }
+  - { category: "thirdparty", name: "支付宝支付", file: "thirdparty/alipay.yml", version: "v1.0.0", learning_method: "scenario_driven_v1.0.0", keywords: ["支付宝", "支付宝支付", "当面付", "付款码支付", "扫码支付", "JSAPI支付", "小程序支付", "APP支付", "H5支付", "WAP支付", "PC支付", "电脑网站支付", "手机网站支付", "周期性扣款", "预授权支付", "押金预扣", "刷脸付", "AI按量付费", "支付有礼", "小游戏", "商家粉丝群", "电子发票", "经营推广", "商家券", "商家会员卡", "红包", "棋盘密云", "支付券", "芝麻实力标", "商家分账", "服务商抽佣", "花呗分期", "商家转账", "银行转账", "小荷包", "身份验证", "APP支付宝登录", "获取会员信息", "人脸认证", "本机号码验证", "芝麻先享", "先享后付", "芝麻免押", "押金减免", "交易安全防护", "风险交易识别", "AI慧眼", "RiskGO", "小程序云", "智能营销", "智能监控", "风险智能", "广告投放", "alipay.trade.pay", "alipay.trade.precreate", "alipay.trade.create", "alipay.trade.query", "alipay.trade.refund", "alipay.trade.fastpay.refund.query", "alipay.trade.close", "alipay.trade.cancel", "alipay.trade.order.settle", "alipay.fund.trans.toaccount.transfer", "alipay.fund.trans.order.query", "alipay.data.dataservice.bill.downloadurl.query", "alipay.trade.app.pay", "alipay.trade.wap.pay", "alipay.trade.page.pay", "RSA2", "RSA签名", "异步通知", "notifyUrl", "验签", "去重", "沙箱环境", "SCRM融合", "支付闭环", "交易全生命周期", "多渠道支付聚合"] }
+  - { category: "thirdparty", name: "微信小程序", file: "thirdparty/wechat-miniprogram.yml", version: "", keywords: ["微信小程序", "wx.login", "wx.request", "openid", "unionid"] }
+  - { category: "thirdparty", name: "支付宝小程序", file: "thirdparty/alipay-miniprogram.yml", version: "", keywords: ["支付宝小程序", "my.getAuthCode", "auth_code"] }
+  - { category: "thirdparty", name: "火山引擎智能外呼", file: "thirdparty/volcano-smart-outbound.yml", version: "v1.1.0", learning_method: "scenario_driven_v1.0.0", keywords: ["火山引擎", "智能外呼", "语音外呼", "AI外呼", "外呼机器人", "Volcano Engine", "Smart Outbound", "ASR", "TTS", "语音识别", "语音合成", "话术剧本", "对话剧本", "意向筛选", "线索清洗", "催收催缴", "通知外呼", "营销外呼", "客户回访", "外呼任务", "计划任务", "Webhook回调", "通话记录", "意向标签", "情绪评分", "VeCDP", "FreeSWITCH", "SIP Trunk", "并发机器人", "话术配置", "录音下载", "号码管理", "SCRM融合", "客户触达", "生命周期触达", "渠道降级"] }
+  - { category: "thirdparty", name: "腾讯云即时通信IM", file: "thirdparty/腾讯云即时通信IM.yml", version: "v1.0.0", learning_method: "scenario_driven_v1.0.0", keywords: ["即时通信", "IM", "腾讯云IM", "TUIKit", "TUICallKit", "TUIRoomKit", "聊天", "单聊", "群聊", "直播群", "AVChatRoom", "消息推送", "离线推送", "云端审核", "内容审核", "文本审核", "图片审核", "音频审核", "视频审核", "审核回调", "审核策略", "REST API", "账号管理", "消息管理", "群组管理", "关系链管理", "会话管理", "全局禁言", "运营管理", "智能客服", "弹幕", "广播消息", "在线人数", "成员标记", "消息撤回", "消息已读", "消息导入", "群成员禁言", "群成员封禁", "SCRM融合", "审核闭环", "跨域衔接"] }
+  - { category: "thirdparty", name: "腾讯云点播VOD", file: "thirdparty/腾讯云点播VOD.yml", version: "v1.0.0", learning_method: "scenario_driven_v1.0.0", keywords: ["点播", "VOD", "腾讯云点播", "视频上传", "视频转码", "媒体处理", "ProcessMedia", "内容审核", "音视频审核", "ReviewAudioVideo", "图片审核", "ReviewImage", "审核模板", "审核回调", "事件通知", "PullEvents", "任务流", "任务流编排", "转码模板", "水印模板", "截图模板", "参数模板", "AI创作", "AIGC", "内容分析", "内容识别", "版权保护", "DRM", "防盗链", "CDN分发", "缓存预热", "播放器SDK", "数据统计", "实时日志", "轮播", "媒资管理", "FileId", "SubAppId", "SessionContext", "TasksNotifyMode", "SCRM融合", "审核闭环", "直播录制审核"] }
+  - { category: "thirdparty", name: "企业微信", file: "thirdparty/wechat-work.yml", version: "v2.0.0", learning_method: "scenario_driven_v1.0.0", keywords: ["企业微信", "WeCom", "WeChat Work", "客户联系", "外部联系人", "external_userid", "客户群", "客户朋友圈", "离职继承", "在职继承", "联系我", "欢迎语", "群发消息", "客户标签", "corpid", "permanent_code", "suite_access_token", "suite_ticket", "第三方应用", "服务商", "SAAS", "SCRM", "授权安装", "OAuth", "回调", "access_token", "通讯录同步", "素材管理", "客户统计", "客户生命周期", "B端客户管理", "客户跟进", "ISV", "代开发"] }
+  - { category: "thirdparty", name: "Coze扣子智能体平台", file: "thirdparty/智能体-coze.yml", version: "v2.0.0", learning_method: "scenario_driven_v1.0.0", keywords: ["Coze", "扣子", "智能体", "Agent", "工作流", "Workflow", "插件", "Plugin", "知识库", "Knowledge", "长期记忆", "LTM", "Chat API", "Chat SDK", "Functioncall", "大模型节点", "LLM节点", "意图识别", "RAG", "向量检索", "变量", "数据库", "触发器", "Cron", "多Agent", "OAuth2.0", "PAT", "QPS", "豆包", "DeepSeek", "飞书", "抖音", "微信", "提示词工程", "人设", "角色提示词", "NL2SQL", "语义检索", "混合检索", "Agent Team", "项目空间", "技能商店", "行业模板", "Seedance", "三端协同", "桌面端", "本地Agent", "Claude Code", "Codex CLI", "编程项目", "视频项目", "云端Agent"] }
+
+# ============================================
+# 设计（design）← V1.4.0 新增分类
+# 特殊性：非业务领域，设计资源与风格体系。无API学习技能，领域匹配预检特殊处理。
+# 供 UX Agent 设计阶段参考：终端规格 → 风格词典 → 终端×风格矩阵 → 设计系统选型
+# ============================================
+  - { category: "design", name: "综合设计体系知识库", file: "design/pixso-community-design.yml", version: "v3.0.0", learning_method: "scenario_driven_v1.0.0", keywords: ["设计", "设计系统", "设计风格", "UI组件集", "移动设计", "网页设计", "图标", "插画", "线框图", "HarmonyOS", "Element Plus", "Ant Design", "Vant WeApp", "iOS设计", "macOS设计", "visionOS", "液态玻璃", "Glassmorphism", "暗色模式", "现代简约", "金融设计", "医疗设计", "科技可视化", "3D设计", "终端×风格", "Design Tokens", "设计规范", "Pixso", "Apple HIG", "Material Design", "Material Design 3", "M3", "Fluent Design", "Acrylic", "Mica", "Nielsen", "可用性原则", "交互理论", "Fitts法则", "Hick法则", "动效原则", "信息图", "AI原生设计", "数字孪生", "车载HMI", "设计原则", "设计趋势2026", "设计标准", "SF Symbols", "Dynamic Type", "Dynamic Color", "无障碍设计"] }
+
+# ============================================
+# 医疗健康（medical）← V2.1.0 新增分类
+# 供 BA 需求分析参考：互联网医疗、在线问诊、电子处方、药品配送、慢病管理等
+# ============================================
+  - { category: "medical", name: "互联网医院", file: "medical/互联网医院.yml", version: "v1.3.0", learning_method: "traditional", keywords: ["互联网医院", "在线问诊", "电子处方", "处方审核", "药品配送", "预约挂号", "慢病管理", "健康管理", "视频问诊", "图文问诊", "HIS对接", "HL7 FHIR", "医保结算", "电子健康卡", "处方流转", "处方外流", "电子处方中心", "RxID", "处方唯一码", "CA签章", "国密加密", "处方有效期72h", "外流药品目录", "精麻药品管控", "双通道药品", "处方状态追踪", "监管上报", "处方模板", "AI智能分诊", "诊断", "药师", "物流配送", "患者", "医生", "问诊", "购药", "远程医疗", "互联网医疗", "在线诊疗", "电子病历", "EMR", "SOAP", "健康档案", "随访管理", "挂号", "就诊", "转诊", "急诊", "MDT会诊", "多学科会诊", "病历质控", "HIS管理员", "号源同步", "检查检验", "LIS", "PACS", "处方分级审核", "配伍禁忌", "IoT健康设备", "指标预警", "药监监管"] }
+  - { category: "medical", name: "互联网药店", file: "medical/互联网药店.yml", version: "v1.2.0", learning_method: "traditional", keywords: ["互联网药店", "购药", "OTC", "处方药", "药品零售", "在线药店", "审方", "处方审核", "药品配送", "药品仓储", "WMS", "药品监管码", "冷链药品", "GSP合规", "退换药", "药师咨询", "药品说明书", "用药提醒", "药品库存", "药店", "拣货", "打包", "签收", "药品搜索", "购药订单", "处方上传", "OCR", "电子处方", "药品电商", "药师", "消费者", "药店商家", "物流", "平台系统", "五层架构", "DDD", "状态机", "O2O配送", "门店自提", "比价", "替代药品", "电子发票", "医保定点", "医保结算", "效期管理", "库存预警", "自动补货", "供应商", "处方外流", "处方外流接收", "电子处方中心", "RxID", "处方唯一码", "四查十对", "四重验证", "药品追溯码", "PASS前置审方", "CA签章", "国密加密", "双通道药品", "5分钟回传", "20项核心数据", "处方有效期72h", "长处方复购", "FEFO", "医保前置机", "处方核销", "患者授权", "预警分级L1L2L3"] }
+  - { category: "medical", name: "HIS医院信息系统", file: "medical/HIS医院信息系统.yml", version: "v1.0.0", learning_method: "traditional", keywords: ["HIS", "医院信息系统", "医院信息管理系统", "门急诊管理", "住院管理", "医嘱管理", "三级查房", "电子病历", "EMR", "HL7", "HL7 V2.5", "FHIR", "FHIR R4", "DICOM", "DICOM 3.0", "PACS", "LIS", "PIS", "PIVAS", "检验科", "影像科", "手术麻醉", "护理管理", "药事管理", "财务管理", "医保结算", "DRG", "DIP", "ICD编码", "ICD-10", "ICD-9-CM-3", "病案管理", "质控管理", "三级质控", "院感管理", "感染管理", "危急值", "危急值闭环", "手术安全核查", "Time-Out", "四查十对", "三查七对", "合理用药", "抗菌药管理", "DDDs", "临床路径", "单病种", "不良事件", "PDCA", "患者主索引", "EMPI", "医嘱四级流转", "ASTM", "RS232", "集成平台", "ESB", "等保三级", "HQMS", "区域卫生平台", "患者服务", "分诊导诊", "挂号预约", "绿通道", "急诊分诊", "手术排班", "麻醉管理", "PACU", "复苏室", "Steward评分", "ASA分级", "ADR上报", "处方点评", "药库管理", "UDI单剂量", "条码管理", "标本管理", "Delta Check", "Westgard", "病历质控", "MERS", "MRSA", "CRE", "VRE", "职业暴露", "传染病直报", "医保三目", "医保前置机", "电子票据", "医疗资源", "床位管理", "设备管理", "排班管理"] }
+  # V2.6.0 新增4个医疗领域——均为传统学习模式，基于最新标准文档抓取
+  - { category: "medical", name: "医药冷链", file: "medical/医药冷链.yml", version: "v1.0.0", learning_method: "traditional", keywords: ["医药冷链", "GSP", "药品冷链", "冷链物流", "药品追溯", "温控运输", "2-8℃", "冷藏配送", "胰岛素冷链", "GB/T 46204-2025", "冷链追溯码", "温控数据", "药品配送", "一物一码", "冷链仓储", "断链", "温度超标", "双机组", "恒温配送", "生物制剂", "GLP-1", "冷链交接", "冷库验证", "设备验证", "GSP合规"] }
+  - { category: "medical", name: "健康险", file: "medical/健康险.yml", version: "v1.0.0", learning_method: "traditional", keywords: ["健康险", "健康保险", "百万医疗", "重疾险", "门诊险", "慢病保险", "糖尿病保险", "智能核保", "保证续保", "理赔流程", "互联网保险", "好医保", "投保", "保单", "等待期", "赔付", "如实告知", "健康告知", "保险API", "慢病理赔", "免赔额", "银保监", "保证续保至100岁", "理赔通过率"] }
+  - { category: "medical", name: "医疗器械注册", file: "medical/医疗器械注册.yml", version: "v1.0.0", learning_method: "traditional", keywords: ["医疗器械注册", "NMPA", "CGM注册", "三类医疗器械", "医疗器械分类", "注册证", "eRPS", "CMDE", "临床试验", "注册检验", "技术审评", "延续注册", "医疗器械注册证", "创新医疗器械", "绿色通道", "CGM", "持续葡萄糖监测", "MARD", "血糖仪注册", "产品技术要求", "医疗器械分类目录", "UDI", "上市后监管"] }
+  - { category: "medical", name: "医学术语标准", file: "medical/医学术语标准.yml", version: "v1.0.0", learning_method: "traditional", keywords: ["医学术语", "ICD-11", "ICD-10", "SNOMED CT", "LOINC", "MeSH", "术语编码", "糖尿病编码", "5A11", "E11", "HbA1c编码", "4548-4", "血糖编码", "2345-7", "DRG", "DIP", "编码映射", "FHIR", "术语集", "WHO ICD", "临床术语", "检验指标编码", "病案编码", "健康数据标准化", "医学编码"] }
+
+# ============================================
+# 统计
+# ============================================
+stats:
+  total_domains: 56
+  learned: 19     # 已学习的领域数（11个SDL + 7个traditional + 1个design）
+  pending: 37     # 待学习的领域数
+  last_updated: "2026-07-27"
+  sdl_migration: "completed"  # V2.0.0：全部8个已学领域完成SDL迁移
+  learning_methods:
+    scenario_driven_v1_0_0: 11  # 采用SDL的领域数（含design）
+    traditional: 7              # 传统模式（互联网医院 + 互联网药店 + HIS + 医药冷链 + 健康险 + 医疗器械注册 + 医学术语标准）

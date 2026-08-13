@@ -1,0 +1,88 @@
+# Skill: 反馈处理器（Feedback Processor）
+# V5.1.0合并：feedback-analyzer + writeback-analyzer → feedback-processor
+# 2个反馈分析Skill合并为1个，通过mode参数区分reflow/writeback
+# ============================================
+skill:
+  id: "feedback-processor"
+  name: "feedback-processor"
+  version: "2.0.0"
+  agents: ["pm-agent", "sm-agent", "ba-agent", "ux-agent", "fd-agent"]
+  description: "反馈回流+用例卡回传的AI分析处理器。通过mode参数区分reflow(反馈回流分析)/writeback(用例卡回传分析)两种功能。"
+
+  triggers:
+    - description: "反馈回流触发时（Review不通过/用户补充/用户驳回/Sprint障碍升级）"
+      condition: "defect-reflow.yml trigger.events任一触发"
+      mode: "reflow"
+    - description: "用户在handoff阶段编辑用例卡（新增/修改/补充用例）时"
+      condition: "handoff.yml step2用户编辑交互卡产生变更"
+      mode: "writeback"
+
+  modes:
+    # ---- mode: reflow（原feedback-analyzer）----
+    reflow:
+      description: "反馈回流触发时AI自动分析根因/影响范围/阶段归属/修复方案/历史模式/Sprint范围"
+      agents: ["sm-agent", "pm-agent"]
+      workflow:
+        - name: "1.读取反馈内容"
+          rule: "读取Review报告/用户补充内容/障碍描述，提取反馈核心信息"
+        - name: "2.ai1根因分析"
+          rule: "AI分析问题根本原因，分类：需求不明确/设计缺陷/实现错误/测试遗漏/环境问题/沟通缺失"
+        - name: "3.ai2影响范围分析"
+          rule: "AI分析反馈影响哪些FN/UC/页面/Sprint/契约Schema/sim适配器，产出受影响产物清单"
+        - name: "4.ai3阶段归属判断"
+          rule: "AI判断反馈应归属哪个阶段+置信度（取代纯人工判断），引用知识库判断"
+        - name: "5.ai4修复方案建议"
+          rule: "AI基于知识库给出≥2个修复方案+利弊+AI推荐+置信度（按human-confirm-protocol Q1方案选择型）"
+        - name: "6.ai5历史模式识别"
+          rule: "AI识别是否为重复问题（跨Sprint/跨版本重复出现），若≥3次建议升级"
+        - name: "7.ai6 Sprint范围校验"
+          rule: "AI判断反馈是否可在当前Sprint内闭环（影响其他Sprint产物→建议升级版本级）"
+        - name: "8.产出分析报告"
+          rule: "汇总六维分析为REFLOW-ANALYSIS报告，供各阶段Agent参考"
+      inputs:
+        - "反馈内容（来自Review报告/用户补充/障碍描述）"
+        - "当前层级（Sprint级/版本级）"
+        - "当前Sprint信息（如适用）"
+        - "知识库引用（领域知识/项目知识/通用知识/经验库）"
+      outputs:
+        - type: "reflow-analysis-report"
+          format: "Markdown"
+          path: "projects/{project}/.codebuddy/journal/reflow-analysis/REFLOW-ANALYSIS-{version}-S{n}-{NNN}.md"
+          description: "六维AI分析报告（根因+影响范围+阶段归属+修复方案+历史模式+Sprint范围）"
+
+    # ---- mode: writeback（原writeback-analyzer）----
+    writeback:
+      description: "用例卡编辑（新增/修改/补充）时AI自动分析变更影响/一致性/增量重跑范围/风险"
+      agents: ["ba-agent", "ux-agent", "fd-agent"]
+      workflow:
+        - name: "1.读取变更内容"
+          rule: "读取用户编辑的变更类型（missing_usecase新增/insufficient_description补充/inconsistent_description修改）+变更详情"
+        - name: "2.wb1变更影响分析"
+          rule: "AI分析用例卡变更影响哪些FN/UC/BR/状态机/业务操作矩阵/契约Schema"
+        - name: "3.wb2一致性校验"
+          rule: "AI校验变更后的用例卡与PRD/仿真原型是否一致（编号一致+行为一致）"
+        - name: "4.wb3增量重跑范围"
+          rule: "AI确定BA需要增量重跑哪些产物（非全量重跑），产出增量重跑清单"
+        - name: "5.wb4风险识别"
+          rule: "AI识别变更是否引入新风险（状态机不完整/信息流断裂/后置条件遗漏/跨Sprint影响）"
+        - name: "6.wb5层级判定"
+          rule: "AI判断变更在Sprint内消化还是需升级版本级（影响其他Sprint→升级版本级）"
+        - name: "7.产出变更分析报告"
+          rule: "汇总五维分析为WRITEBACK-ANALYSIS报告，供BA参考"
+      inputs:
+        - "变更类型（新增/补充/修改）"
+        - "变更详情（用例卡编辑内容）"
+        - "当前Sprint信息（如适用）"
+        - "PRD/仿真原型/用例卡片当前状态"
+      outputs:
+        - type: "writeback-analysis-report"
+          format: "Markdown"
+          path: "projects/{project}/.codebuddy/journal/writeback-analysis/WRITEBACK-ANALYSIS-{version}-S{n}-{NNN}.md"
+          description: "五维AI变更分析报告（影响+一致性+重跑范围+风险+层级判定）"
+
+  dependencies:
+    - "configs/workflows/defect-reflow.yml（ai_analysis定义）"
+    - "configs/workflows/handoff.yml（ai_writeback_analysis定义）"
+    - "common/human-confirm-protocol.yml（修复方案Q1方案选择型）"
+    - "knowledge/common/handoff-spec.yml（回传机制）"
+    - "knowledge/common/use-case-card-standards.yml（用例卡片规范）"

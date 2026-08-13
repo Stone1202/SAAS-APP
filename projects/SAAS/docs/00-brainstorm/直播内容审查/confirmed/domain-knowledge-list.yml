@@ -1,0 +1,70 @@
+# 领域知识清单 — SAAS直播内容审查
+# 传递给 PO Agent 和 BA Agent 继承
+# v1.1.0: 新增已有PRD作为补充资料
+
+version: "1.1.0"
+project: "SAAS"
+topic: "直播内容审查"
+generated_at: "2026-07-22"
+
+domain_knowledge:
+  - domain: "腾讯云直播质检"
+    file: "domains/ai/tencent-live-moderation.yml"
+    version: "v2.0.0"
+    category: "ai"
+    key_summary: "实时审核（图片+音频）+智能擦除（静音/蜂鸣声/隐私模糊）+回调事件通知+9个API+计费规则"
+    matched_by: "关键词匹配（直播+内容审查+擦音）+ AI语义匹配"
+    capabilities:
+      - "图片识别审核（鉴黄/OCR/关键词库）"
+      - "音频识别审核（关键词库匹配，仅中文）"
+      - "音频文字识别（用于智能擦除）"
+      - "智能擦除-音频（静音/蜂鸣声）"
+      - "智能擦除-隐私（人脸/车牌/旗帜模糊）"
+      - "回调事件通知（event_type=315）"
+    constraints:
+      - "审核模板绑定后5-10分钟生效"
+      - "绑定/修改/解绑仅影响新推流"
+      - "默认仅返回不合规结果"
+      - "音频审核仅支持中文"
+      - "智能擦除依赖音频文字识别配置"
+      - "智能擦除与字幕功能互斥"
+      - "首次使用智能擦除需授权MPS"
+    apis:
+      - "CreateLiveSnapshotRule（创建截图规则）"
+      - "CreateLiveSnapshotTemplate（创建截图模板）"
+      - "CreateScreenshotTask（创建截图任务）"
+      - "DescribeLiveSnapshotRules（获取截图规则列表）"
+      - "DescribeLiveSnapshotTemplates（获取截图模板列表）"
+      - "ModifyLiveSnapshotTemplate（修改截图模板）"
+      - "DeleteLiveSnapshotRule（删除截图规则）"
+      - "DeleteLiveSnapshotTemplate（删除截图模板）"
+
+# v1.1.0 补充：已有PRD作为参考基线
+existing_prd_baseline:
+  - domain: "SAAS内容审查域PRD"
+    file: "knowledge/SAAS/需求文档/16-内容审查域-PRD-v1.0.0.md"
+    version: "v1.0.0"
+    key_summary: "15FN+12BR+6ENT+8CONFIG+7API+V1/V2/V3三版路线图+22入口点+三终端架构"
+    fn_count: 15
+    br_count: 12
+    ent_count: 6
+    config_count: 8
+    api_count: 7
+    entry_points: 22
+    version_roadmap:
+      V1: "配置优先（1-2周，6FN）: 开关管理+回调接收+中控室+回放擦音+观众APP"
+      V2: "开发增强（3-4周，5FN）: 词库管理+风控引擎+处置流程+告警+违规记录"
+      V3: "全面化（4-6周，5FN）: 统计看板+平台管控+租户继承+降级审批+审核工作流"
+    
+  - domain: "SAAS直播域PRD"
+    file: "knowledge/projects/SAAS/需求文档/09-直播域-PRD-v7.0.0.md"
+    version: "v7.0.0"
+    key_summary: "直播域67+9功能项+场次状态机9规则+中控室+回放文件+内容审查入口点标注"
+    
+  - domain: "SAAS PRD总索引"
+    file: "knowledge/projects/SAAS/需求文档/00-SAAS-PRD-总索引.md"
+    version: "v1.0.9"
+    key_summary: "14域1124功能项全景图+跨域关系+6大业务流"
+
+# 领域知识缺失记录
+missing_domains: []

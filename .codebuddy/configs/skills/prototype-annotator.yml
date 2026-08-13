@@ -1,0 +1,30 @@
+# Skill: 原型标注注入器（Prototype Annotator）
+skill:
+  id: "prototype-annotator"
+  name: "prototype-annotator"
+  version: "1.0.0"
+  agents: ["ux-agent", "fd-agent"]
+  description: "将交互说明卡数据注入高保真原型，生成带[?]查看按钮和交互说明面板的标注原型，供研发精确理解每个操作的交互细节。"
+  triggers:
+    - command: "/new"
+      stage: "阶段3"
+      description: "新需求流程阶段3：将说明卡注入原型"
+    - command: "/change"
+      stage: "阶段A6"
+      description: "需求变更流程阶段A6：同步更新原型标注"
+  workflow:
+    - name: "读取说明卡数据"
+      rule: "读取 instruction-card-generator 产出的 page-card / action-card 数据"
+    - name: "定位原型元素"
+      rule: "在高保真原型中匹配每个可操作元素与对应说明卡"
+    - name: "注入[?]按钮"
+      rule: "为每个可操作元素添加[?]查看按钮"
+    - name: "构建交互说明面板"
+      rule: "点击[?]时弹出该元素的触发条件/输入/输出/异常/状态变化面板"
+  inputs:
+    - "交互说明卡数据"
+    - "高保真原型文件"
+  outputs:
+    - type: "annotated-prototype"
+      description: "带[?]按钮和交互说明面板的原型"
+  dependencies: ["instruction-card-generator"]

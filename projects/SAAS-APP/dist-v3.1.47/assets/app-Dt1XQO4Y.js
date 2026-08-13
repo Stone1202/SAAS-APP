@@ -1,0 +1,1 @@
+import{a as o,g as e,b as n,e as s,f as i}from"./index-Cg30fIMr.js";const t="real";console.log(`[SAAS-APP] 运行模式: ${t} | 终端: APP端`);(window.location.hash===""||window.location.hash==="#/"||window.location.hash==="#/index.html")&&(window.location.hash="#/app/home");const a=o(e),c=n();a.use(c);a.use(s);a.use(i);a.mount("#app");

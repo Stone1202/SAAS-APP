@@ -1,0 +1,1113 @@
+# 命令规范与参数标准 V1.2.0
+
+> **版本**：V1.2.0 | **创建日期**：2026-07-17  
+> **定位**：.codebuddy/ 全局共享的命令注册规范，定义所有命令的参数格式、类型、默认值、智能提示  
+> **关联文件**：`config.yml`（命令注册）、各 `workflow.yml`（流程定义）
+
+---
+
+## 一、命令总览
+
+| # | 命令 | 类别 | PM管控 | 说明 |
+|---|------|------|--------|------|
+| 1 | `/brainstorm` | 核心生命周期 | ❌ | 脑暴会议（分层类型） |
+| 2 | `/init` | 核心生命周期 | ✅ | 开启需求流 |
+| 3 | `/feedback` | 核心生命周期 | ✅ | 反馈回流 |
+| 4 | `/close` | 核心生命周期 | ✅ | 结束需求流 |
+| 5 | `/handoff` | 核心生命周期 | ❌ | 交付标注 |
+| 6 | `/plan` | 内部自动 | ✅ | 研发排期 |
+| 7 | `/test` | 内部自动 | ✅ | 五层测试 |
+| 8 | `/accept` | 内部自动 | ✅ | 验收 |
+| 9 | `/report` | 内部自动 | ❌ | 生成报告 |
+| 10 | `/learn-project` | 特殊入口 | ❌ | 项目学习 |
+| 11 | `/learn-domain` | 特殊入口 | ❌ | 领域知识学习 |
+| 12 | `/learn-domain-check` | 特殊入口 | ❌ | 领域知识巡检 |
+| 13 | `/rebuild` | 特殊入口 | ❌ | 重建需求 |
+| 14 | `/migrate` | 特殊入口 | ❌ | 迁移知识库 |
+| 15 | `/change` | 核心生命周期 | ✅ | 变更请求 |
+| 16 | `/fix` | 核心生命周期 | ✅ | Bug修复 |
+| 17 | `/deploy` | 特殊入口 | ❌ | 手动部署/重试/查看状态（V1.0.0新增） |
+| 18 | `/register-member` | 管理员专用 | ✅ | 注册新项目+授权成员（V1.2.0升级：按项目隔离） |
+| 19 | `/review-process-improvements` | 管理员专用 | ✅ | 审核流程改进待办+生成升级方案（V5.3.0新增） |
+
+---
+
+## 二、全局参数标准
+
+### 2.1 参数命名规范
+
+所有命令统一使用 `--key=value` 格式（等号赋值），禁止位置参数。
+
+```yaml
+parameter_naming:
+  format: "--key=value"
+  forbidden:
+    - "位置参数（如 /init AI-SCRM 新增）"
+    - "空格赋值（如 /init --project AI-SCRM）"
+    - "版本号出现在用户指令中（系统自动生成）"
+  boolean_flags: "--flag（无值，存在即为true）"
+```
+
+### 2.2 参数语义隔离规则
+
+| 参数名 | 专属命令 | 语义 | 说明 |
+|--------|----------|------|------|
+| `--type` | `/init` | 需求类型 | 新增/迭代/变更/修复 |
+| `--brainstorm-type` | `/brainstorm` | 脑暴类型 | strategic/planning/regular |
+| `--report-type` | `/report` | 报告类型 | test/accept/doc-index |
+| `--source` | `/learn-*`, `/brainstorm`, `/init` | 知识来源 | scheme:value 格式，可多次指定 |
+| `--goal` | `/brainstorm`,`/init`,`/change`,`/fix`,`/close`,`/deploy` | 业务目标（V4.1.0统一命名） | 唯一确定一条业务目标线，支持多人并行 |
+| `--topic` | `/brainstorm`,`/init`,`/change`,`/fix`,`/close`,`/deploy` | 【已废弃】迭代主题 | V4.1.0起请使用 --goal 替代 |
+
+> **V4.1.0变更**：新增 `--goal` 作为 `/init`、`/change`、`/fix`、`/close`、`/deploy` 的统一业务目标参数。原 `--topic` 已废弃，保留别名兼容。
+>
+> **V1.1.0变更**：`--owner` 参数已删除。系统自动从 `git user.name` 识别成员归属，不需要手动指定。
+
+### 2.3 source 参数格式标准
+
+```yaml
+source_format: "scheme:value"
+schemes:
+  local_dir: "local-dir:./path"          # 本地目录
+  http_url: "http-url:https://..."       # HTTP网页
+  https: "https://..."                   # HTTPS网页（learn-domain兼容）
+  website: "website:https://..."         # 需登录网站
+  video: "video:https://..."             # 视频
+  audio: "audio:https://..."             # 音频
+  image: "image:./path.png"              # 图片
+  file: "file:./path.pdf"                # 本地文件
+  api_endpoint: "api-endpoint:https://..." # API接口
+  paste: "paste:直接粘贴文本"            # 直接粘贴
+multi_source: true  # 支持多个 --source 参数
+```
+
+---
+
+## 三、命令详细规范
+
+### 3.1 /brainstorm — 脑暴会议
+
+```yaml
+command: "/brainstorm"
+category: "核心生命周期"
+pm_controlled: false
+workflow: "brainstorm.yml v3.5.1"
+
+usage: "/brainstorm --industry=行业 --brainstorm-type=strategic|planning|regular --goal=业务目标 [--project=项目名] [--source=...] [--stakeholders=干系人清单.md]"
+
+parameters:
+  - name: "--industry"
+    type: "string"
+    required: true
+    default: null
+    description: "行业类型"
+    examples: ["ecommerce", "live", "saas", "finance", "social", "game", "erp", "advertising", "tourism", "general"]
+    smart_hint: "从 config.yml industries 中选择，影响行业特征加载"
+
+  - name: "--brainstorm-type"
+    type: "enum"
+    required: true
+    default: "regular"
+    description: "脑暴类型（决定输出物和后续流程）"
+    enum:
+      - value: "strategic"
+        label: "战略型（新项目/重大转型）"
+        outputs: ["脑暴文档", "战略分析", "商业分析"]
+        next: "→ PO Agent（战略级激活）"
+      - value: "planning"
+        label: "规划型（新模块/大版本）"
+        outputs: ["脑暴文档"]
+        next: "→ PO Agent（规划级激活）"
+      - value: "regular"
+        label: "常规型（功能优化/中版本）"
+        outputs: ["脑暴文档"]
+        next: "→ PM 直接立项（跳过PO）"
+    smart_hint: "新项目选strategic；新模块选planning；功能优化选regular"
+
+  - name: "--goal"
+    type: "string"
+    required: true
+    default: null
+    description: "业务目标标识（V4.1.0统一命名，替代--topic）。同一项目同一目标允许多次脑暴，产物按目标子目录组织（00-brainstorm/{goal}/）。与 /init --goal 对应，脑暴确认后可无缝进入开发。"
+    smart_hint: "英文短横线命名，如 --goal=live-audit 或 --goal=refund-flow"
+    missing_arg_prompt: "请提供业务目标标识，例如 --goal=live-audit"
+
+  - name: "--goal-title"
+    type: "string"
+    required: false
+    default: null
+    description: "业务目标中文标题（V4.1.0新增）。用于脑暴文档标题和门户展示。如未提供，从--goal直译或脑暴过程中由BS Agent引导确认。"
+    smart_hint: "如：直播内容审查系统、退款流程优化"
+
+  - name: "--topic"
+    type: "string"
+    required: false
+    default: null
+    deprecated: true
+    deprecated_since: "V4.1.0"
+    replacement: "--goal"
+    description: "【已废弃】请使用 --goal 替代。"
+
+  - name: "--project"
+    type: "string"
+    required: false
+    default: "未命名"
+    description: "项目名称（存量项目必填，新项目可省略）"
+    smart_hint: "存量项目须与 knowledge/{project}/ 目录匹配"
+
+  - name: "--source"
+    type: "source"
+    required: false
+    default: null
+    description: "外部输入源（可多次指定）"
+    multi: true
+    smart_hint: "支持 local-dir: / http-url: / website: 三种scheme"
+
+  - name: "--stakeholders"
+    type: "file"
+    required: false
+    default: null
+    description: "外部干系人清单文件"
+    smart_hint: "Markdown格式，每行一个干系人角色"
+
+missing_arg_prompt:
+  "--industry": "请提供行业类型（例如：--industry=ecommerce）。可选值见 config.yml industries。"
+  "--brainstorm-type": "请提供脑暴类型（--brainstorm-type=strategic|planning|regular）。新项目选strategic，新模块选planning，功能优化选regular。"
+
+interactive_flow:
+  description: |
+    V4.2.0重构：取消"新项目/存量项目"交互式问答，改为参数驱动+自动检测。
+    保留参数说明展示+必填项缺失指引。
+  steps:
+    - step: "param_display"
+      trigger: "用户输入 /init 命令后"
+      action: "自动展示全部参数说明（必填+可选）"
+    - step: "missing_guide"
+      trigger: "必填参数缺失"
+      action: "展示参数引导提示（参数名+说明+示例值+可选值+默认值建议）"
+    - step: "auto_detect"
+      trigger: "参数齐全"
+      action: "自动检测项目性质（扫描projects/{--project}/），组装参数路由包传递BA"
+```
+
+### 3.2 /init — 开启需求流
+
+```yaml
+command: "/init"
+category: "核心生命周期"
+pm_controlled: true
+workflow: "project-lifecycle.yml v5.3.0"
+
+usage: "/init --project=X --goal=业务目标 --type=新增|迭代|变更|修复 --desc=需求描述 [--goal-title=中文标题] [--file=...] [--api=...] [--source=...] [--priority=...]"
+
+parameters:
+  - name: "--project"
+    type: "string"
+    required: true
+    default: "未命名"
+    description: "项目名称"
+    smart_hint: "须与 projects/{project}/ 目录匹配"
+
+  - name: "--type"
+    type: "enum"
+    required: true
+    default: "新增"
+    description: "需求类型（决定版本号递增策略）"
+    enum:
+      - value: "新增"
+        label: "全新功能模块"
+        version_bump: "minor"
+        touch_stages: [requirement, design, arch, dev, test, accept]
+      - value: "迭代"
+        label: "已有版本功能增强"
+        version_bump: "minor"
+        touch_stages: [requirement, design, arch, dev, test, accept]
+      - value: "变更"
+        label: "已有需求的修改"
+        version_bump: "patch"
+        touch_stages: [requirement, design, arch, dev, test, accept]
+      - value: "修复"
+        label: "Bug修复"
+        version_bump: "patch"
+        touch_stages: [dev, test, accept]
+    smart_hint: "新功能选新增；功能增强选迭代；修改现有选变更；Bug选修复"
+
+  - name: "--desc"
+    type: "string"
+    required: true
+    description: "需求描述（自然语言）"
+    smart_hint: "简要描述需求目标，影响范围由BA自动识别"
+
+  - name: "--goal"
+    type: "string"
+    required: true
+    default: null
+    description: "业务目标标识（V4.1.0新增，替代--topic）。唯一确定一条业务目标线（goal），支持多人并行协作。用途：①作为 Git 分支命名（{member}/{project}-{goal}）②作为版本链隔离维度（每个 goal 独立版本线）③匹配脑暴产物（00-brainstorm/{goal}/confirmed/）。一个项目可以有多个 goal（如 SAAS 下有 live-audit、finance 等），每个 goal 独立演进。必需提供，不支持自动推断。"
+    aliases: ["--scope"]
+    smart_hint: "英文短横线命名，如 live-audit、finance、customer-tag。与 /brainstorm --goal=议题名 对应。"
+    missing_arg_prompt: "请提供业务目标标识（例如：--goal=live-audit）。每个项目可以有多个目标，每个目标独立迭代。"
+
+  - name: "--goal-title"
+    type: "string"
+    required: false
+    default: null
+    description: "业务目标中文标题（V4.1.0新增）。用于门户展示和文档目录命名。如未提供，系统从 --desc 自动提取或使用 --goal 直译。"
+    smart_hint: "如：直播内容审查系统、财务管理系统"
+    missing_arg_prompt: "无需追问，未提供时自动提取。"
+
+  - name: "--topic"
+    type: "string"
+    required: false
+    default: null
+    description: "【已废弃，V4.1.0】请使用 --goal 替代。保留为 --goal 的别名以兼容旧命令。"
+    aliases: []
+    deprecated: true
+    deprecated_since: "V4.1.0"
+    replacement: "--goal"
+    smart_hint: "已废弃，请使用 --goal 参数。"
+    missing_arg_prompt: "已废弃，请使用 --goal 参数。"
+
+  - name: "--file"
+    type: "file"
+    required: false
+    default: null
+    description: "外部需求文件"
+    smart_hint: "Markdown格式需求文档"
+
+  - name: "--api"
+    type: "file"
+    required: false
+    default: null
+    description: "外部接口文档"
+    smart_hint: "供架构师参考的API规格文档"
+
+  - name: "--source"
+    type: "source"
+    required: false
+    default: null
+    description: "外部输入源（可多次指定）"
+    multi: true
+
+  - name: "--priority"
+    type: "enum"
+    required: false
+    default: "P1"
+    description: "优先级"
+    enum:
+      - value: "P0"
+        label: "紧急/阻塞（24小时内）"
+      - value: "P1"
+        label: "高优先级（3天内）"
+      - value: "P2"
+        label: "中优先级（本迭代内）"
+      - value: "P3"
+        label: "低优先级（下迭代）"
+    smart_hint: "修复默认P0；新增默认P1；迭代默认P2"
+
+missing_arg_prompt:
+  "--project": "请提供项目名称（例如：--project=AI-SCRM）。"
+  "--goal": "请提供业务目标（例如：--goal=live-audit）。每个项目可以有多个目标并行开发。"
+  "--type": "请提供需求类型（--type=新增|迭代|变更|修复）。"
+  "--desc": "请提供需求描述（--desc=加入秒杀功能）。"
+```
+
+### 3.3 /feedback — 反馈回流
+
+```yaml
+command: "/feedback"
+category: "核心生命周期"
+pm_controlled: true
+workflow: "project-lifecycle.yml v5.3.0"
+
+usage: "/feedback --project=X [--type=Y] [--msg=反馈内容]   （--project 可省略，自动通过 input_semantic_routing 推断）"
+
+parameters:
+  - name: "--project"
+    type: "string"
+    required: false
+    auto_infer: true
+    fallback: "PROJECT-INDEX.yml active_project"
+    description: "项目名称（可省略——PM Agent 会从用户输入中自动识别项目关键词，无匹配时回退 active_project）"
+
+  - name: "--type"
+    type: "enum"
+    required: false
+    default: "auto（自动选当前未close的需求流）"
+    description: "需求类型（可省略，自动绑定）"
+    enum: ["新增", "迭代", "变更", "修复"]
+    smart_hint: "省略时自动选当前进行中的需求流"
+
+  - name: "--msg"
+    type: "string"
+    required: false
+    default: null
+    description: "反馈内容"
+    smart_hint: "自然语言描述反馈，PM会路由到需求分析阶段"
+
+missing_arg_prompt:
+  "--project": "（V3.0.0起可省略——PM Agent 自动从输入中识别项目关键词，无匹配时使用 active_project）"
+```
+
+### 3.4 /close — 结束需求流
+
+```yaml
+command: "/close"
+category: "核心生命周期"
+pm_controlled: true
+workflow: "project-lifecycle.yml v5.3.0"
+
+usage: "/close --project=X --goal=业务目标 [--type=Y]"
+
+parameters:
+  - name: "--project"
+    type: "string"
+    required: true
+    description: "项目名称"
+
+  - name: "--goal"
+    type: "string"
+    required: false
+    default: null
+    description: "业务目标（V4.1.0新增，替代--topic）。关闭时需指定正确的 goal 定位业务目标线。不提供时自动选当前活跃流中最新的 goal。"
+
+  - name: "--topic"
+    type: "string"
+    required: false
+    default: null
+    deprecated: true
+    deprecated_since: "V4.1.0"
+    replacement: "--goal"
+    description: "【已废弃】请使用 --goal 替代。"
+
+  - name: "--type"
+    type: "enum"
+    required: false
+    default: "auto"
+    description: "需求类型（可省略）"
+    enum: ["新增", "迭代", "变更", "修复"]
+
+post_action: "版本沉淀学习(R6) → PM询问PO下一版本规划（敏捷递归）"
+```
+
+### 3.5 /handoff — 交付标注
+
+```yaml
+command: "/handoff"
+category: "核心生命周期"
+pm_controlled: false
+workflow: "handoff.yml v4.1.0"
+
+usage: "/handoff --project=X [--type=Y]"
+
+parameters:
+  - name: "--project"
+    type: "string"
+    required: true
+    description: "项目名称"
+
+  - name: "--type"
+    type: "enum"
+    required: false
+    default: "auto"
+    description: "需求类型"
+    enum: ["新增", "迭代", "变更", "修复"]
+
+precondition: "流已/close + 原型开发完成 + 测试无open Bug"
+```
+
+### 3.6 /plan — 研发排期（内部）
+
+```yaml
+command: "/plan"
+category: "内部自动"
+pm_controlled: true
+internal: true
+
+usage: "/plan --project=X [--type=Y]   （--type 可省略，自动选当前进行中需求流）"
+
+parameters:
+  - name: "--project"
+    type: "string"
+    required: true
+  - name: "--type"
+    type: "enum"
+    required: false
+    default: "auto"
+    enum: ["新增", "迭代", "变更", "修复"]
+```
+
+### 3.7 /test — 五层测试（内部）
+
+```yaml
+command: "/test"
+category: "内部自动"
+pm_controlled: true
+internal: true
+
+usage: "/test --project=X [--type=Y] [--platform=pc,miniapp,app]   （--type 可省略，自动选当前进行中需求流）"
+
+parameters:
+  - name: "--project"
+    type: "string"
+    required: true
+  - name: "--type"
+    type: "enum"
+    required: false
+    default: "auto"
+    enum: ["新增", "迭代", "变更", "修复"]
+  - name: "--platform"
+    type: "string"
+    required: false
+    default: "all"
+    description: "指定测试终端，逗号分隔"
+    smart_hint: "pc/miniapp/app 三端，省略则全测"
+```
+
+### 3.8 /accept — 验收（内部）
+
+```yaml
+command: "/accept"
+category: "内部自动"
+pm_controlled: true
+internal: true
+
+usage: "/accept --project=X [--type=Y] [--platform=pc,miniapp,app]   （--type 可省略，自动选当前进行中需求流）"
+
+parameters:
+  - name: "--project"
+    type: "string"
+    required: true
+  - name: "--type"
+    type: "enum"
+    required: false
+    default: "auto"
+    enum: ["新增", "迭代", "变更", "修复"]
+  - name: "--platform"
+    type: "string"
+    required: false
+    default: "all"
+    description: "指定验收终端"
+    smart_hint: "四人模拟验收：新用户/VIP/管理员/PO Agent"
+```
+
+### 3.9 /report — 生成报告（内部）
+
+```yaml
+command: "/report"
+category: "内部自动"
+pm_controlled: false
+internal: true
+
+usage: "/report --report-type=test|accept|doc-index --project=X"
+
+parameters:
+  - name: "--report-type"
+    type: "enum"
+    required: true
+    description: "报告类型"
+    enum:
+      - value: "test"
+        label: "测试报告"
+      - value: "accept"
+        label: "验收报告"
+      - value: "doc-index"
+        label: "文档索引报告"
+    smart_hint: "注意：使用 --report-type 而非 --type（避免与/init的--type语义冲突）"
+
+  - name: "--project"
+    type: "string"
+    required: true
+
+missing_arg_prompt:
+  "--report-type": "请提供报告类型（--report-type=test|accept|doc-index）。"
+```
+
+### 3.10 /learn-project — 项目学习
+
+```yaml
+command: "/learn-project"
+category: "特殊入口"
+pm_controlled: false
+workflow: "learn-project.yml v7.0.0"
+
+usage: "/learn-project --project=项目名 --source=scheme:value [--source=...] [--module=模块名] [--cookie=xxx] [--auth=xxx] [--transcript=文字稿.txt]"
+
+parameters:
+  - name: "--project"
+    type: "string"
+    required: true
+    description: "项目名称。同名项目未指定--module时视为全量学习，覆盖已有知识库。"
+    smart_hint: "将创建/覆盖 knowledge/{project}/ 目录"
+
+  - name: "--source"
+    type: "source"
+    required: true
+    multi: true
+    description: "知识来源（至少1个，可多个混合）"
+    schemes: ["local-dir", "http-url", "website", "video", "audio", "image", "file", "api-endpoint", "paste"]
+    smart_hint: "10种来源可混合使用，如 --source=local-dir:./原型 --source=video:https://培训视频"
+
+  - name: "--module"
+    type: "string"
+    required: false
+    description: "模块/流程名（可选）。指定时增量学习该模块/流程；未指定时全量学习覆盖已有知识库。"
+    smart_hint: "增量学习需已有知识库基础，如 --module=订阅模块 或 --module=分账流程"
+
+  - name: "--cookie"
+    type: "string"
+    required: false
+    description: "需登录网站的Cookie（仅会话内使用，不持久化）"
+    security: "仅会话内使用，不持久化存储，日志脱敏"
+
+  - name: "--auth"
+    type: "string"
+    required: false
+    description: "认证信息（Bearer Token等）"
+    security: "仅会话内使用，不持久化存储，日志脱敏"
+
+  - name: "--transcript"
+    type: "file"
+    required: false
+    description: "视频文字稿（ASR不可用时的降级方案）"
+    smart_hint: "当视频无字幕且ASR不可用时提供"
+
+missing_arg_prompt:
+  "--project": "请提供项目名称（例如：--project=AI-SCRM）。"
+  "--source": "请提供至少一个来源（例如：--source=local-dir:./docs 或 --source=video:https://...）。"
+```
+
+### 3.11 /learn-domain — 领域知识学习
+
+```yaml
+command: "/learn-domain"
+category: "特殊入口"
+pm_controlled: false
+workflow: "learn-domain.yml v4.0.0"
+
+usage: "/learn-domain [--domain=领域名] [--category=分类] --source=scheme:value [--source=...] [--focus=学习重点] [--allow-split] [--incremental] [--transcript=文字稿] [--deep-params] [--cookie=xxx] [--auth=xxx]"
+
+parameters:
+  - name: "--domain"
+    type: "string"
+    required: false
+    description: "领域名称"
+    smart_hint: "如：退款流、分账、进销存、微信账号体系等"
+
+  - name: "--category"
+    type: "enum"
+    required: false
+    description: "领域分类（15大分类）"
+    enum: ["account", "product", "ad", "payment", "trade", "aftersale", "settlement", "supplychain", "marketing", "member", "ai", "report", "finance", "tax", "compliance"]
+    smart_hint: "account=账号/product=商品/payment=支付/trade=交易/aftersale=售后/settlement=结算/supplychain=供应链/marketing=营销/member=会员"
+
+  - name: "--source"
+    type: "source"
+    required: true
+    multi: true
+    description: "知识来源"
+    schemes: ["https", "video", "file"]
+    smart_hint: "支持3种：https://网页 / video:视频URL / file:本地文件"
+
+  - name: "--focus"
+    type: "string"
+    required: false
+    description: "学习重点说明，指定学习特定内容"
+    smart_hint: "如：--focus='重点学习商户入网流程和资金收付API参数'"
+
+  - name: "--allow-split"
+    type: "flag"
+    required: false
+    description: "允许多领域拆分（内容跨多个领域时自动拆分）"
+
+  - name: "--incremental"
+    type: "flag"
+    required: false
+    description: "增量学习模式（智能整合去重+冲突合并）"
+
+  - name: "--transcript"
+    type: "file"
+    required: false
+    description: "视频文字稿（ASR降级方案）"
+
+  - name: "--deep-params"
+    type: "flag"
+    required: false
+    description: "V2.1.0新增，强制深度提取每个API的输入参数/输出参数（默认自动识别API文档时启用）"
+    smart_hint: "当API文档含参数表时自动启用；手动指定可强制对全部API执行参数深度提取"
+
+  - name: "--cookie"
+    type: "string"
+    required: false
+    description: "V3.0.0新增，需登录网站时提供Cookie"
+    smart_hint: "配合 --source=website: 使用"
+
+  - name: "--auth"
+    type: "string"
+    required: false
+    description: "V3.0.0新增，需登录网站时提供认证信息（格式：user:password）"
+    smart_hint: "配合 --source=website: 使用"
+
+missing_arg_prompt:
+  "--source": "请提供至少一个来源（--source=https://... 或 --source=video:https://... 或 --source=file:./doc.pdf）。"
+```
+
+### 3.12 /learn-domain-check — 领域知识巡检
+
+```yaml
+command: "/learn-domain-check"
+category: "特殊入口"
+pm_controlled: false
+workflow: "learn-domain.yml v4.0.0"
+
+usage: "/learn-domain-check [--domain=领域名] [--auto-update]"
+
+parameters:
+  - name: "--domain"
+    type: "string"
+    required: false
+    description: "指定巡检领域（省略则巡检全部）"
+
+  - name: "--auto-update"
+    type: "flag"
+    required: false
+    description: "自动增量更新模式（检测到变更自动触发学习）"
+
+automation_support: "可通过 automations 定时触发（如每月1日）"
+```
+
+### 3.13 /rebuild — 重建需求
+
+```yaml
+command: "/rebuild"
+category: "特殊入口"
+pm_controlled: false
+workflow: "learn-project.yml v7.0.0"
+
+usage: "/rebuild --project=项目名"
+
+parameters:
+  - name: "--project"
+    type: "string"
+    required: true
+    description: "已学习项目名称"
+    smart_hint: "项目须已在 knowledge/{project}/ 中有已学PRD"
+
+missing_arg_prompt:
+  "--project": "请提供项目名称（例如：--project=AI-SCRM）。"
+```
+
+### 3.14 /migrate — 迁移知识库
+
+```yaml
+command: "/migrate"
+category: "特殊入口"
+pm_controlled: false
+workflow: "migrate.yml v2.0.0"
+
+usage: "/migrate --from=旧项目路径 --project=项目名"
+
+parameters:
+  - name: "--from"
+    type: "path"
+    required: true
+    description: "源项目路径"
+
+  - name: "--project"
+    type: "string"
+    required: true
+    description: "目标项目名称"
+
+missing_arg_prompt:
+  "--from": "请提供源项目路径（例如：--from=./projects/OldSCRM）。"
+  "--project": "请提供目标项目名称。"
+```
+
+### 3.15 /change — 变更请求
+
+```yaml
+command: "/change"
+category: "核心生命周期"
+pm_controlled: true
+workflow: "change-request.yml v3.1.0"
+
+usage: "/change --project=X --goal=业务目标 --desc=变更概述 [--module=模块] [--file=变更文档] [--api=接口文档] [--source=来源] [--platform=pc,app] [--priority=P0|P1|P2|P3]"
+
+parameters:
+  - name: "--project"
+    type: "string"
+    required: true
+    description: "项目名称"
+    smart_hint: "须与 projects/{project}/ 目录匹配"
+
+  - name: "--goal"
+    type: "string"
+    required: true
+    default: null
+    description: "业务目标（V4.1.0新增）。变更必须定位到正确的业务目标线。不提供时：仅1个活跃goal自动选/多个goal提示选择/无goal提示必填。"
+    smart_hint: "多成员并行同一项目时必填，确保变更落在正确目标"
+
+  - name: "--desc"
+    type: "string"
+    required: true
+    description: "变更概述（一句话，详细内容用--file）"
+    smart_hint: "描述变更内容和影响范围"
+
+  - name: "--module"
+    type: "string"
+    required: false
+    description: "变更模块（逗号分隔多个模块，影响分析聚焦指定模块）"
+    smart_hint: "如 --module=客户管理,订单管理"
+
+  - name: "--file"
+    type: "string"
+    required: false
+    description: "详细变更需求文档路径（当--desc一句话不够时提供）"
+    smart_hint: "支持 local-dir:./变更文档.md 格式"
+
+  - name: "--api"
+    type: "string"
+    required: false
+    description: "变更涉及的接口文档路径"
+    smart_hint: "变更涉及接口契约时提供"
+
+  - name: "--source"
+    type: "string"
+    required: false
+    description: "变更需求来源（scheme:value格式，与/init一致）"
+    smart_hint: "如 --source=website:https://xxx 或 --source=file:./需求.md"
+
+  - name: "--platform"
+    type: "string"
+    required: false
+    description: "受影响的端（逗号分隔，影响分析逐端展开+跨端一致性风险）"
+    smart_hint: "如 --platform=pc,app（不指定则全端分析）"
+
+  - name: "--priority"
+    type: "enum"
+    required: false
+    default: "P1"
+    description: "变更优先级"
+    enum: ["P0", "P1", "P2", "P3"]
+    smart_hint: "P0紧急/P1高/P2中/P3低，默认P1"
+
+missing_arg_prompt:
+  "--project": "请提供项目名称（例如：--project=AI-SCRM）。"
+  "--desc": "请提供变更描述。"
+```
+
+### 3.16 /fix — Bug修复
+
+```yaml
+command: "/fix"
+category: "核心生命周期"
+pm_controlled: true
+workflow: "change-request.yml v3.1.0"
+
+usage: "/fix --project=X --goal=业务目标 --desc=Bug概述 [--module=模块] [--file=Bug详细文档] [--platform=pc] [--bug-id=xxx] [--priority=P0|P1|P2|P3]"
+
+parameters:
+  - name: "--project"
+    type: "string"
+    required: true
+    description: "项目名称"
+    smart_hint: "须与 projects/{project}/ 目录匹配"
+
+  - name: "--goal"
+    type: "string"
+    required: true
+    default: null
+    description: "业务目标（V4.1.0新增）。修复必须定位到正确的业务目标线。不提供时：仅1个活跃goal自动选/多个goal提示选择/无goal提示必填。"
+    smart_hint: "多成员并行同一项目时必填，确保修复落在正确目标"
+
+  - name: "--desc"
+    type: "string"
+    required: true
+    description: "Bug概述（一句话，详细描述用--file）"
+    smart_hint: "描述Bug现象和影响"
+
+  - name: "--module"
+    type: "string"
+    required: false
+    description: "Bug所在模块（逗号分隔多个模块）"
+    smart_hint: "如 --module=客户管理"
+
+  - name: "--file"
+    type: "string"
+    required: false
+    description: "Bug详细描述文档（含复现步骤、截图等）"
+    smart_hint: "支持 local-dir:./bug描述.md 格式"
+
+  - name: "--platform"
+    type: "string"
+    required: false
+    description: "Bug所在端（逗号分隔）"
+    smart_hint: "如 --platform=pc（不指定则全端分析）"
+
+  - name: "--bug-id"
+    type: "string"
+    required: false
+    description: "Bug编号（如已有Bug记录）"
+    smart_hint: "如 --bug-id=BUG-20260721-001"
+
+  - name: "--priority"
+    type: "enum"
+    required: false
+    default: "P1"
+    description: "Bug优先级"
+    enum: ["P0", "P1", "P2", "P3"]
+    smart_hint: "P0紧急/P1高/P2中/P3低，默认P1"
+
+missing_arg_prompt:
+  "--project": "请提供项目名称（例如：--project=AI-SCRM）。"
+  "--desc": "请提供Bug描述。"
+```
+
+---
+
+### 3.17 /deploy — 手动部署（V1.0.0新增）
+
+```yaml
+command: "/deploy"
+category: "特殊入口"
+pm_controlled: true
+workflow: "project-lifecycle.yml stage-9 / deploy-manager.yml V2.0.0"
+
+usage: "/deploy --project=X [--goal=业务目标] [--version=v1.0.0] [--retry] [--status]"
+example: "/deploy --project=AI-SCRM --goal=subscription-migration"
+
+parameters:
+  - name: "--project"
+    type: "string"
+    required: true
+    description: "项目名称"
+    smart_hint: "从 PROJECT-INDEX.yml 中已注册的项目选择"
+
+  - name: "--goal"
+    type: "string"
+    required: false
+    default: null
+    description: "业务目标（V4.1.0新增）。部署URL含 /{member}/{project}/{goal}/{version}/，不提供时自动选当前活跃目标。"
+    smart_hint: "多成员并行同一项目时必填，确保部署到正确路由"
+
+  - name: "--version"
+    type: "string"
+    required: false
+    description: "指定部署的版本号（不指定则部署当前流版本）"
+    smart_hint: "如 v1.0.0，从 state.json streams 中读取当前版本"
+
+  - name: "--retry"
+    type: "boolean"
+    required: false
+    default: false
+    description: "重试上次失败的部署"
+
+  - name: "--status"
+    type: "boolean"
+    required: false
+    default: false
+    description: "查看部署状态（与部署互斥，指定此参数时不执行部署）"
+    smart_hint: "从 DEPLOY-MANIFEST.yml 读取部署记录，展示所有项目当前部署版本+状态+最近5次部署"
+
+modes:
+  deploy:
+    description: "部署当前版本或指定版本"
+    condition: "未指定 --status 和 --retry"
+    actions:
+      - "读取 deploy/edgeone-pages.json 获取部署配置"
+      - "注入 VITE_BASE_PATH=/{member}/{project}/{goal}/{version}/ + VITE_PROJECT_ID={project} + VITE_MODE=sim"
+      - "执行 npm run build:sim"
+      - "聚合到 deploy/artifacts/{member}/{project}/{goal}/{version}/"
+      - "全量推送 deploy/artifacts/ 到 EdgeOne Pages"
+      - "生成访问 URL: https://prototype.jycao.cn/{member}/{project}/{goal}/{version}/"
+      - "更新 DEPLOY-MANIFEST + PROJECT-INDEX + 门户首页自动生成"
+
+  retry:
+    description: "重试上次失败的部署"
+    condition: "指定 --retry"
+    actions:
+      - "从 DEPLOY-MANIFEST.yml 读取最近一次 status=failed 的记录"
+      - "重新执行部署流程"
+
+  status:
+    description: "查看部署状态"
+    condition: "指定 --status"
+    actions:
+      - "读取 DEPLOY-MANIFEST.yml"
+      - "展示所有项目当前部署版本+状态"
+      - "展示最近5次部署记录"
+      - "展示失败部署的 error_msg"
+
+missing_arg_prompt:
+  "--project": "请提供项目名称（例如：--project=AI-SCRM）。"
+
+conflict_detection:
+  - rule: "--status 与 --version/--retry 互斥"
+    message: "查看状态时不能指定版本或重试参数"
+```
+
+---
+
+### 3.18 /register-member — 注册新项目+授权成员（V1.2.0升级）
+
+```yaml
+command: "/register-member"
+category: "管理员专用"
+pm_controlled: true
+workflow: "member-manager.yml V1.0.0"
+
+usage: "/register-member --name=姓名 --git=Gitee用户名 --project=项目名 [--role=admin|member]"
+example: "/register-member --name=李四 --git=lisi --project=crm-portal"
+
+parameters:
+  - name: "--name"
+    type: "string"
+    required: true
+    description: "成员真实姓名（如'李四'）"
+    smart_hint: "成员的真实姓名，用于展示和记录"
+
+  - name: "--git"
+    type: "string"
+    required: true
+    description: "成员Gitee用户名（如'lisi'），用于CODEOWNERS和权限分配"
+    smart_hint: "成员的Gitee用户名，须与.gitconfig中的user.name一致"
+
+  - name: "--project"
+    type: "string"
+    required: true
+    description: "项目名（如'crm-portal'），自动创建项目骨架"
+
+  - name: "--role"
+    type: "enum"
+    required: false
+    default: "member"
+    description: "成员角色"
+    enum: ["admin", "member"]
+    smart_hint: "admin=管理员/member=普通成员，默认member"
+
+auto_actions:
+  - "更新 .access-control.yml 添加成员"
+  - "更新 PROJECT-INDEX.yml 添加成员+项目"
+  - "自动分配端口（从端口池4000-4099选空闲）"
+  - "更新 config.yml port_pool.reserved"
+  - "更新 CODEOWNERS"
+  - "执行 ensure-project.sh 创建项目骨架"
+  - "更新 deploy/edgeone-pages.json 添加部署路由"
+
+missing_arg_prompt:
+  "--name": "请提供成员姓名（例如：--name=李四）。"
+  "--git": "请提供成员Gitee用户名（例如：--git=lisi）。"
+  "--project": "请提供项目名（例如：--project=crm-portal）。"
+```
+
+---
+
+### 3.19 /review-process-improvements — 审核流程改进待办（V5.3.0新增）
+
+```yaml
+command: "/review-process-improvements"
+category: "管理员专用"
+pm_controlled: true
+workflow: "process-improvement-collector.yml V1.0.0"
+
+usage: "/review-process-improvements [--mode=list|review|approve|reject|apply] [--project=项目名]"
+example: "/review-process-improvements --mode=list"
+
+parameters:
+  - name: "--mode"
+    type: "enum"
+    required: false
+    default: "list"
+    enum: ["list", "review", "approve", "reject", "apply"]
+    description: "执行模式：list列出待办/review逐项审核/approve直接批准/reject直接拒绝/apply生成升级方案"
+
+  - name: "--project"
+    type: "string"
+    required: false
+    description: "筛选特定项目的待办（不指定则显示所有项目）"
+```
+
+---
+
+## 四、智能提示规则
+
+### 4.1 缺失参数提示
+
+当用户执行命令但缺少必填参数时，Agent 须按 `missing_arg_prompt` 给出智能提示：
+
+```yaml
+prompt_rules:
+  - rule: "提示须包含参数名、示例值、可选值（如enum）"
+  - rule: "提示须自然语言，非技术术语"
+  - rule: "提示须给出最可能的默认值建议"
+  - rule: "enum类型须列出全部可选值+说明"
+  - rule: "source类型须列出支持的scheme前缀"
+```
+
+### 4.2 参数智能推荐
+
+```yaml
+smart_recommendations:
+  - condition: "新项目首次执行 /brainstorm"
+    recommend: "--brainstorm-type=strategic（新项目默认战略型）"
+  
+  - condition: "已有项目新模块 /brainstorm"
+    recommend: "--brainstorm-type=planning"
+  
+  - condition: "功能优化 /brainstorm"
+    recommend: "--brainstorm-type=regular"
+  
+  - condition: "Bug修复 /init"
+    recommend: "--type=修复 --priority=P0"
+  
+  - condition: "新功能 /init"
+    recommend: "--type=新增 --priority=P1"
+  
+  - condition: "/learn-domain 内容涉及退款"
+    recommend: "--domain=退款流 --category=aftersale"
+  
+  - condition: "/learn-domain 内容涉及分账"
+    recommend: "--domain=分账 --category=settlement"
+  
+  - condition: "/learn-project 视频无字幕"
+    recommend: "添加 --transcript=文字稿.txt（ASR降级方案）"
+  
+  - condition: "/learn-project 需登录网站"
+    recommend: "添加 --cookie=session_id=xxx 或 --auth=Bearer xxx"
+```
+
+### 4.3 参数冲突检测
+
+```yaml
+conflict_detection:
+  - rule: "/brainstorm 不能同时使用 --type（已废弃，改用 --brainstorm-type）"
+  - rule: "/report 不能使用 --type（已废弃，改用 --report-type）"
+  - rule: "/init --type=修复 不能同时指定 --file（修复不需要需求文件）"
+  - rule: "/learn-domain --incremental 须与 --domain 同时使用（增量学习须指定领域）"
+  - rule: "/close 和 /handoff 不能同时执行（handoff 须在 close 之后）"
+```
+
+---
+
+## 五、命令流程图
+
+```
+用户入口
+  │
+  ├─ /brainstorm --brainstorm-type=strategic → 脑暴(战略型) → PO Agent → /init
+  ├─ /brainstorm --brainstorm-type=planning  → 脑暴(规划型) → PO Agent → /init
+  ├─ /brainstorm --brainstorm-type=regular   → 脑暴(常规型) → /init
+  │
+  ├─ /learn-project → 知识库学习 → 可选 /rebuild → /brainstorm
+  ├─ /learn-domain → 领域知识库学习
+  ├─ /learn-domain-check → 领域知识巡检
+  │
+  ├─ /init → 需求流开始 → /plan → BA → UX → Arch → FD → /test → /accept
+  │                                                                    │
+  │  ← /feedback ←──────────────────────────────────────────────────────┘
+  │
+  ├─ /close → 版本沉淀 → PM询问PO下一版本 → /init v2（递归）
+  ├─ /handoff → 交付标注
+  │
+  ├─ /migrate → 跨项目迁移
+  └─ /report → 生成报告
+```

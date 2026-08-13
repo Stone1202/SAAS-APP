@@ -1,0 +1,182 @@
+# ============================================
+# SugarMate DeepLink路由规范 v1.0.0
+# 跨终端(APP/MP/LIVE/PC)统一导航+角色路由+中断恢复
+# ============================================
+version: "1.0.0"
+project: "SugarMate"
+date: "2026-07-29"
+owner: "Arch Agent"
+reference: "terminal-matrix + UX交互跳转矩阵"
+
+---
+
+## 一、DeepLink Scheme 定义
+
+### 1.1 统一Scheme
+```
+sugarmate://{path}?{params}
+```
+
+**解析规则**：
+- APP/MP/LIVE端：注册`URL Scheme` 拦截·原生桥接
+- PC端：解析为SPA路由跳转
+- 网页内点击：如果APP已安装→唤起APP·未安装→跳转下载页
+
+### 1.2 小程序专用
+```
+sugarmate://mp/{path}?{params}  → 跳转微信小程序对应页面
+```
+
+### 1.3 LIVE端专用
+```
+sugarmate://live/{path}?{params}  → 唤起LIVE APP或跳转下载页
+```
+
+---
+
+## 二、路由表·按终端
+
+### 2.1 APP端路由
+
+| DeepLink | 描述 | 角色限制 | 从哪些终端可跳入 |
+|----------|------|:------:|:----------:|
+| `sugarmate://app/home` | 首页 | ALL | ALL |
+| `sugarmate://app/service` | 服务Tab | PATIENT | ALL |
+| `sugarmate://app/service/consultation/{id}` | 问诊详情 | PATIENT/DOCTOR | MP/LIVE/PC |
+| `sugarmate://app/service/prescription/{id}` | 处方详情 | PATIENT/DOCTOR/PH | MP/PC |
+| `sugarmate://app/community` | 社区 | PATIENT | ALL |
+| `sugarmate://app/community/post/{id}` | 帖子详情 | PATIENT | MP/PC |
+| `sugarmate://app/member` | 会员 | PATIENT | ALL |
+| `sugarmate://app/member/points` | 积分 | PATIENT | MP/PC |
+| `sugarmate://app/member/order/list` | 订单列表 | PATIENT | MP |
+| `sugarmate://app/member/order/{id}` | 订单详情 | PATIENT | MP/PC |
+| `sugarmate://app/member/coldchain/{shipment_id}` | 冷链追踪 | PATIENT | PC |
+| `sugarmate://app/mine` | 我的 | PATIENT | ALL |
+| `sugarmate://app/doctor/workspace` | 医生工作台 | DOCTOR | PC |
+| `sugarmate://app/doctor/consultation/{id}` | 接诊详情 | DOCTOR | PC |
+| `sugarmate://app/doctor/prescribe/{patient_id}` | 开具处方 | DOCTOR | - |
+| `sugarmate://app/nutritionist/workspace` | 营养师工作台 | NUTRITIONIST | PC |
+| `sugarmate://app/nutritionist/plan/{id}` | 饮食方案详情 | NUTRITIONIST | PC |
+| `sugarmate://app/hm/workspace` | HM工作台 | HM | PC |
+| `sugarmate://app/hm/visit/{id}` | 回访详情 | HM | - |
+
+### 2.2 MP（小程序）端路由
+
+| DeepLink | 描述 | 从哪些终端可跳入 |
+|----------|------|:----------:|
+| `sugarmate://mp/pages/home/index` | 首页 | ALL |
+| `sugarmate://mp/pages/glucose/index?patient={id}` | 家属·血糖监控 | APP/PC |
+| `sugarmate://mp/pages/article/detail?id={id}` | 科普文章 | APP/PC |
+| `sugarmate://mp/pages/live/room?id={id}` | 直播入口 | APP |
+| `sugarmate://mp/pages/order/detail?id={id}` | 订单详情 | APP/PC |
+
+### 2.3 LIVE端路由
+
+> **历史遗留问题**：PRD中LIVE端跳转覆盖率为0%→已全面补全
+
+| DeepLink | 描述 | 从哪些终端可跳入 |
+|----------|------|:----------:|
+| `sugarmate://live/room/{id}` | 进入直播间 | APP/MP（核心体验） |
+| `sugarmate://live/schedule` | 直播预告列表 | APP/MP |
+| `sugarmate://live/replay/{id}` | 回放详情 | APP/MP |
+| `sugarmate://live/mine` | 我的直播 | - |
+
+### 2.4 APP→LIVE跳转场景（完整覆盖）
+
+| 触发场景 | 来源·APP端 | 目标·LIVE端 | 跳转参数 |
+|----------|------------|-------------|----------|
+| 社区·直播列表→点击直播中卡片 | APP·社区tab | LIVE·直播间 | `?id={live_id}` |
+| 首页·直播推荐→点击进行中 | APP·首页 | LIVE·直播间 | `?id={live_id}` |
+| 搜索·直播结果→点击 | APP·搜索结果 | LIVE·直播间 | `?id={live_id}` |
+| 直播预告→开播提醒推送 | APP·push通知 | LIVE·直播间 | `?id={live_id}` |
+| 商品详情→直播带货入口 | APP·商品详情页 | LIVE·直播间 | `?id={live_id}&product_id={product_id}` |
+| 医生/营养师主页→正在直播 | APP·主页 | LIVE·直播间 | `?id={live_id}` |
+
+### 2.5 PC后台路由
+
+| 路径 | 描述 | 角色 |
+|------|------|:--:|
+| `/admin/workspace` | 运营工作台 | OPS/PH |
+| `/admin/onboarding` | 入驻审核 | OPS |
+| `/admin/onboarding/{id}` | 审核详情 | OPS |
+| `/admin/scrm` | SCRM·客户管理 | OPS/PH |
+| `/admin/product` | 商品管理 | PH |
+| `/admin/order` | 订单管理 | PH/OPS |
+| `/admin/order/coldchain/{shipment_id}` | 冷链详情 | PH/OPS |
+| `/admin/finance` | 财务结算 | PH |
+| `/admin/content-audit` | 内容审核 | OPS |
+| `/admin/data-dashboard` | 数据看板 | PH/OPS |
+| `/admin/settings` | 系统设置 | SUPER_ADMIN |
+
+---
+
+## 三、角色切换路由
+
+### 3.1 APP内角色视图切换
+
+```
+  当前活跃角色 → 点击头像/名称 → 弹出角色选择面板
+    ├─ 目标角色 = 当前角色 → 关闭面板
+    └─ 目标角色 ≠ 当前角色
+          ├─ 草稿检查·有未保存 → 提示保存
+          ├─ 清理当前视图状态
+          ├─ 加载目标角色视图(切换到对应tab)
+          └─ 路由调整: path prefix从/patient/→/doctor/等
+```
+
+### 3.2 跨终端DeepLink跳入·角色校验
+
+```
+  接收DeepLink → 解析路径 → 提取目标角色限制
+    ├─ 目标无角色限制 → 直接跳转
+    ├─ 用户当前活跃身份匹配 → 直接跳转
+    ├─ 用户有其他匹配身份 → 提示切换身份后继续
+    └─ 用户无匹配身份 → 提示无权限访问
+```
+
+---
+
+## 四、中断恢复方案
+
+| 场景 | 中断原因 | 恢复策略 | 保留内容 |
+|------|----------|----------|----------|
+| 医生开方·中途退出 | APP切入后台/电话/消息 | 下次进入处方页→提示"恢复上次未完成处方" | 处方草稿·已输入药物清单 |
+| 入驻申请·网络断开 | 上传资质大文件·超时 | 下次进入入驻页→提示"继续上次申请" | 已填写表单·已上传文件 |
+| 问诊IM·APP崩溃 | 应用异常终止 | 下次进入问诊→自动加载最近会话 | 最近20条消息·输入框中内容 |
+| 直播观看·切换APP | 用户主动切换 | 返回时→继续播放(live模式)或从头(回放) | 直播进度·弹幕位置 |
+| 订单支付·超时 | 支付页等待超时 | 订单详情→"继续支付"按钮·库存已释放需重试 | 订单信息·优惠券锁定状态 |
+
+### 4.1 APP层·场景中断恢复实现
+
+```typescript
+// 中断恢复管理器
+interface InterruptRecoveryState {
+  scene: string;              // 场景标识
+  state: "IN_PROGRESS" | "INTERRUPTED";
+  interrupted_at: number;     // 中断时间戳
+  ttl: number;                // 有效期(超过则清理·不恢复)
+  context: {
+    route: string;            // 中断时的路由
+    partial_data: object;     // 部分完成的表单数据
+    step: number;             // 中断所在的步骤
+  }
+}
+```
+
+**存储位置**：APP·localStorage/AsyncStorage / PC·sessionStorage
+
+---
+
+## 五、页面间跳转·一致性检查清单
+
+> **跳转不验证** = 历史错误 #4
+
+| 检查项 | 要求 |
+|--------|------|
+| ✅ Deeplink覆盖 | ALL终端的直播预约/通知/带货入口→LIVE全部测试 |
+| ✅ APP角色切换 | 4角色视图切换不丢失tab状态 |
+| ✅ 中断恢复 | 5种中断场景全部覆盖·草稿TTL=2h |
+| ✅ 参数安全 | DeepLink参数校验·防止注入·敏感参数加密 |
+| ✅ 回退路径 | 所有跳转支持浏览器的"返回"操作·历史栈正确 |
+| ✅ 跨终端鉴权 | DeepLink参数含token·接收端验证 |
+| ✅ 未登录处理 | DeepLink可携带匿名参数·登录后恢复目标页面 |

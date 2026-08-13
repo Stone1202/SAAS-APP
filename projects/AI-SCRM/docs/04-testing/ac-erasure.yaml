@@ -1,0 +1,70 @@
+- generic [ref=f6e4]:
+  - banner [ref=f6e5]: SAAS运营管理后台 — 直播内容审核
+  - generic [ref=f6e6]:
+    - complementary [ref=f6e7]:
+      - menu [ref=f6e9]:
+        - menuitem "审核模板配置" [ref=f6e10] [cursor=pointer]:
+          - generic [ref=f6e11]: 审核模板配置
+        - menuitem "回调模板配置" [ref=f6e12] [cursor=pointer]:
+          - generic [ref=f6e13]: 回调模板配置
+        - menuitem "智能擦除配置" [ref=f6e14] [cursor=pointer]:
+          - generic [ref=f6e15]: 智能擦除配置
+        - menuitem "审核事件总览" [ref=f6e16] [cursor=pointer]:
+          - generic [ref=f6e17]: 审核事件总览
+        - menuitem "审核处置操作" [ref=f6e18] [cursor=pointer]:
+          - generic [ref=f6e19]: 审核处置操作
+        - menuitem "录播擦音管理" [ref=f6e20] [cursor=pointer]:
+          - generic [ref=f6e21]: 录播擦音管理
+        - menuitem "违规统计看板" [ref=f6e22] [cursor=pointer]:
+          - generic [ref=f6e23]: 违规统计看板
+    - main [ref=f6e24]:
+      - generic [ref=f6e25]:
+        - generic [ref=f6e26]:
+          - heading "智能擦除配置" [level=2] [ref=f6e27]
+          - button "plus 创建擦除模板" [ref=f6e28] [cursor=pointer]:
+            - img "plus" [ref=f6e30]:
+              - img [ref=f6e31]
+            - generic [ref=f6e34]: 创建擦除模板
+        - generic [ref=f6e35]: ℹ️ 智能擦除依赖审核模板的"音频文字识别"配置。擦除方式：静音擦除（默认）将违规音频静音；蜂鸣声擦除将违规音频替换为Beep滴滴声。
+        - generic [ref=f6e38]:
+          - table [ref=f6e42]:
+            - rowgroup [ref=f6e43]:
+              - row "模板名称 擦除类型 音频处理 绑定审核模板 状态 创建时间" [ref=f6e44]:
+                - columnheader "模板名称" [ref=f6e45]
+                - columnheader "擦除类型" [ref=f6e46]
+                - columnheader "音频处理" [ref=f6e47]
+                - columnheader "绑定审核模板" [ref=f6e48]
+                - columnheader "状态" [ref=f6e49]
+                - columnheader "创建时间" [ref=f6e50]
+            - rowgroup [ref=f6e51]:
+              - row "默认智能擦除模板 不合规音频 静音擦除 tpl_default_001 effective 2026-07-18 10:37:21" [ref=f6e52]:
+                - cell "默认智能擦除模板" [ref=f6e53]
+                - cell "不合规音频" [ref=f6e54]:
+                  - generic [ref=f6e55]: 不合规音频
+                - cell "静音擦除" [ref=f6e56]:
+                  - generic [ref=f6e57]: 静音擦除
+                - cell "tpl_default_001" [ref=f6e58]
+                - cell "effective" [ref=f6e59]:
+                  - generic [ref=f6e60]: effective
+                - cell "2026-07-18 10:37:21" [ref=f6e61]
+              - row "默认智能擦除模板 不合规音频 静音擦除 tpl_default_001 effective 2026-07-18 10:37:21" [ref=f6e62]:
+                - cell "默认智能擦除模板" [ref=f6e63]
+                - cell "不合规音频" [ref=f6e64]:
+                  - generic [ref=f6e65]: 不合规音频
+                - cell "静音擦除" [ref=f6e66]:
+                  - generic [ref=f6e67]: 静音擦除
+                - cell "tpl_default_001" [ref=f6e68]
+                - cell "effective" [ref=f6e69]:
+                  - generic [ref=f6e70]: effective
+                - cell "2026-07-18 10:37:21" [ref=f6e71]
+          - list [ref=f6e72]:
+            - listitem "上一页" [ref=f6e73]:
+              - button "left" [disabled] [ref=f6e74]:
+                - img "left" [ref=f6e75]:
+                  - img [ref=f6e76]
+            - listitem "1" [ref=f6e78] [cursor=pointer]:
+              - generic [ref=f6e79]: "1"
+            - listitem "下一页" [ref=f6e80]:
+              - button "right" [disabled] [ref=f6e81]:
+                - img "right" [ref=f6e82]:
+                  - img [ref=f6e83]

@@ -1,0 +1,487 @@
+# ============================================
+# Workflow: handoff（交付标注与回传闭环 V4.1.0）
+# 版本: v4.1.0
+# 最后更新: 2026-07-18
+# ============================================
+#
+# V4.1.0 缺陷修复（交互卡代码注入遗漏）：
+#   1. 【关键修复】拆分Stage 2为两个独立阶段：
+#      - Stage 2（新增）：原型注入交互卡（AI强制执行，不可跳过）
+#        * 更新 useCaseCardData.ts 写入本Sprint卡片数据
+#        * 在每个原型页面挂载 HelpButton + UseCaseDrawer
+#        * 注入后自检：所有页面的【？】是否可点击、抽屉是否弹出
+#      - Stage 3（原Stage 2重命名）：用户审阅交互卡（user_action）
+#   2. 新增注入门禁 G-HO-INJECT-01~03：
+#      - G-HO-INJECT-01：useCaseCardData.ts 含本Sprint所有卡片数据
+#      - G-HO-INJECT-02：每个FN对应页面有【？】按钮
+#      - G-HO-INJECT-03：每个【？】可点击、抽屉弹出、内容与卡片数据一致
+#   3. instruction-card-generator Step 4~5 现在是 handoff Stage 2 的强制前序步骤
+#   4. 旧编号 Stage 2→3, Stage 3→4（向后兼容：引用编号自动调整）
+#
+# V4.0.0 重大升级（对齐POM V5.0三级把关+Sprint循环）：
+#   1. 分层handoff：Sprint级handoff（SM调度，Sprint内闭环）+ 版本级handoff（PM调度，/close前）
+#   2. AI智能分析：用例卡编辑时AI自动分析变更影响/一致性/增量重跑范围/风险/层级判定
+#   3. Sprint级handoff：每Sprint结束SM主持用例卡校验，Sprint内闭环
+#   4. 版本级handoff：Final Sprint后/close前，三位一体交付物门禁G-HO-DELIVERY-01~05
+#   5. 回传升级：引用feedback-processor.yml Skill执行AI分析
+#   6. Sprint内用例卡编辑回传本Sprint的BA（非版本级BA）
+#
+# V3.0.0 重大升级：
+#   1. handoff 移到 /close 之前（AC → handoff → close）
+#   2. 三步流程：校验对应性 → 编辑交互卡 → 回传BA
+#   3. 标注粒度扩展为4级（page/button/metric/field）
+#   4. 交互卡支持就地编辑（新增/修改/补充用例）
+#   5. 编辑后回传BA，增量重跑需求分析，再重跑handoff校验
+#   6. 编号体系统一为方案B扩展（UC-{系统}-{终端}-{NNN}-{SS}）
+#
+# 核心原则：
+#   1. 前置条件：验收(AC)通过（版本级）/ Sprint DoD满足（Sprint级）
+#   2. 对应性校验：每个FN/UC必须有界面标注【？】，反之亦然
+#   3. 代码注入先于用户审阅：AI须先将【？】挂载到原型页面，用户才能在原型中看到并审阅
+#   4. 编辑回传：用户可编辑交互卡，变更回传BA更新REQ
+#   5. 循环校验：回传重跑后重新handoff，直到无变更才进入下一Sprint或/close
+#   6. 编号一致：标注编号与REQ编号同源（方案B扩展）
+#   7. AI分析先行：用例卡编辑时AI先分析，产出分析报告供BA参考（V4.0.0新增）
+#   8. 分层闭环：Sprint内用例卡问题Sprint内闭环，不轻易升级到版本级（V4.0.0新增）
+#   9. dev-change回流验收：handoff优先读取PRD §19回传区，逐条核实dev-change记录已被Agent消费（V1.13.0新增 G-HO-DEVCHANGE-01~03）
+# ============================================
+
+workflow:
+  id: "handoff"
+  name: "交付标注与回传闭环（分层+AI分析+代码注入，V4.1.0）"
+  version: "4.1.0"
+  trigger_command: "/handoff"
+  owner: "ux-agent（版本级） / sm-agent（Sprint级协调）"
+  collab: ["fd-agent", "ba-agent", "sm-agent"]
+  precondition: "ac_passed_and_prototype_done_and_no_open_bug（版本级）/ sprint_dod_satisfied（Sprint级）"
+  standard: ".codebuddy/knowledge/common/handoff-spec.yml"
+  doc_standard: ".codebuddy/knowledge/common/doc-standards.yml"
+
+  # ============================================
+  # V4.0.0新增：分层定义
+  # ============================================
+  layered_design:
+    sprint_level:
+      description: "Sprint级handoff——SM协调，Sprint内闭环"
+      trigger: "每Sprint结束前（Sprint Review后）"
+      owner: "sm-agent（协调） + ux-agent（执行）"
+      scope: "本Sprint的页面/用例/交互卡"
+      final_destination: "本Sprint的BA（增量调整本Sprint范围的需求）"
+      escalation: "Sprint内用例卡问题影响其他Sprint→升级版本级"
+      ai_analysis: "AI分析变更影响+一致性+增量重跑范围+Sprint范围校验"
+    
+    version_level:
+      description: "版本级handoff——PM调度，/close前"
+      trigger: "Final Sprint集成验证后、/close前"
+      owner: "ux-agent + pm-agent"
+      scope: "全版本所有页面/用例/交互卡"
+      final_destination: "版本级BA（调整版本级REQ产物）"
+      gates: "G-HO-DELIVERY-01~05（三位一体交付物门禁）"
+      ai_analysis: "AI分析变更影响+一致性+增量重跑范围+风险+跨Sprint影响"
+
+  # ============================================
+  # V4.0.0新增：AI智能分析（用例卡编辑回传前置）
+  # ============================================
+  ai_writeback_analysis:
+    description: |
+      用例卡编辑（新增/修改/补充）时，AI先执行智能分析，产出分析报告供BA参考。
+      引用 feedback-processor.yml Skill。
+      AI分析不等同于AI决策——AI给建议，BA做决策。
+    skill_ref: "feedback-processor"
+    analysis_dimensions:
+      
+      wb1_impact_analysis:
+        name: "变更影响分析"
+        description: "AI分析用例卡变更影响哪些FN/UC/BR/状态机/业务操作矩阵/契约Schema"
+        output: "受影响产物清单"
+      
+      wb2_consistency_check:
+        name: "一致性校验"
+        description: "AI校验变更后的用例卡与PRD/仿真原型是否一致（编号一致+行为一致）"
+        output: "一致/不一致+差异清单"
+      
+      wb3_incremental_rerun_scope:
+        name: "增量重跑范围"
+        description: "AI确定BA需要增量重跑哪些产物（非全量重跑）"
+        output: "增量重跑产物清单"
+        rule: "Sprint级→仅本Sprint范围产物；版本级→版本级产物"
+      
+      wb4_risk_identification:
+        name: "风险识别"
+        description: "AI识别变更是否引入新风险"
+        risks: ["状态机不完整", "信息流断裂", "后置条件遗漏", "跨Sprint影响"]
+        output: "风险清单+严重性"
+      
+      wb5_layer_determination:
+        name: "层级判定（V4.0.0新增）"
+        description: "AI判断变更在Sprint内消化还是需升级版本级"
+        output: "Sprint内消化/升级版本级+理由"
+        rule: "变更影响其他Sprint的产物→建议升级版本级"
+    
+    output_format:
+      path: "projects/{project}/.codebuddy/journal/writeback-analysis/WRITEBACK-ANALYSIS-{version}-S{n}-{NNN}.md"
+      content: "五维分析报告，附在handoff回传区，供BA参考"
+
+  # ============================================
+  # 选项定义
+  # ============================================
+  options:
+    - flag: "--project"
+      desc: "项目名称"
+      required: true
+    - flag: "--type"
+      desc: "需求类型（可省略，自动选已通过验收的需求流）"
+      required: false
+    - flag: "--module"
+      desc: "指定核查模块名（可省略，默认全量）"
+      required: false
+
+  # ============================================
+  # 阶段定义（V4.1.0：五步流程 = 四步+AI分析，代码注入不可跳过）
+  # ============================================
+  stages:
+    # ========== 第一步：校验对应性 ==========
+    - id: "1"
+      name: "校验对应性（用原需求文档输出标注）"
+      agent: "doc-agent"
+      action: |
+        1. 从 projects/{project}/docs/01-requirements/ 归集本需求流的所有用例（FN/UC/PG）
+        2. 从 projects/{project}/docs/03-design/ 归集所有交互说明卡
+        3. 建立「用例→页面→按钮」的映射索引（基于方案B扩展编号）：
+           - PG-{系统缩写}-{终端缩码}-{NNN} → 页面标注【？】
+           - FN-{系统缩写}-{终端缩码}-{NNN} → 按钮标注【？】
+           - UC-{系统缩写}-{终端缩码}-{NNN}-{SS} → 交互卡内容
+        4. 对应性校验：
+           - 每个FN是否有界面标注【？】？
+           - 每个界面标注【？】是否关联FN？
+           - 每个PG是否有页面标注【？】？
+           - 标注内容与REQ用例描述是否一致？
+      output: "用例归集清单 + 对应性校验报告"
+      checkpoint: true
+      note: "校验不通过的项标记为待处理，进入第二步代码注入"
+
+    # ========== 第二步：原型注入交互卡（V4.1.0新增——AI强制执行，不可跳过） ==========
+    - id: "2"
+      name: "原型注入交互卡（AI强制执行——渲染【？】到每个页面）"
+      agent: "fd-agent"
+      collab: ["ux-agent"]
+      skills: ["instruction-card-generator"]
+      user_action: false
+      checkpoint: true
+      mandatory: true
+      action: |
+        ⚠️ 铁律：此阶段为AI强制执行阶段，不可跳过、不可推给用户。
+        用户无法审阅不存在的【？】按钮——必须先注入再让用户审阅。
+
+        2a. 全量扫描操作清单（V2.3.0★铁律——handoff-spec.yml强制）：
+        - 扫描所有原型页面的所有可交互操作，按10大类覆盖检查：
+          ① 列表操作：搜索/排序/筛选/分页/列头排序/查看/导出
+          ② 写入操作：新增/编辑/删除/导入/禁用/启用
+          ③ 行内操作：查看/编辑/删除/禁用/跳转
+          ④ 表单操作：新建/编辑/审批/引用数据/校验
+          ⑤ 批量操作：批量删除/批量启用/批量导出/批量分配
+          ⑥ 导航操作：菜单跳转/面包屑/标签页切换/返回
+          ⑦ 状态操作：状态切换/流程提交/撤回/锁定
+          ⑧ 交互操作：展开折叠/拖拽排序/右键菜单/快捷键
+          ⑨ 数据操作：导入/导出/同步/刷新/重置
+          ⑩ 通信操作：发送/通知/消息/分享/转发
+        - 每个操作必须有独立用例卡（InlineHelpMark），遗漏任何操作→handoff未完成，不允许进入/close
+        - 页面级用例卡展示该页面全部UC概览，每个操作按钮旁必须有按钮级用例卡InlineHelpMark
+        - 输出操作扫描清单（扫描结果），含：页面路径×操作类型×操作元素×关联UC编号×是否已有卡片
+
+        2b. 生成/更新卡片数据文件：
+        - 目标文件：src/components/useCaseCardData.ts
+        - 操作：将本Sprint/版本的所有卡片数据写入 sprint{n}Cards 数组
+        - 每个卡片含：ucId/fnId/ucName/ucLevel/pageName/priority/automationType/
+          bgId/bgName/preconditions/steps/alternatives/postconditions/dataScope/
+          relatedBR/relatedSC/scName/accepted
+        - 每个卡片必须包含trace_to追溯字段（V2.3.0★铁律——追溯链贯穿到操作）：
+          trace_to:
+            flowchart_node: "对应业务流程图的节点ID（如node_001）"
+            state_transition: "对应状态机的状态过渡（如 pending→approved, 操作=approve）"
+            matrix_cell: "对应业务操作矩阵的单元格坐标（如 行=角色, 列=状态×操作）"
+            operation_type: "操作类型分类（list/write/inline/form/batch/navigate/state/interactive/data/communication 10大类之一）"
+        - 如文件已存在：追加新Sprint数组，不覆盖已有Sprint数据
+        - 如文件不存在：创建文件 + 定义UseCaseCard类型(含trace_to子类型) + 写入首个Sprint数组
+        - 操作类型（operationType）须覆盖：search/sort/navigate/save/filter/confirm（按需扩展到10大类）
+        - 更新所有查询函数（getCardsByFn/getPageCardByFn等）的allCards()来源
+
+        2c. 生成/更新【？】按钮组件：
+        - 目标文件：src/components/HelpButton.tsx + src/components/UseCaseDrawer.tsx
+        - 如文件已存在：检查是否需要新增OperationType的图标/颜色/标签映射
+        - 如文件不存在：创建完整组件（HelpButton接收fnId+ucId参数，
+          UseCaseDrawer右侧滑出抽屉，宽度420px，含trace_to追溯信息展示区）
+
+        2d. 在每个原型页面挂载【？】：
+        - 遍历全量扫描清单（2a），为每个操作元素挂载HelpButton
+        - 每个页面添加：
+          ① 页面标题右侧 → HelpButton（page级，传入fnId）
+          ② 搜索框旁 → HelpButton（search操作，传入fnId+ucId）
+          ③ 筛选组件旁 → HelpButton（filter操作，传入fnId+ucId）
+          ④ 排序表头旁 → HelpButton（sort操作，传入fnId+ucId）
+          ⑤ 操作按钮旁 → HelpButton（save/confirm/navigate操作，传入fnId+ucId）
+          ⑥ 行内操作按钮旁 → HelpButton（inline操作，传入fnId+ucId）
+          ⑦ 表单字段旁 → HelpButton（form操作，传入fnId+ucId，field级标注）
+          ⑧ 批量操作按钮旁 → HelpButton（batch操作，传入fnId+ucId）
+          ⑨ 页面底部挂载 UseCaseDrawer 组件（接收当前页面的fnId列表）
+        - 页面级【？】与操作级【？】通过ucLevel:'page' vs 'operation'区分展示
+        - 每个挂载的HelpButton须能通过卡片数据追溯到对应的flowchart_node/state_transition/matrix_cell
+
+        2e. 注入后自检验证（V4.1.0新增——G-HO-INJECT-01~03 + V2.3.0全量扫描校验）：
+        - G-HO-INJECT-01：useCaseCardData.ts 中 allCards() 包含本Sprint所有卡片
+        - G-HO-INJECT-02：每个FN对应的页面文件中存在 HelpButton import
+        - G-HO-INJECT-03：执行 npm run build 或 npx tsc --noEmit 不引入新类型错误
+        - V2.3.0全量扫描校验：2a扫描清单中的每个操作是否都有对应用例卡（遗漏→阻断）
+        - V2.3.0追溯字段校验：每个卡片是否都包含trace_to的4个子字段（缺失→阻断）
+        - 自检不通过 → 立即修复 → 重新自检 → 直到通过才进入第三步
+      output: "操作扫描清单 + 更新后的useCaseCardData.ts + HelpButton.tsx + UseCaseDrawer.tsx + 所有标注页面"
+      note: "【关键】此阶段是G-HO-DELIVERY-03（可交互用例卡片完整性）的前提——没有注入就没有卡片可交互；V2.3.0铁律——全量扫描+trace_to追溯链贯穿到操作级"
+
+    # ========== 第三步：用户审阅交互卡（V4.1.0：原第二步重命名，前提是代码已注入） ==========
+    - id: "3"
+      name: "用户审阅交互卡（在原型中查看【？】并编辑用例）"
+      agent: "ux-agent"
+      collab: ["fd-agent"]
+      skills: ["prototype-annotator"]
+      user_action: true
+      checkpoint: false
+      precondition: "Stage 2 注入自检全部通过（G-HO-INJECT-01~03全部OK），用户在原型中可以看到【？】按钮"
+      action: |
+        用户打开高保真原型，在各页面看到【？】标注，可执行：
+
+        3a. 查看交互说明卡：
+        - 点击页面标题右侧【？】 → 右侧抽屉弹出，展示页面用例说明
+        - 点击操作按钮旁【？】 → 右侧抽屉弹出，展示操作用例说明
+        - 抽屉内展示：前置条件 → 基本流程（分步） → 备选流程 → 后置条件 → 数据范围
+        - 抽屉底部：「查看完整需求文档」深链
+
+        3b. 用户编辑操作：
+        - 新增用例：页面有功能但无FN/UC → 交互卡上新增（临时编号FN-NEW-{NNN}）
+        - 补充描述：FN/UC存在但描述不完整 → 交互卡上补充（标记updated）
+        - 修改描述：FN/UC描述与实现不符 → 交互卡上修改（标记modified）
+        - 无变更：确认无误，直接进入第五步（循环校验完成）
+
+        3c. 保存：
+        - 保存交互卡变更到本地
+        - 标记变更类型（new/updated/modified/deprecated）
+        - 批量触发AI分析（第四步）
+      output: "编辑后的交互卡数据（含变更标记）"
+      note: "用户无变更时跳过第四步，直接进入循环校验完成"
+
+    # ========== 第四步：AI智能分析 + 回传BA（V4.1.0：原第三步，编号调整） ==========
+    - id: "4"
+      name: "AI智能分析 + 回传BA + 增量重跑需求分析"
+      agent: "ba-agent"
+      condition: "第三步检测到变更（new/updated/modified）"
+      skills: ["feedback-processor"]
+      action: |
+        V4.1.0：回传前先AI分析，BA参考AI分析报告处理回传。
+        
+        4a. AI智能分析（feedback-processor.yml）：
+        - wb1变更影响分析：AI分析变更影响哪些FN/UC/BR/状态机/业务操作矩阵/契约Schema
+        - wb2一致性校验：AI校验变更后用例卡与PRD/仿真原型是否一致
+        - wb3增量重跑范围：AI确定BA需增量重跑哪些产物（非全量）
+        - wb4风险识别：AI识别变更是否引入新风险
+        - wb5层级判定：AI判断Sprint内消化还是升级版本级
+        - 产出WRITEBACK-ANALYSIS报告
+        
+        4b. 回传写入：
+        - 变更内容+AI分析报告写入PRD中对应FN/UC下方的「handoff回传区」
+        - 格式：> ### 📝 handoff 回传区（v{version}，{日期}，含AI分析）
+        
+        4c. BA处理回传（参考AI分析）：
+        - BA先读AI分析的wb1变更影响清单，了解受影响产物
+        - 新增用例 → 在REQ中正式新增FN/UC（编号规范化）
+        - 补充描述 → 在REQ中更新对应UC字段
+        - 修改描述 → 在REQ中修正对应UC字段
+        - BA参考AI的wb3增量重跑范围，确定重跑产物清单
+        - BA参考AI的wb4风险识别，评估是否需风险处理
+        - 处理完成后清空「handoff回传区」（标记为已纳入）
+        
+        4d. 增量重跑（参考AI的wb3范围，非全量）：
+        - V4.1.0分层：Sprint级handoff→仅重跑本Sprint范围产物；版本级handoff→重跑版本级产物
+        - 仅重跑AI分析的受影响FN的产物
+        - 下游受影响阶段基于AI影响分析重跑：
+          - 新增FN → UX设计新增页面/组件 → Arch新增路由 → FD开发 → QA测试 → AC验收
+          - 补充异常流 → UX可能新增异常提示 → FD补充 → QA补充测试用例
+          - 修改描述 → 评估是否影响设计/代码 → 如影响则重跑，否则仅更新REQ
+        
+        4e. 重跑完成后：
+        - V4.1.0分层：Sprint级→Sprint内消化；版本级→同版本内消化（不递增版本号）
+        - 重新执行 /handoff（回到第一步校验对应性——注意：需重新执行Stage 2代码注入）
+        - 循环直到无变更 → 进入下一Sprint或/close
+      output: "AI分析报告 + 更新后的REQ产物 + 重跑后的下游产物"
+      checkpoint: true
+      note: "V4.1.0：循环校验重跑后必须重新/handoff（含代码注入），直到对应性校验全部通过"
+
+  # ============================================
+  # 4级标注粒度（V3.0.0）
+  # ============================================
+  annotation_levels:
+    - level: "page"
+      icon: "【？】"
+      position: "页面标题右侧"
+      content: "页面用例说明（页面目标+核心操作+状态说明）"
+      number: "PG-{系统缩写}-{终端缩码}-{NNN}"
+    - level: "button"
+      icon: "【？】"
+      position: "按钮hover时显示"
+      content: "操作用例说明（触发→前置→执行→反馈→后置）"
+      number: "FN-{系统缩写}-{终端缩码}-{NNN} · UC-{系统缩写}-{终端缩码}-{NNN}-{SS}"
+    - level: "metric"
+      icon: "【？】"
+      position: "统计指标右侧"
+      content: "指标说明（指标定义+计算公式+数据来源+更新频率+关联FN）"
+      number: "关联 FN-{系统缩写}-{终端缩码}-{NNN}"
+    - level: "field"
+      icon: "【？】"
+      position: "表单字段label右侧"
+      content: "字段说明（字段定义+校验规则+数据来源+是否可编辑）"
+      number: "关联 UC-{系统缩写}-{终端缩码}-{NNN}-{SS}"
+
+  # ============================================
+  # 对应性校验门禁
+  # ============================================
+  correspondence_gate:
+    rules:
+      - "每个FN必须有且仅有一个界面标注【？】（按钮级）"
+      - "每个界面标注【？】必须关联一个FN"
+      - "每个PG必须有且仅有一个页面标注【？】（页面级）"
+      - "标注内容与REQ用例描述须一致（差异→触发回传）"
+      - "编号格式必须为方案B扩展（UC-{系统}-{终端}-{NNN}-{SS}）"
+    pass_action: "校验通过 → 进入 /close"
+    fail_action: "校验不通过 → 回到第三步用户审阅 → 第四步回传 → 循环（注意：循环时须重新执行Stage 2代码注入）"
+
+  # ============================================
+  # V4.1.0新增：代码注入门禁（G-HO-INJECT-01~03）
+  # ============================================
+  injection_gate:
+    description: "Stage 2代码注入后AI自检验证——确保【？】按钮已正确挂载到每个原型页面"
+    gates:
+      - id: "G-HO-INJECT-01"
+        name: "卡片数据完整性"
+        check: "useCaseCardData.ts 的 allCards() 函数返回结果包含本Sprint/版本所有卡片的 ucId"
+        on_fail: "阻止进入Stage 3，FD补充缺失卡片数据"
+      - id: "G-HO-INJECT-02"
+        name: "页面标注完整性"
+        check: "每个FN对应的原型页面文件中存在 HelpButton import + UseCaseDrawer 挂载"
+        on_fail: "阻止进入Stage 3，FD补充缺失页面的【？】标注"
+      - id: "G-HO-INJECT-03"
+        name: "构建零错误"
+        check: "npm run build 或 npx tsc --noEmit 不引入新的TS类型错误（预存warning可忽略）"
+        on_fail: "阻止进入Stage 3，FD修复类型错误"
+    pass_action: "注入自检全部通过 → 进入Stage 3用户审阅"
+    fail_action: "任一不通过 → FD修复 → 重新自检 → 直到全部通过"
+
+  # ============================================
+  # V5.0新增：三位一体交付物门禁（G-HO-DELIVERY-01~05）
+  # ============================================
+  delivery_trinity_gate:
+    description: "议题五：PRD(五图)+高保真仿真原型+可交互用例卡片 三位一体完整性校验"
+    gates:
+      - id: "G-HO-DELIVERY-01"
+        name: "PRD五图完整性"
+        check: "PRD含泳道图+流程图+状态机+信息流+时序图，全部Mermaid可渲染"
+        on_fail: "阻止handoff，BA补充五图"
+      - id: "G-HO-DELIVERY-02"
+        name: "高保真仿真原型可用性"
+        check: "dev server可启动 + 页面可访问 + 菜单可跳转 + 数据可保存 + 流程可跑通"
+        on_fail: "阻止handoff，FD修复原型"
+      - id: "G-HO-DELIVERY-03"
+        name: "可交互用例卡片完整性"
+        check: "所有UC都有对应卡片 + 卡片可交互 + auto_play验证通过"
+        on_fail: "阻止handoff，UX/FD补充用例卡片"
+      - id: "G-HO-DELIVERY-04"
+        name: "三位一体一致性"
+        check: "PRD的FN/UC ↔ 仿真原型的页面/操作 ↔ 用例卡片的steps，三者编号一致且行为一致"
+        on_fail: "阻止handoff，PM协调三方对齐"
+      - id: "G-HO-DELIVERY-05"
+        name: "Demo报告"
+        check: "AI自动Demo报告含截图+流程跑通证据+问题清单"
+        on_fail: "阻止handoff，SM补充Demo报告"
+    pass_action: "三位一体门禁全部通过 → 进入/close"
+    fail_action: "任一不通过 → 回到对应Agent修复 → 重新校验"
+    standards_ref:
+      - "common/flow-standards/uc-taxonomy.yml（用例分类体系，V3.0.0新增）"
+      - "common/sim-prototype-standards.yml（高保真仿真原型规范）"
+      - "common/use-case-card-standards.yml（可交互用例卡片规范）"
+
+  # ============================================
+  # 标注强约束（源自 PRD）
+  # ============================================
+  annotation_constraints:
+    - "每个FN/UC必须有对应的界面标注【？】"
+    - "每个交互操作必须有对应的操作按钮级标注"
+    - "标注中的API路径必须与架构契约一致"
+    - "标注中的状态描述必须与状态机一致"
+    - "标注中的权限描述必须与业务操作矩阵一致"
+    - "标注编号必须与REQ编号同源（方案B扩展）"
+
+  # ============================================
+  # 交互反馈模板
+  # ============================================
+  feedback_template: |
+    📋 交付标注完成确认
+
+    **需求流**：{stream_id}（{type}，{version}）
+    **标注范围**：{模块列表}
+    **页面数**：{数量}
+    **操作按钮数**：{数量}
+    **指标标注数**：{数量}
+    **字段标注数**：{数量}
+    **说明卡总数**：{数量}
+
+    **代码注入自检（G-HO-INJECT-01~03）**：
+    - G-HO-INJECT-01 卡片数据完整性：{通过/不通过}（{卡片数}个卡片）
+    - G-HO-INJECT-02 页面标注完整性：{通过/不通过}（{已标注页数}/{总页数}）
+    - G-HO-INJECT-03 构建零错误：{通过/不通过}
+
+    **对应性校验**：
+    - FN→标注 一一对应：{通过/不通过}（{匹配数}/{总数}）
+    - PG→标注 一一对应：{通过/不通过}（{匹配数}/{总数}）
+    - 编号格式校验：{通过/不通过}
+
+    **变更回传**：
+    - 新增用例：{数量} 个
+    - 补充描述：{数量} 个
+    - 修改描述：{数量} 个
+    - 无变更：{是/否}
+
+    **下一步**：
+    - 有变更 → 回传BA → 增量重跑 → 重新/handoff校验（含代码注入）
+    - 无变更 → 执行 /close（版本冻结）
+
+  # ============================================
+  # /close 锁定机制（V4.1.0新增）
+  # ============================================
+  close_lock:
+    description: "/close 时 CodeBuddy 写入 project-lock.json，使浏览器端用例卡变为只读"
+    trigger: "handoff 校验通过 → 执行 /close"
+    action: |
+      1. 更新 projects/SAAS/public/project-lock.json：
+         { "locked": true, "version": "v{当前版本}", "lockedAt": "{ISO 8601}", "description": "..." }
+      2. 刷新 Preview 页面后，UseCaseDrawer 检测 locked=true
+         → 隐藏"编辑用例卡"按钮 → 显示"已锁定"标记
+      3. 所有用例卡变为只读，已保存的编辑记录保留在 IndexedDB 中（供审计和后续版本参考）
+    undo: |
+      如需解锁（新版本迭代）：将 locked 改回 false
+      → UseCaseDrawer 恢复编辑能力
+
+  # ============================================
+  # V4.1.1新增：hardoff回传强制重跑门禁引用（硬约束补丁）
+  # 解决：handoff阶段用户编辑后BA可跳过增量重跑直接标记done
+  # ============================================
+  writeback_gate:
+    description: |
+      V4.1.1新增——handoff回传硬约束门禁。
+      handoff Stage3用户审阅后检测到变更（新增FN/补充异常流/修改描述），
+      BA必须执行增量重跑需求分析（gate G-HO-WRITEBACK-01）。
+      不可只标记done不改PRD。
+    gate: "G-HO-WRITEBACK-01"
+    check: |
+      每次handoff循环迭代中，检测到变更后：
+      1. BA必须产出增量重跑记录（writeback_rerun=true + affected_fn_list + prd_section_updated）
+      2. PBL中必须包含writeback条目（ba_incremental_rerun_done标记）
+      3. 循环迭代直到Stage3无变更
+    on_fail: "handoff回传后BA未执行增量重跑——PM拦截，BA必须根据handoff编辑内容增量重跑需求分析"
+    iron_rule: "PM-11"

@@ -1,0 +1,229 @@
+# ============================================
+# Brain Evolution Engine（大脑进化引擎 V1.0.0）
+# 版本: v1.0.0
+# 最后更新: 2026-07-20
+# ============================================
+#
+# 定义了Agent大脑如何从反馈中学习→进化→越来越聪明。
+# 这不是硬编码规则，而是AI自主从素材中提取模式、更新大脑的过程。
+#
+# 核心原则：
+#   1. 反馈驱动：大脑只从真实反馈中学习，不从假设中学习
+#   2. 增量进化：每次进化基于上一次，不从头来
+#   3. 可验证：进化后的准确率必须≥进化前（否则回滚）
+#   4. 分层进化：Sprint级微进化 → 版本级完整进化 → 项目级跨版本进化
+# ============================================
+
+brain_evolution_engine:
+  version: "1.0.0"
+  
+  # ============================================
+  # 进化触发条件
+  # ============================================
+  triggers:
+    - id: "TRIG-SPRINT"
+      name: "Sprint级微进化"
+      event: "sprint_closed"
+      scope: "sprint"
+      description: "每个Sprint结束时的快速微进化，只追加新模式，不调整已有模式权重"
+      agents_involved: "本Sprint涉及的Agent"
+      inputs:
+        - "本Sprint的Review报告"
+        - "本Sprint的QA Bug列表"
+        - "本Sprint的回流分析报告（如有）"
+        - "Sprint回顾会结论"
+      output: "brain-evolution-delta-sprint-{sprint_id}.yml"
+    
+    - id: "TRIG-VERSION"
+      name: "版本级完整进化"
+      event: "version_closed"
+      scope: "version"
+      description: "/close时的完整大脑进化，包含：新模式提取+已有模式权重调整+预测准确率统计+过时模式标记"
+      agents_involved: "全11个Agent"
+      inputs:
+        - "全版本Review报告（7份）"
+        - "全版本回流分析报告（REFLOW-ANALYSIS-*）"
+        - "QA Bug列表（全量）"
+        - "AC验收Bug列表（全量）"
+        - "PBL问题列表（全量）"
+        - "各Agent当前大脑记忆（brain-memory-spec.yml格式）"
+        - "脑力协同共识记录"
+      output: "brain-evolution-summary-{version}.md + 各Agent的更新后大脑记忆"
+    
+    - id: "TRIG-REFLOW"
+      name: "回流闭环即时微进化"
+      event: "reflow_closed"
+      scope: "reflow"
+      description: "每次回流闭环后的即时微进化，范围仅限回流涉及的Agent，快速学习"
+      agents_involved: "回流涉及的Agent"
+      inputs:
+        - "本次回流的AI分析报告"
+        - "跨脑协同研判记录"
+        - "回流修复效果"
+      output: "brain-evolution-delta-reflow-{reflow_id}.yml"
+    
+    - id: "TRIG-INCIDENT"
+      name: "重大事故紧急进化"
+      event: "major_incident"
+      scope: "incident"
+      description: "P0级别事故/严重问题后，全体Agent紧急学习，高优先级"
+      agents_involved: "全Agent（重点标注事故相关Agent）"
+      priority: "CRITICAL"
+
+  # ============================================
+  # 版本级完整进化流程
+  # ============================================
+  version_evolution:
+    steps:
+      - step: 1
+        name: "收集进化素材"
+        action: |
+          PM收集/close时的全部素材（见TRIG-VERSION的inputs）。
+          素材完整度校验：至少需要 Review报告≥5份 + QA Bug≥1个 + AC Bug≥1个。
+          素材不足 → 触发最小进化（只更新模式库，不调整权重）。
+      
+      - step: 2
+        name: "AI模式提取"
+        action: |
+          AI分析所有素材，从4个维度提取：
+          
+          a. 新出现的问题模式（new_problem_patterns）：
+             - 本版本首次出现的Bug类型/Review不通过项
+             - 判定标准：与已有模式库的相似度 < 阈值（0.3）
+             - 提取：触发条件 + 特征向量 + 推荐应对 + 初始置信度
+          
+          b. 重复出现的问题模式（recurring_problem_patterns）：
+             - 跨版本反复出现的问题（相似度 > 阈值 0.7）
+             - 升级：已有模式的 hit_count += 1, last_seen = 当前版本
+             - 判定是否需要升级到P0级改进项
+          
+          c. 成功模式（success_patterns）：
+             - 本版本做得好的（Review通过率高/0 Bug的FN/一次通过的交互设计）
+             - 提取成功因子 → 固化为推荐模式
+          
+          d. 预测→实际对比（prediction_vs_actual）：
+             - 对比每个Agent本版本的所有预测（quality_prediction/bug_hotspot等）
+             - 计算：precision/recall/F1
+             - 识别：哪些预测准（模式有效）/ 哪些预测不准（模式需要调整）
+      
+      - step: 3
+        name: "大脑更新"
+        action: |
+          对每个Agent大脑，执行：
+          
+          a. 新增模式（add_patterns）：
+             - 将new_problem_patterns和success_patterns加入大脑的patterns列表
+             - 初始置信度 = 0.6（新发现，需要验证）
+             - 标注 first_seen = 当前版本
+          
+          b. 调整已有模式权重（adjust_patterns）：
+             - 模式被成功命中且有效：confidence += 0.05, success_rate *= 0.9 + 0.1*actual_result
+             - 模式被命中但无效（误报）：confidence -= 0.05, false_positive_rate += 0.1
+             - 模式在本版本未被触发：confidence *= 0.95（缓慢衰减）
+             - 调整公式：new_confidence = old_confidence * 0.8 + actual_hit_rate * 0.2
+          
+          c. 标记过时模式（deprecate_patterns）：
+             - confidence < 0.3 且 hit_count > 5 → 标记deprecated
+             - 3个版本未被触发 → 标记可能过时（candidate_deprecation）
+          
+          d. 更新预测准确率：
+             - 计算本版本预测的precision/recall
+             - 追加到大脑的predictions记录
+             - 更新evolution_deltas中的accuracy_change
+      
+      - step: 4
+        name: "进化验证"
+        action: |
+          a. AI回测验证：
+             - 用本版本的实际Bug分布，回测更新后大脑的预测
+             - 对比：更新后预测准确率 vs 更新前预测准确率
+             - 若准确率下降 > 5% → 回滚本次更新（保留原始大脑）
+          
+          b. 跨脑一致性验证：
+             - 检查各Agent大脑之间的协同记录
+             - 若BA大脑说"这个FN高风险"，QA大脑记录"未发现Bug"→ 标记协同偏差
+             - 协同偏差 → 降低双方在该类型上的置信度
+          
+          c. 产出进化报告（brain-evolution-summary-{version}.md）：
+             ├─ 进化概览：本版本所有大脑的进化摘要
+             ├─ 新增模式：每个大脑学到了什么新东西
+             ├─ 调整模式：哪些模式的权重变了、为什么
+             ├─ 预测准确率：各大脑的预测表现（precision/recall/F1）
+             ├─ 跨Agent因果链：BA的发现→下游的实际收益（ROI）
+             ├─ 下版本建议：基于本版本大脑发现的下版本流程优化建议
+             └─ 进化质量评分：综合评估本次进化的质量
+      
+      - step: 5
+        name: "大脑记忆持久化"
+        action: |
+          更新后的大脑记忆写入：
+          1. {版本沉淀}/大脑记忆/{agent}_memory_{version}.yml（版本快照）
+          2. {项目知识库}/大脑记忆/latest/{agent}_memory_latest.yml（最新版，覆盖）
+          3. 若有跨项目通用模式 → 追加到 common/大脑模式库/
+          4. 更新 brain-memory-spec.yml 中的进化记录
+          5. 各Agent大脑版本号 += 1
+
+  # ============================================
+  # Sprint级微进化（快速循环）
+  # ============================================
+  sprint_evolution:
+    description: |
+      Sprint级微进化是轻量级、快速循环的学习机制。
+      不与版本级进化冲突——版本级进化是"学期末大考"，Sprint微进化是"每周小测"。
+    steps:
+      - step: 1
+        name: "收集Sprint反馈"
+        action: "收集本Sprint的Review报告+QA Bug+Sprint回顾会结论"
+      - step: 2
+        name: "快速模式提取"
+        action: |
+          只提取本Sprint的新模式。不调整已有模式权重。
+          因为Sprint数据量小，权重大调整应在版本级进行。
+      - step: 3
+        name: "增量更新大脑"
+        action: |
+          追加新模式到大脑（不修改已有模式）。
+          新模式标记 source=sprint_evolution, confidence=0.5（需版本级验证）。
+      - step: 4
+        name: "Sprint回顾展示"
+        action: "在Sprint回顾会上展示大脑学到了什么"
+
+  # ============================================
+  # 回流闭环即时微进化
+  # ============================================
+  reflow_evolution:
+    description: |
+      每次回流闭环后的即时微进化。范围最小，速度最快。
+    trigger: "defect-reflow step-6"
+    action: |
+      1. 提取本次回流的核心教训（单条模式）
+      2. 追加到涉及Agent的大脑（标记 source=reflow_evolution, confidence=0.7）
+      3. 不调整其他模式权重
+
+  # ============================================
+  # 进化质量控制
+  # ============================================
+  quality_control:
+    # 进化回滚条件
+    rollback_triggers:
+      - condition: "更新后预测准确率下降 > 5%"
+        action: "回滚到进化前的大脑版本"
+      - condition: "新增模式导致误报率上升 > 10%"
+        action: "回滚该新模式，标记为failed_pattern"
+    
+    # 进化质量评分
+    quality_scoring:
+      dimensions:
+        - dimension: "pattern_utility"
+          weight: 30
+          description: "新增模式的实际效用（命中率+成功率）"
+        - dimension: "accuracy_improvement"
+          weight: 30
+          description: "预测准确率的变化"
+        - dimension: "cross_brain_consistency"
+          weight: 20
+          description: "跨Agent协同推理的一致性改善"
+        - dimension: "false_positive_control"
+          weight: 20
+          description: "误报率的控制（越低越好）"
+      pass_threshold: 60  # 低于60分的进化需人工审核

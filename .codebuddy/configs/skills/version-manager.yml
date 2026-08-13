@@ -1,0 +1,92 @@
+# Skill: 版本管理器（Version Manager）
+# V5.1.0合并：version-snapshotter + version-diff-reporter → version-manager
+# 2个版本管理Skill合并为1个，通过mode参数区分快照/差异报告
+# ============================================
+skill:
+  id: "version-manager"
+  name: "version-manager"
+  version: "2.0.0"
+  agents: ["pm-agent", "po-agent", "doc-agent"]
+  description: "/close时冻结版本快照+生成版本差异报告。通过mode参数区分snapshot/diff两种功能。引用version-timeline-standards.yml"
+
+  triggers:
+    - command: "/close"
+      stage: "stage-8 版本快照+差异报告"
+      description: "版本把关校验通过后执行快照，快照完成后执行差异报告"
+
+  modes:
+    # ---- mode: snapshot（原version-snapshotter）----
+    snapshot:
+      description: "冻结当前版本的完整仿真原型——Git Tag+产物归档+SNAPSHOT生成"
+      workflow:
+        - name: "1.版本把关校验前置"
+          rule: "确认G-VER-GUARD-01~04全部通过，否则不执行快照"
+        - name: "2.Git Tag冻结"
+          command: "git tag -a v{version} -m '版本{version}冻结'"
+          purpose: "代码版本标记，可随时git checkout回溯"
+        - name: "3.构建产物归档"
+          command: "npm run build:sim → 产物复制到 docs/09-versions/v{version}/build/"
+          purpose: "无需重新构建即可访问历史版本原型"
+        - name: "4.PRD快照"
+          command: "复制当前版本的所有PRD到 docs/09-versions/v{version}/prd/"
+        - name: "5.用例卡片快照"
+          command: "复制当前版本的所有用例卡片到 docs/09-versions/v{version}/cards/"
+        - name: "6.Demo报告归档"
+          command: "复制AI Demo报告到 docs/09-versions/v{version}/demo/"
+        - name: "7.生成SNAPSHOT.yml"
+          rule: "按snapshot_schema生成快照元数据，含version_info/build_info/artifacts/guard_reports/metrics"
+        - name: "8.更新VERSION-TIMELINE.yml"
+          rule: "在全局版本时间线新增本版本条目"
+      inputs:
+        - "当前版本的PRD/用例卡片/Demo报告"
+        - "构建产物（npm run build:sim）"
+        - "把关报告（Sprint/版本/项目三级）"
+      outputs:
+        - type: "version-snapshot"
+          path: "projects/{project}/docs/09-versions/v{version}/"
+          description: "完整版本快照（build+prd+cards+demo+SNAPSHOT.yml）"
+        - type: "timeline-update"
+          path: "projects/{project}/docs/09-versions/VERSION-TIMELINE.yml"
+          description: "全局版本时间线更新"
+
+    # ---- mode: diff（原version-diff-reporter）----
+    diff:
+      description: "AI自动对比两版本SNAPSHOT生成差异报告+PO/PM人工补充"
+      workflow:
+        - name: "1.读取两版本SNAPSHOT"
+          rule: "读取v{version}和v{version-1}的SNAPSHOT.yml"
+        - name: "2.对比页面清单"
+          rule: "路由级对比，输出新增/修改/删除页面列表"
+        - name: "3.对比用例清单"
+          rule: "UC编号级对比"
+        - name: "4.对比FN清单"
+          rule: "FN编号级对比"
+        - name: "5.对比契约Schema"
+          rule: "字段级diff"
+        - name: "6.对比sim适配器清单"
+          rule: "适配器级对比"
+        - name: "7.对比Sprint计划"
+          rule: "Sprint维度对比"
+        - name: "8.生成Mermaid差异图"
+          rule: "生成页面级/用例级/数据流级三张Mermaid差异图"
+        - name: "9.汇总AI部分DIFF.md"
+          rule: "汇总步骤2~8为DIFF.md的AI部分（一~五章）"
+        - name: "10.PO人工补充"
+          rule: "PO执行商业价值验收后，补充第六章商业价值变更"
+          by: "po-agent"
+        - name: "11.PM人工补充"
+          rule: "PM执行版本把关后，补充第七章风险变更"
+          by: "pm-agent"
+        - name: "12.PO+PM联合补充"
+          rule: "PO+PM联合补充第八章关键决策记录"
+          by: "po-agent + pm-agent"
+      inputs:
+        - "v{version}的SNAPSHOT.yml"
+        - "v{version-1}的SNAPSHOT.yml"
+      outputs:
+        - type: "diff-report"
+          path: "projects/{project}/docs/09-versions/v{version}/DIFF.md"
+          description: "版本差异报告（AI自动一~五章+人工补充六~八章）"
+
+  dependencies:
+    - "common/version-timeline-standards.yml"

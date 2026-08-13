@@ -1,0 +1,43 @@
+{
+  "name": "sugarmate-fix-phase2",
+  "mainConversationId": "a15ff8a1ea394c709fb34757b14abff3",
+  "workspacePath": "/Users/jojo/Desktop/原型设计/九天科技/AI-SCRM",
+  "createdAt": "2026-07-28T14:00:53.239Z",
+  "options": {
+    "workspacePath": "/Users/jojo/Desktop/原型设计/九天科技/AI-SCRM",
+    "isAutoTeam": false
+  },
+  "isAutoTeam": false,
+  "members": [
+    {
+      "memberId": "banner-fixer@sugarmate-fix-phase2",
+      "name": "banner-fixer",
+      "role": "Banner管理体系补全",
+      "sessionId": "92e494582ea54c238387f2d7616ae879"
+    },
+    {
+      "memberId": "sm-fixer@sugarmate-fix-phase2",
+      "name": "sm-fixer",
+      "role": "SM编号冲突修复+过渡表补全",
+      "sessionId": "86850e328ea5454db4df8034f421096f"
+    },
+    {
+      "memberId": "onboarding-fixer@sugarmate-fix-phase2",
+      "name": "onboarding-fixer",
+      "role": "入驻流程修复",
+      "sessionId": "1ff46a445e444f25b665896ffae2d5c4"
+    },
+    {
+      "memberId": "closure-fixer@sugarmate-fix-phase2",
+      "name": "closure-fixer",
+      "role": "闭环修复+异常路径补全",
+      "sessionId": "3df19910fac34fc79dae2ef69a0ef7af"
+    },
+    {
+      "memberId": "ops-fixer@sugarmate-fix-phase2",
+      "name": "ops-fixer",
+      "role": "运营端操作补全",
+      "sessionId": "344fea9f697c45008891a320624f4bf9"
+    }
+  ]
+}

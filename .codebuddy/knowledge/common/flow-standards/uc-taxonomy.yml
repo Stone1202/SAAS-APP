@@ -1,0 +1,450 @@
+# ============================================
+# 用例分类体系（UC Taxonomy）
+# 版本: v1.0.0
+# 创建日期: 2026-07-18
+# ============================================
+#
+# 定位：
+#   定义「页面类型→标准操作用例」的完整映射关系。
+#   供 BA（需求分析时自动拆解UC）、UX（设计时按UC追溯UI元素）、
+#   Handoff（校验PRD↔Design一致性）三方共用。
+#
+# 核心原则：
+#   1. 每个页面 = 1个页面UC + N个操作UC（N由页面类型决定）
+#   2. 操作UC的颗粒度 = 单个交互元素的独立操作（搜索框/排序表头/每个按钮）
+#   3. 页面类型由AI自动识别，用户可修正
+#   4. 追溯链：UC(PRD) → UI元素(Design) → 【？】标注(Handoff)
+# ============================================
+
+version: "1.0.0"
+name: "uc-taxonomy"
+description: "用例分类体系——页面类型→标准操作用例的完整映射，AI自动识别+用户修正"
+
+# ============================================
+# 一、页面类型分类
+# ============================================
+page_types:
+  
+  # --- 管理列表 ---
+  management_list:
+    id: "management_list"
+    chinese_name: "管理列表"
+    description: "带搜索筛选区+操作按钮区+列表表格+分页的标准管理页面"
+    auto_detect:
+      features:
+        - "包含搜索框(Search/Input.Search)"
+        - "包含表格组件(Table)"
+        - "包含分页组件(Pagination)"
+        - "包含工具栏（新增/导入/导出等操作按钮）"
+        - "页面主体为数据列表展示"
+    standard_operations:
+      - type: "search"
+        trigger: "搜索框"
+        description: "输入关键字实时筛选/搜索列表数据"
+        position: "搜索框旁【？】"
+      - type: "sort"
+        trigger: "列表表头"
+        description: "点击表头列切换排序（升序/降序）"
+        position: "可排序列表头旁【？】"
+      - type: "navigate"
+        trigger: "操作按钮/链接"
+        description: "跳转到详情页/打开创建弹窗/打开编辑弹窗"
+        position: "对应操作按钮/链接旁【？】"
+        note: "每个独立的跳转操作按钮=一个独立的navigate UC"
+      - type: "save"
+        trigger: "弹窗/表单提交按钮"
+        description: "提交表单数据并保存（创建/编辑弹窗的确认按钮）"
+        position: "弹窗「确定」/「创建」按钮旁【？】"
+    optional_operations:
+      - type: "filter"
+        trigger: "筛选项（下拉框/日期选择器等）"
+        description: "按结构化条件筛选（与search区别：filter是结构化条件选择，search是自由文本匹配）"
+      - type: "batch_operation"
+        trigger: "批量操作按钮"
+        description: "勾选多项后执行统一操作（批量删除/批量上架/批量导出等）"
+      - type: "export"
+        trigger: "导出按钮"
+        description: "导出当前列表数据为文件（Excel/CSV等）"
+    example: "审核模板配置页、商品列表、用户管理"
+
+  # --- 表单/创建 ---
+  form_create:
+    id: "form_create"
+    chinese_name: "表单/创建"
+    description: "独立页面的创建表单，用户填写字段后提交"
+    auto_detect:
+      features:
+        - "独立的创建页面（非弹窗）"
+        - "页面主体为表单(Form)，字段为空"
+        - "底部或右上角有「创建」/「提交」按钮 + 「取消」按钮"
+        - "无列表/表格数据"
+        - "页面标题含「创建」「新建」「新增」等关键词"
+    standard_operations:
+      - type: "save"
+        trigger: "「创建」/「提交」按钮"
+        description: "校验表单字段→提交数据→创建成功"
+        position: "提交按钮旁【？】"
+      - type: "navigate"
+        trigger: "「取消」/「返回」按钮"
+        description: "放弃填写，返回上一页/列表页"
+        position: "取消/返回按钮旁【？】"
+    optional_operations:
+      - type: "navigate"
+        trigger: "关联项跳转（如：选择所属分类→跳转分类列表）"
+    example: "新建商品页、创建活动页"
+
+  # --- 编辑 ---
+  edit:
+    id: "edit"
+    chinese_name: "编辑"
+    description: "独立页面的编辑表单，预填已有数据，用户修改后保存"
+    auto_detect:
+      features:
+        - "独立的编辑页面（非弹窗）"
+        - "页面主体为表单(Form)，字段已预填"
+        - "底部或右上角有「保存」/「更新」按钮 + 「取消」按钮"
+        - "页面标题含「编辑」「修改」等关键词或路由含 /edit/"
+    standard_operations:
+      - type: "save"
+        trigger: "「保存」/「更新」按钮"
+        description: "校验修改的字段→提交更新→保存成功"
+        position: "保存按钮旁【？】"
+      - type: "navigate"
+        trigger: "「取消」/「返回」按钮"
+        description: "放弃修改，返回上一页/详情页"
+        position: "取消/返回按钮旁【？】"
+    optional_operations:
+      - type: "delete"
+        trigger: "「删除」按钮"
+        description: "删除当前记录（通常需二次确认）"
+        position: "删除按钮旁【？】"
+    example: "编辑商品信息页、修改用户资料页"
+
+  # --- 详情 ---
+  detail:
+    id: "detail"
+    chinese_name: "详情"
+    description: "只读展示页面，展示某一记录的完整信息"
+    auto_detect:
+      features:
+        - "页面主体为只读信息展示（Descriptions/Card）"
+        - "无编辑表单或操作为只读"
+        - "顶部有返回按钮"
+        - "页面标题含「详情」「查看」等关键词或路由含 /detail/"
+    standard_operations:
+      - type: "navigate"
+        trigger: "「返回」按钮"
+        description: "返回上一页/列表页"
+        position: "返回按钮旁【？】"
+    optional_operations:
+      - type: "navigate"
+        trigger: "「编辑」按钮"
+        description: "跳转到编辑页"
+        position: "编辑按钮旁【？】"
+      - type: "navigate"
+        trigger: "其他操作按钮"
+        description: "如：审核/禁用/启用/删除等操作"
+        position: "对应操作按钮旁【？】"
+    example: "审核事件详情、用户详情、订单详情"
+
+  # --- 弹窗/抽屉内表单 ---
+  modal_form:
+    id: "modal_form"
+    chinese_name: "弹窗/抽屉内表单"
+    description: "在弹窗(Modal)或抽屉(Drawer)内的表单，通常由管理列表页的操作按钮触发"
+    auto_detect:
+      features:
+        - "表单在Modal/Drawer组件内"
+        - "由父页面的按钮触发弹出"
+        - "弹窗内有关闭/取消按钮 + 确认/提交按钮"
+    standard_operations:
+      - type: "navigate"
+        trigger: "触发按钮（在父页面，如「创建XXX」按钮）"
+        description: "点击按钮→弹出弹窗/抽屉"
+        position: "父页面触发按钮旁【？】"
+        uc_belongs_to: "父页面FN"
+      - type: "save"
+        trigger: "弹窗「确定」/「创建」按钮"
+        description: "校验表单→提交保存→关闭弹窗→刷新父页面列表"
+        position: "弹窗内提交按钮旁【？】"
+        uc_belongs_to: "父页面FN"
+    note: |
+      弹窗/抽屉不作为独立页面类型出现，其操作UC归属于触发它的父页面FN。
+      生成规则：触发按钮 → 1个navigate UC（打开弹窗），弹窗内提交按钮 → 1个save UC。
+    example: "创建审核模板弹窗（归属审核模板列表页FN）"
+
+  # --- 仪表盘/统计 ---
+  dashboard:
+    id: "dashboard"
+    chinese_name: "仪表盘/统计"
+    description: "统计面板页面，展示图表/指标卡片/数据总览"
+    auto_detect:
+      features:
+        - "页面主体为统计卡片(Card/Statistic)+图表(Chart)"
+        - "无传统列表表格"
+        - "页面标题含「概览」「仪表盘」「Dashboard」「统计」等关键词"
+    standard_operations:
+      - type: "filter"
+        trigger: "时间范围选择器/筛选条件"
+        description: "按时间范围/维度的筛选条件切换统计数据"
+        position: "筛选条件区旁【？】"
+    optional_operations:
+      - type: "navigate"
+        trigger: "统计卡片"
+        description: "点击卡片下钻到详细列表"
+        position: "可点击卡片旁【？】"
+    example: "运营数据概览、审核统计仪表盘"
+
+  # --- 登录/认证 ---
+  auth:
+    id: "auth"
+    chinese_name: "登录/认证"
+    description: "登录页、注册页、密码重置等认证相关页面"
+    auto_detect:
+      features:
+        - "页面主体为登录/注册表单"
+        - "通常无导航栏/侧边栏"
+        - "路由通常为 /login /register /reset-password"
+    standard_operations:
+      - type: "save"
+        trigger: "「登录」/「注册」按钮"
+        description: "校验账号密码→提交验证→登录成功跳转"
+        position: "登录/注册按钮旁【？】"
+    example: "运营管理端登录页"
+
+# ============================================
+# 二、操作类型统一定义
+# ============================================
+operation_types:
+  search:
+    id: "search"
+    chinese_name: "搜索"
+    description: "输入文本关键字实时筛选/模糊匹配"
+    color: "#1677ff"
+    icon: "SearchOutlined"
+    applicable_page_types: ["management_list"]
+    priority: "P1"
+
+  sort:
+    id: "sort"
+    chinese_name: "排序"
+    description: "点击列表表头切换排序规则（升序/降序）"
+    color: "#722ed1"
+    icon: "SortAscendingOutlined"
+    applicable_page_types: ["management_list"]
+    priority: "P2"
+
+  navigate:
+    id: "navigate"
+    chinese_name: "跳转/导航"
+    description: "页面跳转、弹窗打开、链接跳转等导航操作"
+    color: "#fa8c16"
+    icon: "LoginOutlined"
+    applicable_page_types: ["management_list", "form_create", "edit", "detail", "modal_form", "dashboard"]
+    priority: "P0"
+    note: "每个独立的跳转触发元素=一个独立的navigate UC"
+
+  save:
+    id: "save"
+    chinese_name: "保存/提交"
+    description: "校验表单→提交数据→持久化保存"
+    color: "#52c41a"
+    icon: "SaveOutlined"
+    applicable_page_types: ["management_list", "form_create", "edit", "modal_form", "auth"]
+    priority: "P0"
+    note: "表单的提交按钮、弹窗的确认按钮均为save操作"
+
+  filter:
+    id: "filter"
+    chinese_name: "筛选"
+    description: "结构化条件筛选（与search区别：filter通过下拉框/日期选择器等结构化组件筛选）"
+    color: "#13c2c2"
+    icon: "FilterOutlined"
+    applicable_page_types: ["management_list", "dashboard"]
+    priority: "P1"
+
+  cancel:
+    id: "cancel"
+    chinese_name: "取消/返回"
+    description: "取消当前操作、关闭弹窗、返回上一页"
+    color: "#8c8c8c"
+    icon: "CloseOutlined"
+    applicable_page_types: ["form_create", "edit"]
+    priority: "P2"
+
+  batch_operation:
+    id: "batch_operation"
+    chinese_name: "批量操作"
+    description: "勾选多项后执行统一操作"
+    color: "#eb2f96"
+    icon: "UngroupOutlined"
+    applicable_page_types: ["management_list"]
+    priority: "P2"
+
+  delete:
+    id: "delete"
+    chinese_name: "删除"
+    description: "删除单条记录"
+    color: "#ff4d4f"
+    icon: "DeleteOutlined"
+    applicable_page_types: ["edit", "detail"]
+    priority: "P2"
+
+# ============================================
+# 三、AI自动识别与生成规则
+# ============================================
+ai_auto_generation:
+
+  # Step 1: 页面类型识别
+  page_type_detection:
+    description: |
+      BA分析需求时，AI自动识别每个页面的类型。
+      识别依据：页面特征（components/布局/关键词）。
+      用户可在BA确认阶段修正识别结果。
+    output: "每个FN标注其 page_type（management_list|form_create|edit|detail|modal_form|dashboard|auth）"
+
+  # Step 2: 标准操作UC自动生成
+  operation_uc_generation:
+    description: |
+      根据页面类型，AI自动生成对应的标准操作UC。
+      management_list → 4核心(search/sort/navigate/save) + 可选(filter/batch_operation/export)
+      form_create → 2核心(save/navigate(取消))
+      edit → 2核心(save/navigate(返回)) + 可选(delete)
+      detail → 1核心(navigate(返回)) + 可选(navigate(编辑等))
+      modal_form → 2操作(navigate(打开)/save)（归属父页面FN）
+      dashboard → 1操作(filter) + 可选(navigate)
+      auth → 1操作(save(登录))
+    standard_rules:
+      - "页面UC = 1个（描述页面整体）"
+      - "操作UC数量 = 页面类型的 standard_operations + 用户确认的 optional_operations"
+      - "每个独立的触发元素=一个独立的操作UC"
+      - "弹窗内的操作归属于触发弹窗的父页面FN"
+
+  # Step 3: 编号自动分配
+  numbering:
+    page_uc: "UC-{系统缩写}-{终端缩码}-{NNN}"
+    operation_uc: "UC-{系统缩写}-{终端缩码}-{NNN}-{SS}"
+    ss_rule: "按页面类型标准操作顺序自动分配 01/02/03..."
+    example:
+      management_list:
+        - "UC-AUD-PC-001（页面UC）"
+        - "UC-AUD-PC-001-01（搜索）"
+        - "UC-AUD-PC-001-02（排序）"
+        - "UC-AUD-PC-001-03（跳转：创建按钮）"
+        - "UC-AUD-PC-001-04（保存：弹窗提交）"
+        - "UC-AUD-PC-001-05（跳转：详情链接）[如有多个navigate按钮]"
+
+# ============================================
+# 四、PRD ↔ Design 追溯规则
+# ============================================
+traceability:
+
+  # PRD侧义务
+  prd_side:
+    - rule: "每个FN必须标注 page_type"
+      check: "FN信息表中包含 page_type 字段"
+    - rule: "每个页面UC必须描述页面整体（布局/区域/能力）"
+      check: "页面UC的 basic_flow 包含页面结构和区域描述"
+    - rule: "每个操作UC必须标注 trigger_element（触发元素名称）"
+      check: "操作UC的 trigger_element 字段非空"
+    - rule: "操作UC编号按页面类型标准顺序分配"
+      check: "编号后缀序列遵循 uc-taxonomy.yml#numbering"
+    - rule: "每个UC标注所属PG（页面编号）"
+      check: "UC的 related_pg 字段非空且与设计PG编号一致"
+
+  # Design侧义务
+  design_side:
+    - rule: "每个PG必须有对应的页面UC（来自PRD）"
+      check: "设计文档第2章「信息结构」中标注每个PG对应的UC编号"
+    - rule: "每个交互行为必须引用对应的操作UC"
+      check: "设计文档第4章「页面交互说明」中每个交互行为标注关联的UC编号"
+    - rule: "操作UC的 trigger_element（如'搜索框'/'创建按钮'）必须与Design的UI元素一致"
+      check: "触发元素名称与Design中BTN/IPT的实际名称一致"
+    - rule: "交互跳转矩阵（第8章）每行列必须包含关联UC"
+      check: "矩阵中「关联UC」列非空"
+    - rule: "Design中每个可交互UI元素（按钮/链接/输入）必须有归属的操作UC"
+      check: "Design的UI元素清单中每个BTN/IPT标注关联的UC编号"
+
+  # Handoff侧校验
+  handoff_side:
+    - rule: "FN数量 = Design中页面数量（1对1）"
+      check: "FN总数 vs PG总数 校验"
+    - rule: "操作UC总数 = Design中交互行为总数"
+      check: "UC总数 vs 交互跳转矩阵行数 校验"
+    - rule: "每个【？】标注关联的UC编号必须可追溯到PRD"
+      check: "【？】标注的UC编号在PRD中存在"
+    - rule: "【？】标注的内容与PRD中UC描述一致"
+      check: "对应性校验逐项对比"
+
+  # 一致性矩阵（PRD UC ↔ Design UI元素 ↔ 【？】标注）
+  consistency_matrix_format: |
+    | UC编号 | UC名称 | 操作类型 | 页面类型 | PRD触发元素 | Design UI编号 | Design UI名称 | 【？】位置 | 状态 |
+    |--------|--------|----------|----------|-------------|---------------|---------------|------------|------|
+    | UC-AUD-PC-001-01 | 搜索审核模板 | search | management_list | 搜索框 | PG-AUD-PC-001-IPT01 | 搜索框 | 搜索框旁 | ✓一致 |
+    | UC-AUD-PC-001-03 | 打开创建弹窗 | navigate | management_list | 创建按钮 | PG-AUD-PC-001-BTN01 | 创建审核模板 | 按钮旁 | ✓一致 |
+    | UC-AUD-PC-001-04 | 保存模板配置 | save | management_list | 弹窗创建按钮 | PG-AUD-PC-001-M01-BTN01 | 创建 | 弹窗按钮旁 | ✓一致 |
+
+# ============================================
+# 五、PRD中UC章节的输出格式规范
+# ============================================
+prd_uc_format:
+
+  page_uc_template: |
+    ### UC-{系统}-{终端}-{NNN}（页面用例）{页面名称}
+    
+    | 字段 | 值 |
+    |------|-----|
+    | 页面类型 | {page_type} |
+    | 所属FN | FN-{系统}-{终端}-{NNN} |
+    | 参与者 | {actor} |
+    | 优先级 | P0 |
+    
+    **触发元素**：页面标题右侧【？】
+    
+    **前置条件**：{前置条件列表}
+    
+    **基本流程**：
+    1. [手动] 用户进入{页面名称}
+    2. [系统自动] 页面展示{页面区域描述}
+    
+    **后置条件**：{后置条件}
+    
+    **数据范围**：R: {读取范围} / W: —
+
+  operation_uc_template: |
+    ### UC-{系统}-{终端}-{NNN}-{SS}（操作用例·{操作类型中文}）{操作名称}
+    
+    | 字段 | 值 |
+    |------|-----|
+    | 操作类型 | {operation_type} |
+    | 所属页面UC | UC-{系统}-{终端}-{NNN} |
+    | 优先级 | {priority} |
+    
+    **触发元素**：{trigger_element}旁【？】
+    
+    **前置条件**：{前置条件}
+    
+    **基本流程**：
+    1. [手动] {操作描述}
+    2. [系统自动] {响应描述}
+    
+    **备选流程**：
+    - {异常/分支描述}
+    
+    **后置条件**：{后置条件}
+    
+    **数据范围**：R: {读取} / W: {写入}
+
+# ============================================
+# 六、版本历史
+# ============================================
+version_history:
+  - version: "1.0.0"
+    date: "2026-07-18"
+    changes: |
+      初始版本。
+      - 定义7种页面类型（管理列表/表单创建/编辑/详情/弹窗表单/仪表盘/认证）
+      - 定义8种操作类型（search/sort/navigate/save/filter/cancel/batch_operation/delete）
+      - 定义AI自动识别规则与生成规则
+      - 定义PRD↔Design追溯规则与一致性矩阵
+      - 定义PRD中UC章节输出格式

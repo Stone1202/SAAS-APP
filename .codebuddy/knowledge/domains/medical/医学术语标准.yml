@@ -1,0 +1,232 @@
+# ============================================
+# 医学术语标准领域知识 v1.0.0
+# 分类：medical
+# 学习日期：2026-07-27
+# 学习方法：traditional（基于WHO ICD-11+SNOMED International+NLM MeSH+LOINC公开文档）
+# 来源：WHO ICD-11浏览器+梅斯医学ICD糖尿病编码+百度健康SNOMED科普+PubMed MeSH
+# ============================================
+
+domain:
+  name: "医学术语标准"
+  category: "medical"
+  version: "v1.0.0"
+  learned_at: "2026-07-27"
+  learning_method: "traditional"
+  source_urls:
+    - "https://icd.who.int/zh"
+    - "https://ai.medsci.cn/article/icd-query/0aea05ed-abf5-40f5-a8d3-f620a05aada0"
+    - "https://ai.medsci.cn/article/icd-query/c8805bd7-eb46-448a-a6ec-5d7326393d3c"
+    - "https://health.baidu.com/m/detail/ar_6723853067136818739"
+    - "https://health.baidu.com/m/detail/ar_6444041093021361158"
+    - "https://mesh.aiproducthub.cn/"
+    - "https://www.snomed.org/?lang=zh"
+  description: "医学术语标准是医疗健康信息化的基础设施，四大核心体系：ICD-11用于疾病诊断编码和医保结算、SNOMED CT用于临床细节描述和电子病历语义化、LOINC用于检验检查指标标准化、MeSH用于医学文献主题标引。糖尿病相关术语在四套标准中都有完整覆盖。"
+  curation_policy: "保留：四大术语标准的核心定位和使用场景、糖尿病相关编码（ICD-11/ICD-10）、血糖监测和HbA1c的LOINC编码、SNOMED CT糖尿病临床术语示例。过滤：标准文件的技术实现细节、非糖尿病相关编码的完整列表。"
+  status: "draft"
+
+  # ============================================
+  # 角色清单
+  # ============================================
+  domain_roles:
+    - role_id: "ROLE-术语标准-001"
+      name: "WHO（世界卫生组织）"
+      type: "regulator"
+      core_need: "维护ICD-11国际疾病分类标准，支持全球健康统计和流行病学监测"
+      serves: ["全球医疗体系"]
+
+    - role_id: "ROLE-术语标准-002"
+      name: "SNOMED International"
+      type: "regulator"
+      core_need: "维护SNOMED CT全球临床术语标准，支持电子病历语义互操作"
+      serves: ["医疗机构", "HIS/EMR系统"]
+
+    - role_id: "ROLE-术语标准-003"
+      name: "医疗机构（医院/诊所）"
+      type: "integrator"
+      core_need: "在HIS/EMR中使用标准化术语编码，实现诊断和检验数据的互操作"
+      serves: ["患者", "医保机构"]
+
+    - role_id: "ROLE-术语标准-004"
+      name: "医保机构"
+      type: "beneficiary"
+      core_need: "基于ICD编码进行疾病分组（DRG/DIP）和医保结算"
+      serves: ["患者"]
+
+    - role_id: "ROLE-术语标准-005"
+      name: "医疗信息化系统（HIS/EMR/健康APP）"
+      type: "integrator"
+      core_need: "使用标准术语编码实现数据交换、AI分析和跨机构共享"
+      serves: ["医疗机构", "患者"]
+
+  # ============================================
+  # 商业问题清单
+  # ============================================
+  business_problems:
+    - id: "BP-术语标准-001"
+      problem: "医疗数据孤岛——不同医院使用不同的诊断和检验描述方式，数据无法互认共享"
+      pain_point: "患者转院或跨院就医时需重复检查、重新建档，效率低浪费大"
+      value: "统一采用ICD-11+SNOMED CT+LOINC编码，实现诊疗数据互操作"
+      evidence: "ICD-11现已在全球70+国家推广使用，中国正推动DRG/DIP支付改革依赖ICD编码"
+      priority: "high"
+      priority_rationale: "糖友之家如要接入多家医院数据，术语标准化是前提"
+      scrm_relevance: "糖友之家健康管理功能需对接HIS和检验系统，术语标准化是数据互通基础"
+      related_roles: ["ROLE-术语标准-005"]
+      related_problems: ["BP-术语标准-002"]
+
+    - id: "BP-术语标准-002"
+      problem: "糖尿病管理数据散落——血糖记录、HbA1c、并发症数据分散在不同平台，格式不一"
+      pain_point: "糖尿病患者无法统一查看和管理自己的健康数据，AI分析无法跨数据源工作"
+      value: "以LOINC编码统一检验指标（如血糖2345-7、HbA1c 4548-4），实现多源数据整合"
+      evidence: "LOINC是国际通用的检验检查指标编码标准，覆盖98%的常用检验项目"
+      priority: "high"
+      priority_rationale: "糖友之家核心功能依赖血糖数据和检验数据整合分析"
+      scrm_relevance: "糖友之家需要统一血糖记录、检验报告的数据格式"
+      related_roles: ["ROLE-术语标准-005"]
+
+    - id: "BP-术语标准-003"
+      problem: "医保结算编码差异——ICD-10和ICD-11并行期，编码映射容易出错"
+      pain_point: "编码错误导致医保拒付，患者自费增加"
+      value: "建立ICD-10到ICD-11的编码映射表，确保双标准并行期编码准确"
+      evidence: "中国医保目前仍以ICD-10为主，正逐步向ICD-11过渡"
+      priority: "medium"
+      priority_rationale: "影响医保对接功能的数据准确性"
+
+  # ============================================
+  # 1. 业务泳道图
+  # ============================================
+  swimlane:
+    roles: ["临床医生", "检验科", "病案室", "HIS系统", "医保机构"]
+    stages: ["诊断", "检验", "编码", "存储", "交换", "结算"]
+
+    actions:
+      - role: "临床医生"
+        stage: "诊断"
+        action: "下达诊断→系统提示对应ICD-11编码（如2型糖尿病=5A11）"
+        input: "患者症状、检查结果"
+        output: "诊断结论+ICD编码"
+        sources: ["ICD-11编码规则"]
+
+      - role: "检验科"
+        stage: "检验"
+        action: "完成检验→结果标注LOINC编码（如空腹血糖=2345-7, HbA1c=4548-4）"
+        input: "检验样本"
+        output: "检验结果+LOINC编码"
+        sources: ["LOINC标准"]
+
+      - role: "病案室"
+        stage: "编码"
+        action: "审核诊断与编码的一致性→按DRG/DIP分组规则确定病例权重"
+        input: "诊断+ICD编码+手术编码"
+        output: "DRG/DIP分组结果"
+        sources: ["DRG/DIP编码规范"]
+
+      - role: "HIS系统"
+        stage: "存储"
+        action: "将诊断(ICD)+检验(LOINC)+临床术语(SNOMED CT)结构化存储"
+        input: "临床数据+术语编码"
+        output: "结构化电子病历"
+        sources: ["HIS FHIR数据模型"]
+
+      - role: "HIS系统"
+        stage: "交换"
+        action: "通过FHIR R4标准+标准术语编码进行跨机构数据交换"
+        input: "结构化电子病历"
+        output: "互联互通数据包"
+        sources: ["HL7 FHIR R4", "互联互通成熟度测评"]
+
+      - role: "医保机构"
+        stage: "结算"
+        action: "基于ICD编码+DRG/DIP分组进行医保结算→审核合理性"
+        input: "ICD编码+DRG/DIP分组+费用清单"
+        output: "结算结果"
+        sources: ["DRG/DIP支付改革"]
+
+  # ============================================
+  # 2. 业务流程图
+  # ============================================
+  flow:
+    happy_path: "医生临床诊断→系统自动匹配ICD-11编码→检验科标注LOINC编码→病案室编码审核→HIS结构化存储→医保结算→跨机构数据共享"
+    exceptions:
+      - desc: "ICD-10/ICD-11编码冲突：中国医保仍用ICD-10，临床诊断建议用ICD-11→系统需内置编码映射表"
+        sources: ["中国DRG/DIP实践"]
+      - desc: "SNOMED CT中文版不完整：部分临床术语无中文映射→优先使用ICD+LOINC组合覆盖，SNOMED作为补充"
+        sources: ["SNOMED CT中文版现状"]
+    branches:
+      - desc: "健康APP场景：简化编码——用户自测血糖→LOINC编码(2345-7)→结构化存储→AI分析趋势→不涉及医保结算"
+        sources: ["糖尿病健康管理实践"]
+
+  # ============================================
+  # 3. 业务信息流
+  # ============================================
+  info_flow:
+    entities:
+      - name: "糖尿病诊断编码"
+        producer: "临床医生/HIS"
+        consumer: "医保系统、电子病历、健康档案"
+        depends_on: "ICD-11或ICD-10标准"
+        sources: ["ICD-11 2025"]
+
+      - name: "血糖监测结果"
+        producer: "检验科/血糖仪/自我监测"
+        consumer: "电子病历、健康APP、AI分析系统"
+        depends_on: "LOINC编码+血糖仪精度"
+        sources: ["LOINC标准"]
+
+      - name: "DRG/DIP分组"
+        producer: "病案室/HIS"
+        consumer: "医保机构"
+        depends_on: "诊断编码+治疗方案编码"
+        sources: ["DRG/DIP分组方案"]
+
+    cross_system: "HIS↔LIS(检验)↔PACS(影像)↔电子病历↔健康APP↔医保平台↔区域卫生平台"
+
+  # ============================================
+  # 4. 术语标准速查表（糖尿病相关核心编码）
+  # ============================================
+  operation_matrix:
+    roles: ["术语标准"]
+    states: ["ICD-11", "ICD-10", "SNOMED CT", "LOINC"]
+    matrix:
+      - role: "诊断"
+        state: "ICD-11"
+        operations: ["1型糖尿病=5A10", "2型糖尿病=5A11", "妊娠糖尿病=JA63.0", "糖尿病高渗性高血糖状态=5A20"]
+        sources: ["WHO ICD-11 Browser 2025"]
+
+      - role: "诊断"
+        state: "ICD-10"
+        operations: ["1型糖尿病=E10", "2型糖尿病=E11", "其他糖尿病=E13", "未特指=E14"]
+        sources: ["ICD-10 2019中文版"]
+
+      - role: "临床术语"
+        state: "SNOMED CT"
+        operations: ["2型糖尿病=44054006", "糖尿病肾病=127013003", "糖尿病视网膜病变=4855003", "低血糖症=302866003", "胰岛素抵抗=413890003"]
+        sources: ["SNOMED International"]
+
+      - role: "检验指标"
+        state: "LOINC"
+        operations: ["空腹血糖(质)=2345-7", "糖化血红蛋白(HbA1c)=4548-4", "餐后2h血糖=1557-6", "尿糖=2349-9", "胰岛素=8070-7", "C肽=13032-8", "尿酮体=5792-7"]
+        sources: ["LOINC 2.78"]
+
+  # ============================================
+  # 5. 解决方案概括
+  # ============================================
+  solution:
+    patterns:
+      - desc: "四大标准各司其职——ICD管诊断编码（医保结算用）、SNOMED管临床术语（电子病历用）、LOINC管检验指标（检验结果互通用）、MeSH管文献索引（知识库搜索用）"
+        sources: ["WHO/SNOMED/LOINC/NLM官方文档"]
+      - desc: "糖尿病数据整合——用ICD-11编码标记诊断类型+LOINC编码标准化检验指标+SNOMED CT补充临床细节→实现跨机构数据互通"
+        sources: ["本领域知识整合推导"]
+
+    tech_considerations:
+      - desc: "编码映射表维护：ICD-10→ICD-11映射、LOINC编码更新（LOINC每半年更新一次）、SNOMED CT每半年更新"
+        sources: ["WHO/LOINC/SNOMED发布周期"]
+      - desc: "FHIR标准对接：FHIR R4资源模型中Observation. code推荐使用LOINC编码，Condition.code推荐使用ICD/SNOMED编码"
+        sources: ["HL7 FHIR R4"]
+
+    best_practices:
+      - desc: "糖友之家术语标准选型：核心数据用LOINC编码（血糖/检验）+ ICD-11（诊断类型）→最小化标准开销、最大化互通价值"
+        sources: ["SugarMate脑暴v5.0需求推导+本领域知识分析"]
+      - desc: "ICD-11 API可用：WHO提供公开的ICD-11 REST API（https://icd.who.int/icdapi），可在线查询编码和术语定义"
+        sources: ["WHO ICD-API"]
+      - desc: "Q-术语标准-001 糖友之家健康数据编码规范：血糖记录使用LOINC 2345-7（空腹血糖质量浓度），诊断使用ICD-11 5A10/5A11，HbA1c使用LOINC 4548-4"
+        sources: ["SugarMate脑暴v5.0需求推导+ICD-11+LOINC"]

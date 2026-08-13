@@ -1,0 +1,30 @@
+skill:
+  id: "api-learner"
+  name: "api-learner"
+  version: "1.0.0"
+  agents: ["ba-agent", "arch-agent"]
+  triggers:
+    - "learn-domain Step4.5（来源含接口文档 / --deep-params / 分类=thirdparty）"
+    - "learn-project Stage2.3（来源含接口文档 / --deep-params）"
+  description: >
+    【学习域】API学习技能（公共能力）。当学习来源包含接口文档时触发，
+    产出 Part12 API参数字典 + Part13 参数流转图 + 参数流转校验报告。
+    定义文件：.codebuddy/knowledge/common/api-learner.yml
+    最终目的：服务于7部分业务产物 + 7项业务分析建模，梳理API在不同业务中的接口名称映射和调用顺序。
+    被 learn-domain 和 learn-project 共同引用，条件触发，非接口文档来源不触发。
+  inputs:
+    - "接口文档内容（--api文件 / --source=api-endpoint / 抓取到的API参数表）"
+    - "领域知识已有api_chain（增量学习时）"
+    - "common/api-learner.yml（技能定义）"
+  outputs:
+    - type: "part12"
+      name: "API参数字典"
+      description: "每个API的入参/出参/通知参数/错误码完整定义+语义角色+加密+枚举+校验+来源类型"
+    - type: "part13"
+      name: "参数流转图"
+      description: "场景内+跨场景参数流转+来源溯源+依赖矩阵+参数×状态机+参数×规则+安全分析"
+    - type: "param_check_report"
+      name: "参数流转校验报告"
+      description: "8项参数级校验结果（来源一致性/类型匹配/必填可达/幂等键/敏感加密/金额/状态机/规则）"
+  dependencies: ["common/api-learner.yml"]
+  public_definition: ".codebuddy/knowledge/common/api-learner.yml"

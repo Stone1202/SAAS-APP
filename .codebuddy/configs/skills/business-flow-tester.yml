@@ -1,0 +1,22 @@
+# Skill: 业务流程闭环验收器（Business Flow Tester）
+skill:
+  id: "business-flow-tester"
+  name: "business-flow-tester"
+  agent: "ac-agent"
+  description: "模拟真实用户的完整操作链路，验证业务流程闭环，不单独测试功能而是模拟用户的一天"
+  triggers:
+    - command: "/accept"
+      stage: "business-flow"
+      description: "AC Agent 验收阶段自动触发"
+    - command: "/new"
+      stage: "阶段5"
+  workflow:
+    - name: "角色与场景设定"
+      rule: "选择 persona（新用户/VIP/管理员）与数据场景（空/正常/密集/异常/边界）"
+    - name: "完整链路走查"
+      rule: "按步骤模拟用户操作，标记 ✅/❌，记录阻塞点"
+    - name: "预制场景验收"
+      rule: "逐个切换预制场景验证完整流程，输出流程完整性表"
+  output:
+    - type: "ACR"
+      description: "业务流程验收结果（flow/persona/totalSteps/passed/failed/blockedAt/bugs）"

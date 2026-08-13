@@ -1,0 +1,71 @@
+skill:
+  id: "roadmap-planner"
+  name: "路线图规划器"
+  owner: "po-agent"
+  version: "1.0.0"
+  
+  description: |
+    制定产品路线图，含季度规划、版本里程碑、功能优先级。
+    战略级和规划级项目激活。
+  
+  triggers:
+    - command: "PO Agent战略级/规划级激活"
+      stage: "阶段0.5·产品规划"
+      condition: "脑暴类型=strategic或planning"
+  
+  input:
+    - type: "product_architecture"
+      description: "产品架构文档（子系统/模块划分）"
+    - type: "backlog"
+      description: "版本Backlog（MoSCoW排序）"
+    - type: "brainstorm_confirmed"
+      description: "脑暴确认稿"
+  
+  output:
+    - type: "PROD-ROADMAP"
+      location: "projects/{project}/docs/00.5-product/PROD-ROADMAP-{project}-v{version}.md"
+      format: "Markdown"
+  
+  methodology: |
+    1. 季度规划
+       - Q1/Q2/Q3/Q4 主题
+       - 每季度交付目标
+    2. 版本里程碑
+       - v1.0.0: MVP核心功能（Must项）
+       - v1.1.0: 重要功能增强（Should项）
+       - v1.2.0: 体验优化（Could项）
+    3. 功能优先级矩阵
+       - 价值 vs 复杂度四象限
+       - 高价值低复杂度 → 优先
+       - 高价值高复杂度 → 规划
+       - 低价值低复杂度 → 填充
+       - 低价值高复杂度 → 排除
+    4. 依赖关系图
+    5. 风险与假设
+  
+  roadmap_template: |
+    ## 产品路线图
+    
+    ### 季度规划
+    | 季度 | 主题 | 交付目标 | 版本 |
+    |------|------|----------|------|
+    | Q1 | MVP上线 | 核心功能闭环 | v1.0.0 |
+    | Q2 | 功能增强 | 重要功能交付 | v1.1.0~v1.2.0 |
+    
+    ### 版本里程碑
+    #### v1.0.0（MVP）
+    - 目标：核心业务闭环
+    - 功能清单：{Must项列表}
+    - 预计周期：{周期}
+    
+    ### 价值/复杂度矩阵
+    ```mermaid
+    quadrantChart
+      title 功能优先级矩阵
+      x-axis 低复杂度 --> 高复杂度
+      y-axis 低价值 --> 高价值
+      quadrant-1 优先做
+      quadrant-2 规划做
+      quadrant-3 填充做
+      quadrant-4 不做
+    ```

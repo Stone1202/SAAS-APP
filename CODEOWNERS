@@ -1,0 +1,22 @@
+# CODEOWNERS — 控制各目录的合并审批权
+# 格式：目录路径  @Gitee用户名
+# 新增成员时在此追加 projects/{member}/  @{member}
+
+# === 流程引擎（仅 admin） ===
+.codebuddy/configs/           @jojo180712
+.codebuddy/scripts/           @jojo180712
+.codebuddy/knowledge/common/  @jojo180712
+deploy/                       @jojo180712
+.access-control.yml           @jojo180712
+
+# === 项目代码（按项目，授权成员可改） ===
+projects/SAAS-APP/           @jojo180712 @Eltonliz @linjinmei @fuyongjian @jiangrubin @zhuangjingxiang
+.codebuddy/knowledge/projects/SAAS-APP/  @Eltonliz @linjinmei @fuyongjian @jiangrubin @zhuangjingxiang
+projects/AI-SCRM/             @jojo180712 @Eltonliz @fuyongjian @jiangrubin
+projects/SAAS/                @Eltonliz @linjinmei @fuyongjian @jiangrubin @zhuangjingxiang
+.codebuddy/knowledge/projects/SAAS/  @Eltonliz @linjinmei @fuyongjian @jiangrubin @zhuangjingxiang
+projects/SugarMate/           @jojo180712 @fuyongjian @jiangrubin
+
+# === 共享知识库（admin 审核） ===
+.codebuddy/knowledge/domains/        @jojo180712
+.codebuddy/knowledge/common/经验库/   @jojo180712

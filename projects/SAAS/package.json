@@ -1,0 +1,35 @@
+{
+  "name": "saas-audit-prototype",
+  "version": "1.0.0",
+  "description": "SAAS直播内容审查高保真原型",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "build:sim": "vite build --mode sim && node -e \"const f=require('fs');let h=f.readFileSync('dist/index.html','utf8');h=h.replace(/ crossorigin/g,'');f.writeFileSync('dist/index.html',h);console.log('  crossorigin removed')\"",
+    "preview": "vite preview",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "test:e2e": "npx playwright test --config=e2e-acceptance/playwright.config.ts"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "element-plus": "^2.6.3",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.21",
+    "vue-router": "^4.3.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@mermaid-js/mermaid-cli": "^11.16.0",
+    "@playwright/test": "^1.61.1",
+    "@types/node": "^26.1.1",
+    "@vitejs/plugin-vue": "^5.0.4",
+    "jsdom": "^29.1.1",
+    "mermaid": "^11.16.0",
+    "typescript": "^5.4.3",
+    "vite": "^5.2.6",
+    "vitest": "^4.1.10",
+    "vue-tsc": "^2.0.6"
+  }
+}

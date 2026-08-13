@@ -1,0 +1,628 @@
+# ============================================
+# 领域知识：支付宝支付
+# 分类：thirdparty（第三方API文档）
+# 版本：v1.0.0
+# 创建日期：2026-07-21
+# 学习方法：场景驱动学习法（SDL V1.0.0）
+# 来源：
+#   1. 用户提供的支付宝开放平台能力清单（open.alipay.com/api#openapi）
+#   2. https://opendocs.alipay.com/open/00a8bj (当面付API)
+#   3. https://cloud.tencent.com/developer/article/1191378 (12个核心交易API详解)
+# ============================================
+
+meta:
+  domain_name: "支付宝支付"
+  category: "thirdparty"
+  version: "1.0.0"
+  sdl_version: "1.0.0"
+  created: "2026-07-21"
+  last_updated: "2026-07-21"
+  source_urls:
+    - "https://open.alipay.com/api#openapi"
+    - "https://opendocs.alipay.com/open/00a8bj"
+    - "https://cloud.tencent.com/developer/article/1191378"
+  crawling_log:
+    - url: "https://open.alipay.com/api#openapi"
+      status: "js_rendered"
+      strategy: "S2-JS降级+用户手动提供内容"
+      note: "SPA页面web_fetch无法获取JS渲染内容，用户手动提供了完整的能力清单（10大类30+能力）"
+    - url: "https://opendocs.alipay.com/open/00a8bj"
+      status: "success"
+      strategy: "direct"
+      content_fidelity: "full"
+    - url: "https://cloud.tencent.com/developer/article/1191378"
+      status: "success"
+      strategy: "S6-MULTI多源互补"
+      content_fidelity: "full"
+      note: "第三方教程补充API参数详情"
+
+# ============================================
+# Part A: 商业问题（SDL Layer 0）
+# ============================================
+business_problems:
+  - id: "BP-ALI-001"
+    role: "商家"
+    problem: "如何接入支付宝收款？"
+    pain_point: "线下/线上多种支付场景需要不同接入方式，开发成本高"
+    value: "支付宝提供9种支付方式覆盖全场景：当面付/JSAPI/APP/H5/PC/周期扣款/预授权/刷脸/AI按量付费"
+    evidence: "12个核心交易API（trade.pay/precreate/create/query/refund/close/cancel/settle）+ SDK 9平台支持"
+    scrm_relevance: 4
+    priority: "P0"
+    related_scenes: ["S-ALI-001", "S-ALI-002"]
+
+  - id: "BP-ALI-002"
+    role: "商家"
+    problem: "如何管理交易全生命周期？"
+    pain_point: "支付后需要查询/退款/关闭/撤销/结算等操作，流程复杂"
+    value: "完整交易管理API链：创建→支付→查询→退款→退款查询→关闭→撤销→结算→对账"
+    evidence: "alipay.trade.query/refund/fastpay.refund.query/close/cancel/order.settle + bill.downloadurl.query"
+    scrm_relevance: 5
+    priority: "P0"
+    related_scenes: ["S-ALI-003"]
+
+  - id: "BP-ALI-003"
+    role: "商家"
+    problem: "如何实现资金分账和转账？"
+    pain_point: "平台型业务需要将交易资金分配给多个收款方，提现需要转账到支付宝账户"
+    value: "商家分账（alipay.trade.order.settle）+ 商家转账（alipay.fund.trans.toaccount.transfer）"
+    evidence: "分账支持服务商抽佣/合作伙伴分润；转账支持API接口版灵活接入企业系统"
+    scrm_relevance: 5
+    priority: "P0"
+    related_scenes: ["S-ALI-004"]
+
+  - id: "BP-ALI-004"
+    role: "商家"
+    problem: "如何确保支付安全性？"
+    pain_point: "支付涉及资金安全，需要签名验签、异步通知防重放、风险交易识别"
+    value: "RSA2签名认证 + 异步通知验签防重放 + 交易安全防护（风险交易识别）+ AI慧眼/AI防伪"
+    evidence: "SDK初始化需配置APP_PRIVATE_KEY+ALIPAY_PUBLIC_KEY+SIGN_TYPE(RSA2)；异步通知需rsaCheckV1验签+去重处理"
+    scrm_relevance: 4
+    priority: "P0"
+
+  - id: "BP-ALI-005"
+    role: "商家"
+    problem: "如何利用营销能力提升转化？"
+    pain_point: "支付后缺乏二次触达手段，复购率低"
+    value: "支付有礼（支付成功页推荐商品/优惠券/会员卡）+ 商家券 + 红包 + 支付券 + 芝麻先享/免押"
+    evidence: "支付有礼支持商品/优惠券/会员卡/小程序服务4类推荐；花呗分期减轻资金压力促转化"
+    scrm_relevance: 4
+    priority: "P1"
+
+  - id: "BP-ALI-006"
+    role: "商家"
+    problem: "如何管理会员体系和用户身份？"
+    pain_point: "用户注册登录流程长，会员体系搭建成本高"
+    value: "APP支付宝登录（一键登录免注册）+ 获取会员信息（授权）+ 商家会员卡 + 人脸认证/本机号码验证"
+    evidence: "支付宝身份验证（人脸+证件多因子核验）+ 芝麻信用（先享后付/免押金）"
+    scrm_relevance: 5
+    priority: "P1"
+
+  - id: "BP-ALI-007"
+    role: "平台/服务商"
+    problem: "如何实现预授权和周期性扣款？"
+    pain_point: "押金场景需要冻结资金，订阅场景需要周期扣款"
+    value: "预授权支付（押金预扣→交易完成→扣款）+ 周期性扣款（用户授权→周期内自动扣款）"
+    evidence: "芝麻免押（信用预授权代替资金冻结）+ 周期性扣款API"
+    scrm_relevance: 4
+    priority: "P1"
+
+  - id: "BP-ALI-008"
+    role: "商家"
+    problem: "如何使用AI能力提升经营效率？"
+    pain_point: "内容审核/智能识别/风险防控需要AI能力但自建成本高"
+    value: "AI慧眼（智能分类/多模态OCR/AI防伪/AI质检）+ RiskGO（生态安全一站式输出）+ 小程序云风险智能"
+    evidence: "支持软件扫描/单机故障/内容违规/黄牛刷单等风险识别"
+    scrm_relevance: 3
+    priority: "P2"
+
+# ============================================
+# Part B: 跨域衔接（SDL Layer 2）
+# ============================================
+cross_domain_bridges:
+  - id: "CDB-ALI-001"
+    from_domain: "支付宝支付"
+    to_domain: "易宝支付"
+    bridge_type: "能力衔接"
+    description: "支付宝与易宝同为支付渠道，在SCRM系统中可形成多渠道支付聚合"
+    integration_point: "SCRM支付网关统一接入 → 渠道路由（支付宝/易宝/微信） → 统一交易管理"
+    scrm_fusion_value: "多渠道支付聚合，根据场景自动选择最优渠道，统一对账和退款管理"
+    confidence: 0.9
+
+  - id: "CDB-ALI-002"
+    from_domain: "支付宝支付"
+    to_domain: "腾讯云点播VOD"
+    bridge_type: "场景衔接"
+    description: "VOD/直播付费内容 → 支付宝支付/预授权 → 支付成功回调 → 内容权限开通"
+    integration_point: "支付成功异步通知(notifyUrl) → SCRM订单服务 → VOD播放权限开通"
+    scrm_fusion_value: "内容付费闭环：用户支付→权限开通→内容消费→到期自动关闭权限"
+    confidence: 0.85
+
+  - id: "CDB-ALI-003"
+    from_domain: "支付宝支付"
+    to_domain: "腾讯云即时通信IM"
+    bridge_type: "场景衔接"
+    description: "IM直播间付费功能（打赏/付费入场/会员专属） → 支付宝支付 → 支付成功→IM权限变更"
+    integration_point: "支付宝支付成功通知 → SCRM → IM群组成员角色/权限变更"
+    scrm_fusion_value: "直播付费场景闭环：支付→权限→IM体验差异化"
+    confidence: 0.8
+
+  - id: "CDB-ALI-004"
+    from_domain: "支付宝支付"
+    to_domain: "内容安全审核(ai)"
+    bridge_type: "数据流衔接"
+    description: "支付宝AI慧眼/RiskGO → 风险交易识别结果 → SCRM风控系统 → 交易拦截/标记"
+    integration_point: "支付宝交易安全防护回调 → SCRM风控规则引擎 → 交易处置决策"
+    scrm_fusion_value: "支付风控与内容审核统一管理，风险交易+违规内容双维度风控"
+    confidence: 0.75
+
+# ============================================
+# Part C: 角色视角（SDL Layer 3）
+# ============================================
+role_perspectives:
+  - scene_id: "S-ALI-001"
+    scene_name: "当面付支付"
+    role: "收银员"
+    operations: ["扫描用户付款码", "生成订单二维码", "查询支付结果", "退款"]
+    kpi: ["支付成功率", "平均支付耗时", "退款处理时间"]
+    pain_points: ["网络异常时支付状态不确定", "退款流程繁琐"]
+    scrm_expectation: "SCRM统一管理多渠道当面付交易，支付状态实时同步"
+
+  - scene_id: "S-ALI-001"
+    scene_name: "当面付支付"
+    role: "消费者"
+    operations: ["出示付款码", "扫描商家二维码", "确认支付", "查看支付结果"]
+    kpi: ["支付便捷度", "支付安全性"]
+    pain_points: ["支付失败原因不明确"]
+    scrm_expectation: "支付结果实时推送，异常有友好提示"
+
+  - scene_id: "S-ALI-003"
+    scene_name: "交易管理"
+    role: "财务"
+    operations: ["查询交易", "发起退款", "退款查询", "下载对账单", "分账结算"]
+    kpi: ["对账准确率", "退款成功率", "分账到账时间"]
+    pain_points: ["多渠道对账复杂", "退款状态跟踪困难", "分账规则配置复杂"]
+    scrm_expectation: "SCRM财务看板统一展示支付宝/易宝/微信多渠道交易数据，自动对账"
+
+  - scene_id: "S-ALI-004"
+    scene_name: "资金分账转账"
+    role: "平台运营"
+    operations: ["配置分账规则", "发起分账", "发起转账", "查询转账结果"]
+    kpi: ["分账成功率", "转账到账时间", "资金安全"]
+    pain_points: ["分账规则复杂（服务商抽佣+合作伙伴分润）", "转账异常处理"]
+    scrm_expectation: "SCRM自动计算分账金额，根据业务规则自动发起分账"
+
+# ============================================
+# Part D: 场景地图增强（SDL Layer 1增强）
+# ============================================
+scenario_maps:
+  - id: "S-ALI-001"
+    name: "当面付支付"
+    related_topics: ["T-ALI-001"]
+    related_business_problems: ["BP-ALI-001"]
+    flow: "商家生成订单→(付款码:扫描用户码 / 扫码:生成二维码用户扫)→支付→异步通知→查询确认"
+    participants: ["收银员", "消费者", "支付宝", "商家后台"]
+    closure: "生成订单→发起支付→支付成功→异步通知→查询确认→交易完成"
+    api_chain: ["alipay.trade.precreate(扫码生成二维码)/alipay.trade.pay(付款码)", "异步通知(notifyUrl)", "alipay.trade.query(查询确认)"]
+    scrm_relevance: "HIGH — 线下收款核心场景"
+
+  - id: "S-ALI-002"
+    name: "线上支付（APP/H5/PC/小程序）"
+    related_topics: ["T-ALI-001"]
+    related_business_problems: ["BP-ALI-001"]
+    flow: "创建订单→调起支付（APP SDK/H5页面/PC扫码/小程序JSAPI）→用户支付→异步通知→查询确认"
+    participants: ["用户", "商家APP/网站", "支付宝", "商家后台"]
+    closure: "创建订单→调起支付→支付成功→异步通知→查询确认→交易完成"
+    api_chain: ["alipay.trade.create(创建订单)", "alipay.trade.app.pay/wap.pay/page.pay/JSAPI(调起支付)", "异步通知", "alipay.trade.query"]
+    scrm_relevance: "HIGH — 线上收款核心场景"
+
+  - id: "S-ALI-003"
+    name: "交易管理（查询/退款/关闭/撤销/对账）"
+    related_topics: ["T-ALI-002"]
+    related_business_problems: ["BP-ALI-002"]
+    flow: "交易发生后→(查询状态/发起退款/退款查询/关闭未支付/撤销异常交易/下载对账单)"
+    participants: ["财务", "支付宝", "商家后台"]
+    closure: "交易→查询/退款/关闭/撤销→状态更新→对账确认"
+    api_chain: ["alipay.trade.query(查询)", "alipay.trade.refund(退款)", "alipay.trade.fastpay.refund.query(退款查询)", "alipay.trade.close(关闭)", "alipay.trade.cancel(撤销)", "alipay.data.dataservice.bill.downloadurl.query(对账单)"]
+    scrm_relevance: "HIGH — 交易全生命周期管理"
+
+  - id: "S-ALI-004"
+    name: "资金分账转账"
+    related_topics: ["T-ALI-003"]
+    related_business_problems: ["BP-ALI-003"]
+    flow: "交易成功→(分账:按规则分配资金给多收款方 / 转账:单笔转账到支付宝账户)→查询结果"
+    participants: ["平台运营", "支付宝", "收款方"]
+    closure: "交易成功→发起分账/转账→查询结果→资金到账"
+    api_chain: ["alipay.trade.order.settle(分账结算)", "alipay.fund.trans.toaccount.transfer(转账)", "alipay.fund.trans.order.query(转账查询)"]
+    scrm_relevance: "HIGH — 平台型业务资金管理核心"
+
+  - id: "S-ALI-005"
+    name: "预授权与周期扣款"
+    related_topics: ["T-ALI-004"]
+    related_business_problems: ["BP-ALI-007"]
+    flow: "用户授权→(预授权:冻结资金→交易完成→扣款 / 周期扣款:按周期自动扣款)"
+    participants: ["用户", "商家", "支付宝"]
+    closure: "授权→冻结/扣款→完成/释放"
+    api_chain: ["预授权支付API", "周期性扣款API", "alipay.trade.query(查询状态)"]
+    scrm_relevance: "MEDIUM — 订阅/押金场景"
+
+  - id: "S-ALI-006"
+    name: "营销与会员"
+    related_topics: ["T-ALI-005", "T-ALI-006"]
+    related_business_problems: ["BP-ALI-005", "BP-ALI-006"]
+    flow: "支付成功→支付有礼(推荐商品/优惠券/会员卡)→用户领取→复购/会员沉淀"
+    participants: ["用户", "商家", "支付宝"]
+    closure: "支付→推荐→领取→复购/沉淀"
+    api_chain: ["支付有礼配置", "商家券API", "商家会员卡API", "获取会员信息API"]
+    scrm_relevance: "MEDIUM — 支付后营销闭环"
+
+# ============================================
+# Part 1: 业务泳道图
+# ============================================
+business_swimlane: |
+  ```mermaid
+  flowchart LR
+      subgraph 商家
+          A1[创建订单] --> A2{支付方式?}
+      end
+      subgraph 支付宝
+          B1[接收支付请求] --> B2{支付类型}
+          B2 -->|付款码| B3[alipay.trade.pay 同步]
+          B2 -->|扫码| B4[alipay.trade.precreate 生成二维码]
+          B2 -->|APP/H5/PC| B5[alipay.trade.create+调起支付]
+          B3 --> B6{支付结果}
+          B4 --> B7[用户扫码支付]
+          B5 --> B8[用户支付]
+          B7 --> B6
+          B8 --> B6
+          B6 -->|成功| B9[异步通知notifyUrl]
+          B6 -->|失败| B10[返回失败]
+      end
+      subgraph 商家后台
+          C1[接收异步通知] --> C2[验签+去重]
+          C2 --> C3[更新订单状态]
+          C3 --> C4[alipay.trade.query 确认]
+      end
+      subgraph 后续管理
+          D1[交易查询] --> D2[退款/退款查询]
+          D2 --> D3[关闭/撤销]
+          D3 --> D4[分账结算]
+          D4 --> D5[对账单下载]
+      end
+      A2 --> B1
+      B9 --> C1
+      C4 --> D1
+  ```
+
+# ============================================
+# Part 2: 业务流程
+# ============================================
+business_process:
+  normal_flow: "创建订单→发起支付→用户支付→异步通知→查询确认→交易完成→(退款/分账/对账)"
+  exception_flow: "创建订单→发起支付→支付超时→查询订单→(未支付→关闭订单 / 已支付→撤销交易)"
+  branch_flow: "创建订单→发起支付→支付成功→支付有礼推荐→用户领取优惠券→复购"
+  mermaid: |
+    ```mermaid
+    flowchart TD
+        A[创建订单 alipay.trade.create] --> B{支付方式?}
+        B -->|当面付-付款码| C[alipay.trade.pay 同步支付]
+        B -->|当面付-扫码| D[alipay.trade.precreate 生成二维码]
+        B -->|APP| E[alipay.trade.app.pay]
+        B -->|H5| F[alipay.trade.wap.pay]
+        B -->|PC| G[alipay.trade.page.pay]
+        B -->|小程序| H[JSAPI支付]
+        C --> I{支付结果}
+        D --> J[用户扫码]
+        E --> I
+        F --> I
+        G --> I
+        H --> I
+        J --> I
+        I -->|成功| K[异步通知 notifyUrl]
+        I -->|失败| L[返回错误]
+        I -->|超时| M[alipay.trade.query 查询]
+        K --> N[验签+去重+更新状态]
+        M --> O{查询结果}
+        O -->|已支付| N
+        O -->|未支付| P[alipay.trade.close 关闭]
+        N --> Q[交易完成]
+        Q --> R{后续操作}
+        R -->|退款| S[alipay.trade.refund]
+        R -->|分账| T[alipay.trade.order.settle]
+        R -->|对账| U[下载对账单]
+    ```
+
+# ============================================
+# Part 3: 信息流图
+# ============================================
+information_flow: |
+  ```mermaid
+  flowchart TD
+      subgraph 商家系统
+          M1[订单服务] -->|创建订单| M2[支付服务]
+          M2 -->|调用API| M3[支付宝网关]
+          M3 -->|异步通知| M4[通知服务]
+          M4 -->|验签| M5[订单状态更新]
+      end
+      subgraph 支付宝
+          A1[API网关] -->|RSA2验签| A2[交易引擎]
+          A2 -->|支付结果| A3[异步通知服务]
+          A3 -->|HTTP POST| A4[notifyUrl回调]
+          A2 -->|资金| A5[资金中心]
+      end
+      subgraph 资金流
+          F1[用户支付宝] -->|支付| F2[支付宝资金中心]
+          F2 -->|结算| F3[商家支付宝]
+          F3 -->|分账| F4[收款方支付宝]
+          F3 -->|转账| F5[收款方支付宝]
+      end
+      subgraph 数据流
+          D1[交易数据] -->|对账单| D2[商家对账系统]
+          D2 -->|核对| D3[财务报表]
+      end
+      A5 --> F2
+      A2 --> D1
+  ```
+
+# ============================================
+# Part 4: 状态机
+# ============================================
+state_machine:
+  entity: "交易状态"
+  states: ["待创建", "已创建", "支付中", "已支付", "已退款", "已关闭", "已撤销", "已结算"]
+  transitions:
+    - { from: "—", to: "待创建", trigger: "用户下单", operator: "用户" }
+    - { from: "待创建", to: "已创建", trigger: "alipay.trade.create", operator: "商家" }
+    - { from: "已创建", to: "支付中", trigger: "发起支付(pay/precreate/app.pay/wap.pay/page.pay)", operator: "商家" }
+    - { from: "支付中", to: "已支付", trigger: "用户支付成功", operator: "用户/支付宝" }
+    - { from: "已创建", to: "已关闭", trigger: "alipay.trade.close(超时未支付)", operator: "商家" }
+    - { from: "支付中", to: "已撤销", trigger: "alipay.trade.cancel(异常撤销)", operator: "商家" }
+    - { from: "已支付", to: "已退款", trigger: "alipay.trade.refund", operator: "商家" }
+    - { from: "已支付", to: "已结算", trigger: "alipay.trade.order.settle(分账)", operator: "商家" }
+  mermaid: |
+    ```mermaid
+    stateDiagram-v2
+        [*] --> 待创建: 用户下单
+        待创建 --> 已创建: alipay.trade.create
+        已创建 --> 支付中: 发起支付
+        支付中 --> 已支付: 用户支付成功
+        已创建 --> 已关闭: alipay.trade.close 超时未支付
+        支付中 --> 已撤销: alipay.trade.cancel 异常撤销
+        已支付 --> 已退款: alipay.trade.refund
+        已支付 --> 已结算: alipay.trade.order.settle 分账
+        已支付 --> [*]: 交易完成
+        已退款 --> [*]: 退款完成
+        已关闭 --> [*]: 订单关闭
+        已撤销 --> [*]: 交易撤销
+        已结算 --> [*]: 分账完成
+    ```
+
+# ============================================
+# Part 5: 业务操作矩阵
+# ============================================
+business_operation_matrix:
+  roles: ["收银员", "消费者", "财务", "平台运营"]
+  states: ["已创建", "支付中", "已支付", "已退款", "已关闭", "已撤销", "已结算"]
+  matrix:
+    - { role: "收银员", state: "已创建", operations: ["发起支付", "关闭订单"] }
+    - { role: "收银员", state: "支付中", operations: ["等待支付", "查询状态"] }
+    - { role: "收银员", state: "已支付", operations: ["确认收款", "发起退款"] }
+    - { role: "消费者", state: "已创建", operations: ["扫码支付", "出示付款码"] }
+    - { role: "消费者", state: "已支付", operations: ["查看支付结果", "申请退款"] }
+    - { role: "财务", state: "已支付", operations: ["查询交易", "发起退款", "下载对账单"] }
+    - { role: "财务", state: "已退款", operations: ["退款查询", "对账确认"] }
+    - { role: "平台运营", state: "已支付", operations: ["发起分账", "发起转账"] }
+    - { role: "平台运营", state: "已结算", operations: ["查询分账结果"] }
+
+# ============================================
+# Part 6: 业务时序图
+# ============================================
+business_sequence: |
+  ```mermaid
+  sequenceDiagram
+      participant U as 用户
+      participant M as 商家系统
+      participant A as 支付宝
+      participant F as 财务系统
+      U->>M: 下单
+      M->>A: alipay.trade.create(创建订单)
+      A-->>M: 返回订单号
+      M->>A: 发起支付(pay/precreate/app.pay等)
+      A-->>U: 调起支付页面/生成二维码
+      U->>A: 完成支付
+      A-->>M: 异步通知(notifyUrl)支付成功
+      M->>M: 验签+去重+更新订单状态
+      M->>A: alipay.trade.query(查询确认)
+      A-->>M: 确认支付成功
+      M-->>U: 支付成功
+      opt 退款
+          F->>A: alipay.trade.refund(发起退款)
+          A-->>F: 退款结果
+          F->>A: alipay.trade.fastpay.refund.query(退款查询)
+          A-->>F: 退款详情
+      end
+      opt 分账
+          M->>A: alipay.trade.order.settle(分账结算)
+          A-->>M: 分账结果
+      end
+      opt 对账
+          F->>A: bill.downloadurl.query(对账单下载)
+          A-->>F: 下载地址
+      end
+  ```
+
+# ============================================
+# Part 7: 数据实体(ER)
+# ============================================
+data_entities:
+  - name: "交易订单"
+    fields:
+      - { name: "out_trade_no", type: "string", required: true, desc: "商户订单号（唯一）" }
+      - { name: "trade_no", type: "string", required: false, desc: "支付宝交易号" }
+      - { name: "total_amount", type: "decimal", required: true, desc: "订单总金额（元）" }
+      - { name: "subject", type: "string", required: true, desc: "订单标题" }
+      - { name: "status", type: "enum", required: true, desc: "交易状态(WAIT_BUYER_PAY/TRADE_CLOSED/TRADE_SUCCESS/TRADE_FINISHED)" }
+      - { name: "payment_type", type: "enum", required: false, desc: "支付方式(face/scan/app/wap/pc/jsapi)" }
+      - { name: "notify_url", type: "string", required: false, desc: "异步通知地址" }
+
+  - name: "退款记录"
+    fields:
+      - { name: "out_request_no", type: "string", required: true, desc: "退款请求号（同一笔退款唯一）" }
+      - { name: "out_trade_no", type: "string", required: true, desc: "关联商户订单号" }
+      - { name: "refund_amount", type: "decimal", required: true, desc: "退款金额" }
+      - { name: "refund_status", type: "enum", required: true, desc: "退款状态(REFUND_SUCCESS/REFUND_PROCESSING/REFUND_FAIL)" }
+      - { name: "refund_reason", type: "string", required: false, desc: "退款原因" }
+
+  - name: "分账记录"
+    fields:
+      - { name: "settle_id", type: "string", required: true, desc: "分账记录ID" }
+      - { name: "out_trade_no", type: "string", required: true, desc: "关联商户订单号" }
+      - { name: "trans_in", type: "string", required: true, desc: "收款方支付宝账号" }
+      - { name: "amount", type: "decimal", required: true, desc: "分账金额" }
+      - { name: "settle_status", type: "enum", required: true, desc: "分账状态(SUCCESS/FAIL)" }
+
+  - name: "转账记录"
+    fields:
+      - { name: "out_biz_no", type: "string", required: true, desc: "商户转账唯一标识" }
+      - { name: "payee_type", type: "enum", required: true, desc: "收款方类型(ALIPAY_USERID/ALIPAY_LOGONID)" }
+      - { name: "payee_account", type: "string", required: true, desc: "收款方账号" }
+      - { name: "amount", type: "decimal", required: true, desc: "转账金额" }
+      - { name: "trans_status", type: "enum", required: true, desc: "转账状态(SUCCESS/FAIL)" }
+
+# ============================================
+# Part 8: 解决方案概括
+# ============================================
+solution_summary:
+  product_name: "支付宝开放平台"
+  product_url: "https://open.alipay.com"
+  api_gateway: "https://openapi.alipay.com/gateway.do"
+  sandbox_gateway: "https://openapi.alipaydev.com/gateway.do"
+  sdk_init_params:
+    - { param: "URL", desc: "支付网关（正式/沙箱）" }
+    - { param: "APP_ID", desc: "应用ID（创建应用后生成）" }
+    - { param: "APP_PRIVATE_KEY", desc: "应用私钥（开发者生成）" }
+    - { param: "FORMAT", desc: "返回格式（固定json）" }
+    - { param: "CHARSET", desc: "字符编码（固定UTF-8）" }
+    - { param: "ALIPAY_PUBLIC_KEY", desc: "支付宝公钥（支付宝生成）" }
+    - { param: "SIGN_TYPE", desc: "签名算法（推荐RSA2）" }
+  capability_categories:
+    - { category: "支付", count: 9, items: "当面付/JSAPI/APP/H5/PC/周期扣款/预授权/刷脸/AI按量付费" }
+    - { category: "私域", count: 5, items: "小程序/支付有礼/小游戏/商家粉丝群/电子发票" }
+    - { category: "公域", count: 1, items: "经营推广" }
+    - { category: "营销", count: 6, items: "商家券/会员卡/红包/棋盘密云/支付券/芝麻实力标" }
+    - { category: "资金", count: 5, items: "分账/花呗分期/商家转账/银行转账/小荷包" }
+    - { category: "会员", count: 5, items: "身份验证/APP登录/获取会员信息/人脸认证/本机号码验证" }
+    - { category: "信用", count: 2, items: "芝麻先享/芝麻免押" }
+    - { category: "安全", count: 3, items: "交易安全防护/AI慧眼/RiskGO" }
+    - { category: "小程序云", count: 3, items: "智能营销/智能监控/风险智能" }
+    - { category: "广告", count: 1, items: "支付宝广告投放" }
+  total_capabilities: 40
+  security_requirements:
+    - "RSA2签名认证（所有API请求需签名，响应需验签）"
+    - "异步通知验签（rsaCheckV1）+ 去重处理（防止重复通知）"
+    - "交易安全防护（风险交易实时识别）"
+    - "沙箱环境测试（所有接口支持沙箱）"
+    - "数据交互JSON格式，编码UTF-8"
+  integration_steps:
+    - "1. 注册支付宝开放平台账号"
+    - "2. 创建应用（获取APP_ID）"
+    - "3. 生成RSA2密钥对（应用私钥+应用公钥）"
+    - "4. 上传应用公钥到开放平台，获取支付宝公钥"
+    - "5. 初始化AlipayClient（配置7个参数）"
+    - "6. 集成支付SDK（9种支付方式按需选择）"
+    - "7. 配置异步通知URL（notifyUrl）"
+    - "8. 实现验签+去重+业务逻辑处理"
+  common_issues:
+    - "Q: 退款失败怎么办？A: 用原退款请求号重试，返回码10000仅代表查询成功不代表退款成功"
+    - "Q: 异步通知没收到？A: 1.检查notifyUrl是否可达 2.用alipay.trade.query主动查询 3.注意去重处理"
+    - "Q: 支付超时如何处理？A: 先alipay.trade.query查询，未支付则alipay.trade.close关闭，已支付则alipay.trade.cancel撤销"
+    - "Q: 分账和转账区别？A: 分账(alipay.trade.order.settle)基于已有交易分配资金，转账(alipay.fund.trans)独立转账"
+
+# ============================================
+# Part 9: 主题清单
+# ============================================
+topics:
+  - { id: "T-ALI-001", name: "支付方式（9种）", content_ratio: "25%", related_apis: 8, related_bp: ["BP-ALI-001"], scrm_relevance: "HIGH" }
+  - { id: "T-ALI-002", name: "交易管理", content_ratio: "20%", related_apis: 7, related_bp: ["BP-ALI-002"], scrm_relevance: "HIGH" }
+  - { id: "T-ALI-003", name: "资金分账转账", content_ratio: "12%", related_apis: 3, related_bp: ["BP-ALI-003"], scrm_relevance: "HIGH" }
+  - { id: "T-ALI-004", name: "预授权与周期扣款", content_ratio: "8%", related_apis: 2, related_bp: ["BP-ALI-007"] }
+  - { id: "T-ALI-005", name: "营销能力", content_ratio: "12%", related_apis: 6, related_bp: ["BP-ALI-005"] }
+  - { id: "T-ALI-006", name: "会员与身份", content_ratio: "8%", related_apis: 5, related_bp: ["BP-ALI-006"], scrm_relevance: "HIGH" }
+  - { id: "T-ALI-007", name: "信用（芝麻）", content_ratio: "5%", related_apis: 2, related_bp: ["BP-ALI-007"] }
+  - { id: "T-ALI-008", name: "安全防护", content_ratio: "5%", related_apis: 3, related_bp: ["BP-ALI-004", "BP-ALI-008"] }
+  - { id: "T-ALI-009", name: "小程序云", content_ratio: "3%", related_apis: 3, related_bp: ["BP-ALI-008"] }
+  - { id: "T-ALI-010", name: "私域运营", content_ratio: "2%", related_apis: 5, related_bp: ["BP-ALI-005"] }
+
+# ============================================
+# Part 10: 场景清单
+# ============================================
+scenes:
+  - { id: "S-ALI-001", name: "当面付支付", related_topics: ["T-ALI-001"], related_bp: ["BP-ALI-001"], scrm_relevance: "HIGH" }
+  - { id: "S-ALI-002", name: "线上支付", related_topics: ["T-ALI-001"], related_bp: ["BP-ALI-001"], scrm_relevance: "HIGH" }
+  - { id: "S-ALI-003", name: "交易管理", related_topics: ["T-ALI-002"], related_bp: ["BP-ALI-002"], scrm_relevance: "HIGH" }
+  - { id: "S-ALI-004", name: "资金分账转账", related_topics: ["T-ALI-003"], related_bp: ["BP-ALI-003"], scrm_relevance: "HIGH" }
+  - { id: "S-ALI-005", name: "预授权与周期扣款", related_topics: ["T-ALI-004"], related_bp: ["BP-ALI-007"] }
+  - { id: "S-ALI-006", name: "营销与会员", related_topics: ["T-ALI-005", "T-ALI-006"], related_bp: ["BP-ALI-005", "BP-ALI-006"] }
+
+# ============================================
+# Part 11: 接口串联
+# ============================================
+api_list:
+  # 核心交易API
+  - { name: "统一收单交易支付(付款码)", action: "alipay.trade.pay", category: "当面付", rate_limit: "免费", scene: "S-ALI-001", note: "付款码/条码/声波支付，同步返回" }
+  - { name: "统一收单线下交易预创建(扫码)", action: "alipay.trade.precreate", category: "当面付", rate_limit: "免费", scene: "S-ALI-001", note: "生成二维码，异步通知支付结果" }
+  - { name: "统一收单交易创建", action: "alipay.trade.create", category: "交易管理", rate_limit: "免费", scene: "S-ALI-002", note: "创建订单，配合APP/H5/PC/小程序支付" }
+  - { name: "统一收单线下交易查询", action: "alipay.trade.query", category: "交易管理", rate_limit: "免费", scene: "S-ALI-003", note: "查询所有支付订单状态" }
+  - { name: "统一收单交易退款", action: "alipay.trade.refund", category: "交易管理", rate_limit: "免费", scene: "S-ALI-003", note: "支持多次退款，总退款不超实付金额" }
+  - { name: "统一收单交易退款查询", action: "alipay.trade.fastpay.refund.query", category: "交易管理", rate_limit: "免费", scene: "S-ALI-003", note: "返回码10000仅代表查询成功非退款成功" }
+  - { name: "统一收单交易关闭", action: "alipay.trade.close", category: "交易管理", rate_limit: "免费", scene: "S-ALI-003", note: "关闭未支付订单" }
+  - { name: "统一收单交易撤销", action: "alipay.trade.cancel", category: "交易管理", rate_limit: "免费", scene: "S-ALI-003", note: "仅超时/未知状态时可撤销，已支付撤销会退款" }
+  - { name: "统一收单交易结算(分账)", action: "alipay.trade.order.settle", category: "资金", rate_limit: "免费", scene: "S-ALI-004", note: "线下场景交易后分账结算" }
+  # 资金API
+  - { name: "单笔转账到支付宝账户", action: "alipay.fund.trans.toaccount.transfer", category: "资金", rate_limit: "免费", scene: "S-ALI-004", note: "支付宝提现/转账" }
+  - { name: "查询转账订单", action: "alipay.fund.trans.order.query", category: "资金", rate_limit: "免费", scene: "S-ALI-004", note: "转账结果查询" }
+  # 对账API
+  - { name: "查询对账单下载地址", action: "alipay.data.dataservice.bill.downloadurl.query", category: "对账", rate_limit: "免费", scene: "S-ALI-003", note: "获取离线账单下载地址" }
+  # 其他支付方式（基于用户提供的能力清单）
+  - { name: "APP支付", action: "alipay.trade.app.pay", category: "APP支付", scene: "S-ALI-002", note: "商家APP调起支付宝" }
+  - { name: "手机网站支付(WAP)", action: "alipay.trade.wap.pay", category: "H5支付", scene: "S-ALI-002", note: "手机网站接入" }
+  - { name: "电脑网站支付(PC)", action: "alipay.trade.page.pay", category: "PC支付", scene: "S-ALI-002", note: "电脑网站付款" }
+
+api_chaining:
+  scene_s_ali_001_face_to_face:
+    name: "当面付支付接口串联"
+    chain:
+      - { step: 1, api: "alipay.trade.precreate(扫码) / alipay.trade.pay(付款码)", desc: "发起支付" }
+      - { step: 2, api: "异步通知 notifyUrl", desc: "支付成功异步回调（需验签+去重）" }
+      - { step: 3, api: "alipay.trade.query", desc: "主动查询确认支付状态" }
+      - { step: 4, api: "alipay.trade.refund(如需)", desc: "发起退款" }
+      - { step: 5, api: "alipay.trade.fastpay.refund.query", desc: "退款查询" }
+
+  scene_s_ali_002_online_payment:
+    name: "线上支付接口串联"
+    chain:
+      - { step: 1, api: "alipay.trade.create", desc: "创建订单" }
+      - { step: 2, api: "alipay.trade.app.pay / wap.pay / page.pay", desc: "调起对应终端支付" }
+      - { step: 3, api: "异步通知 notifyUrl", desc: "支付成功回调" }
+      - { step: 4, api: "alipay.trade.query", desc: "查询确认" }
+      - { step: 5, api: "alipay.trade.close(超时未支付)", desc: "关闭订单" }
+
+  scene_s_ali_003_trade_management:
+    name: "交易全生命周期管理串联"
+    chain:
+      - { step: 1, api: "alipay.trade.query", desc: "查询交易状态" }
+      - { step: 2, api: "alipay.trade.refund", desc: "发起退款（支持多次退款）" }
+      - { step: 3, api: "alipay.trade.fastpay.refund.query", desc: "退款查询（注意10000≠退款成功）" }
+      - { step: 4, api: "alipay.trade.close / cancel", desc: "关闭未支付 / 撤销异常交易" }
+      - { step: 5, api: "alipay.trade.order.settle", desc: "分账结算" }
+      - { step: 6, api: "alipay.data.dataservice.bill.downloadurl.query", desc: "下载对账单" }
+
+  cross_scene_payment_to_content:
+    name: "跨场景：支付→内容权限"
+    chain:
+      - { step: 1, api: "alipay.trade.create + app.pay/wap.pay", desc: "用户为内容付费" }
+      - { step: 2, api: "异步通知", desc: "支付成功回调SCRM" }
+      - { step: 3, api: "alipay.trade.query", desc: "确认支付成功" }
+      - { step: 4, api: "SCRM→VOD/IM", desc: "开通内容权限/变更IM角色" }
+      - { step: 5, api: "alipay.trade.refund(如需)", desc: "内容退款→关闭权限" }
+
+orphan_apis: []

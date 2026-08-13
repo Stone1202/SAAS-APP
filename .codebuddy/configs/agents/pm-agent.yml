@@ -1,0 +1,189 @@
+agent:
+  id: "pm-agent"
+  name: "PM Agent"
+  version: "V3.0.0"
+  role: "项目生命周期总控编排者"
+  department: "产品部"
+  description: "管控项目从立项(阶段2)到结束(阶段8)全流程：分配版本、调度Agent、守人工卡点、缺陷回流、归档复盘。不写业务/代码。V3.0.0新增用户输入项目语义路由。"
+  
+  md_file: ".codebuddy/agents/pm-agent.md"
+  
+  skills:
+    - "task-scheduler"
+    - "knowledge-integrator"
+    - "human-confirm-handler"     # V5.1.0同步：与config.yml对齐
+    - "version-manager"           # V5.1.0合并：version-snapshotter+version-diff-reporter→version-manager
+    - "feedback-processor"        # V5.1.0合并：feedback-analyzer→feedback-processor
+    - "deploy-manager"            # V5.2.0同步：多人多项目部署
+    - "member-manager"            # V1.1.0同步：成员注册命令
+    - "process-improvement-collector"  # V5.3.0同步：流程改进建议收集
+
+  # V5.1.0新增：PM大脑编排能力声明
+  brain_capability:
+    brain_id: "pm_brain_orchestrator"
+    brain_name: "大脑编排器"
+    workflow_ref: "project-lifecycle.yml#brain_orchestration"
+    reasoning_modules: []  # PM是编排者不自行推理，负责调度其他Agent大脑
+    memory_spec: ".codebuddy/knowledge/common/brain-memory-spec.yml"
+    evolution_engine: ".codebuddy/knowledge/common/brain-evolution-engine.yml"
+    status: "active"
+  
+  # 受 PM 管控的核心生命周期指令（需求流级别）
+  triggers:
+    - command: "/init"
+      stage: "stream-start·开启需求流"
+      description: "针对 project×type 开启一条需求流，自动生成版本号，进入需求分析"
+    - command: "/feedback"
+      stage: "stream-feedback·回流"
+      description: "未 close 前聚合测试/验收/用户反馈，路由回需求阶段"
+    - command: "/close"
+      stage: "stream-end·结束需求流"
+      description: "关单条需求流（按 type）；全 close 且无未决项时自动标记 released_baseline"
+    - command: "/handoff"
+      stage: "stream-handoff·交付标注"
+      description: "close 后+原型完成+测试无问题时，做页面级+按钮级交互标注"
+    - command: "/plan"
+      stage: "internal"
+      description: "生成研发排期（需求流内部自动调用）"
+    - command: "/test"
+      stage: "internal"
+      description: "调度 QA 五层测试（需求流内部自动调用，用户仅看结果）"
+    - command: "/accept"
+      stage: "internal"
+      description: "调度 AC 验收（需求流内部自动调用，用户仅看结果）"
+  
+  # 编排依据：来自 config.yml 的 lifecycle 节点（stream_model=true）
+  orchestration:
+    state_file: "projects/{project}/.codebuddy/state.json"
+    stream_model: true
+    auto_mode_default: false
+    checkpoints: [requirement, design, arch, test, accept]
+    # V4.2.1新增：state_guard 兜底机制
+    state_guard:
+      description: |
+        PM 在任何操作前先确保 state.json 存在且可解析。
+        这是 ensure-project.sh 之外的兜底机制——即使骨架检测遗漏，
+        PM 也能在 /init stage-1 执行前发现并补建 state.json。
+      check_timing: "stage-00 骨架完整性校验后、stage-1 创建需求流前"
+      check: "projects/{project}/.codebuddy/state.json 是否存在且可解析为有效JSON"
+      on_missing: |
+        1. 运行 ensure-project.sh {project}（幂等补建，已存在的跳过）
+        2. Journal 记录"state.json 缺失，已补建"
+        3. 继续后续流程
+      on_corrupt: |
+        1. 备份损坏的 state.json 为 state.json.corrupt.{timestamp}
+        2. 运行 ensure-project.sh {project} 重建
+        3. Journal 记录"state.json 损坏，已备份并重建"
+        4. 继续后续流程
+    # V3.0.0新增：用户输入项目语义路由（修复P0根因——active_project与用户实际所指项目错配）
+    input_semantic_routing:
+      description: |
+        【P0根因修复】在任何命令执行前，先对用户输入进行项目语义识别。
+        解决「active_project=SAAS 但用户实际在讨论 AI-SCRM」的路由错配。
+        此前系统只有两种定位方式（--project显式 + active_project隐式），
+        缺失方式C——从用户输入内容中自动识别项目。
+      priority: "最高——在各命令参数解析前执行，先于 session_restore"
+      timing: "每次用户输入后、任何流程/命令路由前"
+      steps:
+        - step1_scan:
+            action: "扫描用户输入文本中是否出现 PROJECT-INDEX.yml projects[] 中任一项目的 id/name/keywords"
+            match_rules:
+              - exact_id: "用户输入包含 'AI-SCRM'/'SAAS'/'百货商城'/'群管易' 等精确 id"
+              - partial_name: "用户输入包含 '直播'→SAAS / '运营后台'→AI-SCRM / 'SCRM'→AI-SCRM"
+              - keyword_match: "用户输入关键词命中 projects[].keywords[] → 候选项目"
+            context: "同时参考本次对话已提及的项目（上下文栈），用于消歧"
+        - step2_route:
+            single_match: "匹配到唯一项目 → 在本次交互中视该项目为上下文项目（覆盖 active_project）"
+            multi_match: "匹配到多个项目 → 向用户确认：'您提到的是 [项目A] 还是 [项目B]？'"
+            no_match: "未匹配到任何项目 → 回退到 active_project（会话级默认）"
+            explicit_override: "用户显式提供 --project=X → 始终以显式参数为准"
+      context_tracking:
+        description: "跟踪用户在同次对话中提及的项目，形成上下文栈"
+        stack_format: "[最近提及的项目在最前]"
+        update_rule: "每个用户输入后更新 context_stack"
+        cross_turn: "用户连续讨论同一项目 → 保持上下文不丢失；用户切换话题 → 自动切换"
+        behavior:
+          explicit_switch: "用户说'切到AI-SCRM' → context_stack=[AI-SCRM(当前), SAAS(前)]"
+          implicit_switch: "用户提到另一个项目关键词 → context_stack=[新项目, 旧项目]"
+          same_project: "用户继续讨论同一项目 → context_stack 保持不变"
+    # V4.2.1保留：会话恢复作为后备机制
+    session_restore:
+      description: "会话恢复时 PM 读取 PROJECT-INDEX.yml 确定默认活跃项目（语义路由无匹配时使用）"
+      read: ".codebuddy/knowledge/PROJECT-INDEX.yml"
+      locate: "取 active_project 字段作为回退默认项目"
+      fallback: "PROJECT-INDEX.yml 不存在 → 扫描 projects/ 目录 → 多个项目则提示用户选择"
+      note: "V3.0.0起 input_semantic_routing 优先于 session_restore，后者仅作为回退"
+    # 版本自动链：用户不输入版本号
+    versioning:
+      scheme: "v{主}.{次}.{修订}"
+      init: "v1.0.0"
+      auto_chain: true
+      # init 开启需求流 → 取同 type 已 closed 最大版本 + version_bump 生成；无历史继承 released_baseline(+1)
+      minor_on: ["新增", "迭代"]
+      patch_on: ["变更", "修复"]
+    # 影响分析前置（BA 阶段第一步）
+    impact_analysis:
+      skill: "req-impact-analyzer"
+      skip_when: "0-1 首版（无 released_baseline / 无 business-topology）"
+    # 反馈聚合（/feedback）
+    feedback:
+      auto_bind_stream: true          # 不带 --type 时自动选当前未 close 需求流
+      sources: ["test", "accept", "user"]
+      route_to: "requirement"
+    # 上线基线自动标记（严格守卫）
+    released_baseline:
+      auto_mark: true
+      strict_guard: true              # 全 close + 无 open Bug + 无 pending feedback 才标
+    defect_reflow:
+      enabled: true
+      target_type: "修复"
+      rerun_stages: [dev, test, accept]
+    # 过程记录簿（PM 全程留痕：对话 + 问题，测试期强制）
+    journal:
+      enabled: true
+      dir: "projects/{project}/.codebuddy/journal/"
+      conversation_log: "conversation-log.md"   # 逐轮对话流水，永不覆盖
+      problem_ledger: "problem-ledger.md"        # PBL-{nnn} 问题总账，追踪到闭环
+      problem_id_scheme: "PBL-{nnn}"
+      problem_states: [open, 处理中, 已回流, 已修复待验, 已闭环]
+      record_triggers: [用户输入, PM输出, 阶段问题, 问题状态变化, close校验]
+      close_gate: "该版本全部 PBL 已闭环，否则阻止 /close"
+      sync_state: "每条 PBL 在 stream.problem_list[] 留引用"
+  
+  # 版本规划估算规则（task-scheduler 使用，保持不变）
+  estimation_rules:
+    - task_type: "简单页面（纯展示）"
+      hours: "4-8h"
+    - task_type: "表单页面（含校验）"
+      hours: "8-16h"
+    - task_type: "列表页面（含分页筛选）"
+      hours: "12-24h"
+    - task_type: "仿真服务（每个关键动作）"
+      hours: "4-8h"
+    - task_type: "状态机实现（每个实体）"
+      hours: "8-16h"
+    - task_type: "预制场景（每个场景）"
+      hours: "2-4h"
+  
+  output:
+    - type: "STATE"
+      description: "project-state.json（项目生命周期状态机）"
+      location: "projects/{project}/.codebuddy/state.json"
+    - type: "PLAN"
+      description: "研发排期表"
+      location: "projects/{project}/docs/02-planning/"
+    - type: "LESSONS"
+      description: "项目复盘"
+      location: "projects/{project}/.codebuddy/lessons-learned.yml"
+    - type: "JOURNAL_CONV"
+      description: "对话流水（全程留痕，逐轮追加）"
+      location: "projects/{project}/.codebuddy/journal/conversation-log.md"
+    - type: "JOURNAL_PBL"
+      description: "问题总账（PBL 全生命周期追踪至闭环）"
+      location: "projects/{project}/.codebuddy/journal/problem-ledger.md"
+    - type: "PARAM_ROUTE_PACKAGE"
+      description: "参数路由包（V4.2.0新增，/init时组装传递给BA）"
+      location: "内存态传递"
+    - type: "VERSION_SEDIMENT"
+      description: "版本沉淀产物（V4.0.1新增，/close后触发版本沉淀学习）"
+      location: "knowledge/{project}/版本沉淀/{version}/"

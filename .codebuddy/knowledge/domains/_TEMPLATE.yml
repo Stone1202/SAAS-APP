@@ -1,0 +1,441 @@
+# ============================================
+# 领域知识模板 V2.0.0 — 每个 /learn-domain 产出按此结构填充
+# 文件名：{domain-name}.yml
+# 路径：.codebuddy/knowledge/domains/{category}/{domain-name}.yml
+#
+# V2.0.0 变更（对应 learn-domain V4.0.0，场景驱动学习法 SDL V1.0.0）：
+#   - 新增 business_problems 部分（Part A: SDL Layer 0 商业问题）
+#   - 新增 cross_domain_bridges 部分（Part B: SDL Layer 2 跨域衔接）
+#   - 新增 role_perspectives 部分（Part C: SDL Layer 3 角色视角）
+#   - 新增 scenario_maps 部分（Part D: SDL Layer 1 场景地图增强）
+#   - 新增 learning_method 字段（scenario_driven_v1.0.0 / traditional）
+#   - 新增 related_scenes 字段（所有Part1-13产物关联场景ID）
+#   - 新增 domain_roles 字段（Step0 角色推断）
+# V1.6.0 变更（对应 learn-domain V2.1.0）：
+#   - 新增 api_param_dictionary 部分（Part12: API参数字典）
+#   - 新增 param_flow 部分（Part13: 参数流转图）
+# V1.5.0 变更：
+#   - 新增 transcripts 部分（视频文字稿引用）
+#   - 新增 key_frames 部分（视频关键帧识别结果）
+#   - source_urls 支持 video 类型
+# V1.4.0 变更：
+#   - 新增 images 部分（图片识别）
+#   - 新增 api_integration 部分（接口串联）
+#   - 新增 auto_check 配置（自动巡检）
+# V1.3.0 变更：
+#   - 所有条目增加 sources 字段
+#   - 支持 conflict: true 标记
+# ============================================
+
+domain:
+  name: ""                    # 领域名称（如"退款流"）
+  category: ""                # 分类（account/product/ad/payment/trade/aftersale/settlement/supplychain/marketing/member/ai/report/finance/tax/compliance）
+  version: "v1.0.0"           # 版本号（增量学习 minor+1，SDL重学 major+1）
+  learned_at: ""              # 学习日期
+  learning_method: "scenario_driven_v1.0.0"  # V2.0.0新增：scenario_driven_v1.0.0 / traditional
+  source_urls: []             # 所有学习来源网页链接列表
+  description: ""             # 领域简述
+  curation_policy: ""         # V2.0.0建议：说明对源内容的过滤策略（保留什么/过滤什么/为什么）
+  status: "draft"             # draft → approved（Step8 用户确认后改 approved）
+
+  # ═══════════════════════════════════════════════════════════════
+  # Part A: 商业问题（SDL Layer 0，V2.0.0 新增）
+  # AI推理：这个领域帮企业解决什么商业问题？
+  # ═══════════════════════════════════════════════════════════════
+  # 角色清单（Step0a 产出）
+  domain_roles:
+    - role_id: ""             # ROLE-{领域}-{NNN}
+      name: ""                # 角色名
+      type: ""                # integrator(集成方)/payer(付费方)/user(使用方)/beneficiary(受益方)/regulator(监管方)
+      core_need: ""           # 核心诉求
+      serves: []              # 服务的其他角色ID列表
+
+  # 商业问题清单（Step0b 产出）
+  business_problems:
+    - id: ""                  # BP-{领域缩写}-{NNN}
+      problem: ""             # 一句话描述商业问题
+      pain_point: ""          # 不做这件事的后果
+      value: ""               # 引入能力后的价值
+      evidence: ""            # 证据（行业数据/案例/AI推理）
+      priority: ""            # high/medium/low
+      priority_rationale: ""  # 为什么是这个优先级
+      scrm_relevance: ""      # 在SCRM场景下的相关性
+      related_roles: []       # 关联的角色ID
+      related_problems: []    # 依赖/关联的其他问题ID
+
+  # 问题依赖图（Step0c 产出）
+  problem_dependency_graph: ""  # Mermaid graph，标注问题间依赖关系
+
+  # ═══════════════════════════════════════════════════════════════
+  # Part D: 场景地图（SDL Layer 1增强，V2.0.0 新增）
+  # 每个场景 = 完整业务闭环 + 精确API能力链
+  # ═══════════════════════════════════════════════════════════════
+  scenario_maps:
+    - scene_id: ""            # SC-{领域}-{NNN}
+      scene_name: ""          # 场景名
+      problem_ref: ""         # 解决的商业问题ID（关联business_problems）
+      trigger: ""             # 触发条件（什么事件/条件触发这个场景？）
+      closure: ""             # 业务闭环（从触发到结束的完整闭环是什么？）
+      participant_roles: []   # 参与者角色列表
+      depends_on: []          # 前置场景ID列表
+      depended_by: []         # 后置场景ID列表
+      api_chain:              # 该场景的完整API调用链
+        - seq: 0              # 调用顺序
+          api_name: ""        # API名称
+          api_path: ""        # 接口路径
+          purpose: ""         # 在场景中的作用
+          inputs_from: ""     # 输入来源
+          outputs_to: ""      # 输出去向
+      main_flow: ""           # 主流程描述（Mermaid flowchart）
+      exceptions: []          # 异常分支
+      expected_outcome: ""    # 期望结果
+
+  # ═══════════════════════════════════════════════════════════════
+  # Part B: 跨域衔接（SDL Layer 2，V2.0.0 新增）
+  # 显式建模该领域与哪些其他领域有数据/流程/状态/渠道/降级联动
+  # ═══════════════════════════════════════════════════════════════
+  cross_domain_bridges:
+    - bridge_id: ""           # CDB-{from_domain}-{to_domain}-{NNN}
+      from:
+        domain: ""            # 来源领域名
+        scene_id: ""          # 来源场景ID
+        output_data: ""       # 输出的数据/结果
+      to:
+        domain: ""            # 目标领域名
+        scene_id: ""          # 目标场景ID
+        input_data: ""        # 需要的数据/输入
+      bridge_type: ""         # data(数据衔接)/flow(流程衔接)/state(状态衔接)/channel(渠道衔接)/fallback(降级衔接)
+      content: ""             # 衔接内容描述
+      trigger: ""             # 触发条件
+      direction: "单向"        # 单向/双向
+      scrm_value: ""          # 在SCRM中的业务价值
+      mapping: ""             # 字段映射关系
+      status: "inferred"      # verified(文档明确)/inferred(AI推理)/pending(待验证)
+
+  # ═══════════════════════════════════════════════════════════════
+  # Part C: 角色视角（SDL Layer 3，V2.0.0 新增）
+  # 同一场景不同角色看到什么、操作什么、关心什么KPI？
+  # ═══════════════════════════════════════════════════════════════
+  role_perspectives:
+    - scene_id: ""            # 关联场景ID
+      scene_name: ""          # 场景名
+      perspectives:
+        - role: ""            # 角色名
+          role_type: ""       # operator(运营)/admin(管理员)/developer(开发者)/end_user(终端用户)/integrator(集成方)
+          operations:         # 该角色在此场景中的操作
+            - op_id: ""       # OP-{场景}-{NNN}
+              name: ""        # 操作名
+              input: ""       # 输入
+              output: ""      # 输出
+              success_next: ""  # 成功后下一步
+              failure_next: ""  # 失败后下一步
+          kpis:               # 该角色关心的KPI
+            - objective: ""   # 目标（OKR的O）
+              key_results: [] # 关键结果（OKR的KR）
+          pains: []           # 该角色在此场景中的痛点
+          expectations_from_scrm: []  # 该角色对SCRM系统的期望
+
+  # ============================================
+  # 1. 业务泳道图（角色×阶段×动作）
+  # ============================================
+  swimlane:
+    roles: []                 # 参与角色列表
+    stages: []                # 业务阶段列表
+    actions:
+      - role: ""              # 角色
+        stage: ""             # 阶段
+        action: ""            # 动作
+        input: ""             # 输入信息
+        output: ""            # 输出信息
+        sources: []           # 来源（如["微信支付", "支付宝"]）—— V1.3.0 新增
+
+  # ============================================
+  # 2. 业务流程图
+  # ============================================
+  flow:
+    happy_path: ""            # 主干流程（通用描述，去掉渠道特定细节）
+    exceptions:
+      - desc: ""              # 异常描述
+        sources: []           # 来源 —— V1.3.0 新增
+        conflict: false       # 是否冲突项 —— V1.3.0 新增
+    branches:
+      - desc: ""              # 分支描述
+        sources: []           # 来源 —— V1.3.0 新增
+        conflict: false       # 是否冲突项
+
+  # ============================================
+  # 3. 业务信息流（信息主体×生产者×消费者×依赖）
+  # ============================================
+  info_flow:
+    entities:
+      - name: ""              # 信息主体名
+        producer: ""          # 生产者
+        consumer: ""          # 消费者
+        depends_on: ""        # 依赖的前置动作
+        sources: []           # 来源 —— V1.3.0 新增
+    cross_system: ""          # 跨系统流转
+
+  # ============================================
+  # 4. 业务操作矩阵（角色×状态×操作）
+  # ============================================
+  operation_matrix:
+    roles: []                 # 角色列表
+    states: []                # 状态列表
+    matrix:
+      - role: ""              # 角色
+        state: ""             # 状态
+        operations: []        # 可操作列表
+        sources: []           # 来源 —— V1.3.0 新增
+
+  # ============================================
+  # 5. 解决方案概括
+  # ============================================
+  solution:
+    patterns:
+      - desc: ""              # 方案模式描述
+        sources: []           # 来源 —— V1.3.0 新增
+        conflict: false       # 是否冲突项 —— V1.3.0 新增
+    tech_considerations:
+      - desc: ""              # 技术考量描述
+        sources: []           # 来源 —— V1.3.0 新增
+    best_practices:
+      - desc: ""              # 最佳实践描述
+        sources: []           # 来源 —— V1.3.0 新增
+
+  # ============================================
+  # 整合差异报告（V1.3.0 新增，仅 --incremental 时存在）
+  # ============================================
+  integration_report:         # 增量整合时自动生成
+    base_version: ""          # 整合前的版本（如 v1.0.0）
+    new_version: ""           # 整合后的版本（如 v1.1.0）
+    added:                    # 新增项
+      roles: 0                # 新增角色数
+      actions: 0              # 新增动作数
+      exceptions: 0           # 新增异常分支数
+      entities: 0             # 新增信息主体数
+      operations: 0           # 新增操作数
+      patterns: 0             # 新增方案模式数
+    merged:                   # 合并项（去重）
+      actions: 0              # 合并的动作数
+      exceptions: 0           # 合并的异常分支数
+      entities: 0             # 合并的信息主体数
+      operations: 0           # 合并的操作数
+    conflicts:                # 冲突项（需人工裁决）
+      - field: ""             # 冲突字段（如"到账时间"）
+        values: []            # 冲突值列表（如["T+1(微信)", "实时(支付宝)"]）
+        resolution: ""        # 裁决结论（Step7/Step8 填写）
+
+  # ============================================
+  # 6. 图片识别结果（V1.4.0 新增）
+  # ============================================
+  images:
+    - url: ""                 # 图片URL
+      description: ""         # 图片描述
+      ai_extracted: false     # AI 是否已提取
+      content: ""             # AI 提取的文字内容
+      verified: false         # 是否已人工验证
+      image_unclear: false    # 图片是否不清晰
+
+  # ============================================
+  # 7. 视频文字稿（V1.5.0 新增）
+  # ============================================
+  transcripts:                 # 视频语音转文字结果（引用外部文件，不全部写入 .yml）
+    - video_url: ""            # 视频URL
+      video_title: ""          # 视频标题
+      video_duration: ""       # 时长（如 25:30）
+      subtitle_available: false # 是否有字幕
+      asr_processed: false     # 是否已语音识别
+      transcript_file: ""      # 文字稿文件路径（domains/{category}/transcripts/xxx.txt）
+      chapters:                # 章节列表
+        - name: ""             # 章节名
+          start: ""            # 开始时间
+          end: ""              # 结束时间
+          content: ""          # 章节文字内容摘要
+
+  # ============================================
+  # 8. 视频关键帧（V1.5.0 新增）
+  # ============================================
+  key_frames:                  # 视频关键帧识别结果
+    - video_url: ""            # 来源视频URL
+      timestamp: ""            # 时间戳（如 03:15）
+      frame_file: ""           # 截图文件路径（domains/{category}/frames/xxx.png）
+      description: ""          # 帧描述（如"退款流程图"）
+      ai_extracted: false      # AI 是否已提取
+      content: ""              # AI 提取的文字内容
+      verified: false          # 是否已人工验证
+
+  # ============================================
+  # 9. 接口自动发现与串联（V1.4.0 新增）
+  # ============================================
+  api_integration:
+    discovered_apis:
+      - path: ""              # 接口路径（如 POST /v3/refund/domestic/refunds）
+        name: ""              # 接口名称
+        source_url: ""        # 来源页面
+        inputs: []            # 入参列表
+        outputs: []           # 出参列表
+        confirmed: false      # true=文档明确 / false=AI推断
+    call_sequence:
+      - step: 0               # 调用顺序
+        api: ""               # 接口名称
+        next: ""              # 下一步接口
+        relation: ""          # confirmed / inferred
+        inference_reason: ""  # 推断依据（inferred 时填写）
+    sequence_diagram: ""      # Mermaid sequenceDiagram（接口调用时序图）
+    orphan_apis:              # 孤立接口（无法串联）
+      - path: ""
+        name: ""
+        note: ""              # 文档未说明调用时机，需人工确认
+
+  # ============================================
+  # 10. API参数字典（V1.6.0 新增，Part12）
+  # ============================================
+  api_param_dictionary:
+    description: "每个API的完整入参/出参/通知参数/错误码定义，含语义角色+加密+枚举+校验"
+
+    # 参数语义角色枚举（每个参数标注其一）
+    # PRIMARY_KEY: 主键标识（如merchantNo/orderNo）
+    # IDEMPOTENT_KEY: 幂等键（如requestNo）
+    # AMOUNT: 金额字段
+    # STATUS: 状态字段
+    # SENSITIVE: 敏感数据（身份证/银行卡/手机号）
+    # TIMESTAMP: 时间戳
+    # SIGNATURE: 签名字段
+    # REFERENCE: 引用字段（外键）
+    # BUSINESS_PARAM: 业务参数
+    # PAGINATION: 分页参数
+    # QUERY_FILTER: 查询过滤
+    # RESPONSE_META: 响应元数据
+
+    apis:
+      - api_id: ""              # API编号（如API-MER-001，与api_chain对齐）
+        api_name: ""            # API名称
+        api_path: ""            # 接口路径
+
+        # 输入参数
+        request_params:
+          - field: ""            # 字段名
+            type: ""             # string/number/boolean/object/array/enum/file
+            required: true       # 是否必填
+            max_length: ""       # 最大长度（如有）
+            description: ""      # 字段含义
+            enum_values: []      # 枚举值（type=enum时）
+            default: ""          # 默认值（如有）
+            source_type: ""      # user_input/upstream_api/system_generated/config/computed
+            source_api: ""       # 来源API编号（source_type=upstream_api时）
+            source_field: ""     # 来源API出参字段名
+            encryption: "none"   # none/rsa/aes/mask
+            validation: ""       # 校验规则（如"金额>0""手机号11位"）
+            semantic_role: ""    # 参数语义角色（见上方枚举）
+
+        # 输出参数
+        response_params:
+          - field: ""
+            type: ""
+            description: ""
+            enum_values: []
+            nullable: false      # 是否可空
+            downstream_usage: [] # 下游消费方（API编号列表）
+            semantic_role: ""
+
+        # 异步通知参数（async=true时）
+        notification_params:
+          notification_event: "" # 通知事件名（如openAccountResult）
+          params:
+            - field: ""
+              type: ""
+              description: ""
+              semantic_role: ""
+          correlation_field: ""  # 关联字段（如requestNo）
+
+        # 错误码
+        error_codes:
+          - code: ""
+            message: ""
+            handling: ""         # 处理建议
+
+  # ============================================
+  # 11. 参数流转图（V1.6.0 新增，Part13）
+  # ============================================
+  param_flow:
+    description: "跨API参数融合分析：场景内流转+跨场景流转+来源溯源+依赖矩阵"
+
+    # 场景内参数流转
+    intra_scene_param_flow:
+      - scene_id: ""             # 场景编号（如SC-MER-001）
+        scene_name: ""
+        flows:
+          - from_api: ""         # 生产者API编号
+            from_field: ""       # 生产者出参字段
+            to_api: ""           # 消费者API编号
+            to_field: ""         # 消费者入参字段
+            dependency: "required" # required/optional
+        mermaid: ""              # 场景内参数流转Mermaid图
+
+    # 跨场景参数流转
+    cross_scene_param_flow:
+      - from_scene: ""           # 生产者场景
+        from_api: ""
+        from_field: ""
+        to_scene: ""             # 消费者场景
+        to_api: ""
+        to_field: ""
+        dependency: "required"   # required/optional
+      mermaid: ""                # 跨场景参数流转Mermaid图
+
+    # 参数来源溯源（关键参数）
+    param_source_trace:
+      - param_name: ""           # 参数名（如merchantNo）
+        semantic_role: ""        # PRIMARY_KEY/IDEMPOTENT_KEY/AMOUNT/SENSITIVE
+        origin:
+          api_id: ""             # 最初来源API
+          source_type: ""        # system_generated/user_input/config
+        flows_to: []             # 流入的API编号列表
+        trace_chain: ""          # 完整来源链描述
+
+    # 参数依赖矩阵
+    param_dependency_matrix:
+      description: "行=消费者API，列=生产者API，单元格=依赖参数列表"
+      matrix:
+        - consumer_api: ""
+          producer_api: ""
+          params: []             # 依赖的参数列表
+          dependency: "required" # required/optional
+
+    # 参数×状态机关联
+    param_state_association:
+      - param_name: ""
+        state_machine: ""        # 关联的状态机实体
+        effect: ""               # 对状态的影响（如"merchantStatus=ACTIVE是资金收付API前置条件"）
+
+    # 参数×业务规则关联
+    param_rule_association:
+      - rule_id: ""              # BR-XXX-NNN
+        related_params: []       # 涉及的参数列表
+
+    # 参数安全分析
+    param_security_analysis:
+      sensitive_fields:
+        - param_name: ""
+          api_id: ""
+          encryption: ""         # 加密方式
+          risk: ""               # 风险描述
+      idempotent_keys:
+        - param_name: ""
+          api_id: ""
+          uniqueness_mechanism: "" # 唯一性保证机制
+      amount_fields:
+        - param_name: ""
+          api_id: ""
+          validation: ""
+          precision: ""          # 精度（如2位小数）
+
+  # ============================================
+  # 自动化巡检配置（V1.4.0 新增）
+  # ============================================
+  auto_check:
+    enabled: false            # 是否启用自动巡检
+    schedule: "monthly"       # monthly / weekly / quarterly
+    last_checked: ""          # 上次巡检时间
+    last_changed: ""          # 上次变更时间
+    status: "up_to_date"      # up_to_date / changed / link_broken

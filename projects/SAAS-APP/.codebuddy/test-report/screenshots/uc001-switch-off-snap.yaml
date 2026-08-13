@@ -1,0 +1,171 @@
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - heading "租户管理" [level=2] [ref=e5]
+      - text: 管理所有租户及其直播审查开关
+    - generic [ref=e8]:
+      - table [ref=e10]:
+        - rowgroup [ref=e18]:
+          - row "租户编号 租户名称 租户联系电话 注册时间 是否启用 操作" [ref=e19]:
+            - columnheader "租户编号" [ref=e20]:
+              - generic [ref=e21]: 租户编号
+            - columnheader "租户名称" [ref=e22]:
+              - generic [ref=e23]: 租户名称
+            - columnheader "租户联系电话" [ref=e24]:
+              - generic [ref=e25]: 租户联系电话
+            - columnheader "注册时间" [ref=e26]:
+              - generic [ref=e27]: 注册时间
+            - columnheader "是否启用" [ref=e28]:
+              - generic [ref=e30]:
+                - text: 是否启用
+                - button "查看「是否启用」列用例说明" [ref=e31] [cursor=pointer]:
+                  - img [ref=e32]
+            - columnheader "操作" [ref=e35]:
+              - generic [ref=e37]:
+                - text: 操作
+                - button "查看「操作」列用例说明" [ref=e38] [cursor=pointer]:
+                  - img [ref=e39]
+      - table [ref=e46]:
+        - rowgroup [ref=e54]:
+          - row "T-001 XX科技 13800001001 2024-03-15 已启用 内容审查开关 已开启" [ref=e55]:
+            - cell "T-001" [ref=e56]:
+              - generic [ref=e57]: T-001
+            - cell "XX科技" [ref=e58]:
+              - generic [ref=e59]: XX科技
+            - cell "13800001001" [ref=e60]:
+              - generic [ref=e61]: "13800001001"
+            - cell "2024-03-15" [ref=e62]:
+              - generic [ref=e63]: 2024-03-15
+            - cell "已启用" [ref=e64]:
+              - generic [ref=e66]:
+                - generic [ref=e68]: 已启用
+                - button "查看「是否启用」列用例说明" [ref=e69] [cursor=pointer]:
+                  - img [ref=e70]
+            - cell "内容审查开关 已开启" [ref=e73]:
+              - generic [ref=e75]:
+                - button "内容审查开关 已开启" [active] [ref=e76] [cursor=pointer]:
+                  - generic [ref=e77]:
+                    - generic [ref=e78]: 内容审查开关
+                    - generic [ref=e79]: 已开启
+                - button "查看「操作」列用例说明" [ref=e80] [cursor=pointer]:
+                  - img [ref=e81]
+          - row "T-002 达人传媒 13800002002 2024-06-20 已停用 内容审查开关 已关闭" [ref=e84]:
+            - cell "T-002" [ref=e85]:
+              - generic [ref=e86]: T-002
+            - cell "达人传媒" [ref=e87]:
+              - generic [ref=e88]: 达人传媒
+            - cell "13800002002" [ref=e89]:
+              - generic [ref=e90]: "13800002002"
+            - cell "2024-06-20" [ref=e91]:
+              - generic [ref=e92]: 2024-06-20
+            - cell "已停用" [ref=e93]:
+              - generic [ref=e95]:
+                - generic [ref=e97]: 已停用
+                - button "查看「是否启用」列用例说明" [ref=e98] [cursor=pointer]:
+                  - img [ref=e99]
+            - cell "内容审查开关 已关闭" [ref=e102]:
+              - generic [ref=e104]:
+                - button "内容审查开关 已关闭" [ref=e105] [cursor=pointer]:
+                  - generic [ref=e106]:
+                    - generic [ref=e107]: 内容审查开关
+                    - generic [ref=e108]: 已关闭
+                - button "查看「操作」列用例说明" [ref=e109] [cursor=pointer]:
+                  - img [ref=e110]
+          - row "T-003 娱乐互娱 13800003003 2024-08-01 已停用 内容审查开关 已关闭" [ref=e113]:
+            - cell "T-003" [ref=e114]:
+              - generic [ref=e115]: T-003
+            - cell "娱乐互娱" [ref=e116]:
+              - generic [ref=e117]: 娱乐互娱
+            - cell "13800003003" [ref=e118]:
+              - generic [ref=e119]: "13800003003"
+            - cell "2024-08-01" [ref=e120]:
+              - generic [ref=e121]: 2024-08-01
+            - cell "已停用" [ref=e122]:
+              - generic [ref=e124]:
+                - generic [ref=e126]: 已停用
+                - button "查看「是否启用」列用例说明" [ref=e127] [cursor=pointer]:
+                  - img [ref=e128]
+            - cell "内容审查开关 已关闭" [ref=e131]:
+              - generic [ref=e133]:
+                - button "内容审查开关 已关闭" [ref=e134] [cursor=pointer]:
+                  - generic [ref=e135]:
+                    - generic [ref=e136]: 内容审查开关
+                    - generic [ref=e137]: 已关闭
+                - button "查看「操作」列用例说明" [ref=e138] [cursor=pointer]:
+                  - img [ref=e139]
+          - row "T-004 教育在线 13800004004 2024-11-10 已启用 内容审查开关 已开启" [ref=e142]:
+            - cell "T-004" [ref=e143]:
+              - generic [ref=e144]: T-004
+            - cell "教育在线" [ref=e145]:
+              - generic [ref=e146]: 教育在线
+            - cell "13800004004" [ref=e147]:
+              - generic [ref=e148]: "13800004004"
+            - cell "2024-11-10" [ref=e149]:
+              - generic [ref=e150]: 2024-11-10
+            - cell "已启用" [ref=e151]:
+              - generic [ref=e153]:
+                - generic [ref=e155]: 已启用
+                - button "查看「是否启用」列用例说明" [ref=e156] [cursor=pointer]:
+                  - img [ref=e157]
+            - cell "内容审查开关 已开启" [ref=e160]:
+              - generic [ref=e162]:
+                - button "内容审查开关 已开启" [ref=e163] [cursor=pointer]:
+                  - generic [ref=e164]:
+                    - generic [ref=e165]: 内容审查开关
+                    - generic [ref=e166]: 已开启
+                - button "查看「操作」列用例说明" [ref=e167] [cursor=pointer]:
+                  - img [ref=e168]
+    - button "用例卡" [ref=e173] [cursor=pointer]:
+      - img [ref=e174]
+      - generic [ref=e177]: 用例卡
+  - generic [ref=e179]:
+    - heading "内容审查开关配置" [level=3] [ref=e181]
+    - generic [ref=e182]:
+      - generic [ref=e183]:
+        - generic [ref=e184]:
+          - generic [ref=e185]: 租户名称
+          - generic [ref=e186]: XX科技
+        - generic [ref=e187]:
+          - generic [ref=e188]: 租户编号
+          - generic [ref=e189]: T-001
+        - generic [ref=e190]:
+          - generic [ref=e191]: 推流域名
+          - generic [ref=e192]: rtmp://live-push.xxkeji.com/live
+        - generic [ref=e193]:
+          - generic [ref=e194]: 今日违规数
+          - generic [ref=e195]: "12"
+      - generic [ref=e198]:
+        - generic [ref=e199]: 内容审查
+        - generic [ref=e200]:
+          - switch
+        - generic [ref=e203]: 已关闭
+      - generic [ref=e208]:
+        - paragraph [ref=e209]: 操作影响范围（5级联动）
+        - generic [ref=e210]:
+          - generic [ref=e211]:
+            - generic [ref=e212]: ①
+            - generic [ref=e213]: 直播审查开关
+            - generic [ref=e214]: "OFF"
+          - generic [ref=e215]: →
+          - generic [ref=e216]:
+            - generic [ref=e217]: ②
+            - generic [ref=e218]: 直播中控Tab
+            - generic [ref=e219]: 隐藏
+          - generic [ref=e220]: →
+          - generic [ref=e221]:
+            - generic [ref=e222]: ③
+            - generic [ref=e223]: 直播列表入口
+            - generic [ref=e224]: 不可操作
+          - generic [ref=e225]: →
+          - generic [ref=e226]:
+            - generic [ref=e227]: ④
+            - generic [ref=e228]: 回放擦音任务
+            - generic [ref=e229]: 跳过
+          - generic [ref=e230]: →
+          - generic [ref=e231]:
+            - generic [ref=e232]: ⑤
+            - generic [ref=e233]: 观众端效果
+            - generic [ref=e234]: 不生效
+    - generic [ref=e205]:
+      - button "取消" [ref=e206] [cursor=pointer]
+      - button "确认关闭" [ref=e235] [cursor=pointer]

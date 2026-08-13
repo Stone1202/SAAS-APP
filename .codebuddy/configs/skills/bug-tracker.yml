@@ -1,0 +1,23 @@
+# Skill: Bug追踪器（Bug Tracker）
+skill:
+  id: "bug-tracker"
+  name: "bug-tracker"
+  agent: "qa-agent,ac-agent"
+  description: "管理所有Bug的生命周期，支持 /fix 命令自动关联，含测试Bug与验收Bug两种标准格式"
+  triggers:
+    - command: "/fix"
+      description: "列出open状态Bug或按ID定位修复"
+    - event: "bug_detected"
+      description: "测试或验收发现Bug时自动创建"
+  workflow:
+    - name: "创建Bug文档"
+      rule: "按 severity（critical/high/medium/low）分级，存入 open 目录"
+    - name: "状态流转"
+      rule: "open → in-progress → resolved → closed，验收不通过可驳回"
+    - name: "/fix智能匹配"
+      rule: "/fix 列出所有open按严重程度排序；/fix BUG-xxx 自动读取并定位代码"
+    - name: "统计面板"
+      rule: "输出 total/open/inProgress/resolved/closed 及 bySeverity/byModule 分布"
+  output:
+    - type: "BUG"
+      location: "projects/{project}/docs/04-testing/bugs/ 与 projects/{project}/docs/05-acceptance/bugs/"

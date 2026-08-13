@@ -1,0 +1,74 @@
+agent:
+  id: "fd-agent"
+  name: "FD Agent"
+  role: "前端开发 + UML驱动实现"
+  department: "研发部"
+  description: "将需求转化为可运行的仿真系统代码，遵守13条铁律。V3.1.0新增UML驱动实现能力（状态机层级→组件状态管理、组合片段→条件渲染、通信图→组件边界）。"
+  
+  md_file: ".codebuddy/agents/fd-agent.md"
+  
+  version: "V3.1.0"
+  
+  skills:
+    - "sim-code-generator"
+    - "component-builder"
+    - "compliance-checker"
+    - "prototype-annotator"
+    - "multi-platform-code-generator"
+    - "uml-to-code-mapper"           # V3.1.0新增：UML模型→前端代码映射器
+    - "instruction-card-generator"   # V5.1.0同步：与config.yml对齐
+
+  # V5.1.0增强：FD实现模式大脑能力声明 + V3.1.0 UML推理增强
+  brain_capability:
+    brain_id: "fd_brain_v1"
+    brain_name: "实现模式大脑 + UML代码推理器"
+    workflow_ref: "dev-flow.yml#ai_brain"
+    reasoning_modules: ["implementation_trap_prediction", "component_reuse_reasoning", "compliance_pattern_recognition", "visual_regression_risk", "uml_state_to_component_mapper", "uml_fragment_to_render_mapper"]
+    uml_knowledge_ref: ".codebuddy/knowledge/common/uml-standards.yml"
+    memory_spec: ".codebuddy/knowledge/common/brain-memory-spec.yml"
+    status: "active"
+  
+  triggers:
+    - command: "/init --type=新增|迭代"
+      stage: "阶段5·开发"
+      description: "新需求处理的开发阶段（与UX、QA并行）"
+    - command: "/init --type=变更"
+      stage: "阶段A3"
+      description: "变更处理的代码更新阶段"
+    - command: "/init --type=修复"
+      stage: "阶段B2"
+      description: "Bug修复的实施阶段"
+  
+  input:
+    - type: "requirement_doc"
+      description: "BA产出的需求文档"
+    - type: "design_doc"
+      description: "UX产出的设计文档"
+  
+  output:
+    code:
+      - "src/modules/{module}/{version}/contracts.ts"
+      - "src/modules/{module}/{version}/adapter.ts（FD 按端实例化到 {platform}/）"
+      - "src/modules/{module}/{version}/sim.ts"
+      - "src/modules/{module}/{version}/real.ts"
+      - "src/modules/{module}/{version}/store.ts"
+      - "src/modules/{module}/{version}/types.ts"
+      - "src/modules/{module}/{version}/components/*.tsx"
+    config:
+      - "src/modules/{module}/{version}/simulation/scenarios/{module}.scenarios.ts"
+  
+  rules:
+    - "R001: 契约驱动，先有Schema后有代码"
+    - "R002: 环境无关，禁止if(isMock)出现在组件和Store中"
+    - "R003: 仿真即真实，sim.ts必须复刻全部后端业务规则"
+    - "R004: 渐进切换，单接口粒度开关"
+    - "R005: 状态闭环，操作持久化到IndexedDB"
+    - "R006: 场景可复现，每个模块至少5个预制场景"
+    - "R007: 领域分层，按业务模块组织文件"
+    - "R008: 组件纯净，只从Store消费"
+    - "R009: 四态覆盖，loading/error/empty/success"
+    - "R010: 生产隔离，仿真代码可tree-shaking"
+    - "R011: 禁止越界，UI层不直接引用仿真引擎"
+    - "R012: 业务操作矩阵落地，按角色×业务状态实现路由守卫与按钮级显隐/禁用，支持切换角色/状态演示"
+  
+  auto_check: "compliance-checker"

@@ -1,0 +1,358 @@
+# ============================================
+# deploy-manager.yml — 部署管理器 Skill V2.0.3
+# ============================================
+# 版本：V2.0.3（门户 V2.0.0 动态化 + 全成员构建 + manifest.json）
+# 核心变更：
+#   - 7步→9步：新增产物聚合 + 门户自动生成
+#   - 部署内容：单个项目 dist → 整个 deploy/artifacts/ 全量
+#   - URL：edgeone.app → 自定义域名/member/project/version/
+#   - 门户首页：自动扫描→按成员→项目→版本分组展示
+# V2.0.1 新增：
+#   - Step 5.5：生成 SPA 回退页 404.html（子目录 SPA fallback）
+# V2.0.2 新增：
+#   - Step 3.5：复制 PRD HTML 文档到 {version}/prd/
+# V2.0.3 新增：
+#   - 门户 V2.0.0 动态化：fetch manifest.json 而不是硬编码数据
+#   - Step 4 新增生成 manifest.json（全量扫描产物→JSON）
+#   - Step 5 简化为直接复制模板（无需模板替换）
+#   - build-all.sh 覆盖全部 6 位成员的构建
+# ============================================
+
+id: deploy-manager
+name: 部署管理器
+version: "2.0.3"
+type: skill
+
+# ---------- 触发条件 ----------
+trigger:
+  - command: /close              # project-lifecycle stage-9
+  - command: /deploy             # 手动部署（将来支持）
+  - event: on_close_stage_9      # /close 流程触发
+
+# ---------- 前置依赖 ----------
+dependencies:
+  - config: deploy/edgeone-pages.json
+  - manifest: deploy/DEPLOY-MANIFEST.yml
+  - portal_template: deploy/access-portal/index.html
+  - spa_fallback_template: deploy/404-template.html
+  - access_control: .access-control.yml
+
+# ---------- 9步全量聚合部署流程 ----------
+steps:
+
+  # ==========================================
+  # Step 1: 前置校验
+  # ==========================================
+  - id: step-1
+    name: 前置校验
+    description: |
+      校验部署前置条件是否满足：
+      1. 读取 deploy/edgeone-pages.json，确认 base_domain 不是占位符
+      2. 读取 .access-control.yml，确认当前成员权限
+      3. 读取 deploy/DEPLOY-MANIFEST.yml，获取上次部署记录
+      4. 确认 projects/{--project}/dist 存在且非空
+      5. 确认 EdgeOne Pages 集成已连接
+    checks:
+      - check: base_domain_not_placeholder
+        rule: "edgeone-pages.json base_domain != 'prototype.jycao.cn' 或用户明确确认使用占位符"
+        on_fail: "提示用户先替换占位域名为实际域名"
+      - check: member_access
+        rule: "当前用户（git user.name）在 .access-control.yml members 中"
+        on_fail: "提示管理员通过 /register-member 注册"
+      - check: dist_exists
+        rule: "projects/{--project}/dist/ 目录存在且 index.html 存在"
+        on_fail: "提示用户先执行构建"
+      - check: edgeone_connected
+        rule: "EdgeOne Pages 集成已连接"
+        on_fail: "提示用户连接 EdgeOne Pages 集成"
+
+  # ==========================================
+  # Step 2: 读取部署配置
+  # ==========================================
+  - id: step-2
+    name: 读取部署配置
+    actions:
+      - action: read_config
+        file: deploy/edgeone-pages.json
+        output_vars:
+          - base_domain
+          - deploy_root
+          - routing_pattern
+          - projects
+      - action: read_access
+        file: .access-control.yml
+        output_var: members
+      - action: identify_member
+        from: git user.name（当前用户）
+        output_var: current_member_id
+      - action: identify_project
+        from: --project 参数或当前 /init 绑定的项目
+        output_var: current_project
+      - action: identify_version
+        from: state.json 或 --version 参数
+        output_var: current_version
+      - action: identify_goal
+        from: state.json 或 --goal 参数
+        output_var: current_goal
+
+  # ==========================================
+  # Step 3: 构建产物复制到聚合目录
+  # ==========================================
+  - id: step-3
+    name: 构建产物聚合
+    description: |
+      将当前项目的构建产物复制到聚合部署目录。
+      目标路径：deploy/artifacts/{member}/{project}/{goal}/{version}/
+      
+      操作：
+      1. 创建目标目录：mkdir -p deploy/artifacts/{member}/{project}/{goal}/{version}/
+      2. 复制 dist 内容：cp -r projects/{project}/dist/* deploy/artifacts/{member}/{project}/{goal}/{version}/
+      3. 复制 PRD HTML 文档（如果存在）：cp -r projects/{project}/docs/09-versions/{version}/prd-html/ deploy/artifacts/.../prd/
+      4. 如有旧版本同一 member+project+goal，保留不删（全量聚合，旧版本共存）
+    actions:
+      - action: create_target_dir
+        path: "deploy/artifacts/{current_member_id}/{current_project}/{current_topic}/{current_version}/"
+      - action: copy_dist
+        source: "projects/{current_project}/dist/"
+        target: "deploy/artifacts/{current_member_id}/{current_project}/{current_topic}/{current_version}/"
+        overwrite: true
+      - action: verify_copy
+        check: "deploy/artifacts/{current_member_id}/{current_project}/{current_topic}/{current_version}/index.html 存在"
+      - action: copy_prd_html
+        condition: "projects/{current_project}/docs/09-versions/{current_version}/prd-html/ 目录存在"
+        source: "projects/{current_project}/docs/09-versions/{current_version}/prd-html/"
+        target: "deploy/artifacts/{current_member_id}/{current_project}/{current_topic}/{current_version}/prd/"
+        overwrite: true
+
+  # ==========================================
+  # Step 4: 生成新版 manifest.json（V2.0.0 goal 维度）
+  # ==========================================
+  - id: step-4
+    name: 生成新版 manifest.json
+    description: |
+      V2.0.0 升级：基于项目元数据模板 deploy/access-portal/manifest.json，
+      扫描实际产物目录更新版本信息，生成 deploy/artifacts/manifest.json。
+      
+      关键：不要生成旧版 {slug, versions:[string]} 格式，
+      必须使用新版 goal 维度结构（goals[] + main 聚合入口）。
+      
+      操作：
+      1. 读取 deploy/access-portal/manifest.json 作为元数据模板
+      2. 扫描 deploy/artifacts/{member}/{project}/ 下实际存在的 goal 目录和版本目录
+      3. 更新 goals[].versions[] 为实际产物中匹配 goal 的版本（保留 prd_doc_url/scope_only_proto_url 的相对路径模式）
+      4. 更新 main.version 为各 goal 最新版本
+      5. 更新 generated_at 为当前 ISO 8601 时间
+      6. 写出到 deploy/artifacts/manifest.json
+    actions:
+      - action: read_manifest_template
+        source: "deploy/access-portal/manifest.json"
+      - action: scan_artifacts
+        path: "deploy/artifacts/"
+        depth: 4
+      - action: generate_manifest
+        output: "deploy/artifacts/manifest.json"
+        template_source: "deploy/access-portal/manifest.json"
+        preserve_fields:
+          - "members[].projects[].name"
+          - "members[].projects[].framework"
+          - "members[].projects[].goals[].title"
+          - "members[].projects[].goals[].branch"
+          - "members[].projects[].goals[].terminals"
+          - "members[].projects[].main.proto_url"
+          - "members[].projects[].main.prd_overview_url"
+          - "members[].projects[].main.terminals"
+          - "members[].projects[].main.merged_goals"
+        dynamic_fields:
+          - "generated_at"
+          - "members[].projects[].goals[].versions[].version"
+          - "members[].projects[].main.version"
+
+  # ==========================================
+  # Step 5: 复制门户首页（V2.0.0 动态版）
+  # ==========================================
+  - id: step-5
+    name: 复制门户首页
+    description: |
+      V2.0.0 升级：门户改为动态加载 manifest.json，不再嵌入硬编码数据。
+      直接将模板复制到 deploy/artifacts/index.html（无需模板替换）。
+      
+      门户渲染逻辑：
+      1. 页面加载时 fetch ./manifest.json
+      2. 与内置 METADATA 注册表（PROJECT_META + MEMBER_META）合并
+      3. 动态渲染成员/项目/版本/终端入口
+      4. manifest 加载失败时回退到 FALLBACK_DATA
+      
+      优势：新增成员只需改 build-all.sh PROJECTS 数组，
+      门户自动识别，无需手动更新 HTML。
+    template: "deploy/access-portal/index.html"
+    output: "deploy/artifacts/index.html"
+    replacements: []  # V2.0.0: 无需模板替换，门户动态加载 manifest.json
+
+  # ==========================================
+  # Step 5.5: 生成 SPA 回退页（404.html）
+  # ==========================================
+  - id: step-5.5
+    name: 生成 SPA 回退页
+    description: |
+      EdgeOne Pages 只支持根级 SPA fallback，子目录 SPA 的深层路由无法自动回退。
+      解决方案：根级 404.html 中 JS 动态 fetch 子项目 index.html 并替换文档。
+      
+      详见 deploy/DEPLOY-GUIDE.md §3。
+    actions:
+      - action: copy_fallback_template
+        source: "deploy/404-template.html"
+        target: "deploy/artifacts/404.html"
+        overwrite: true
+
+  # ==========================================
+  # Step 6: 部署到 EdgeOne Pages
+  # ==========================================
+  - id: step-6
+    name: 部署到 EdgeOne Pages
+    description: |
+      将整个 deploy/artifacts/ 目录部署到 EdgeOne Pages。
+      
+      关键：部署的是整个 artifacts/ 目录（含所有成员、所有项目、所有版本 + 门户首页），
+      不是单个项目的 dist。这样每次部署都是全量更新，不丢旧内容。
+      
+      如果 EdgeOne Pages 已绑定自定义域名（prototype.jycao.cn），
+      根路径 / 自动指向门户首页，各项目路径按 routing_pattern 访问。
+    actions:
+      - action: deploy_artifacts
+        source_dir: "deploy/artifacts/"
+        integration: edgeone-pages
+        tool: deploy_folder
+      - action: capture_result
+        output_vars:
+          - deploy_url       # EdgeOne 分配的 URL（如 xxx.edgeone.dev）
+          - project_id       # EdgeOne 项目 ID
+
+  # ==========================================
+  # Step 7: 生成访问 URL
+  # ==========================================
+  - id: step-7
+    name: 生成访问 URL
+    description: |
+      生成两个 URL：
+      - 门户首页：https://{base_domain}/
+      - 当前项目：https://{base_domain}/{member}/{project}/{goal}/{version}/
+      
+      如果域名尚未绑定，降级使用 EdgeOne 分配的 URL：
+      - 门户首页：{deploy_url}/
+      - 当前项目：{deploy_url}/{member}/{project}/{goal}/{version}/
+    actions:
+      - action: build_urls
+        inputs:
+          base_domain: "{base_domain}"
+          member: "{current_member_id}"
+          project: "{current_project}"
+          topic: "{current_topic}"
+          version: "{current_version}"
+          edgeone_url: "{deploy_url}"
+        outputs:
+          portal_url: "https://{base_domain}/"
+          project_url: "https://{base_domain}/{current_member_id}/{current_project}/{current_topic}/{current_version}/"
+          fallback_portal_url: "{deploy_url}/"
+          fallback_project_url: "{deploy_url}/{current_member_id}/{current_project}/{current_topic}/{current_version}/"
+
+  # ==========================================
+  # Step 8: 更新部署记录
+  # ==========================================
+  - id: step-8
+    name: 更新部署记录
+    description: |
+      更新 deploy/DEPLOY-MANIFEST.yml：
+      1. last_deploy 更新当前部署信息
+      2. deploy_history 追加新记录
+    actions:
+      - action: update_manifest
+        file: "deploy/DEPLOY-MANIFEST.yml"
+        updates:
+          last_deploy:
+            timestamp: "{now_iso8601}"
+            deployed_by: "{current_member_id}"
+            total_members: "{scanned_members_count}"
+            total_projects: "{scanned_projects_count}"
+          deploy_history:
+            append:
+              timestamp: "{now_iso8601}"
+              deployed_by: "{current_member_id}"
+              event: "全量聚合部署"
+              members_count: "{scanned_members_count}"
+              projects_count: "{scanned_projects_count}"
+
+  # ==========================================
+  # Step 9: 输出部署结果
+  # ==========================================
+  - id: step-9
+    name: 输出部署结果
+    description: |
+      向用户展示部署结果：
+      - 门户首页 URL
+      - 当前项目 URL
+      - 部署摘要（成员数/项目数/版本数）
+      - EdgeOne 控制台链接（用于域名绑定）
+    output_template: |
+      ✅ 部署完成！
+      
+      🌐 门户首页：{portal_url}
+      📦 当前项目：{project_url}
+      
+      📊 部署摘要：
+      - 成员：{total_members} 人
+      - 项目：{total_projects} 个
+      - 版本：部署 {current_version}
+      
+      ⚠️ 域名提示：
+      自定义域名（{base_domain}）生效需要到 EdgeOne 控制台绑定：
+      {edgeone_console_url}
+
+# ---------- 错误处理 ----------
+error_handling:
+  - error: dist_not_found
+    message: "项目 {project} 的 dist/ 不存在，请先执行构建"
+    action: "提示用户执行 npm run build:sim"
+  
+  - error: copy_failed
+    message: "产物复制失败，请检查磁盘空间和权限"
+    action: "检查 deploy/artifacts/ 目录权限"
+  
+  - error: deploy_failed
+    message: "EdgeOne Pages 部署失败"
+    action: "检查集成连接状态，重试或手动上传"
+  
+  - error: domain_placeholder
+    message: "域名仍是占位符 prototype.jycao.cn，部署将使用 EdgeOne 默认 URL"
+    action: "提示用户确认是否使用占位符继续，或提供实际域名"
+
+# ---------- 版本历史 ----------
+version_history:
+  - version: "2.0.3"
+    date: "2026-07-29"
+    changes:
+      - "门户 V2.0.0 动态化：fetch manifest.json 替代硬编码数据"
+      - "Step 4 新增生成 deploy/artifacts/manifest.json"
+      - "Step 5 简化：直接复制模板，无需模板替换"
+      - "解决其他成员项目 404 的根因（硬编码数据与构建产物不一致）"
+  - version: "2.0.2"
+    date: "2026-07-29"
+    changes:
+      - "新增 Step 3.5：复制 PRD HTML 文档到 {version}/prd/（解决 docs/prd-html/ 不会被自动部署的问题）"
+  - version: "2.0.1"
+    date: "2026-07-28"
+    changes:
+      - "新增 Step 5.5：生成 SPA 回退页 deploy/artifacts/404.html（子目录 SPA fallback，解决深层路由空白问题）"
+      - "新增依赖 deploy/404-template.html"
+  - version: "2.0.0"
+    date: "2026-07-23"
+    changes:
+      - "7步→9步：新增产物聚合（step-3）+ 门户自动生成（step-5）"
+      - "部署内容：单个项目 dist → 整个 deploy/artifacts/ 全量"
+      - "URL：edgeone.app → 自定义域名 + /member/project/topic/version/ 路由"
+      - "topic 路由：支持多人并行同一项目不同迭代主题"
+      - "门户首页：按项目→主题分组展示，自动扫描生成"
+      - "DEPLOY-MANIFEST 结构重构：支持多成员多版本记录"
+  - version: "1.0.0"
+    date: "2026-07-20"
+    changes:
+      - "初始版本：单项目 EdgeOne Pages 部署"

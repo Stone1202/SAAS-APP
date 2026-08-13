@@ -1,0 +1,78 @@
+# SPRINT-PLAN — SAAS直播内容审查 V1.0.0 Sprint计划
+# PO产品规划：Sprint拆解
+# 日期: 2026-07-22 | PO Agent
+
+project: "SAAS"
+version: "v1.0.0"
+sprint_count: 1
+sprint_duration: "1-2周"
+
+# ============================================
+# Sprint 1: 三终端效果模拟
+# ============================================
+sprints:
+
+  - id: "SPRINT-001"
+    name: "三终端效果模拟"
+    version: "v1.0.0"
+    duration: "1-2周"
+    goal: |
+      完成三终端直播内容审查效果模拟：
+      运营后台开关 → 租户后台直播中控监控 → 观众端擦音效果 → 回放擦音效果
+    
+    backlog_items:
+      - "BL-AUDIT-010: 模拟回调数据生成器（共享层，先做）"
+      - "BL-AUDIT-001: 租户审查开关管理（运营后台）"
+      - "BL-AUDIT-002: 直播中控模拟回调+实时告警（租户后台）"
+      - "BL-AUDIT-003: 直播中控违规处置操作（租户后台）"
+      - "BL-AUDIT-004: 直播中控擦音模式切换（租户后台）"
+      - "BL-AUDIT-005: 回放擦音效果模拟（租户后台）"
+      - "BL-AUDIT-006: 观众端直播模拟+静音效果（观众端）"
+      - "BL-AUDIT-007: 观众端直播模拟+擦音效果（观众端）"
+      - "BL-AUDIT-009: 观众端断流结束提示（观众端）"
+    
+    total_story_points: 29
+    
+    # 执行顺序（依赖关系驱动）
+    execution_order:
+      - phase: "Phase 1: 基础设施"
+        items: ["BL-AUDIT-010"]
+        note: "先搭建模拟数据生成器，直播中控和观众端共享"
+      
+      - phase: "Phase 2: 运营后台"
+        items: ["BL-AUDIT-001"]
+        note: "租户审查开关管理，最简单先做"
+      
+      - phase: "Phase 3: 租户后台直播中控"
+        items: ["BL-AUDIT-002", "BL-AUDIT-003", "BL-AUDIT-004", "BL-AUDIT-005"]
+        note: "直播中控核心功能：告警+处置+模式切换+回放擦音"
+      
+      - phase: "Phase 4: 观众端"
+        items: ["BL-AUDIT-006", "BL-AUDIT-007", "BL-AUDIT-009"]
+        note: "观众端效果模拟：静音+擦音+断流提示"
+    
+    terminal_assignment:
+      运营后台_PC:
+        path: "/admin/audit"
+        items: ["BL-AUDIT-001"]
+        note: "独立路由，平台运营访问"
+      
+      租户后台_PC:
+        path: "/tenant/live-control"
+        items: ["BL-AUDIT-002", "BL-AUDIT-003", "BL-AUDIT-004", "BL-AUDIT-005"]
+        note: "直播直播中控内容审查Tab，租户运营访问"
+      
+      观众端_H5:
+        path: "/h5/live/:roomId"
+        items: ["BL-AUDIT-006", "BL-AUDIT-007", "BL-AUDIT-008", "BL-AUDIT-009"]
+        note: "移动端H5 375px，观众访问"
+    
+    definition_of_done:
+      - "三终端可独立访问演示"
+      - "运营后台可开关租户审查"
+      - "直播中控展示模拟违规告警+列表+详情"
+      - "直播中控可处置（记录/断流/忽略）+擦音模式切换"
+      - "观众端可感知静音/擦音两种效果"
+      - "观众端断流提示"
+      - "回放擦音效果可演示"
+      - "模拟数据生成器正常工作"

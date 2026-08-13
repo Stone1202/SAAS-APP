@@ -1,0 +1,261 @@
+# ============================================
+# 脑暴流程文档标准（单一事实源）
+# 版本：v1.2.0
+# 最后更新：2026-07-16
+version: "1.2.0"
+# 来源：反向推敲自两份标杆脑暴文档
+#   - ai-scrm-AI场景深度脑暴报告-v4.0.0（大脑架构终极融合）
+#   - POM-V3.0.1 头脑风暴部成立与文档标准化强化 变更通报 + RULES-V1.0.0
+# 说明：本文件是 BS Agent / 脑暴工作流 / 脑暴 config / 脑暴 skill
+#       产出脑暴文档的唯一标准事实源。下游需求标准（doc-standards.yml）
+#       以本文件 B-05 confirmed/ 为阶段2 输入边界，以 B-04 BO/BG 为
+#       编号追溯链（UC→FN→PG→MD→SC→BG→BO）链首。
+# v1.2.0 升级：新增 B-10 分层类型铁律（战略型条件输出战略+商业产物）
+# v1.1.0 升级：新增 B-09 领域知识引用铁律 + B-02 三流草图增强（标注参考来源）
+# ============================================
+
+brainstorm_standard:
+
+  # 文档组织（二分落盘，铁律 B-05）
+  artifact_model:
+    root: "projects/{project}/docs/00-brainstorm/"
+    split:
+      process:
+        desc: "进行中过程产物（未确认草稿/深化调研/专家归类/接口骨架/闭环探索），可增删改，无 README"
+        rule: "严禁 BA 引用 process/ 作为需求基线"
+      confirmed:
+        desc: "已与用户往复确认的基准方案/结论"
+        readme_required: true
+        readme_fields: [文件, 主题, 确认轮次, 进入需求分析用途]
+        header_must: "状态：基准方案已与用户往复确认（YYYY-MM-DD 第N轮）"
+        no_open_items: "确认稿不得保留未决表述；未决项剥离回 process/ 或 problem-ledger"
+    migration: "process/ 某产物经往复确认后迁移至 confirmed/ 并追加 README 一行"
+
+  # 脑暴分层类型（铁律 B-10，v1.2.0 新增）
+  brainstorm_types:
+    required: true
+    rule: |
+      脑暴开始前必须确认脑暴类型（strategic/planning/regular），
+      类型决定输出物范围和后续流程路由。
+      战略型脑暴须额外输出战略分析+商业分析产物。
+    types:
+      strategic:
+        name: "战略型脑暴"
+        trigger: "新项目/重大方向转型"
+        outputs:
+          - "脑暴文档（confirmed/）"
+          - "战略分析文档（SWOT+市场定位+竞争分析+战略目标）"
+          - "商业分析文档（商业模式画布+盈利模式+ROI）"
+        expert_departments: "全9部门（市场部/商业部重点参与）"
+        next: "通知 PO Agent（战略级激活：三层能力全开）"
+        extra_output_location: "projects/{project}/docs/00-brainstorm/confirmed/STRATEGY-{project}-v{version}.md + BUSINESS-{project}-v{version}.md"
+      planning:
+        name: "规划型脑暴"
+        trigger: "新模块/大版本迭代"
+        outputs:
+          - "脑暴文档（confirmed/）"
+        expert_departments: "6部门（运营/业务/产品/设计/开发/测试）"
+        next: "通知 PO Agent（规划级激活：第二层+第一层）"
+      regular:
+        name: "常规型脑暴"
+        trigger: "功能优化/中版本迭代"
+        outputs:
+          - "脑暴文档（confirmed/）"
+        expert_departments: "4部门（产品/业务/运营/测试）"
+        next: "PM 直接立项（跳过 PO Agent）"
+    strategic_output_template:
+      strategy_doc: |
+        # {项目}-战略分析-v{版本}
+        ## 一、SWOT分析
+        | 维度 | 内容 |
+        |------|------|
+        | 优势(S) | {内部优势} |
+        | 劣势(W) | {内部劣势} |
+        | 机会(O) | {外部机会} |
+        | 威胁(T) | {外部威胁} |
+        ## 二、市场定位
+        {目标市场+定位策略}
+        ## 三、竞争分析
+        {主要竞品+差异化策略}
+        ## 四、战略目标
+        {短期/中期/长期目标}
+      business_doc: |
+        # {项目}-商业分析-v{版本}
+        ## 一、商业模式画布
+        {九模块画布}
+        ## 二、盈利模式
+        {收入流+定价策略}
+        ## 三、ROI分析
+        {开发成本 vs 预期收益 + 投资回报率}
+    routing_rule: |
+      脑暴完成后按类型路由：
+      - strategic → 通知 PO Agent → PO产出产品文档 → PM立项
+      - planning → 通知 PO Agent → PO产出产品文档 → PM立项
+      - regular → 直接通知 PM 立项（跳过PO）
+
+  # 专家矩阵（铁律 B-01，对齐 POM V3.0.1 九部门）
+  expert_matrix:
+    source: "POM 头脑风暴部 RULES §2 九部门领域经验档案"
+    departments: [市场部, 商业部, 运营部, 业务部, 产品部, 设计部, 开发部, 测试部, 验收部]
+    forbid_hardcode_5: "禁止固定 5 角色（行业/商业/业务/技术/用户研究）硬编码；须按议题匹配"
+    topic_match:
+      新业务_新市场: [市场部, 商业部, 产品部, 业务部, 运营部]
+      商业化_变现: [商业部, 产品部, 业务部, 市场部, 运营部]
+      运营工具_自动化: [运营部, 产品部, 业务部, 商业部]
+      业务流程重构: [业务部, 产品部, 运营部, 测试部]
+      用户体验升级: [设计部, 产品部, 验收部, 运营部]
+      技术架构升级: [开发部, 产品部, 测试部]
+      质量_缺陷修复: [测试部, 产品部, 开发部, 业务部]
+      AI_智能化: [产品部, 商业部, 运营部, 测试部]
+      通用产品功能: [产品部, 业务部, 运营部, 测试部]
+    min_viable_team: "3-6 人含 PMO；必修部门到齐方准入"
+    one_line_stance:
+      required: true
+      limit: "≤50 字"
+      format: "[部门][姓名] 将从 [XX视角] 审视该议题，重点关注 [XX方向]"
+
+  # 四步法 + 三流草图（铁律 B-02，v1.1.0 增强领域知识标注）
+  four_steps:
+    steps:
+      - name: 发散
+        ratio: "40%"
+        rule: "轮流发言不设限；每位专家≥1轮；禁止批评、数量优先；PMO白板记录"
+        v1_1_0_enhance: "发言须引用领域知识作为论据（铁律 B-09），领域知识缺失时标注"
+      - name: 收敛
+        ratio: "30%"
+        rule: "按用户旅程/业务线/技术可行性三维分组为场景簇；每位专家投3票"
+      - name: 连线
+        ratio: "20%"
+        rule: "场景簇串联成连贯业务流程；强制产出三流草图"
+        v1_1_0_enhance: "三流草图以领域知识标准流程为基准模板，标注参考来源"
+      - name: 定调
+        ratio: "10%"
+        rule: "PMO 总结核心洞察；逐项确认 同意/保留/反对；记录遗留归属"
+    three_flow_sketches:
+      required: true
+      items:
+        - 业务流草图(flowchart)
+        - 信息流草图(跨模块数据流向)
+        - 状态流草图(关键状态机 + 状态过渡)
+      gate: "缺任一不得准出（对应 RULES BS-R04）"
+      v1_1_0_reference_annotation:
+        rule: "三流草图须标注领域知识参考来源（v1.1.0 新增）"
+        format: "> 参考来源：领域知识《{领域名}》{版本} → {文件路径}"
+        diff_annotation: "与领域知识标准流程的差异处须显式标注并说明理由"
+        example: |
+          > 参考来源：领域知识《退款流》v1.2.0 → aftersale/refund-flow.yml
+          > 差异说明：本项目在标准7状态基础上增加"风控审核中"状态，因项目有独立风控团队
+      downstream: "为阶段2 正式五流五图（doc-standards.yml swimlane/cross_system_info_flow/state_machine）起点"
+
+  # 决策冻结 + 风险登记（铁律 B-03，范式见 v4.0.0 D1-D8 + 风险矩阵）
+  decision_freeze:
+    required: true
+    decision_table:
+      columns: [决策编号(Dn), 决策, 立场, 优先级]
+      example_ref: "v4.0.0 D1-D8（如 D1 采用AI大脑中枢+子脑架构=极高）"
+    risk_matrix:
+      columns: [风险, 概率, 影响, 缓解]
+      example_ref: "v4.0.0 风险矩阵（中枢过载/编排复杂度/过度自动化/事件编织误判/全局认知偏见）"
+
+  # 业务目标映射（铁律 B-04，链首）
+  business_goal_mapping:
+    required: true
+    rule: "脑暴结论须向上对齐业务目标 BO/BG，作为 doc-standards.yml 追溯链 UC→FN→PG→MD→SC→BG→BO 的链首"
+    output: "确认稿须列 BO/BG 编号预期"
+
+  # 跨文档追溯链（铁律 B-07）
+  traceability:
+    rule: "确认稿『下一步/需求映射』章节须登记将转化为下游 PRD 的 FN/UC/BG/BO 编号预期"
+    downstream: "requirement-flow §6 单文档模式以 confirmed/ 为唯一输入边界"
+
+  # 文件命名 + 元信息头 + 版本追溯（铁律 B-06，遵循 POM 文档标准化规范）
+  doc_hygiene:
+    naming: "{项目}-{议题}-brainstorm-v{版本}.md"
+    metadata_header:
+      fields: [日期, 议题类型, 主持(PMO), 参与专家(部门+姓名), 各专家一句话立场, 版本]
+    version_sync:
+      rule: "文件名/元信息/版本记录表 三者版本号一致（DOC-R02 阻断）"
+      version_history_required: true
+      no_overwrite_history: true
+    related_doc_rules: "POM-文档标准化强化规范-V1.0.0（DOC-R01~R06）"
+
+  # 发言质量评估（铁律 B-08）
+  quality_assessment:
+    required: true
+    dimensions: [视角独特性, 深度, 建设性, 协作度]
+    scale: "1-5"
+    owner: "PMO 会后填写"
+    usage: "仅优化后续组队策略，不关联绩效"
+
+  # 领域知识引用（铁律 B-09，v1.1.0 新增）
+  domain_knowledge_reference:
+    required: true
+    rule: |
+      脑暴阶段必须加载领域知识（brainstorm.yml stage-0c），九部门专家发言时
+      须引用领域知识作为论据支撑，三流草图须标注参考来源。
+    expert_citation:
+      format: "[部门][姓名] 引用领域知识《{领域名}》{版本}：{引用内容摘要}"
+      required: "每位专家至少1次领域知识引用（领域知识缺失时标注缺失）"
+      examples:
+        - "[业务部][张三] 引用领域知识《退款流》v1.2.0：标准退款流程包含7个状态，建议本项目退款状态机以此为基准"
+        - "[开发部][李四] 引用领域知识《分账》v1.1.0：三方分账需对接支付通道的分账接口，技术可行性确认"
+        - "[运营部][王五] 引用领域知识《进销存》v1.0.0：标准盘点流程含日盘/周盘/月盘，建议本项目采用周盘"
+    missing_domain_knowledge:
+      handling: "领域知识缺失时，专家须标注'领域知识缺失，建议后续 /learn-domain 学习'"
+      record_in_confirmed: "confirmed/ 确认稿须记录领域知识缺失项，传递给 BA 在需求分析时补充学习"
+    domain_knowledge_checklist:
+      location: "confirmed/ 确认稿须包含「领域知识清单」章节"
+      fields:
+        - 领域名
+        - 文件路径
+        - 版本
+        - 关键摘要（≤100字）
+        - 匹配方式（keyword / semantic / project_prd / sedimentation）
+      missing_fields:
+        - 领域名
+        - 标记"待 /learn-domain 学习"
+        - 建议学习来源（如用户提供的 URL）
+      downstream: "该清单传递给 /init 阶段 BA，BA 直接继承，避免重复匹配"
+    matching_mechanism:
+      ref: "复用 BA Agent 领域知识匹配机制（ba-agent.md 产物8）"
+      keyword_match: "扫描诉求描述，匹配 DOMAIN-INDEX.yml 关键词列表"
+      semantic_match: "AI 分析诉求语义，识别涉及的领域"
+      priority:
+        1: "项目知识库（已学PRD）"
+        2: "领域知识库（关键词匹配）"
+        3: "领域知识库（AI语义匹配）"
+        4: "跨版本沉淀（上一版本经验）"
+    rules_knowledge:
+      ref: "同时加载业务规则知识库（.codebuddy/knowledge/rules/）"
+      usage: "获取该领域的可复用业务规则，供专家讨论引用"
+
+  # 准入准出门禁（对齐 RULES 六，v1.1.0 新增领域知识门禁）
+  gates:
+    entry:
+      - "议题已明确（书面诉求），非『随便聊聊』"
+      - "≥3 位部门专家确认参会（含产品部必修）"
+      - "每位专家已提交一句话立场（≤50字）"
+      - "PMO 已备背景简报+数据"
+      - "领域知识已加载或用户确认无领域知识可加载（v1.1.0 新增）"
+      - "领域知识清单已产出（v1.1.0 新增）"
+      - "脑暴类型已确认（v1.2.0 新增：strategic/planning/regular）"
+      - "会议≥90分钟"
+    exit:
+      - "会议记录按模板完整填写"
+      - "≥2 个场景簇"
+      - "三流草图已产出（业务+信息+状态流）"
+      - "三流草图标注领域知识参考来源（v1.1.0 新增）"
+      - "专家发言含领域知识引用（v1.1.0 新增）"
+      - "核心洞察已填（一致+争议+遗留）"
+      - "下一步任务分配至负责人+截止时间"
+      - "confirmed/ 含领域知识清单章节（v1.1.0 新增）"
+      - "战略型脑暴须额外产出战略分析+商业分析文档（v1.2.0 新增）"
+      - "按脑暴类型正确路由后续流程（v1.2.0 新增）"
+      - "归档至 docs/00-brainstorm/confirmed/"
+
+  # 与下游需求标准衔接
+  downstream_link:
+    requirement_input: "confirmed/ 为 BA 需求分析唯一权威输入（见 requirement-flow.md / doc-standards.yml）"
+    domain_knowledge_handover: "confirmed/ 领域知识清单传递给 BA，BA 直接继承，避免重复匹配（v1.1.0 新增）"
+    standard_ref: "knowledge/common/doc-standards.yml（v2.0.0 需求标准）"
+    governance_ref: "knowledge/common/doc-standards.yml#governance"

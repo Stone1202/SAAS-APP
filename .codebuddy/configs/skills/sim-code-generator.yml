@@ -1,0 +1,240 @@
+# ============================================
+# Skill: sim-code-generator（仿真代码生成器）
+# 所属 Agent: FD Agent（前端开发）
+# 版本: v2.0.0
+# 最后更新: 2026-07-15
+# ============================================
+#
+# FD Agent 专家视角：
+#   仿真代码生成器是 FD Agent 的「核心武器」——它把 BA Agent 产出的业务规则（BR）
+#   和 Arch Agent 产出的接口契约翻译成可运行的 sim.ts 仿真服务代码。
+#   这是铁律3（仿真即真实）的落地工具：sim.ts 必须全量复刻 real.ts 的业务逻辑、
+#   错误码、延迟模拟和随机错误——让仿真系统在无后端的情况下也能完整演示业务。
+#
+# 核心原则：
+#   1. sim.ts 不是「简化版」——是 real.ts 的「全量复刻」
+#   2. 每行 sim.ts 代码都对应一条 BR 业务规则
+#   3. 每个接口都经过 Zod Schema 入参校验 + 出参校验
+#   4. 所有数据持久化到 IndexedDB（铁律5）
+#   5. 延迟 300-800ms + 5% 随机错误模拟真实网络环境
+#
+# 触发时机：FD Agent 开发阶段，需要为模块生成 sim.ts 时
+# 前置依赖：BA Agent 的 BR 业务规则 + Arch Agent 的接口契约（Zod Schema）
+# 后置校验：compliance-checker（IRON-01/03/05 必须通过）+ test-runner
+# ============================================
+
+skill:
+  name: sim-code-generator
+  id: "SKL-FD-SIM"
+  version: "2.0.0"
+  owner: "fd-agent"
+  category: "code-generation"
+  description: |
+    FD Agent 的仿真服务代码生成器。
+    根据 BA Agent 的业务规则（BR）和 Arch Agent 的接口契约（Zod Schema），
+    生成全量复刻后端逻辑的 sim.ts 仿真服务代码。
+    强制遵循铁律1（Zod 校验）、铁律3（仿真即真实）、铁律5（IndexedDB 持久化）。
+  triggers:
+    - event: "sim_service_requested"
+      auto: true
+      description: "FD Agent 收到 sim.ts 生成需求时自动触发"
+    - event: "br_updated"
+      auto: true
+      description: "BA Agent 更新业务规则后，触发对应 sim.ts 增量更新"
+    - event: "contract_updated"
+      auto: true
+      description: "Arch Agent 更新接口契约后，触发对应 sim.ts 适配更新"
+  inputs:
+    - name: "business_rules"
+      source: "ba-agent"
+      path: "projects/{project}/docs/01-requirements/business-rules/{module}/"
+      format: "Markdown"
+      required: true
+      description: "BA Agent 产出的业务规则文档（BR-{MODULE}-{NNN}），每条规则对应 sim.ts 中的一个校验分支"
+    - name: "interface_contract"
+      source: "arch-agent"
+      path: "projects/{project}/docs/04-arch/contracts/{module}/api-contract.yml"
+      format: "YAML"
+      required: true
+      description: "Arch Agent 产出的接口契约（含请求/响应 Zod Schema 定义和错误码枚举）"
+  workflow:
+    - step: "parse_contract"
+      action: "解析接口契约，提取所有接口的请求 Schema、响应 Schema、错误码枚举"
+    - step: "parse_business_rules"
+      action: "解析业务规则，按接口归类，建立 BR→接口 映射"
+    - step: "generate_function_skeleton"
+      action: "为每个接口生成六步标准流程的函数骨架"
+    - step: "implement_business_rules"
+      action: "逐条将 BR 翻译为 sim.ts 中的校验逻辑（if/throw）"
+    - step: "implement_persistence"
+      action: "添加 IndexedDB 持久化操作（simulatedDB.xxx）"
+    - step: "add_network_simulation"
+      action: "添加 delay(300,800) + randomError(0.05)"
+    - step: "self_check"
+      action: "生成后自检：六步是否完整、Schema 校验是否到位、BR 是否全覆盖"
+
+  # ============================================
+  # 六步标准流程模板（每个 sim.ts 函数必须遵循）
+  # ============================================
+  template: |
+    // ============================================
+    // 模块：{moduleName}
+    // 对应契约：projects/{project}/docs/04-arch/contracts/{module}/api-contract.yml
+    // 业务规则：projects/{project}/docs/01-requirements/business-rules/{module}/
+    // 铁律1：Zod Schema 校验入参+出参
+    // 铁律3：仿真即真实，逻辑全量复刻
+    // 铁律5：IndexedDB 持久化
+    // ============================================
+
+    import { z } from 'zod';
+    import { simulatedDB } from '@/simulation/db/simulated-db';
+    import { delay, randomError } from '@/simulation/utils/network-sim';
+    import { BusinessError, NetworkError } from '@/simulation/utils/errors';
+
+    // 导入契约 Schema（铁律1）
+    import { {requestSchema}, {responseSchema} } from '@/contracts/schemas/{moduleName}';
+
+    /**
+     * {功能描述}
+     *
+     * 关联业务规则：
+     * {逐条列出关联的 BR 编号和规则摘要}
+     *
+     * 错误码：
+     * - {ERROR_CODE_1}: {错误描述}
+     * - {ERROR_CODE_2}: {错误描述}
+     */
+    export async function {functionName}(
+      req: z.infer<typeof {requestSchema}>
+    ): Promise<z.infer<typeof {responseSchema}>> {
+
+      // ============================================
+      // 步骤1：输入校验（铁律1：与后端完全一致）
+      // 使用契约定义的 Zod Schema 校验入参
+      // ============================================
+      const parsed = {requestSchema}.safeParse(req);
+      if (!parsed.success) {
+        throw new BusinessError(
+          'VALIDATION_ERROR',
+          parsed.error.errors.map(e => e.message).join(', ')
+        );
+      }
+
+      // ============================================
+      // 步骤2：网络延迟模拟（300-800ms 随机）
+      // 模拟真实网络环境，让用户体验到合理的响应时间
+      // ============================================
+      await delay(300, 800);
+
+      // ============================================
+      // 步骤3：随机错误模拟（5% 概率）
+      // 模拟服务器繁忙、网络抖动等异常场景
+      // ============================================
+      if (randomError(0.05)) {
+        throw new NetworkError('SERVER_BUSY', '服务器繁忙，请稍后重试');
+      }
+
+      // ============================================
+      // 步骤4：业务规则校验（逐条实现 BR）
+      // 每条 BR 对应一个 if/throw 校验分支
+      // ============================================
+      // BR-{MODULE}-001: {规则描述}
+      // if ({条件}) { throw new BusinessError('{ERROR_CODE}', '{用户可理解的消息}'); }
+
+      // BR-{MODULE}-002: {规则描述}
+      // if ({条件}) { throw new BusinessError('{ERROR_CODE}', '{用户可理解的消息}'); }
+
+      // ============================================
+      // 步骤5：数据库操作（铁律5：IndexedDB 持久化）
+      // 查询/新增/更新/删除 — 必须通过 simulatedDB
+      // ============================================
+      // const existing = await simulatedDB.{tableName}.where('{key}').equals(req.{key}).first();
+      // if (existing) { ... }
+      // await simulatedDB.{tableName}.put({ ... });
+
+      // ============================================
+      // 步骤6：返回响应（铁律1：Zod 校验输出结构）
+      // 确保返回数据与契约定义的响应 Schema 完全一致
+      // ============================================
+      return {responseSchema}.parse({
+        // 响应数据
+      });
+    }
+
+  # ============================================
+  # 生成检查清单（FD Agent 自检用）
+  # ============================================
+  checklist:
+    - id: "SIM-01"
+      item: "使用了请求 Schema 校验输入？（铁律1）"
+      check: "函数体第一步必须是 requestSchema.safeParse(req)"
+      fail_action: "补充 Zod 校验逻辑"
+    - id: "SIM-02"
+      item: "使用了响应 Schema 校验输出？（铁律1）"
+      check: "return 语句必须包裹 responseSchema.parse()"
+      fail_action: "补充出参 Zod 校验"
+    - id: "SIM-03"
+      item: "包含网络延迟模拟？（铁律3）"
+      check: "必须有 await delay(300, 800)"
+      fail_action: "补充延迟模拟"
+    - id: "SIM-04"
+      item: "包含随机错误？（铁律3）"
+      check: "必须有 randomError(0.05) 判断"
+      fail_action: "补充随机错误模拟"
+    - id: "SIM-05"
+      item: "数据持久化到 IndexedDB？（铁律5）"
+      check: "所有数据读写必须通过 simulatedDB"
+      fail_action: "替换内存操作为 simulatedDB 操作"
+    - id: "SIM-06"
+      item: "逐条实现了所有业务规则？（铁律3）"
+      check: "逐条对照 BR 文档，每条 BR 在 sim.ts 中有对应 if/throw 分支"
+      fail_action: "补充缺失的 BR 校验分支"
+    - id: "SIM-07"
+      item: "错误码与契约定义一致？（铁律1）"
+      check: "BusinessError 的第一个参数必须与契约中的错误码枚举值完全一致"
+      fail_action: "修正错误码为契约定义值"
+    - id: "SIM-08"
+      item: "错误消息用户可理解？"
+      check: "禁止技术术语，如 'NullPointerException'、'SQL Error'"
+      fail_action: "替换为用户可理解的中文消息"
+    - id: "SIM-09"
+      item: "函数签名与 real.ts 一致？"
+      check: "sim.ts 的每个导出函数必须在 real.ts 中存在相同签名的对应函数"
+      fail_action: "对齐函数签名"
+
+  # ============================================
+  # 业务规则翻译映射规则
+  # BR 自然语言 → sim.ts 代码模式
+  # ============================================
+  br_to_code_patterns:
+    - br_pattern: "如果.*不允许.*则"
+      code_pattern: "if ({条件}) { throw new BusinessError('{CODE}', '{消息}'); }"
+    - br_pattern: ".*必须.*否则"
+      code_pattern: "if (!{条件}) { throw new BusinessError('{CODE}', '{消息}'); }"
+    - br_pattern: ".*不能超过.*"
+      code_pattern: "if ({值} > {上限}) { throw new BusinessError('{CODE}', '{消息}'); }"
+    - br_pattern: ".*不能少于.*"
+      code_pattern: "if ({值} < {下限}) { throw new BusinessError('{CODE}', '{消息}'); }"
+    - br_pattern: ".*状态为.*时.*不能"
+      code_pattern: "if ({状态检查} && {操作检查}) { throw new BusinessError('{CODE}', '{消息}'); }"
+    - br_pattern: "连续.*次.*锁定"
+      code_pattern: "// 需配合 simulatedDB 记录失败次数，达到阈值后 throw BusinessError"
+
+  # ============================================
+  # 错误码命名规范
+  # ============================================
+  error_code_convention:
+    format: "{DOMAIN}_{ERROR_TYPE}"
+    examples:
+      - "AUTH_INVALID_CREDENTIALS  # 认证-无效凭据"
+      - "AUTH_ACCOUNT_LOCKED      # 认证-账户锁定"
+      - "ORDER_INSUFFICIENT_STOCK # 订单-库存不足"
+      - "ORDER_STATUS_CONFLICT    # 订单-状态冲突"
+      - "VALIDATION_ERROR         # 通用-参数校验失败"
+      - "SERVER_BUSY              # 通用-服务器繁忙"
+      - "RESOURCE_NOT_FOUND       # 通用-资源不存在"
+    rules:
+      - "必须全大写，单词用下划线分隔"
+      - "第一段为业务域（AUTH/ORDER/GOODS/PAYMENT 等）"
+      - "第二段为具体错误类型"
+      - "必须与 Arch Agent 契约中的错误码枚举完全一致"

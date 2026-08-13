@@ -1,0 +1,1 @@
+import{c as n,a as s,r as t,e as o,_ as i}from"./index-h3gY0C-q.js";const c="real";console.log(`[SAAS Audit Prototype] 运行模式: ${c} | 终端: 运营后台`);const a=n(i),p=s();a.use(p);a.use(t);a.use(o);t.isReady().then(()=>{const e=window.location.hash;(e===""||e==="#/"||e==="#/index.html"||e==="#/tenant/")&&t.replace("/admin/tenant")});a.mount("#app");

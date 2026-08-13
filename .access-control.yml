@@ -1,0 +1,111 @@
+# .access-control.yml — 访问控制配置（管理员维护）
+# V1.2.0 — 按项目隔离（不按owner），成员可访问多个项目
+# ============================================
+version: "1.2.0"
+
+# ============================================
+# 当前用户识别方式（优先级从高到低）
+# ============================================
+user_identification:
+  - env_var: "CODEBUDDY_USER"
+  - git_config: "user.name"
+  - fallback: "admin"
+
+# ============================================
+# 成员注册表
+# ============================================
+members:
+  - id: "jojo"
+    name: "Jojo"
+    git_name: "jojo"
+    role: "admin"
+    accessible_projects: ["SAAS-APP", "AI-SCRM", "SAAS", "SugarMate"]    # V1.2.0: 可访问的项目列表（支持跨项目协作）
+
+  - id: "Eltonliz"
+    name: "李政"
+    git_name: "Eltonliz"
+    role: "member"
+    accessible_projects: ["SAAS-APP", "SAAS", "AI-SCRM"]
+
+  - id: "linjinmei"
+    name: "林金梅"
+    git_name: "linjinmei"
+    role: "member"
+    accessible_projects: ["SAAS-APP", "SAAS"]
+
+  - id: "fuyongjian"
+    name: "付永健"
+    git_name: "fuyongjian"
+    role: "member"
+    accessible_projects: ["SAAS-APP", "AI-SCRM", "SAAS", "SugarMate"]
+
+  - id: "jiangrubin"
+    name: "江如彬"
+    git_name: "jiangrubin"
+    role: "member"
+    accessible_projects: ["SAAS-APP", "AI-SCRM", "SAAS", "SugarMate"]
+
+  - id: "zhuangjingxiang"
+    name: "庄景翔"
+    git_name: "zhuangjingxiang"
+    role: "member"
+    accessible_projects: ["SAAS-APP", "SAAS"]
+
+# ============================================
+# 权限边界定义
+# ============================================
+permission_boundary:
+  admin:
+    can_read: ["**"]
+    can_write: ["**"]
+    can_execute: ["**"]
+    description: "管理员全权访问所有目录"
+
+  member:
+    can_read:
+      - ".codebuddy/knowledge/domains/**"
+      - ".codebuddy/knowledge/common/经验库/**"
+      - ".codebuddy/knowledge/PROJECT-INDEX.yml"
+      - ".codebuddy/knowledge/projects/{accessible_project}/**"  # 自己被授权的项目知识
+      - "projects/{accessible_project}/**"                        # 自己被授权的项目代码
+    can_write:
+      - "projects/{accessible_project}/**"                        # 只能写被授权的项目
+    can_execute:
+      - "/brainstorm"
+      - "/init"
+      - "/learn-project"
+      - "/learn-domain"
+      - "/test"
+      - "/accept"
+      - "/feedback"
+      - "/close"
+      - "/report"
+      - "/handoff"
+      - "/deploy"
+    forbidden:
+      - ".codebuddy/configs/**"
+      - ".codebuddy/scripts/**"
+      - ".codebuddy/knowledge/common/**"
+      - "deploy/**"
+      - ".access-control.yml"
+    description: "成员只能访问被授权的项目和共享知识库，不可见流程引擎"
+
+# ============================================
+# 权限执行机制
+# ============================================
+enforcement:
+  logic_level:
+    - "CodeBuddy 启动时读取此文件，确定当前用户角色"
+    - "成员角色的 AI 根据 accessible_projects 列表确定可访问的项目"
+    - "成员可被授权访问多个项目（跨项目协作）"
+    - "执行命令时 --project 参数必须在 accessible_projects 列表中"
+
+# ============================================
+# 知识库贡献审核
+# ============================================
+knowledge_review:
+  enabled: true
+  pending_dirs:
+    - ".codebuddy/knowledge/domains/_pending/"
+    - ".codebuddy/knowledge/common/经验库/_pending/"
+  review_command: "/approve-knowledge"

@@ -1,0 +1,251 @@
+# ============================================
+# 医疗器械注册领域知识 v1.0.0
+# 分类：medical
+# 学习日期：2026-07-27
+# 学习方法：traditional（基于NMPA公开法规+CMDE审评指导原则的文本学习）
+# 来源：NMPA注册管理办法+CMDE CGM审评指导原则（2023修订版）+医疗器械分类目录
+# ============================================
+
+domain:
+  name: "医疗器械注册"
+  category: "medical"
+  version: "v1.0.0"
+  learned_at: "2026-07-27"
+  learning_method: "traditional"
+  source_urls:
+    - "https://zwfw.nmpa.gov.cn/web/taskview/11100000MB0341032Y100017214300101"
+    - "https://www.cnpharm.com/upload/resources/file/2023/07/18/141594.pdf"
+    - "https://chines.org.cn/guiding-principles-for-medicaldevices/cxpttjcxtz/"
+    - "https://www.sohu.com/a/1005811275_121824620"
+    - "https://www.nifdc.org.cn/nifdc/xxgk/sjcx/ylqxfl/index.html"
+  description: "中国医疗器械实行分类注册管理制度，I类备案、II类省级注册、III类国家局（NMPA）注册。持续葡萄糖监测系统（CGM）属于第三类医疗器械，需通过临床试验验证安全性和有效性后方可上市。"
+  curation_policy: "保留：医疗器械三级分类规则、CGM注册审查要点（临床试验要求、性能指标、技术文档清单）、注册流程关键节点、证书有效期与延续。过滤：具体代理代办服务推广、非CGM相关器械的审评细节。"
+  status: "draft"
+
+  # ============================================
+  # 角色清单
+  # ============================================
+  domain_roles:
+    - role_id: "ROLE-器械注册-001"
+      name: "医疗器械注册申请人"
+      type: "integrator"
+      core_need: "高效获取NMPA注册证书，产品合规上市"
+      serves: ["患者/医疗机构"]
+
+    - role_id: "ROLE-器械注册-002"
+      name: "NMPA（国家药品监督管理局）"
+      type: "regulator"
+      core_need: "确保医疗器械安全有效，保护公众健康"
+      serves: ["患者"]
+
+    - role_id: "ROLE-器械注册-003"
+      name: "CMDE（器审中心）"
+      type: "regulator"
+      core_need: "按指导原则进行技术审评，确保申请材料合规"
+      serves: ["NMPA", "注册申请人"]
+
+    - role_id: "ROLE-器械注册-004"
+      name: "临床试验机构"
+      type: "beneficiary"
+      core_need: "按GCP规范完成临床试验，出具有效的临床试验报告"
+      serves: ["注册申请人"]
+
+    - role_id: "ROLE-器械注册-005"
+      name: "检验检测机构"
+      type: "beneficiary"
+      core_need: "出具权威的注册检验报告（性能、电气安全、EMC等）"
+      serves: ["注册申请人"]
+
+  # ============================================
+  # 商业问题清单
+  # ============================================
+  business_problems:
+    - id: "BP-器械注册-001"
+      problem: "CGM（持续葡萄糖监测系统）作为最高风险等级器械，注册周期长、投入大"
+      pain_point: "III类器械从立项到获证通常需2-3年，临床试验成本300万+，中小创新企业难以承受"
+      value: "按审评指导原则精准准备材料，减少发补轮次，缩短审评周期"
+      evidence: "CMDE 2023年修订版CGM注册审查指导原则提供了标准化技术要求和性能指标框架"
+      priority: "high"
+      priority_rationale: "糖友之家如要「预留自研CGM」功能，需了解注册门槛和周期"
+      scrm_relevance: "影响CGM硬件集成决策——自研vs对接已有NMPA获批产品"
+      related_roles: ["ROLE-器械注册-001"]
+      related_problems: ["BP-器械注册-002"]
+
+    - id: "BP-器械注册-002"
+      problem: "医疗器械分类界定模糊——新技术/新产品无明确分类导致注册路径不确定"
+      pain_point: "分类错误导致注册材料白做，需从头重来"
+      value: "明确知晓三类分类标准，提前做好分类界定申请"
+      evidence: "《医疗器械分类规则》明确按风险三档管理；CGM明确为III类"
+      priority: "medium"
+      priority_rationale: "CGM分类已明确（III类），但新型传感器技术可能存在分类争议"
+
+    - id: "BP-器械注册-003"
+      problem: "证书到期后续流程——5年有效期届满需延续注册"
+      pain_point: "延续注册不及时导致产品被迫停产"
+      value: "提前6个月启动延续注册，确保持续合规生产"
+      evidence: "注册证有效期5年，需在届满前6个月提交延续注册申请"
+      priority: "medium"
+      priority_rationale: "长期运营需要的合规意识"
+
+  # ============================================
+  # 1. 业务泳道图
+  # ============================================
+  swimlane:
+    roles: ["注册申请人", "检验机构", "临床试验机构", "CMDE", "NMPA"]
+    stages: ["分类界定", "注册检验", "临床试验", "提交申请", "技术审评", "行政审批", "获证上市", "上市后监管"]
+
+    actions:
+      - role: "注册申请人"
+        stage: "分类界定"
+        action: "判断产品属于I类/II类/III类→如不明确可向标管中心申请分类界定"
+        input: "产品原理、预期用途、结构组成"
+        output: "分类结果（如CGM=III类）"
+        sources: ["医疗器械分类规则", "分类目录"]
+
+      - role: "检验机构"
+        stage: "注册检验"
+        action: "按产品技术要求进行性能、电气安全（GB 9706）和EMC检验"
+        input: "样机+产品技术要求"
+        output: "注册检验报告"
+        sources: ["CGM注册审查指导原则 2023"]
+
+      - role: "临床试验机构"
+        stage: "临床试验"
+        action: "多中心临床试验→验证CGM准确度（MARD值）、安全性、有效性"
+        input: "临床试验方案+伦理批件"
+        output: "临床试验报告"
+        sources: ["CGM注册审查指导原则 2023"]
+
+      - role: "注册申请人"
+        stage: "提交申请"
+        action: "整理注册申请资料→eRPS系统在线提交→缴纳审评费"
+        input: "全套注册资料"
+        output: "受理通知书"
+        sources: ["NMPA政务服务门户"]
+
+      - role: "CMDE"
+        stage: "技术审评"
+        action: "形式审查→立卷审查→技术审评→发补（如有）→补充资料审评"
+        input: "注册申请资料"
+        output: "审评报告（通过/不通过/补充资料）"
+        sources: ["CGM注册审查指导原则 2023"]
+
+      - role: "NMPA"
+        stage: "行政审批"
+        action: "行政审批→制证→颁发医疗器械注册证"
+        input: "审评通过结论"
+        output: "医疗器械注册证（有效期5年）"
+        sources: ["NMPA注册管理办法"]
+
+      - role: "注册申请人"
+        stage: "上市后监管"
+        action: "不良事件监测+定期风险评价报告+变更注册（如需）+延续注册"
+        input: "上市后数据"
+        output: "定期报告"
+        sources: ["医疗器械不良事件监测管理办法"]
+
+  # ============================================
+  # 2. 业务流程图
+  # ============================================
+  flow:
+    happy_path: "分类界定(III类)→注册检验(性能+安全+EMC)→临床试验(多中心)→eRPS提交→立卷审查(5工作日)→技术审评(法定90工作日)→发补(如有)→补充资料→行政审批(20工作日)→获证(5年有效期)→延续注册(届满前6个月)"
+    exceptions:
+      - desc: "发补（补充资料通知）：CMDE列出不足项→申请人1年内补充→补正后技术审评（60工作日）→通过/二次发补/不通过"
+        sources: ["NMPA注册管理办法"]
+      - desc: "临床试验豁免情形：列入《免于临床试验医疗器械目录》的产品可免临床试验，但仍需临床评价"
+        sources: ["免于临床试验医疗器械目录"]
+      - desc: "创新医疗器械特别审批：创新性强且国内无同类产品的器械可申请绿色通道→审评优先→审批加速"
+        sources: ["创新医疗器械特别审批程序"]
+    branches:
+      - desc: "II类器械流程：省级药监局注册→流程类似但审评周期更短→不需国家局审批"
+        sources: ["医疗器械分类管理"]
+
+  # ============================================
+  # 3. 业务信息流
+  # ============================================
+  info_flow:
+    entities:
+      - name: "产品技术要求"
+        producer: "注册申请人"
+        consumer: "检验机构、CMDE"
+        depends_on: "分类界定结果+产品设计定型"
+        sources: ["CGM注册审查指导原则 2023"]
+
+      - name: "注册检验报告"
+        producer: "检验机构"
+        consumer: "CMDE"
+        depends_on: "样机+产品技术要求"
+        sources: ["NMPA注册管理办法"]
+
+      - name: "临床试验报告"
+        producer: "临床试验机构"
+        consumer: "CMDE"
+        depends_on: "临床试验方案经伦理委员会批准+完成所有随访"
+        sources: ["CGM注册审查指导原则 2023"]
+
+      - name: "医疗器械注册证"
+        producer: "NMPA"
+        consumer: "注册申请人"
+        depends_on: "全部审评通过"
+        sources: ["NMPA注册管理办法"]
+
+    cross_system: "eRPS线上注册系统↔CMDE审评系统↔NMPA行政审批系统↔UDI唯一标识数据库"
+
+  # ============================================
+  # 4. 业务操作矩阵（角色×状态×操作）
+  # ============================================
+  operation_matrix:
+    roles: ["注册申请人", "CMDE", "NMPA"]
+    states: ["分类界定中", "注册检验中", "临床试验中", "申请已受理", "技术审评中", "发补中", "行政审批中", "已获证", "已过期", "延续注册中"]
+
+    matrix:
+      - role: "CMDE"
+        state: "技术审评中"
+        operations: ["形式审查", "立卷审查", "技术审评", "发出发补通知", "组织专家评审"]
+        sources: ["NMPA注册管理办法"]
+
+      - role: "注册申请人"
+        state: "发补中"
+        operations: ["分析发补意见", "补充研究/数据", "提交补正资料"]
+        sources: ["NMPA注册管理办法"]
+
+      - role: "NMPA"
+        state: "行政审批中"
+        operations: ["审核审评结论", "做出审批决定", "制证颁证"]
+        sources: ["NMPA注册管理办法"]
+
+      - role: "注册申请人"
+        state: "已获证"
+        operations: ["合规生产", "不良事件监测", "变更注册（设计/工艺/原材料变更）", "延续注册（到期前6个月）"]
+        sources: ["NMPA上市后监管"]
+
+  # ============================================
+  # 5. 解决方案概括
+  # ============================================
+  solution:
+    patterns:
+      - desc: "CGM注册审查指导原则（2023修订版）——CMDE提供了标准化的产品技术要求框架和临床试验设计指南，申请企业可按此逐项准备"
+        sources: ["CGM注册审查指导原则 2023"]
+
+      - desc: "eRPS电子提交——注册申请全部在线提交，减少纸质材料往返，进度实时可查"
+        sources: ["NMPA eRPS系统"]
+
+      - desc: "创新器械绿色通道——国内首创、核心技术有发明专利的器械可申请特别审批，审评优先处理"
+        sources: ["创新医疗器械特别审批程序"]
+
+    tech_considerations:
+      - desc: "CGM核心性能指标：MARD值（平均绝对相对偏差）、20/20%一致率、Clarke误差网格分析、传感器稳定性（7-14天佩戴精度）"
+        sources: ["CGM注册审查指导原则 2023"]
+
+      - desc: "注册证书5年有效期→成熟产品对接已有获证CGM（如雅培瞬感、美敦力Guardian、硅基、微泰等）比自研CGM更具实操性"
+        sources: ["NMPA注册管理办法+行业实践推导"]
+
+    best_practices:
+      - desc: "对接已有注册CGM：优先选择NMPA已获批的CGM品牌，通过API/蓝牙协议对接，避免自研注册的时间成本（2-3年）和资金成本（300万+）"
+        sources: ["NMPA注册管理办法+行业实践推导"]
+
+      - desc: "如未来自研CGM：建议先完成专利申请→分类界定确认（III类）→注册检验→启动临床试验（至少2家临床机构）→提交eRPS"
+        sources: ["CGM注册审查指导原则 2023"]
+
+      - desc: "Q-器械注册-001 糖友之家CGM对接策略：优先对接NMPA已获批CGM硬件（如硅基、雅培瞬感），在平台提供数据同步与展示，自研CGM作为长期规划"
+        sources: ["SugarMate脑暴v5.0 D7决策+本领域知识推导"]

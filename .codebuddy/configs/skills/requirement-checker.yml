@@ -1,0 +1,239 @@
+# ============================================
+# Skill: requirement-checker（需求对照验收器）
+# 所属 Agent: AC Agent（验收交付）
+# 版本: v2.0.0
+# 最后更新: 2026-07-15
+# ============================================
+#
+# AC Agent 专家视角：
+#   需求对照验收器是 AC Agent 的「标尺」——逐条对照 POM/需求文档中的 User Story
+#   与仿真系统的实际行为，判定每个 User Story 的验收通过/失败。
+#   这不是「大概看看」，而是逐条走查：Happy Path、Ugly Path、Corner Case 全覆盖。
+#   验收失败直接生成 Bug 条目，回流到 PM → BA → dev→test→accept 闭环。
+#
+# 核心原则：
+#   1. 以 User Story 为验收单元，逐条对照
+#   2. 每个 Story 至少验证 Happy Path + 2 个 Ugly Path + 1 个 Corner Case
+#   3. 验收不通过 = 生成 Bug（非"建议"），进入缺陷回流
+#   4. 错误提示必须用户可理解（非技术术语）
+#   5. 操作必须有合理反馈（加载态、成功态、失败态）
+#
+# 触发时机：AC Agent 验收阶段自动触发
+# 前置依赖：BA Agent 的 User Story 列表 + QA Agent 的测试报告
+# 后置输出：验收报告 + Bug 列表（不通过项）
+# ============================================
+
+skill:
+  name: requirement-checker
+  id: "SKL-AC-REQCHECK"
+  version: "2.0.0"
+  owner: "ac-agent"
+  category: "acceptance"
+  description: |
+    AC Agent 的需求对照验收器。
+    逐条对照 POM/需求文档中的 User Story 与仿真系统的实际行为，
+    覆盖 Happy Path、Ugly Path、Corner Case，生成验收报告和 Bug 列表。
+    验收不通过项自动进入缺陷回流闭环。
+  triggers:
+    - event: "acceptance_started"
+      auto: true
+      description: "AC Agent 验收阶段启动时自动触发"
+    - event: "qa_report_received"
+      auto: true
+      description: "收到 QA Agent 测试报告后触发逐条验收"
+  inputs:
+    - name: "user_stories"
+      source: "ba-agent"
+      path: "projects/{project}/docs/01-requirements/user-stories/{module}/"
+      format: "Markdown"
+      required: true
+      description: "BA Agent 产出的 User Story 列表（含 Happy/Ugly/Corner Case 描述）"
+    - name: "pom_document"
+      source: "ba-agent"
+      path: "projects/{project}/pom/{module}/"
+      format: "Markdown"
+      required: true
+      description: "BA Agent 产出的 POM 需求文档（含 UC/FN/BR 完整定义）"
+    - name: "qa_report"
+      source: "qa-agent"
+      path: "projects/{project}/docs/04-testing/reports/"
+      format: "JSON"
+      required: false
+      description: "QA Agent 的测试报告（含已知 Bug，避免重复提交）"
+  workflow:
+    - step: "load_user_stories"
+      action: "从 BA 产物中加载完整的 User Story 列表（含 Happy/Ugly/Corner Case）"
+    - step: "load_qa_report"
+      action: "加载 QA 测试报告，标记已知 Bug 的 Story 为「已知问题待修复」"
+    - step: "verify_happy_path"
+      action: "对每个未标记的 Story，在仿真系统中走查 Happy Path"
+    - step: "verify_ugly_paths"
+      action: "对每个 Story，验证至少 2 个 Ugly Path（错误输入/异常操作）"
+    - step: "verify_corner_cases"
+      action: "对每个 Story，验证至少 1 个 Corner Case（边界条件）"
+    - step: "check_error_messages"
+      action: "检查所有错误提示是否用户可理解（禁止技术术语）"
+    - step: "check_feedback"
+      action: "检查所有操作是否有合理反馈（加载/成功/失败）"
+    - step: "generate_report"
+      action: "生成验收报告 + Bug 列表"
+
+  # ============================================
+  # 验收方法：逐条对照模板
+  # ============================================
+  verification_template: |
+    ## 验收：{US-ID} {Story 标题}
+
+    **需求描述**：{Story 原文描述}
+
+    ### Happy Path 验证
+    1. {步骤1} [✅/❌]
+    2. {步骤2} [✅/❌]
+    3. {步骤3} [✅/❌]
+    ...
+    **Happy Path 结果**：[✅ 通过 / ❌ 不通过]
+
+    ### Ugly Path 验证
+    #### Ugly Path 1: {异常场景1}
+    1. {步骤} [✅/❌]
+    2. {步骤} [✅/❌]
+    **结果**：[✅/❌]
+
+    #### Ugly Path 2: {异常场景2}
+    1. {步骤} [✅/❌]
+    2. {步骤} [✅/❌]
+    **结果**：[✅/❌]
+
+    ### Corner Case 验证
+    #### Corner Case: {边界场景}
+    1. {步骤} [✅/❌]
+    **结果**：[✅/❌]
+
+    ### 错误提示可理解性
+    - {错误场景1}: "{实际错误消息}" → [可理解 / ❌ 技术术语]
+    - {错误场景2}: "{实际错误消息}" → [可理解 / ❌ 技术术语]
+
+    ### 操作反馈完整性
+    - 加载态：[有反馈 / ❌ 无反馈]
+    - 成功态：[有反馈 / ❌ 无反馈]
+    - 失败态：[有反馈 / ❌ 无反馈]
+
+    ---
+    **最终结果**：[✅ 通过 / ❌ 不通过]
+    {若不通过：Bug ID: BUG-ACCEPT-{YYYYMMDD}-{NNN}，严重程度: {high|medium|low}}
+
+  # ============================================
+  # 强制检查清单（每个 Story 必须逐项检查）
+  # ============================================
+  checklist:
+    - id: "AC-01"
+      item: "Happy Path 是否完整可走通？"
+      check: "从入口到出口全链路无阻断"
+      fail_action: "记录阻断点，生成 Bug"
+    - id: "AC-02"
+      item: "Ugly Path 是否都有对应的错误提示？"
+      check: "每个异常操作都有明确的用户可理解错误提示"
+      fail_action: "记录缺少错误提示的异常场景，生成 Bug"
+    - id: "AC-03"
+      item: "Corner Case 是否都有合理的处理？"
+      check: "边界条件不会导致崩溃、白屏、死循环"
+      fail_action: "记录 Corner Case 处理缺陷，生成 Bug"
+    - id: "AC-04"
+      item: "错误提示是否用户可理解（非技术术语）？"
+      check: |
+        禁止出现：500 Internal Server Error、TypeError、NullPointerException、
+        SQL Error、Network Error（无上下文）、undefined、NaN
+      fail_action: "标记为「错误提示不可理解」，生成 Bug"
+    - id: "AC-05"
+      item: "操作是否有合理的反馈？"
+      check: "每个用户操作必须有加载态（按钮禁用+loading图标）、成功提示、失败提示"
+      fail_action: "记录缺少反馈的操作，生成 Bug"
+    - id: "AC-06"
+      item: "数据一致性是否保持？"
+      check: "操作后页面数据与操作结果一致（如删除后列表不再显示该项）"
+      fail_action: "记录数据不一致问题，生成 Bug"
+
+  # ============================================
+  # 多人模拟验收角色配置（四人模拟）
+  # 由 config.yml → acceptance.personas 定义
+  # 本 Skill 负责按角色执行对应场景的验收
+  # ============================================
+  persona_verification:
+    new_user:
+      role: "新用户"
+      scenario: "empty"
+      focus:
+        - "首次使用体验是否流畅"
+        - "空状态引导是否清晰"
+        - "新手引导是否完整"
+        - "注册/登录流程是否顺畅"
+    vip_user:
+      role: "VIP用户"
+      scenario: "dense"
+      focus:
+        - "大数据量下的性能表现"
+        - "批量操作的可用性"
+        - "高级功能的易用性"
+        - "数据加载速度"
+    admin:
+      role: "管理员"
+      scenario: "normal"
+      focus:
+        - "管理功能的完整性"
+        - "权限控制的正确性"
+        - "审批流程的合规性"
+        - "数据看板的准确性"
+
+  # ============================================
+  # 输出格式
+  # ============================================
+  output_format:
+    schema: |
+      {
+        "acceptance_id": "AC-{stream_id}-{timestamp}",
+        "module": "{module_name}",
+        "agent": "ac-agent",
+        "persona": "{当前模拟角色}",
+        "timestamp": "ISO-8601",
+        "total_stories": {Story总数},
+        "passed": {通过数},
+        "failed": {失败数},
+        "skipped": {跳过数（已知Bug）},
+        "coverage_rate": "{通过数/总数 * 100}%",
+        "bugs": [
+          {
+            "bug_id": "BUG-ACCEPT-{YYYYMMDD}-{NNN}",
+            "user_story": "{US-ID}",
+            "title": "{Bug标题}",
+            "description": "{详细描述}",
+            "expected": "{预期行为}",
+            "actual": "{实际行为}",
+            "severity": "high|medium|low",
+            "persona": "{发现角色}",
+            "checklist_item": "{对应检查项 ID}"
+          }
+        ],
+        "summary": {
+          "happy_path_pass_rate": "{Happy Path 通过率}",
+          "ugly_path_pass_rate": "{Ugly Path 通过率}",
+          "corner_case_pass_rate": "{Corner Case 通过率}",
+          "error_message_readability": "{错误提示可理解性评分}",
+          "feedback_completeness": "{操作反馈完整度评分}"
+        }
+      }
+
+  # ============================================
+  # 错误提示可理解性判定标准
+  # ============================================
+  error_message_standards:
+    acceptable_patterns:
+      - "包含具体操作指引（如'请稍后重试''请联系管理员'）"
+      - "使用用户能理解的业务语言"
+      - "明确指出问题所在（如'用户名不能为空'）"
+    unacceptable_patterns:
+      - "包含技术栈名称（React、TypeScript、Zod）"
+      - "包含 HTTP 状态码裸数字（500、404）"
+      - "包含异常类名（TypeError、NullPointerException）"
+      - "包含未翻译的英文错误信息"
+      - "包含 undefined、null、NaN 等编程语言值"
+      - "过于笼统无帮助（如仅显示'错误'二字）"

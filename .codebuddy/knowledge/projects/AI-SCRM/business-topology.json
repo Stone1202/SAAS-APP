@@ -1,0 +1,96 @@
+{
+  "version": "v2.0.0",
+  "updated": "2026-07-18",
+  "change_note": "v2.0.0：从抽象模块分类→真实业务流程。SOP不再作为独立模块，能力分散嵌入沟通过程。核心业务流程重新定义为「一条客户沟通」的全流程闭环。",
+
+  "platforms": ["PC", "Mobile H5", "Mobile APP"],
+
+  "systems": {
+    "tenant": {
+      "name": "租户后台",
+      "users": ["租户管理员", "销售经理", "销售坐席", "客服", "运营专员"],
+      "terminals": ["PC", "Mobile H5", "Mobile APP"]
+    },
+    "operator": {
+      "name": "运营后台",
+      "users": ["平台管理员", "CSM客户成功", "平台财务"],
+      "terminals": ["PC"]
+    }
+  },
+
+  "processes": [
+    {
+      "id": "P-01",
+      "name": "客户沟通全流程（核心闭环）",
+      "system": "租户后台",
+      "description": "一条客户沟通的完整链路：触达→沟通中AI辅助→沟通后AI处理→跟进→再触达",
+      "modules": ["客户管理", "统一沟通", "AI沟通辅助"],
+      "terminals": ["PC"]
+    },
+    {
+      "id": "P-02",
+      "name": "客户画像持续丰富",
+      "system": "租户后台",
+      "description": "每次沟通自动更新客户画像：标签提取、意向评分、情绪趋势、购买偏好",
+      "modules": ["客户管理", "AI沟通辅助"],
+      "terminals": ["PC"]
+    },
+    {
+      "id": "P-03",
+      "name": "跟进执行与成交转化",
+      "system": "租户后台",
+      "description": "从待办→日历排程→执行跟进→再次沟通→成交转化的循环",
+      "modules": ["跟进管理", "统一沟通", "数据看板"],
+      "terminals": ["PC"]
+    },
+    {
+      "id": "P-04",
+      "name": "销售团队管理与绩效",
+      "system": "租户后台",
+      "description": "权限分配、数据域隔离、沟通质检、绩效排名",
+      "modules": ["团队管理", "数据看板"],
+      "terminals": ["PC"]
+    },
+    {
+      "id": "P-05",
+      "name": "租户全生命周期管理",
+      "system": "运营后台",
+      "description": "注册→审核→试用→付费→续费→到期→流失挽回",
+      "modules": ["租户管理", "版本与定价", "订阅与账单"],
+      "terminals": ["PC"]
+    },
+    {
+      "id": "P-06",
+      "name": "SAAS营收与AI计费",
+      "system": "运营后台",
+      "description": "版本订阅收入+AI用量计费+资源增购+营收分析",
+      "modules": ["订阅与账单", "AI用量管理", "营收分析"],
+      "terminals": ["PC"]
+    },
+    {
+      "id": "P-07",
+      "name": "移动办公场景",
+      "system": "租户后台",
+      "description": "外勤时查看客户、处理待办、回复消息",
+      "modules": ["工作台", "客户管理", "跟进管理"],
+      "terminals": ["Mobile H5", "Mobile APP"]
+    }
+  ],
+
+  "modules": [
+    {"id": "M-T-WB", "system": "租户后台", "name": "工作台", "description": "今日概览、待办、消息、快捷入口", "version_required": "全版本"},
+    {"id": "M-T-CM", "system": "租户后台", "name": "客户管理", "description": "客户档案、标签体系、360视图、分群管理", "version_required": "全版本"},
+    {"id": "M-T-CC", "system": "租户后台", "name": "统一沟通", "description": "企微聊天/电话/短信/邮件 + 沟通记录归档", "version_required": "全版本"},
+    {"id": "M-T-AI", "system": "租户后台", "name": "AI沟通辅助", "description": "沟通中：话术推荐/情绪监控/商品推荐/意图识别。沟通后：总结/质检/画像更新/跟进生成", "version_required": "专业版+"},
+    {"id": "M-T-FU", "system": "租户后台", "name": "跟进管理", "description": "统一待办中心 + 跟进日历 + 销售漏斗", "version_required": "全版本"},
+    {"id": "M-T-DB", "system": "租户后台", "name": "数据看板", "description": "沟通分析/转化漏斗/员工绩效", "version_required": "基础版+"},
+    {"id": "M-T-TM", "system": "租户后台", "name": "团队管理", "description": "成员管理、RBAC角色、数据域权限、字段权限", "version_required": "基础版+"},
+    {"id": "M-T-SS", "system": "租户后台", "name": "系统设置", "description": "行业模板、通知配置、API密钥", "version_required": "全版本"},
+    {"id": "M-O-OW", "system": "运营后台", "name": "运营工作台", "description": "KPI总览、预警列表、租户健康度分布"},
+    {"id": "M-O-TM", "system": "运营后台", "name": "租户管理", "description": "租户全生命周期、健康度评分、分层运营"},
+    {"id": "M-O-VP", "system": "运营后台", "name": "版本与定价", "description": "功能矩阵配置、定价策略、促销管理"},
+    {"id": "M-O-SB", "system": "运营后台", "name": "订阅与账单", "description": "订单管理、退款审批、发票管理"},
+    {"id": "M-O-AU", "system": "运营后台", "name": "AI用量管理", "description": "AI调用统计、Token消耗、按量计费"},
+    {"id": "M-O-RA", "system": "运营后台", "name": "营收分析", "description": "MRR/ARR、续费率、LTV/CAC、四象限"}
+  ]
+}

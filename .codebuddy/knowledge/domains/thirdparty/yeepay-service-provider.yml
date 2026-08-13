@@ -1,0 +1,1423 @@
+# ============================================
+# 领域知识：易宝服务商（Yeepay Service Provider）
+# 分类：thirdparty（第三方）> 品牌：易宝（Yeepay）
+# 版本：v3.0.0（V2.1.0 + SDL V1.0.0场景驱动学习：domain_roles + business_problems + scenario_maps + cross_domain_bridges + role_perspectives）
+# 创建日期：2026-07-17
+# 更新日期：2026-07-20（V3.0.0 SDL四层结构新增）
+# 来源：
+#   - https://open.yeepay.com/docs/products/fwssfk/guide/development-tips （开发指南）
+#   - https://open.yeepay.com/docs/products/fwssfk/api/options__rest__v2.0__mer__register__saas__merchant （API列表入口）
+# 学习方式：/learn-domain V2.1.0（增量学习，--deep-params自动启用）→ SDL V1.0.0 场景驱动结构化增强
+# 抓取方式：agent-browser（JavaScript动态渲染页面，web_fetch降级）
+# ============================================
+
+domain:
+  name: "易宝服务商"
+  category: "thirdparty"
+  brand: "易宝（Yeepay）"
+  product_code: "fwssfk"
+  version: "3.0.0"
+  created_at: "2026-07-17"
+  updated_at: "2026-07-20"
+  learning_method: "scenario_driven_v1.0.0"
+  sources:
+    - url: "https://open.yeepay.com/docs/products/fwssfk/guide/development-tips"
+      type: "https"
+      title: "易宝服务商开放平台-开发指南"
+      fetched_at: "2026-07-17"
+      fetch_method: "agent-browser"
+    - url: "https://open.yeepay.com/docs/products/fwssfk/api/options__rest__v2.0__mer__register__saas__merchant"
+      type: "https"
+      title: "易宝服务商-API列表入口（特约商户入网）"
+      fetched_at: "2026-07-17"
+      fetch_method: "agent-browser（展开左侧导航获取全部150+API；V2.1.0增量：逐个点击入网类6个API提取参数详情）"
+
+  # ============================================
+  # SDL V1.0.0: Scenario-Driven Learning 四层结构（v3.0.0 新增）
+  # 面向BA需求分析的场景化领域知识，强化跨域桥接与角色视角
+  # ============================================
+
+  # --- Layer 1: 领域角色（角色身份与职责） ---
+  domain_roles:
+    - role_id: "DR-YP-001"
+      role_name: "SaaS服务商"
+      role_type: "integrator"
+      description: "使用易宝服务商开放API为特约商户提供支付能力的SaaS平台，负责商户入驻、交易管理、资金清算等全流程。在SCRM场景中，SaaS服务商将支付能力嵌入经营闭环，为商户提供收款、对账、退款等一站式服务。"
+      key_responsibilities:
+        - "特约商户入驻管理（入网/变更/解冻）"
+        - "调用易宝API完成资金收付（充值/转账/提现/付款）"
+        - "聚合支付收银台集成与运营"
+        - "渠道报备与实名认证管理"
+        - "投诉工单处理与退款审核"
+        - "记账簿管理与资金流水监控"
+      api_scope: "全部150+API的调用方"
+
+    - role_id: "DR-YP-002"
+      role_name: "特约商户"
+      role_type: "user"
+      description: "通过SaaS服务商接入易宝支付的实际经营主体（企业/个体/小微），使用服务商提供的支付功能完成收款、退款、提现等操作。在SCRM场景中，特约商户是SaaS平台的核心客户，其支付体验直接影响平台留存。"
+      key_responsibilities:
+        - "提供入网资质材料（营业执照/法人身份/结算账户）"
+        - "在SaaS平台发起收款/退款/提现"
+        - "查看交易流水与资金余额"
+        - "签署入网协议与意愿认证"
+      api_scope: "通过SaaS服务商间接使用，不直接调用API"
+
+    - role_id: "DR-YP-003"
+      role_name: "消费者"
+      role_type: "end_user"
+      description: "在特约商户处消费的最终用户，通过聚合支付（微信/支付宝/银联）完成付款。在SCRM场景中，消费者的支付体验（成功率、退款时效、投诉响应）直接影响商户满意度和平台口碑。"
+      key_responsibilities:
+        - "扫码/线上完成支付"
+        - "发起退款申请"
+        - "提交支付投诉"
+      api_scope: "不直接调用API，通过支付渠道间接交互"
+
+    - role_id: "DR-YP-004"
+      role_name: "易宝平台"
+      role_type: "platform"
+      description: "提供支付基础设施的清算平台，负责商户资质审核、资金清算、异步通知、风控等核心能力。对外暴露150+ REST API，采用RSA签名+敏感字段加密的安全机制。"
+      key_responsibilities:
+        - "商户资质审核与开户"
+        - "资金清算与结算"
+        - "异步通知服务商业务结果"
+        - "风控与合规管理"
+        - "密钥管理与安全认证"
+      api_scope: "全部API的服务端实现"
+
+    - role_id: "DR-YP-005"
+      role_name: "银行/支付渠道"
+      role_type: "channel"
+      description: "底层支付渠道（微信支付/支付宝/银联/网银），负责实际的资金流转。易宝作为聚合层，统一对接各渠道，SaaS服务商只需对接易宝即可获得全渠道支付能力。"
+      key_responsibilities:
+        - "实际资金扣款与清算"
+        - "渠道实名认证与报备"
+        - "渠道投诉工单生成与反馈"
+      api_scope: "不直接暴露给SaaS服务商，通过易宝API间接使用"
+
+  # --- Layer 2: 业务问题（SCRM场景下的痛点与价值） ---
+  business_problems:
+    - problem_id: "BP-YP-001"
+      problem: "SaaS平台缺乏支付能力，无法为商户提供一站式经营闭环"
+      pain_point: "商户在SaaS平台完成营销、客户管理后，收款环节需要跳转到第三方支付工具，导致经营数据割裂、用户体验断层"
+      value: "通过易宝服务商API将支付能力嵌入SaaS平台，实现「营销-交易-对账-服务」全链路闭环，商户无需离开平台即可完成经营全流程"
+      evidence: "SC-MER-001/002/003(入网) + SC-PAY-001~004(资金收付) + SC-AGG-001(聚合支付) 三大场景支撑"
+      priority: "P0"
+      scrm_relevance: "直接关系SCRM平台的经营闭环能力，是核心差异化竞争力"
+
+    - problem_id: "BP-YP-002"
+      problem: "商户入网流程复杂，资质审核周期长，影响商户上线速度"
+      pain_point: "传统入网需人工收集资质、线下审核、反复补材料，从申请到开通动辄3-7个工作日，商户流失率高"
+      value: "API自动化入网+H5自助入网双通道，资质文件在线提交，审核进度实时可查，入网周期缩短至分钟级（自动化审核）或小时级（人工审核）"
+      evidence: "API-MER-001(企业入网) + API-MER-002(小微入网) + API-MER-004(H5入网) + API-MER-003(进度查询) + API-MER-006(资质上传)"
+      priority: "P0"
+      scrm_relevance: "入网效率直接影响SCRM平台商户增长和激活率"
+
+    - problem_id: "BP-YP-003"
+      problem: "多支付渠道管理分散，资金归集和对账困难"
+      pain_point: "微信支付、支付宝、银联等渠道各自独立，商户需分别管理多个后台，资金分散在不同账户，对账耗时且易出错"
+      value: "聚合支付统一收银台，一笔交易一个订单，资金统一归集到易宝商户账户，提供统一对账单"
+      evidence: "SC-AGG-001(聚合支付下单) + SC-PAY-001(充值) + SC-PAY-003(提现) + 渠道报备SC-RPT-001/002"
+      priority: "P1"
+      scrm_relevance: "资金归集能力是SCRM平台为商户提供经营分析的基础数据源"
+
+    - problem_id: "BP-YP-004"
+      problem: "退款/投诉处理依赖人工，效率低易出错"
+      pain_point: "退款需人工登录多个渠道后台操作，投诉工单分散在微信/支付宝各自平台，处理不及时导致商户被渠道处罚"
+      value: "API统一退款+投诉工单集中管理，支持自动审核退款、模板化回复投诉，处理时效从小时级降至分钟级"
+      evidence: "SC-CMP-001(投诉处理) + SC-CMP-002(小程序投诉) + API-LED-007(记账簿退款) + SC-PAY-004(付款冲退)"
+      priority: "P1"
+      scrm_relevance: "退款/投诉处理效率直接影响SCRM平台的商户服务质量和满意度"
+
+    - problem_id: "BP-YP-005"
+      problem: "商户资金流不透明，无法实时掌握经营状况"
+      pain_point: "商户看不到实时余额、在途资金、待结算金额，经营决策缺乏资金数据支撑"
+      value: "多维度余额查询（银行账户/在途/资金账户/全部）+交易流水实时可查+自动提现规则，资金流完全透明"
+      evidence: "API-ACC-009(银行账户余额) + API-PAY-017(在途余额) + API-PAY-018(资金账户余额) + API-PAY-019(全部账户余额) + API-PAY-016(自动提现规则)"
+      priority: "P1"
+      scrm_relevance: "资金透明度是SCRM平台为商户提供经营看板的关键数据维度"
+
+    - problem_id: "BP-YP-006"
+      problem: "分账结算规则复杂，利润分配容易出错"
+      pain_point: "平台型商户需要向多个分账方分配收入，手动计算和打款工作量大，容易错账漏账"
+      value: "记账簿体系支持资金冻结/解冻/拨入/分账，配合自动结算规则，实现精准的利润分配"
+      evidence: "SC-LED-001(记账簿管理) + API-LED-005(冻结) + API-LED-006(解冻) + API-LED-003(资金拨入) + functionService.SHARE(分账功能)"
+      priority: "P2"
+      scrm_relevance: "分账能力支持SCRM平台的渠道分销、员工佣金等业务场景"
+
+  # --- Layer 3: 场景地图（关键业务场景的结构化描述） ---
+  scenario_maps:
+    - scenario_id: "SC-YP-001"
+      scenario_name: "特约商户入网（企业/个体/小微）"
+      description: "SaaS服务商通过API或H5页面帮助特约商户完成在易宝的注册开户，含资质审核、意愿认证、协议签署、银行绑卡全流程"
+      trigger: "商户在SaaS平台点击「开通支付服务」或运营人员在后台为商户创建入网申请"
+      participant_roles: ["DR-YP-001(SaaS服务商)", "DR-YP-002(特约商户)", "DR-YP-004(易宝平台)", "DR-YP-005(银行)"]
+      api_chain:
+        - step: 1
+          api: "API-MER-006"
+          action: "上传商户资质文件（营业执照/法人身份证）"
+        - step: 2
+          api: "API-MER-001/002"
+          action: "提交入网申请（企业/个体或小微），含主体信息/法人信息/结算账户/产品配置"
+        - step: 3
+          api: "API-MER-003"
+          action: "轮询查询入网进度（异步审核）"
+        - step: 4
+          api: "异步通知"
+          action: "接收开户结果+绑卡结果通知，获取merchantNo"
+      alternative_flow: "H5自助入网：API-MER-004获取H5链接 → 商户自主填写 → API-MER-005查询进度"
+      closure: "applicationStatus=COMPLETED 且 merchantNo已生成，商户进入ACTIVE状态"
+      related_scenes: ["SC-MER-001", "SC-MER-002", "SC-MER-003"]
+
+    - scenario_id: "SC-YP-002"
+      scenario_name: "资金收付（充值/转账/提现/付款）"
+      description: "SaaS服务商为商户提供完整的资金流转能力：充值到易宝账户、账户间转账、提现到银行卡、付款到供应商/个人"
+      trigger: "商户在SaaS平台发起充值/转账/提现/付款操作"
+      participant_roles: ["DR-YP-001(SaaS服务商)", "DR-YP-002(特约商户)", "DR-YP-004(易宝平台)", "DR-YP-005(银行/渠道)"]
+      api_chain:
+        - step: 1
+          api: "API-PAY-001/002/003(充值) / API-PAY-006(转账) / API-PAY-010/011(提现) / API-PAY-019/022/023/024(付款)"
+          action: "发起资金操作请求（含幂等键requestNo+金额+目标账户）"
+        - step: 2
+          api: "API-PAY-004/007/012/020(查询)"
+          action: "查询交易结果（同步或异步）"
+        - step: 3
+          api: "异步通知"
+          action: "接收交易结果通知（成功/失败/处理中）"
+      closure: "交易状态终态（成功/失败），资金实际到账"
+      related_scenes: ["SC-PAY-001", "SC-PAY-002", "SC-PAY-003", "SC-PAY-004"]
+
+    - scenario_id: "SC-YP-003"
+      scenario_name: "聚合支付收银"
+      description: "SaaS服务商集成聚合支付能力，为商户提供统一收银台，消费者可通过微信/支付宝/银联/刷脸等多种方式付款"
+      trigger: "消费者在商户页面选择商品后进入收银台"
+      participant_roles: ["DR-YP-001(SaaS服务商)", "DR-YP-002(特约商户)", "DR-YP-003(消费者)", "DR-YP-004(易宝平台)", "DR-YP-005(支付渠道)"]
+      api_chain:
+        - step: 1
+          api: "API-AGG-001/002"
+          action: "托管下单或统一下单（含订单金额/商品描述/支付方式）"
+        - step: 2
+          api: "API-AGG-003"
+          action: "付款码支付（消费者出示付款码场景）"
+        - step: 3
+          api: "API-AGG-004"
+          action: "超时关单（未支付订单自动关闭）"
+        - step: 4
+          api: "异步通知"
+          action: "接收支付结果通知"
+      alternative_flow: "签约代扣：API-AGG-006(签约) → 自动扣款；刷脸付：API-AGG-009(获取刷脸凭证)"
+      closure: "消费者支付成功，资金进入商户易宝账户"
+      related_scenes: ["SC-AGG-001", "SC-AGG-002", "SC-AGG-003"]
+
+    - scenario_id: "SC-YP-004"
+      scenario_name: "退款与投诉处理"
+      description: "SaaS服务商统一处理来自微信/支付宝渠道的消费者投诉，支持查询、回复协商、退款审核、处理完成的完整闭环"
+      trigger: "消费者在微信/支付宝发起支付投诉，或商户在SaaS平台主动发起退款"
+      participant_roles: ["DR-YP-001(SaaS服务商)", "DR-YP-002(特约商户)", "DR-YP-003(消费者)", "DR-YP-004(易宝平台)", "DR-YP-005(支付渠道)"]
+      api_chain:
+        - step: 1
+          api: "API-CMP-001"
+          action: "查询投诉订单列表（按时间/状态筛选）"
+        - step: 2
+          api: "API-CMP-002/003"
+          action: "查看投诉详情与协商历史"
+        - step: 3
+          api: "API-CMP-004"
+          action: "回复用户处理内容（模板化或自定义）"
+        - step: 4
+          api: "API-CMP-005"
+          action: "更新退款审核结果（同意/拒绝退款）"
+        - step: 5
+          api: "API-CMP-006"
+          action: "反馈处理完成（投诉工单关闭）"
+      alternative_flow: "记账簿退款：API-LED-007(无需投诉直接退款)；小程序投诉：API-CMP-008~010"
+      closure: "投诉工单状态=已处理，退款（如有）到账消费者"
+      related_scenes: ["SC-CMP-001", "SC-CMP-002"]
+
+    - scenario_id: "SC-YP-005"
+      scenario_name: "分账结算"
+      description: "SaaS服务商通过记账簿体系实现商户资金的分账管理：资金冻结→按规则分配→解冻打款，支持多级分账方"
+      trigger: "交易完成进入结算周期，或平台按规则触发分账"
+      participant_roles: ["DR-YP-001(SaaS服务商)", "DR-YP-002(特约商户)", "DR-YP-004(易宝平台)"]
+      api_chain:
+        - step: 1
+          api: "API-LED-001"
+          action: "开立记账簿（为分账场景创建独立记账单元）"
+        - step: 2
+          api: "API-LED-003"
+          action: "资金拨入记账簿（从商户账户拨入待分账资金）"
+        - step: 3
+          api: "API-LED-005"
+          action: "冻结待分账金额（防止分账期间资金被挪用）"
+        - step: 4
+          api: "API-LED-006"
+          action: "解冻并按规则分配到各分账方"
+        - step: 5
+          api: "API-LED-009"
+          action: "查询来账流水（各分账方确认到账）"
+      closure: "全部分账方收到应得款项，记账簿余额清零或留存"
+      related_scenes: ["SC-LED-001", "SC-SET-001"]
+
+  # --- Layer 4: 跨域桥接（与其他领域知识的关联） ---
+  cross_domain_bridges:
+    - bridge_id: "CDB-YP-001"
+      bridge_name: "易宝 → 微信支付（聚合支付路由与渠道降级）"
+      description: "聚合支付场景下，易宝作为聚合层统一对接微信支付渠道。SaaS服务商通过易宝API下单后，易宝根据路由规则选择微信支付（默认）或降级到支付宝/银联。"
+      shared_entities: ["merchantNo(易宝)↔sub_mch_id(微信支付服务商)", "orderNo↔out_trade_no"]
+      data_flow: "SaaS服务商 → API-AGG-001(易宝托管下单) → 易宝路由 → 微信支付统一下单 → 消费者付款 → 支付结果回调 → 异步通知服务商"
+      scenarios: ["SC-AGG-001(聚合支付下单)", "SC-RPT-001(微信实名认证)", "SC-RPT-002(渠道报备)"]
+
+    - bridge_id: "CDB-YP-002"
+      bridge_name: "易宝 → 微信账号（商户身份映射）"
+      description: "特约商户在易宝的merchantNo需要与微信生态的appid/openid体系建立映射，以实现微信公众号支付、小程序支付等场景。"
+      shared_entities: ["merchantNo↔appid(微信公众号/小程序)", "渠道报备信息(API-RPT-009~013)"]
+      data_flow: "SaaS服务商 → API-RPT-012(公众号配置) → 易宝同步微信 → 微信返回授权状态 → API-RPT-011(授权状态查询)"
+      scenarios: ["SC-RPT-001(微信实名认证)", "SC-RPT-002(公众号配置)"]
+
+    - bridge_id: "CDB-YP-003"
+      bridge_name: "易宝 → 企业微信（支付通知触达）"
+      description: "交易结果、退款进度、投诉通知等支付事件通过企业微信消息推送触达商户运营人员，实现支付事件与SCRM通知体系的融合。"
+      shared_entities: ["交易事件(支付成功/退款/投诉)↔企业微信应用消息"]
+      data_flow: "易宝异步通知 → SaaS服务商回调处理 → 匹配商户 → 企业微信发送卡片消息(含交易摘要/金额/操作链接)"
+      scenarios: ["SC-PAY-001~004(资金收付异步通知)", "SC-CMP-001(投诉通知)", "SC-YP-004(退款通知)"]
+
+    - bridge_id: "CDB-YP-004"
+      bridge_name: "易宝 → 结算域（资金结算流程）"
+      description: "易宝的渠道结算账户管理(SC-SET-001)与记账簿体系(SC-LED-001)共同支撑SaaS平台的商户结算业务，结算域负责结算周期、结算规则、结算单生成等业务逻辑。"
+      shared_entities: ["渠道结算账户(API-SET-001~003)", "记账簿余额(API-LED-004)", "结算单(结算域生成)"]
+      data_flow: "交易完成 → 资金进入商户账户 → 结算周期到达 → 查询渠道结算账户 → 生成结算单 → 记账簿拨入/冻结/解冻 → 打款到商户银行卡"
+      scenarios: ["SC-SET-001(渠道结算)", "SC-LED-001(记账簿)", "SC-PAY-003(提现)"]
+
+  # --- Layer 5: 角色视角（不同角色在关键场景下的关注点与操作路径） ---
+  role_perspectives:
+    - role_ref: "DR-YP-001"
+      role_name: "服务商运营人员"
+      scenarios:
+        - scenario_ref: "SC-YP-001(特约商户入网)"
+          concerns: "入网审核通过率、平均入网耗时、驳回原因分布"
+          key_actions:
+            - "审核商户提交的资质材料完整性"
+            - "调用API-MER-001/002提交入网申请"
+            - "轮询API-MER-003监控入网进度"
+            - "处理驳回：分析驳回原因 → 通知商户补材料 → 重新提交"
+            - "入网成功后记录merchantNo，初始化商户配置"
+          metrics: ["入网通过率", "平均入网耗时", "驳回率", "各状态停留时长分布"]
+        - scenario_ref: "SC-YP-003(聚合支付收银)"
+          concerns: "支付成功率、渠道可用性、异常订单处理"
+          key_actions:
+            - "监控聚合支付成功率（按渠道/时段/金额）"
+            - "支付失败时排查原因（渠道故障/余额不足/风控拦截）"
+            - "超时未支付订单自动关单（API-AGG-004）"
+            - "渠道降级切换（微信不可用时切支付宝）"
+          metrics: ["支付成功率", "渠道分布占比", "平均支付耗时", "关单率"]
+        - scenario_ref: "SC-YP-004(退款与投诉处理)"
+          concerns: "投诉处理时效、退款审核准确率、渠道处罚风险"
+          key_actions:
+            - "每日巡检投诉订单列表（API-CMP-001）"
+            - "分析投诉类型分布，制定处理SOP"
+            - "批量处理常规退款审核（API-CMP-005）"
+            - "超时未处理投诉预警（渠道有处理时限要求）"
+          metrics: ["投诉处理平均时长", "退款审核通过率", "投诉类型分布", "渠道处罚次数"]
+
+    - role_ref: "DR-YP-002"
+      role_name: "特约商户"
+      scenarios:
+        - scenario_ref: "SC-YP-002(资金收付)"
+          concerns: "账户余额实时可见、交易记录完整、提现到账速度"
+          key_actions:
+            - "查看各账户余额（银行账户/在途/资金账户）"
+            - "查看交易流水明细（充值/收款/退款/提现）"
+            - "发起提现到银行卡（查看提现进度）"
+            - "设置自动提现规则（余额超过阈值自动提现）"
+          metrics: ["账户余额", "日/月交易额", "提现到账时长", "退款率"]
+        - scenario_ref: "SC-YP-004(退款与投诉处理)"
+          concerns: "退款是否及时到账消费者、投诉是否影响店铺评分"
+          key_actions:
+            - "在SaaS平台查看投诉详情与协商历史"
+            - "选择同意退款或申诉（提供证据材料）"
+            - "追踪退款进度（退款发起→审核→到账）"
+          metrics: ["退款处理时长", "投诉解决率", "消费者满意度"]
+
+    - role_ref: "DR-YP-003"
+      role_name: "消费者"
+      scenarios:
+        - scenario_ref: "SC-YP-003(聚合支付收银)"
+          concerns: "支付流程顺畅、多种支付方式可选、支付安全"
+          key_actions:
+            - "选择支付方式（微信/支付宝/银联/刷脸）"
+            - "完成付款（扫码或被扫）"
+            - "支付失败时重试或切换支付方式"
+          metrics: ["支付成功率", "支付耗时", "可用支付方式数量"]
+        - scenario_ref: "SC-YP-004(退款与投诉处理)"
+          concerns: "退款到账速度、投诉响应及时性、处理结果满意度"
+          key_actions:
+            - "在支付渠道发起投诉（微信/支付宝投诉入口）"
+            - "查看投诉处理进度与商户回复"
+            - "确认退款到账"
+          metrics: ["退款到账时长", "投诉响应时长", "投诉处理满意度"]
+
+  # ============================================
+  # Part 1: 业务泳道（角色×阶段×动作）
+  # ============================================
+  swimlane:
+    roles:
+      - { id: "SP", name: "服务商（SaaS服务商）", description: "通过易宝开放平台为特约商户提供支付服务的SaaS服务商" }
+      - { id: "YP", name: "易宝支付", description: "支付清算平台，提供开放API和资金清结算" }
+      - { id: "MER", name: "特约商户", description: "通过服务商接入易宝支付的商户（企业/个体/小微）" }
+      - { id: "BANK", name: "银行", description: "商户结算银行账户开户行" }
+      - { id: "CHANNEL", name: "支付渠道（微信/支付宝/银联）", description: "底层支付渠道" }
+      - { id: "CONSUMER", name: "消费者", description: "最终付款用户" }
+
+    stages:
+      - { id: "S1", name: "商户入网", desc: "商户通过服务商提交入网申请，完成开户和绑卡" }
+      - { id: "S2", name: "商户变更", desc: "商户信息变更、产品变更、费率查询、沉默商户解冻" }
+      - { id: "S3", name: "账户服务", desc: "银行账户开立、绑卡、余额查询、缴费账户" }
+      - { id: "S4", name: "资金收付", desc: "充值、转账、提现、付款、定向付款等资金流转" }
+      - { id: "S5", name: "记账簿服务", desc: "记账簿开立、资金拨入、冻结/解冻、退款、来账流水" }
+      - { id: "S6", name: "聚合支付", desc: "聚合支付下单、付款码支付、签约/解约、刷脸付" }
+      - { id: "S7", name: "渠道报备", desc: "微信/支付宝实名认证、活动报名、渠道报备" }
+      - { id: "S8", name: "渠道结算", desc: "渠道结算账户查询/修改" }
+      - { id: "S9", name: "信用分", desc: "信用分创建/完结/修改/取消/同步/查询/扣款" }
+      - { id: "S10", name: "投诉处理", desc: "微信/支付宝投诉订单查询/回复/退款审核/处理完成" }
+      - { id: "S11", name: "银行转账/网银支付", desc: "银行转账支付、到账确认、网银支付" }
+
+  # ============================================
+  # Part 2: 业务流程（按场景拆分）
+  # ============================================
+  business_flow:
+    description: "易宝服务商11大业务场景流程"
+
+    scenes:
+
+      # ========== 场景1：特约商户入网（企业/个体） ==========
+      - scene_id: "SC-MER-001"
+        scene_name: "特约商户入网（企业/个体）"
+        scene_desc: "SaaS服务商为特约商户（企业/个体）提交入网申请，完成开户和绑卡"
+        mermaid: |
+          flowchart TD
+            A[服务商调用入网API] --> B[易宝审核商户资质]
+            B --> C{开户结果}
+            C -->|成功| D[异步通知: 开户成功]
+            C -->|失败| E[异步通知: 开户失败+原因]
+            D --> F[易宝向银行发起绑卡]
+            F --> G{绑卡结果}
+            G -->|成功| H[异步通知: 绑卡成功]
+            G -->|处理中| I[异步通知: 绑卡处理中]
+            G -->|失败| J[异步通知: 绑卡失败+原因]
+            H --> K[商户入网完成]
+            I --> K
+            J --> L[修正银行卡信息重新绑卡]
+        apis:
+          - { name: "特约商户入网(企业/个体)", ref: "API-MER-001" }
+          - { name: "商户入网进度查询", ref: "API-MER-003" }
+          - { name: "子商户入网资质文件上传", ref: "API-MER-006" }
+        async_notification: "openAccountResult（开户结果+绑卡结果）"
+
+      # ========== 场景2：特约商户入网（小微） ==========
+      - scene_id: "SC-MER-002"
+        scene_name: "特约商户入网（小微）"
+        scene_desc: "SaaS服务商为小微商户提交入网申请（简化流程）"
+        apis:
+          - { name: "特约商户入网(小微)", ref: "API-MER-002" }
+          - { name: "商户入网进度查询", ref: "API-MER-003" }
+
+      # ========== 场景3：H5自助入网 ==========
+      - scene_id: "SC-MER-003"
+        scene_name: "H5自助入网"
+        scene_desc: "服务商获取H5入网链接，商户通过H5页面自助完成入网"
+        mermaid: |
+          flowchart TD
+            A[服务商调用获取H5链接API] --> B[返回H5入网页面URL]
+            B --> C[商户打开H5页面自助填写]
+            C --> D[易宝处理入网]
+            D --> E[服务商查询H5入网进度]
+        apis:
+          - { name: "获取H5入网链接", ref: "API-MER-004" }
+          - { name: "H5入网进度查询", ref: "API-MER-005" }
+
+      # ========== 场景4：商户变更服务 ==========
+      - scene_id: "SC-CHG-001"
+        scene_name: "商户信息变更"
+        scene_desc: "商户基础信息变更（名称/法人/联系方式等）"
+        apis:
+          - { name: "商户信息变更", ref: "API-CHG-001" }
+          - { name: "商户信息变更进度查询", ref: "API-CHG-003" }
+
+      - scene_id: "SC-CHG-002"
+        scene_name: "商户产品变更"
+        scene_desc: "商户开通/关闭支付产品，费率变更"
+        apis:
+          - { name: "商户产品变更", ref: "API-CHG-002" }
+          - { name: "商户产品费率查询", ref: "API-CHG-004" }
+          - { name: "商户产品变更进度查询", ref: "API-CHG-005" }
+
+      - scene_id: "SC-CHG-003"
+        scene_name: "沉默商户解冻"
+        scene_desc: "长期未交易的商户被冻结后申请解冻"
+        apis:
+          - { name: "沉默商户解冻申请", ref: "API-CHG-006" }
+          - { name: "沉默商户解冻申请进度查询", ref: "API-CHG-007" }
+
+      # ========== 场景5：账户服务 ==========
+      - scene_id: "SC-ACC-001"
+        scene_name: "银行账户开立与绑卡"
+        scene_desc: "为商户开立银行账户并绑卡"
+        apis:
+          - { name: "开立银行账户", ref: "API-ACC-001" }
+          - { name: "多渠道绑卡", ref: "API-ACC-002" }
+          - { name: "查询绑卡申请", ref: "API-ACC-003" }
+          - { name: "开立银行账户-申请短验", ref: "API-ACC-005" }
+          - { name: "开立银行账户-短验确认", ref: "API-ACC-006" }
+          - { name: "开立银行账户查询", ref: "API-ACC-007" }
+
+      - scene_id: "SC-ACC-002"
+        scene_name: "账户查询"
+        scene_desc: "查询商户基础信息、银行卡信息、账户余额"
+        apis:
+          - { name: "查询商户基础信息", ref: "API-ACC-009" }
+          - { name: "查询商户银行卡信息", ref: "API-ACC-010" }
+          - { name: "银行账户查询余额", ref: "API-ACC-008" }
+          - { name: "在途账户余额查询", ref: "API-PAY-017" }
+          - { name: "资金账户余额查询", ref: "API-PAY-018" }
+          - { name: "全部账户余额查询", ref: "API-PAY-019" }
+
+      - scene_id: "SC-ACC-003"
+        scene_name: "缴费账户"
+        scene_desc: "申请开通缴费账户、绑定卡、查询"
+        apis:
+          - { name: "申请开通缴费账户", ref: "API-ACC-011" }
+          - { name: "缴费账户绑定卡", ref: "API-ACC-012" }
+          - { name: "查询缴费账户", ref: "API-ACC-013" }
+
+      # ========== 场景6：资金收付 ==========
+      - scene_id: "SC-PAY-001"
+        scene_name: "充值"
+        scene_desc: "多种支付方式充值（网银/银行汇款/多种支付）"
+        apis:
+          - { name: "充值-下单（多种支付）", ref: "API-PAY-001" }
+          - { name: "充值-网银下单", ref: "API-PAY-002" }
+          - { name: "充值-银行汇款下单", ref: "API-PAY-003" }
+          - { name: "充值-查询", ref: "API-PAY-004" }
+          - { name: "充值订单批量查询", ref: "API-PAY-005" }
+
+      - scene_id: "SC-PAY-002"
+        scene_name: "转账"
+        scene_desc: "账户间转账、转账到支付宝/微信"
+        apis:
+          - { name: "转账-下单", ref: "API-PAY-006" }
+          - { name: "转账-查询", ref: "API-PAY-007" }
+          - { name: "转账到支付宝", ref: "API-ACC-004" }
+          - { name: "转账到支付宝（单笔）", ref: "API-ACC-005" }
+          - { name: "转账到微信零钱-下单", ref: "API-PAY-008" }
+          - { name: "转账到微信零钱-查询", ref: "API-PAY-009" }
+
+      - scene_id: "SC-PAY-003"
+        scene_name: "提现"
+        scene_desc: "提现到银行卡，支持自动提现规则"
+        apis:
+          - { name: "提现-下单", ref: "API-PAY-010" }
+          - { name: "提现-下单（H5版）", ref: "API-PAY-011" }
+          - { name: "提现-查询", ref: "API-PAY-012" }
+          - { name: "提现卡查询", ref: "API-PAY-013" }
+          - { name: "提现卡-添加", ref: "API-PAY-014" }
+          - { name: "提现卡-修改/注销", ref: "API-PAY-015" }
+          - { name: "自动提现-规则设置", ref: "API-PAY-016" }
+          - { name: "自动提现-规则查询", ref: "API-PAY-017" }
+          - { name: "自动提现-规则作废", ref: "API-PAY-018" }
+
+      - scene_id: "SC-PAY-004"
+        scene_name: "付款"
+        scene_desc: "付款到供应商/个人、定向付款、付款冲退"
+        apis:
+          - { name: "付款-下单", ref: "API-PAY-019" }
+          - { name: "付款-查询", ref: "API-PAY-020" }
+          - { name: "付款-撤销", ref: "API-PAY-021" }
+          - { name: "付款到供应商/个人-下单", ref: "API-PAY-022" }
+          - { name: "付款-下单（多场景）", ref: "API-PAY-023" }
+          - { name: "定向付款-下单", ref: "API-PAY-024" }
+          - { name: "付款冲退-查询", ref: "API-PAY-025" }
+          - { name: "付款到供应商--申请添加供应商", ref: "API-PAY-026" }
+          - { name: "付款到供应商--查询已添加的供应商", ref: "API-PAY-027" }
+          - { name: "付款到供应商--查询申请进度", ref: "API-PAY-028" }
+          - { name: "付款到个人--申请添加个人用户", ref: "API-PAY-029" }
+          - { name: "付款到个人--查询已添加的个人用户", ref: "API-PAY-030" }
+          - { name: "付款到个人--查询申请进度", ref: "API-PAY-031" }
+
+      # ========== 场景7：记账簿服务 ==========
+      - scene_id: "SC-LED-001"
+        scene_name: "记账簿管理"
+        scene_desc: "记账簿开立、资金拨入、冻结/解冻、退款、来账流水查询"
+        apis:
+          - { name: "转账到支付宝-开立记账本", ref: "API-LED-001" }
+          - { name: "记账本资金拨入记录查询", ref: "API-LED-002" }
+          - { name: "转账到支付宝-记账本资金拨入", ref: "API-LED-003" }
+          - { name: "转账到支付宝-记账本查询", ref: "API-LED-004" }
+          - { name: "冻结记账薄金额", ref: "API-LED-005" }
+          - { name: "解冻记账薄金额", ref: "API-LED-006" }
+          - { name: "记账簿退款", ref: "API-LED-007" }
+          - { name: "记账簿退款查询", ref: "API-LED-008" }
+          - { name: "批量查询记账簿来账流水", ref: "API-LED-009" }
+          - { name: "记账簿冻结记录查询", ref: "API-LED-010" }
+          - { name: "记账簿解冻记录查询", ref: "API-LED-011" }
+
+      # ========== 场景8：聚合支付 ==========
+      - scene_id: "SC-AGG-001"
+        scene_name: "聚合支付下单与支付"
+        scene_desc: "聚合支付托管下单、统一下单、付款码支付"
+        apis:
+          - { name: "聚合支付托管下单", ref: "API-AGG-001" }
+          - { name: "聚合支付统一下单", ref: "API-AGG-002" }
+          - { name: "付款码支付", ref: "API-AGG-003" }
+          - { name: "聚合关单", ref: "API-AGG-004" }
+          - { name: "生成聚合订单码", ref: "API-AGG-005" }
+
+      - scene_id: "SC-AGG-002"
+        scene_name: "聚合支付签约管理"
+        scene_desc: "聚合支付签约/解约/签约查询"
+        apis:
+          - { name: "签约", ref: "API-AGG-006" }
+          - { name: "签约查询", ref: "API-AGG-007" }
+          - { name: "解约", ref: "API-AGG-008" }
+
+      - scene_id: "SC-AGG-003"
+        scene_name: "刷脸付"
+        scene_desc: "获取刷脸付调用凭证"
+        apis:
+          - { name: "获取刷脸付调用凭证", ref: "API-AGG-009" }
+
+      # ========== 场景9：渠道报备 ==========
+      - scene_id: "SC-RPT-001"
+        scene_name: "微信/支付宝实名认证"
+        scene_desc: "微信和支付宝的商户实名认证申请/撤销/查询"
+        apis:
+          - { name: "微信实名认证申请单申请", ref: "API-RPT-001" }
+          - { name: "撤销微信实名认证申请单", ref: "API-RPT-002" }
+          - { name: "查询微信实名认证状态", ref: "API-RPT-003" }
+          - { name: "支付宝实名认证申请单申请", ref: "API-RPT-004" }
+          - { name: "撤销支付宝实名认证", ref: "API-RPT-005" }
+          - { name: "查询支付宝实名认证状态", ref: "API-RPT-006" }
+
+      - scene_id: "SC-RPT-002"
+        scene_name: "活动报名与渠道报备"
+        scene_desc: "活动报名、渠道报备信息查询/修改、商户授权状态"
+        apis:
+          - { name: "活动报名申请接口", ref: "API-RPT-007" }
+          - { name: "活动报名查询接口", ref: "API-RPT-008" }
+          - { name: "查询渠道报备信息", ref: "API-RPT-009" }
+          - { name: "修改渠道报备信息", ref: "API-RPT-010" }
+          - { name: "商户授权状态查询接口", ref: "API-RPT-011" }
+          - { name: "公众号配置接口（异步）", ref: "API-RPT-012" }
+          - { name: "公众号配置查询", ref: "API-RPT-013" }
+          - { name: "报备记录备份", ref: "API-RPT-014" }
+
+      # ========== 场景10：渠道结算 ==========
+      - scene_id: "SC-SET-001"
+        scene_name: "渠道结算账户管理"
+        scene_desc: "查询/修改渠道结算账户"
+        apis:
+          - { name: "查询渠道结算账户", ref: "API-SET-001" }
+          - { name: "修改渠道结算账户", ref: "API-SET-002" }
+          - { name: "查询渠道结算账户修改结果", ref: "API-SET-003" }
+
+      # ========== 场景11：信用分 ==========
+      - scene_id: "SC-CRD-001"
+        scene_name: "信用分管理"
+        scene_desc: "信用分创建/完结/修改/取消/同步/查询/扣款"
+        apis:
+          - { name: "信用分创建", ref: "API-CRD-001" }
+          - { name: "信用分完结", ref: "API-CRD-002" }
+          - { name: "信用分修改", ref: "API-CRD-003" }
+          - { name: "信用分取消", ref: "API-CRD-004" }
+          - { name: "信用分同步", ref: "API-CRD-005" }
+          - { name: "信用分查询", ref: "API-CRD-006" }
+          - { name: "信用分扣款", ref: "API-CRD-007" }
+
+      # ========== 场景12：投诉处理 ==========
+      - scene_id: "SC-CMP-001"
+        scene_name: "微信/支付宝投诉处理"
+        scene_desc: "投诉订单查询/详情/协商历史/回复/退款审核/处理完成"
+        apis:
+          - { name: "查询投诉订单列表", ref: "API-CMP-001" }
+          - { name: "查询投诉订单详情", ref: "API-CMP-002" }
+          - { name: "查询投诉协商历史", ref: "API-CMP-003" }
+          - { name: "回复用户处理内容", ref: "API-CMP-004" }
+          - { name: "更新退款审核结果", ref: "API-CMP-005" }
+          - { name: "反馈处理完成", ref: "API-CMP-006" }
+          - { name: "图片下载", ref: "API-CMP-007" }
+
+      - scene_id: "SC-CMP-002"
+        scene_name: "易宝微信小程序投诉"
+        scene_desc: "小程序投诉详情/回应申诉/协商历史"
+        apis:
+          - { name: "查询小程序投诉详情", ref: "API-CMP-008" }
+          - { name: "商家回应/申诉小程序投诉", ref: "API-CMP-009" }
+          - { name: "查询小程序投诉协商历史", ref: "API-CMP-010" }
+
+      # ========== 场景13：银行转账/网银支付 ==========
+      - scene_id: "SC-BNK-001"
+        scene_name: "银行转账支付"
+        scene_desc: "银行转账支付、到账确认"
+        apis:
+          - { name: "银行转账支付", ref: "API-BNK-001" }
+          - { name: "银行转账查询", ref: "API-BNK-002" }
+          - { name: "到账信息确认接口", ref: "API-BNK-003" }
+
+      - scene_id: "SC-BNK-002"
+        scene_name: "网银支付"
+        scene_desc: "网银支付"
+        apis:
+          - { name: "网银支付", ref: "API-BNK-004" }
+
+      # ========== 场景14：其他服务 ==========
+      - scene_id: "SC-OTH-001"
+        scene_name: "辅助查询服务"
+        scene_desc: "省市区编码查询、整改协查结果、集团账户资金划拨等"
+        apis:
+          - { name: "查询经营省市区编码", ref: "API-OTH-001" }
+          - { name: "查询整改协查结果", ref: "API-OTH-002" }
+          - { name: "集团账户资金划拨", ref: "API-OTH-003" }
+          - { name: "集团账户资金划拨查询", ref: "API-OTH-004" }
+          - { name: "商户状态查询", ref: "API-OTH-005" }
+          - { name: "重复获取(短验/邮件/电子签章)", ref: "API-OTH-006" }
+          - { name: "付款码查询用户ID", ref: "API-OTH-007" }
+          - { name: "银联获取用户ID", ref: "API-OTH-008" }
+          - { name: "上传电子小票信息", ref: "API-OTH-009" }
+          - { name: "花呗分期前置发奖", ref: "API-OTH-010" }
+          - { name: "花呗分期前置咨询", ref: "API-OTH-011" }
+          - { name: "银行入金退回", ref: "API-OTH-012" }
+          - { name: "银行入金流水退回查询", ref: "API-OTH-013" }
+          - { name: "厦门多渠道开户激活", ref: "API-OTH-014" }
+
+  # ============================================
+  # Part 3: 信息流（核心信息主体）
+  # ============================================
+  information_flow:
+    entities:
+      - name: "商户入网请求"
+        producer: "服务商（SP）"
+        consumer: "易宝支付（YP）"
+        key_fields: ["requestNo", "merchantName", "merchantType", "businessLicenseNo", "legalPersonName", "legalPersonIdNo(加密)", "bankAccountNo(加密)", "productConfig", "businessScene", "uboInfoList(受益人)", "businessConfig(支付业务配置)"]
+
+      - name: "开户结果通知"
+        producer: "易宝支付（YP）"
+        consumer: "服务商（SP）"
+        key_fields: ["requestNo", "openAccountStatus(SUCCESS/FAIL)", "openAccountMessage", "bindBankStatus(SUCCESS/PROCESS/FAIL)", "bindBankMessage"]
+
+      - name: "资金交易请求"
+        producer: "服务商（SP）/特约商户（MER）"
+        consumer: "易宝支付（YP）"
+        key_fields: ["requestNo", "merchantNo", "amount", "orderNo", "bankAccountNo", "payChannel"]
+
+      - name: "资金交易结果通知"
+        producer: "易宝支付（YP）"
+        consumer: "服务商（SP）"
+        key_fields: ["requestNo", "orderNo", "tradeStatus", "tradeAmount", "tradeTime", "errorCode", "errorMessage"]
+
+      - name: "渠道报备请求"
+        producer: "服务商（SP）"
+        consumer: "易宝支付（YP）→ 渠道（CHANNEL）"
+        key_fields: ["merchantNo", "channelType(WECHAT/ALIPAY/UNIONPAY)", "reportType", "reportData"]
+
+  # ============================================
+  # Part 4: 业务操作矩阵（角色×状态×操作）
+  # ============================================
+  business_operation_matrix:
+    states:
+      - { id: "INIT", name: "未入网" }
+      - { id: "PENDING", name: "入网处理中" }
+      - { id: "ACCOUNT_SUCCESS", name: "开户成功-绑卡处理中" }
+      - { id: "ACTIVE", name: "正常运营" }
+      - { id: "REJECTED", name: "入网拒绝" }
+      - { id: "BANK_FAIL", name: "开户成功-绑卡失败" }
+      - { id: "FROZEN", name: "沉默冻结" }
+      - { id: "CLOSED", name: "已关闭" }
+
+    matrix:
+      - { role: "SP", state: "INIT", operation: "特约商户入网", target: "PENDING", scene: "SC-MER-001/002" }
+      - { role: "SP", state: "INIT", operation: "获取H5入网链接", target: "INIT", scene: "SC-MER-003" }
+      - { role: "SP", state: "PENDING", operation: "商户入网进度查询", target: "PENDING/ACCOUNT_SUCCESS/REJECTED", scene: "SC-MER-001" }
+      - { role: "YP", state: "PENDING", operation: "审核商户资质", target: "ACCOUNT_SUCCESS/REJECTED", scene: "SC-MER-001" }
+      - { role: "YP", state: "ACCOUNT_SUCCESS", operation: "发起绑卡", target: "ACTIVE/BANK_FAIL", scene: "SC-MER-001" }
+      - { role: "SP", state: "ACCOUNT_SUCCESS", operation: "等待绑卡异步通知", target: "ACTIVE/BANK_FAIL", scene: "SC-MER-001" }
+      - { role: "SP", state: "ACTIVE", operation: "商户信息变更", target: "ACTIVE", scene: "SC-CHG-001" }
+      - { role: "SP", state: "ACTIVE", operation: "商户产品变更", target: "ACTIVE", scene: "SC-CHG-002" }
+      - { role: "SP", state: "ACTIVE", operation: "充值/转账/提现/付款", target: "ACTIVE", scene: "SC-PAY-001~004" }
+      - { role: "SP", state: "ACTIVE", operation: "聚合支付下单", target: "ACTIVE", scene: "SC-AGG-001" }
+      - { role: "SP", state: "ACTIVE", operation: "渠道报备/实名认证", target: "ACTIVE", scene: "SC-RPT-001/002" }
+      - { role: "SP", state: "ACTIVE", operation: "投诉处理", target: "ACTIVE", scene: "SC-CMP-001/002" }
+      - { role: "SP", state: "FROZEN", operation: "沉默商户解冻申请", target: "ACTIVE", scene: "SC-CHG-003" }
+      - { role: "SP", state: "BANK_FAIL", operation: "重新绑卡", target: "ACCOUNT_SUCCESS", scene: "SC-ACC-001" }
+      - { role: "SP", state: "REJECTED", operation: "修正信息后重新入网", target: "PENDING", scene: "SC-MER-001" }
+
+  # ============================================
+  # Part 5: 解决方案概括
+  # ============================================
+  solution_summary:
+    product_name: "易宝服务商解决方案（fwssfk）"
+    description: |
+      易宝支付为SaaS服务商提供的完整支付接入解决方案，覆盖商户全生命周期：
+      入网→变更→账户→资金收付→记账簿→聚合支付→渠道报备→结算→信用分→投诉处理→银行转账。
+      共150+API接口，14大业务场景。
+
+    api_categories:
+      - { category: "入网", api_count: 10, scenes: ["SC-MER-001", "SC-MER-002", "SC-MER-003"] }
+      - { category: "变更服务", api_count: 8, scenes: ["SC-CHG-001", "SC-CHG-002", "SC-CHG-003"] }
+      - { category: "账户服务", api_count: 13, scenes: ["SC-ACC-001", "SC-ACC-002", "SC-ACC-003"] }
+      - { category: "资金收付", api_count: 31, scenes: ["SC-PAY-001", "SC-PAY-002", "SC-PAY-003", "SC-PAY-004"] }
+      - { category: "记账簿服务", api_count: 11, scenes: ["SC-LED-001"] }
+      - { category: "聚合支付", api_count: 9, scenes: ["SC-AGG-001", "SC-AGG-002", "SC-AGG-003"] }
+      - { category: "渠道报备", api_count: 14, scenes: ["SC-RPT-001", "SC-RPT-002"] }
+      - { category: "渠道结算", api_count: 3, scenes: ["SC-SET-001"] }
+      - { category: "信用分", api_count: 7, scenes: ["SC-CRD-001"] }
+      - { category: "投诉处理", api_count: 10, scenes: ["SC-CMP-001", "SC-CMP-002"] }
+      - { category: "银行转账/网银支付", api_count: 4, scenes: ["SC-BNK-001", "SC-BNK-002"] }
+      - { category: "其他服务", api_count: 14, scenes: ["SC-OTH-001"] }
+
+    total_apis: 150+
+    total_scenes: 14
+
+    security_requirements:
+      - "密钥管理：RSA密钥对，商户私钥本地保管，易宝公钥平台配置，定期轮换"
+      - "通信安全：全链路HTTPS，敏感数据加密传输（身份证号/银行卡号等）"
+      - "业务安全：幂等性控制（requestNo唯一标识），详细日志记录，金额限制+频率控制+异常监控"
+
+    integration_steps:
+      - { step: 1, name: "商户入网并签约产品", substeps: ["查看产品开通情况", "检查应用配置"] }
+      - { step: 2, name: "密钥配置", substeps: ["密钥制备（RSA密钥对）", "密钥配置（平台配置公钥）"] }
+      - { step: 3, name: "SDK集成", substeps: ["Java开发者：使用易宝SDK", "其他语言：按API文档自行集成"] }
+      - { step: 4, name: "开发对接", substeps: ["API对接准备（请求头+签名+加密）", "关键开发要点", "异步通知处理"] }
+      - { step: 5, name: "测试验证", substeps: ["沙箱环境测试", "联调测试"] }
+      - { step: 6, name: "安全建议", substeps: ["密钥管理", "通信安全", "业务安全"] }
+
+    common_issues:
+      - { issue: "产品计费策略与SAAS服务商返佣策略不一致", solution: "联系群里运营，查询开通产品的计费规则" }
+
+  # ============================================
+  # Part 6-8: 图片/视频/关键帧（本次无）
+  # ============================================
+  images: []
+  transcripts: []
+  key_frames: []
+
+  # ============================================
+  # Part 9: 接口串联（完整API清单+场景串联）
+  # ============================================
+  api_chain:
+    description: "易宝服务商150+API完整清单，按业务场景串联"
+
+    # ========== 入网类API ==========
+    API-MER-001: { name: "特约商户入网(企业/个体)", path: "/rest/v2.0/mer/register/saas/merchant", method: "POST", scene: "SC-MER-001", async: true, notification: "openAccountResult" }
+    API-MER-002: { name: "特约商户入网(小微)", path: "(小微入网)", method: "POST", scene: "SC-MER-002", async: true, notification: "openAccountResult" }
+    API-MER-003: { name: "商户入网进度查询", path: "(进度查询)", method: "POST", scene: "SC-MER-001/002", async: false, dependency: "requestNo" }
+    API-MER-004: { name: "获取H5入网链接", path: "(H5链接)", method: "POST", scene: "SC-MER-003", async: false }
+    API-MER-005: { name: "H5入网进度查询", path: "(H5进度)", method: "POST", scene: "SC-MER-003", async: false }
+    API-MER-006: { name: "子商户入网资质文件上传", path: "(文件上传)", method: "POST", scene: "SC-MER-001", async: false }
+
+    # ========== 变更服务API ==========
+    API-CHG-001: { name: "商户信息变更", path: "(信息变更)", method: "POST", scene: "SC-CHG-001", async: true }
+    API-CHG-002: { name: "商户产品变更", path: "(产品变更)", method: "POST", scene: "SC-CHG-002", async: true }
+    API-CHG-003: { name: "商户信息变更进度查询", path: "(变更进度)", method: "POST", scene: "SC-CHG-001", async: false }
+    API-CHG-004: { name: "商户产品费率查询", path: "(费率查询)", method: "POST", scene: "SC-CHG-002", async: false }
+    API-CHG-005: { name: "商户产品变更进度查询", path: "(产品变更进度)", method: "POST", scene: "SC-CHG-002", async: false }
+    API-CHG-006: { name: "沉默商户解冻申请", path: "(解冻申请)", method: "POST", scene: "SC-CHG-003", async: true }
+    API-CHG-007: { name: "沉默商户解冻申请进度查询", path: "(解冻进度)", method: "POST", scene: "SC-CHG-003", async: false }
+
+    # ========== 账户服务API ==========
+    API-ACC-001: { name: "开立银行账户", path: "(开户)", method: "POST", scene: "SC-ACC-001", async: true }
+    API-ACC-002: { name: "多渠道绑卡", path: "(多渠道绑卡)", method: "POST", scene: "SC-ACC-001", async: true }
+    API-ACC-003: { name: "查询绑卡申请", path: "(绑卡查询)", method: "POST", scene: "SC-ACC-001", async: false }
+    API-ACC-004: { name: "转账到支付宝", path: "(转支付宝)", method: "POST", scene: "SC-PAY-002", async: true }
+    API-ACC-005: { name: "转账到支付宝（单笔）", path: "(转支付宝单笔)", method: "POST", scene: "SC-PAY-002", async: true }
+    API-ACC-006: { name: "开立银行账户-申请短验", path: "(申请短验)", method: "POST", scene: "SC-ACC-001", async: false }
+    API-ACC-007: { name: "开立银行账户-短验确认", path: "(短验确认)", method: "POST", scene: "SC-ACC-001", async: false }
+    API-ACC-008: { name: "开立银行账户查询", path: "(开户查询)", method: "POST", scene: "SC-ACC-001", async: false }
+    API-ACC-009: { name: "银行账户查询余额", path: "(余额查询)", method: "POST", scene: "SC-ACC-002", async: false }
+    API-ACC-010: { name: "查询商户基础信息", path: "(基础信息)", method: "POST", scene: "SC-ACC-002", async: false }
+    API-ACC-011: { name: "查询商户银行卡信息", path: "(银行卡信息)", method: "POST", scene: "SC-ACC-002", async: false }
+    API-ACC-012: { name: "申请开通缴费账户", path: "(缴费开户)", method: "POST", scene: "SC-ACC-003", async: true }
+    API-ACC-013: { name: "缴费账户绑定卡", path: "(缴费绑卡)", method: "POST", scene: "SC-ACC-003", async: true }
+    API-ACC-014: { name: "查询缴费账户", path: "(缴费查询)", method: "POST", scene: "SC-ACC-003", async: false }
+
+    # ========== 资金收付API ==========
+    API-PAY-001: { name: "充值-下单（多种支付）", path: "(充值下单)", method: "POST", scene: "SC-PAY-001", async: true }
+    API-PAY-002: { name: "充值-网银下单", path: "(网银充值)", method: "POST", scene: "SC-PAY-001", async: true }
+    API-PAY-003: { name: "充值-银行汇款下单", path: "(汇款充值)", method: "POST", scene: "SC-PAY-001", async: true }
+    API-PAY-004: { name: "充值-查询", path: "(充值查询)", method: "POST", scene: "SC-PAY-001", async: false }
+    API-PAY-005: { name: "充值订单批量查询", path: "(充值批量查询)", method: "POST", scene: "SC-PAY-001", async: false }
+    API-PAY-006: { name: "转账-下单", path: "(转账下单)", method: "POST", scene: "SC-PAY-002", async: true }
+    API-PAY-007: { name: "转账-查询", path: "(转账查询)", method: "POST", scene: "SC-PAY-002", async: false }
+    API-PAY-008: { name: "转账到微信零钱-下单", path: "(转微信下单)", method: "POST", scene: "SC-PAY-002", async: true }
+    API-PAY-009: { name: "转账到微信零钱-查询", path: "(转微信查询)", method: "POST", scene: "SC-PAY-002", async: false }
+    API-PAY-010: { name: "提现-下单", path: "(提现下单)", method: "POST", scene: "SC-PAY-003", async: true }
+    API-PAY-011: { name: "提现-下单（H5版）", path: "(提现H5)", method: "POST", scene: "SC-PAY-003", async: true }
+    API-PAY-012: { name: "提现-查询", path: "(提现查询)", method: "POST", scene: "SC-PAY-003", async: false }
+    API-PAY-013: { name: "提现卡查询", path: "(提现卡查询)", method: "POST", scene: "SC-PAY-003", async: false }
+    API-PAY-014: { name: "提现卡-添加", path: "(提现卡添加)", method: "POST", scene: "SC-PAY-003", async: true }
+    API-PAY-015: { name: "提现卡-修改/注销", path: "(提现卡修改)", method: "POST", scene: "SC-PAY-003", async: true }
+    API-PAY-016: { name: "自动提现-规则设置", path: "(自动提现设置)", method: "POST", scene: "SC-PAY-003", async: false }
+    API-PAY-017: { name: "自动提现-规则查询", path: "(自动提现查询)", method: "POST", scene: "SC-PAY-003", async: false }
+    API-PAY-018: { name: "自动提现-规则作废", path: "(自动提现作废)", method: "POST", scene: "SC-PAY-003", async: false }
+    API-PAY-019: { name: "付款-下单", path: "(付款下单)", method: "POST", scene: "SC-PAY-004", async: true }
+    API-PAY-020: { name: "付款-查询", path: "(付款查询)", method: "POST", scene: "SC-PAY-004", async: false }
+    API-PAY-021: { name: "付款-撤销", path: "(付款撤销)", method: "POST", scene: "SC-PAY-004", async: false }
+    API-PAY-022: { name: "付款到供应商/个人-下单", path: "(付供应商下单)", method: "POST", scene: "SC-PAY-004", async: true }
+    API-PAY-023: { name: "付款-下单（多场景）", path: "(付款多场景)", method: "POST", scene: "SC-PAY-004", async: true }
+    API-PAY-024: { name: "定向付款-下单", path: "(定向付款)", method: "POST", scene: "SC-PAY-004", async: true }
+    API-PAY-025: { name: "付款冲退-查询", path: "(付款冲退)", method: "POST", scene: "SC-PAY-004", async: false }
+    API-PAY-026: { name: "付款到供应商--申请添加供应商", path: "(添加供应商)", method: "POST", scene: "SC-PAY-004", async: true }
+    API-PAY-027: { name: "付款到供应商--查询已添加的供应商", path: "(查询供应商)", method: "POST", scene: "SC-PAY-004", async: false }
+    API-PAY-028: { name: "付款到供应商--查询申请进度", path: "(供应商进度)", method: "POST", scene: "SC-PAY-004", async: false }
+    API-PAY-029: { name: "付款到个人--申请添加个人用户", path: "(添加个人)", method: "POST", scene: "SC-PAY-004", async: true }
+    API-PAY-030: { name: "付款到个人--查询已添加的个人用户", path: "(查询个人)", method: "POST", scene: "SC-PAY-004", async: false }
+    API-PAY-031: { name: "付款到个人--查询申请进度", path: "(个人进度)", method: "POST", scene: "SC-PAY-004", async: false }
+
+    # ========== 记账簿服务API ==========
+    API-LED-001: { name: "转账到支付宝-开立记账本", path: "(开立记账本)", method: "POST", scene: "SC-LED-001", async: true }
+    API-LED-002: { name: "记账本资金拨入记录查询", path: "(拨入记录)", method: "POST", scene: "SC-LED-001", async: false }
+    API-LED-003: { name: "转账到支付宝-记账本资金拨入", path: "(资金拨入)", method: "POST", scene: "SC-LED-001", async: true }
+    API-LED-004: { name: "转账到支付宝-记账本查询", path: "(记账本查询)", method: "POST", scene: "SC-LED-001", async: false }
+    API-LED-005: { name: "冻结记账薄金额", path: "(冻结金额)", method: "POST", scene: "SC-LED-001", async: true }
+    API-LED-006: { name: "解冻记账薄金额", path: "(解冻金额)", method: "POST", scene: "SC-LED-001", async: true }
+    API-LED-007: { name: "记账簿退款", path: "(记账簿退款)", method: "POST", scene: "SC-LED-001", async: true }
+    API-LED-008: { name: "记账簿退款查询", path: "(退款查询)", method: "POST", scene: "SC-LED-001", async: false }
+    API-LED-009: { name: "批量查询记账簿来账流水", path: "(来账流水)", method: "POST", scene: "SC-LED-001", async: false }
+    API-LED-010: { name: "记账簿冻结记录查询", path: "(冻结记录)", method: "POST", scene: "SC-LED-001", async: false }
+    API-LED-011: { name: "记账簿解冻记录查询", path: "(解冻记录)", method: "POST", scene: "SC-LED-001", async: false }
+
+    # ========== 聚合支付API ==========
+    API-AGG-001: { name: "聚合支付托管下单", path: "(托管下单)", method: "POST", scene: "SC-AGG-001", async: true }
+    API-AGG-002: { name: "聚合支付统一下单", path: "(统一下单)", method: "POST", scene: "SC-AGG-001", async: true }
+    API-AGG-003: { name: "付款码支付", path: "(付款码)", method: "POST", scene: "SC-AGG-001", async: true }
+    API-AGG-004: { name: "聚合关单", path: "(聚合关单)", method: "POST", scene: "SC-AGG-001", async: false }
+    API-AGG-005: { name: "生成聚合订单码", path: "(订单码)", method: "POST", scene: "SC-AGG-001", async: false }
+    API-AGG-006: { name: "签约", path: "(签约)", method: "POST", scene: "SC-AGG-002", async: true }
+    API-AGG-007: { name: "签约查询", path: "(签约查询)", method: "POST", scene: "SC-AGG-002", async: false }
+    API-AGG-008: { name: "解约", path: "(解约)", method: "POST", scene: "SC-AGG-002", async: true }
+    API-AGG-009: { name: "获取刷脸付调用凭证", path: "(刷脸付)", method: "POST", scene: "SC-AGG-003", async: false }
+
+    # ========== 渠道报备API ==========
+    API-RPT-001: { name: "微信实名认证申请单申请", path: "(微信实名)", method: "POST", scene: "SC-RPT-001", async: true }
+    API-RPT-002: { name: "撤销微信实名认证申请单", path: "(撤销微信实名)", method: "POST", scene: "SC-RPT-001", async: false }
+    API-RPT-003: { name: "查询微信实名认证状态", path: "(微信实名状态)", method: "POST", scene: "SC-RPT-001", async: false }
+    API-RPT-004: { name: "支付宝实名认证申请单申请", path: "(支付宝实名)", method: "POST", scene: "SC-RPT-001", async: true }
+    API-RPT-005: { name: "撤销支付宝实名认证", path: "(撤销支付宝实名)", method: "POST", scene: "SC-RPT-001", async: false }
+    API-RPT-006: { name: "查询支付宝实名认证状态", path: "(支付宝实名状态)", method: "POST", scene: "SC-RPT-001", async: false }
+    API-RPT-007: { name: "活动报名申请接口", path: "(活动报名)", method: "POST", scene: "SC-RPT-002", async: true }
+    API-RPT-008: { name: "活动报名查询接口", path: "(报名查询)", method: "POST", scene: "SC-RPT-002", async: false }
+    API-RPT-009: { name: "查询渠道报备信息", path: "(报备查询)", method: "POST", scene: "SC-RPT-002", async: false }
+    API-RPT-010: { name: "修改渠道报备信息", path: "(报备修改)", method: "POST", scene: "SC-RPT-002", async: true }
+    API-RPT-011: { name: "商户授权状态查询接口", path: "(授权状态)", method: "POST", scene: "SC-RPT-002", async: false }
+    API-RPT-012: { name: "公众号配置接口（异步）", path: "(公众号配置)", method: "POST", scene: "SC-RPT-002", async: true }
+    API-RPT-013: { name: "公众号配置查询", path: "(公众号查询)", method: "POST", scene: "SC-RPT-002", async: false }
+    API-RPT-014: { name: "报备记录备份", path: "(报备备份)", method: "POST", scene: "SC-RPT-002", async: false }
+
+    # ========== 渠道结算API ==========
+    API-SET-001: { name: "查询渠道结算账户", path: "(结算查询)", method: "POST", scene: "SC-SET-001", async: false }
+    API-SET-002: { name: "修改渠道结算账户", path: "(结算修改)", method: "POST", scene: "SC-SET-001", async: true }
+    API-SET-003: { name: "查询渠道结算账户修改结果", path: "(结算修改结果)", method: "POST", scene: "SC-SET-001", async: false }
+
+    # ========== 信用分API ==========
+    API-CRD-001: { name: "信用分创建", path: "(信用分创建)", method: "POST", scene: "SC-CRD-001", async: true }
+    API-CRD-002: { name: "信用分完结", path: "(信用分完结)", method: "POST", scene: "SC-CRD-001", async: true }
+    API-CRD-003: { name: "信用分修改", path: "(信用分修改)", method: "POST", scene: "SC-CRD-001", async: true }
+    API-CRD-004: { name: "信用分取消", path: "(信用分取消)", method: "POST", scene: "SC-CRD-001", async: true }
+    API-CRD-005: { name: "信用分同步", path: "(信用分同步)", method: "POST", scene: "SC-CRD-001", async: true }
+    API-CRD-006: { name: "信用分查询", path: "(信用分查询)", method: "POST", scene: "SC-CRD-001", async: false }
+    API-CRD-007: { name: "信用分扣款", path: "(信用分扣款)", method: "POST", scene: "SC-CRD-001", async: true }
+
+    # ========== 投诉处理API ==========
+    API-CMP-001: { name: "查询投诉订单列表", path: "(投诉列表)", method: "POST", scene: "SC-CMP-001", async: false }
+    API-CMP-002: { name: "查询投诉订单详情", path: "(投诉详情)", method: "POST", scene: "SC-CMP-001", async: false }
+    API-CMP-003: { name: "查询投诉协商历史", path: "(协商历史)", method: "POST", scene: "SC-CMP-001", async: false }
+    API-CMP-004: { name: "回复用户处理内容", path: "(回复处理)", method: "POST", scene: "SC-CMP-001", async: true }
+    API-CMP-005: { name: "更新退款审核结果", path: "(退款审核)", method: "POST", scene: "SC-CMP-001", async: true }
+    API-CMP-006: { name: "反馈处理完成", path: "(处理完成)", method: "POST", scene: "SC-CMP-001", async: true }
+    API-CMP-007: { name: "图片下载", path: "(图片下载)", method: "POST", scene: "SC-CMP-001", async: false }
+    API-CMP-008: { name: "查询小程序投诉详情", path: "(小程序投诉)", method: "POST", scene: "SC-CMP-002", async: false }
+    API-CMP-009: { name: "商家回应/申诉小程序投诉", path: "(小程序申诉)", method: "POST", scene: "SC-CMP-002", async: true }
+    API-CMP-010: { name: "查询小程序投诉协商历史", path: "(小程序协商)", method: "POST", scene: "SC-CMP-002", async: false }
+
+    # ========== 银行转账/网银支付API ==========
+    API-BNK-001: { name: "银行转账支付", path: "(银行转账)", method: "POST", scene: "SC-BNK-001", async: true }
+    API-BNK-002: { name: "银行转账查询", path: "(转账查询)", method: "POST", scene: "SC-BNK-001", async: false }
+    API-BNK-003: { name: "到账信息确认接口", path: "(到账确认)", method: "POST", scene: "SC-BNK-001", async: false }
+    API-BNK-004: { name: "网银支付", path: "(网银支付)", method: "POST", scene: "SC-BNK-002", async: true }
+
+    # ========== 其他服务API ==========
+    API-OTH-001: { name: "查询经营省市区编码", path: "(省市区编码)", method: "POST", scene: "SC-OTH-001", async: false }
+    API-OTH-002: { name: "查询整改协查结果", path: "(整改协查)", method: "POST", scene: "SC-OTH-001", async: false }
+    API-OTH-003: { name: "集团账户资金划拨", path: "(集团划拨)", method: "POST", scene: "SC-OTH-001", async: true }
+    API-OTH-004: { name: "集团账户资金划拨查询", path: "(划拨查询)", method: "POST", scene: "SC-OTH-001", async: false }
+    API-OTH-005: { name: "商户状态查询", path: "(状态查询)", method: "POST", scene: "SC-OTH-001", async: false }
+    API-OTH-006: { name: "重复获取(短验/邮件/电子签章)", path: "(重复获取)", method: "POST", scene: "SC-OTH-001", async: false }
+    API-OTH-007: { name: "付款码查询用户ID", path: "(付款码用户ID)", method: "POST", scene: "SC-OTH-001", async: false }
+    API-OTH-008: { name: "银联获取用户ID", path: "(银联用户ID)", method: "POST", scene: "SC-OTH-001", async: false }
+    API-OTH-009: { name: "上传电子小票信息", path: "(电子小票)", method: "POST", scene: "SC-OTH-001", async: false }
+    API-OTH-010: { name: "花呗分期前置发奖", path: "(花呗发奖)", method: "POST", scene: "SC-OTH-001", async: true }
+    API-OTH-011: { name: "花呗分期前置咨询", path: "(花呗咨询)", method: "POST", scene: "SC-OTH-001", async: false }
+    API-OTH-012: { name: "银行入金退回", path: "(入金退回)", method: "POST", scene: "SC-OTH-001", async: true }
+    API-OTH-013: { name: "银行入金流水退回查询", path: "(入金退回查询)", method: "POST", scene: "SC-OTH-001", async: false }
+    API-OTH-014: { name: "厦门多渠道开户激活", path: "(厦门开户激活)", method: "POST", scene: "SC-OTH-001", async: true }
+
+    signature_method: "RSA签名"
+    encryption: "敏感字段加密传输（身份证号/银行卡号等）"
+    base_url: "https://openapi.yeepay.com"
+    content_type: "application/json"
+
+  # ============================================
+  # Part 12: API参数字典（V2.1.0 新增）
+  # 入网类6个API参数完整提取（其余API待强化学习补充）
+  # 参数语义角色: PRIMARY_KEY/IDEMPOTENT_KEY/AMOUNT/STATUS/SENSITIVE/TIMESTAMP/SIGNATURE/REFERENCE/BUSINESS_PARAM/PAGINATION/QUERY_FILTER/RESPONSE_META
+  # 参数来源类型: user_input/upstream_api/system_generated/config/computed
+  # 加密: none/rsa/aes/mask
+  # ============================================
+  api_param_dictionary:
+    description: "V2.1.0增量学习：入网类6个API参数深度提取，含语义角色+来源+加密+枚举+校验"
+    coverage: "6/150+ API（入网类全覆盖），其余API待强化学习选项f)逐步补充"
+
+    # ========== API-MER-001: 特约商户入网(企业/个体) ==========
+    API-MER-001:
+      api_name: "特约商户入网(企业/个体)"
+      api_path: "/rest/v2.0/mer/register/saas/merchant"
+      method: "POST"
+      content_type: "application/x-www-form-urlencoded"
+      requires_signature: true
+      request_params:
+        - { field: "requestNo", type: "string(64)", required: true, description: "入网请求号", source_type: "user_input", encryption: "none", validation: "唯一性：非驳回状态不允许重复", semantic_role: "IDEMPOTENT_KEY", example: "YBRWQQH20210622XXXXXX" }
+        - { field: "businessRole", type: "string", required: true, description: "入网商户业务角色", source_type: "user_input", encryption: "none", enum_values: ["ORDINARY_MERCHANT", "PLATFORM_MERCHANT", "SETTLED_MERCHANT", "SHARE_MERCHANT", "HEAD_CHAIN", "BRANCH_CHAIN"], semantic_role: "BUSINESS_PARAM", example: "ORDINARY_MERCHANT" }
+        - { field: "parentMerchantNo", type: "string(32)", required: true, description: "上级商户编号（SAAS服务商/平台商/连锁总店商编）", source_type: "config", encryption: "none", semantic_role: "REFERENCE", example: "10080011235" }
+        - { field: "merchantSubjectInfo", type: "string(JSON)", required: true, description: "商户主体信息（signName/shortName等）", source_type: "user_input", encryption: "none", semantic_role: "BUSINESS_PARAM" }
+        - { field: "merchantCorporationInfo", type: "string(JSON)", required: true, description: "商户法人信息（法人证件类型/编号/正反面URL/手机号）", source_type: "user_input", encryption: "none", semantic_role: "SENSITIVE", note: "含法人身份证号/手机号，需加密传输" }
+        - { field: "businessAddressInfo", type: "string(JSON)", required: true, description: "经营地址（省/市/区/详细地址）", source_type: "user_input", encryption: "none", semantic_role: "BUSINESS_PARAM" }
+        - { field: "notifyUrl", type: "string(256)", required: true, description: "商户回调地址（接收审核/驳回/完成通知）", source_type: "config", encryption: "none", semantic_role: "BUSINESS_PARAM" }
+        - { field: "productInfo", type: "string(JSON)", required: true, description: "开通产品信息（productCode/rateType/percentRate/fixedRate）", source_type: "user_input", encryption: "none", semantic_role: "BUSINESS_PARAM" }
+        - { field: "industryCategoryInfo", type: "string(JSON)", required: false, description: "经营类目（一级行业/二级行业分类编码）", source_type: "user_input", encryption: "none", semantic_role: "BUSINESS_PARAM" }
+        - { field: "accountInfo", type: "string(JSON)", required: true, description: "结算账户信息（bankAccountType/bankCardNo/bankCode）", source_type: "user_input", encryption: "rsa", semantic_role: "SENSITIVE", note: "银行卡号需RSA加密" }
+        - { field: "productQualificationInfo", type: "string(JSON)", required: false, description: "产品资质信息", source_type: "user_input", encryption: "none", semantic_role: "BUSINESS_PARAM" }
+        - { field: "functionService", type: "string(JSON)", required: false, description: "功能服务（SHARE分账/BACKUP备份数量）", source_type: "user_input", encryption: "none", semantic_role: "BUSINESS_PARAM" }
+        - { field: "functionServiceQualificationInfo", type: "string(JSON)", required: false, description: "功能服务配套资质信息", source_type: "user_input", encryption: "none", semantic_role: "BUSINESS_PARAM" }
+        - { field: "businessScene", type: "string(JSON)", required: false, description: "商户收单场景（businessSceneList/isAppIdConfig等）", source_type: "user_input", encryption: "none", semantic_role: "BUSINESS_PARAM" }
+
+      response_params:
+        - { field: "returnCode", type: "string", required: true, description: "响应编码", semantic_role: "RESPONSE_META" }
+        - { field: "returnMsg", type: "string", required: true, description: "响应描述", semantic_role: "RESPONSE_META" }
+        - { field: "requestNo", type: "string(64)", required: false, description: "入网请求号（校验通过后返回）", semantic_role: "IDEMPOTENT_KEY", downstream_usage: ["API-MER-003"] }
+        - { field: "applicationNo", type: "string", required: false, description: "申请单编号（校验通过后返回）", semantic_role: "PRIMARY_KEY", downstream_usage: ["异步通知"] }
+        - { field: "applicationStatus", type: "string", required: false, description: "申请状态", enum_values: ["REVIEW_BACK", "AUTHENTICITY_VERIFYING", "AGREEMENT_SIGNING", "BUSINESS_OPENING", "COMPLETED"], semantic_role: "STATUS" }
+
+      notification_params:
+        notification_event: "入网结果通知"
+        content_type: "application/json"
+        correlation_field: "requestNo"
+        params:
+          - { field: "requestNo", type: "string(64)", required: true, description: "商户入网请求号", semantic_role: "IDEMPOTENT_KEY" }
+          - { field: "applicationNo", type: "string(64)", required: true, description: "入网申请单编号", semantic_role: "PRIMARY_KEY" }
+          - { field: "applicationStatus", type: "string(64)", required: true, description: "申请状态", enum_values: ["REVIEW_BACK(申请已驳回)", "AUTHENTICITY_VERIFYING(真实性验证中)", "AGREEMENT_SIGNING(协议待签署)", "BUSINESS_OPENING(业务开通中)", "COMPLETED(申请已完成)"], semantic_role: "STATUS" }
+          - { field: "merchantNo", type: "string(32)", required: false, description: "易宝内部商户编号（商编生成后返回）", semantic_role: "PRIMARY_KEY", downstream_usage: ["API-MER-003", "API-CHG-001~007", "API-ACC-001~014", "API-PAY-001~031", "全部需merchantNo的API"] }
+          - { field: "auditOpinion", type: "string(1024)", required: false, description: "驳回原因/报备失败原因/资质缺失说明", semantic_role: "BUSINESS_PARAM" }
+          - { field: "progressDescription", type: "string(128)", required: false, description: "进度说明（REMIT_AUTH=待意愿认证）", semantic_role: "STATUS" }
+          - { field: "agreementSignUrl", type: "string(256)", required: false, description: "协议签署地址（协议待签署时返回）", semantic_role: "BUSINESS_PARAM" }
+          - { field: "intentionAuthUrl", type: "string(256)", required: false, description: "意愿认证地址", semantic_role: "BUSINESS_PARAM" }
+          - { field: "openAccountResult", type: "object", required: false, description: "开户结果通知（含openAccountStatus/bindBankStatus等）", semantic_role: "STATUS", sub_fields: ["requestNo", "openAccountStatus(SUCCESS/FAIL)", "openAccountMessage", "bindBankStatus(SUCCESS/PROCESS/FAIL)", "bindBankMessage"] }
+
+      error_codes:
+        - { code: "NIG00000", message: "请求成功", handling: "无" }
+        - { code: "NIG00001", message: "必填参数有误", handling: "根据报错检查参数信息，如有更多疑问请联系技术支持" }
+        - { code: "NIG00002", message: "数据验证有误", handling: "根据报错检查参数信息，如有更多疑问请联系技术支持" }
+        - { code: "NIG00003", message: "并发请求报错", handling: "降低请求频率，如有更多疑问请联系技术支持" }
+        - { code: "NIG99999", message: "系统未知异常", handling: "联系技术支持或易宝运营" }
+        - { code: "40044", message: "业务处理失败（总错误码）", handling: "查看子错误码" }
+
+    # ========== API-MER-002: 特约商户入网(小微) ==========
+    API-MER-002:
+      api_name: "特约商户入网(小微)"
+      api_path: "/rest/v2.0/mer/register/saas/micro/merchant"
+      method: "POST"
+      content_type: "application/x-www-form-urlencoded"
+      requires_signature: true
+      request_params:
+        - { field: "requestNo", type: "string(64)", required: true, description: "入网请求号", source_type: "user_input", encryption: "none", semantic_role: "IDEMPOTENT_KEY" }
+        - { field: "parentMerchantNo", type: "string(32)", required: true, description: "上级商户编号", source_type: "config", encryption: "none", semantic_role: "REFERENCE" }
+        - { field: "merchantSubjectInfo", type: "string(JSON)", required: true, description: "商户主体信息（signName/shortName）", source_type: "user_input", encryption: "none", semantic_role: "BUSINESS_PARAM" }
+        - { field: "merchantCorporationInfo", type: "string(JSON)", required: true, description: "商户法人信息（法人证件类型/编号/正反面URL/手机号）", source_type: "user_input", encryption: "none", semantic_role: "SENSITIVE" }
+        - { field: "businessAddressInfo", type: "string(JSON)", required: true, description: "经营地址", source_type: "user_input", encryption: "none", semantic_role: "BUSINESS_PARAM" }
+        - { field: "notifyUrl", type: "string(256)", required: true, description: "商户回调地址", source_type: "config", encryption: "none", semantic_role: "BUSINESS_PARAM" }
+        - { field: "productInfo", type: "string(JSON)", required: true, description: "开通产品信息", source_type: "user_input", encryption: "none", semantic_role: "BUSINESS_PARAM" }
+        - { field: "businessRole", type: "string", required: false, description: "入网商户业务角色", source_type: "user_input", encryption: "none", enum_values: ["ORDINARY_MERCHANT", "SETTLED_MERCHANT", "SHARE_MERCHANT", "BRANCH_CHAIN"], semantic_role: "BUSINESS_PARAM", default: "SETTLED_MERCHANT" }
+        - { field: "industryCategoryInfo", type: "string(JSON)", required: false, description: "经营类目", source_type: "user_input", encryption: "none", semantic_role: "BUSINESS_PARAM" }
+        - { field: "accountInfo", type: "string(JSON)", required: false, description: "结算账户信息（bankAccountType/bankCardNo/bankCode）", source_type: "user_input", encryption: "rsa", semantic_role: "SENSITIVE" }
+        - { field: "productQualificationInfo", type: "string(JSON)", required: false, description: "产品资质", source_type: "user_input", encryption: "none", semantic_role: "BUSINESS_PARAM" }
+        - { field: "functionService", type: "string(JSON)", required: false, description: "功能服务", source_type: "user_input", encryption: "none", semantic_role: "BUSINESS_PARAM" }
+
+      response_params:
+        - { field: "returnCode", type: "string", required: true, description: "响应编码", semantic_role: "RESPONSE_META" }
+        - { field: "returnMsg", type: "string", required: true, description: "响应描述", semantic_role: "RESPONSE_META" }
+        - { field: "requestNo", type: "string(64)", required: false, description: "入网请求号", semantic_role: "IDEMPOTENT_KEY", downstream_usage: ["API-MER-003"] }
+        - { field: "applicationNo", type: "string", required: false, description: "申请单编号", semantic_role: "PRIMARY_KEY" }
+        - { field: "applicationStatus", type: "string", required: false, description: "申请状态", semantic_role: "STATUS" }
+
+      notification_params:
+        notification_event: "入网结果通知"
+        correlation_field: "requestNo"
+        params:
+          - { field: "requestNo", type: "string(64)", required: true, description: "商户入网请求号", semantic_role: "IDEMPOTENT_KEY" }
+          - { field: "applicationNo", type: "string(64)", required: true, description: "入网申请单编号", semantic_role: "PRIMARY_KEY" }
+          - { field: "applicationStatus", type: "string(64)", required: true, description: "申请状态", semantic_role: "STATUS" }
+          - { field: "merchantNo", type: "string(32)", required: false, description: "易宝内部商户编号", semantic_role: "PRIMARY_KEY", downstream_usage: ["全部需merchantNo的API"] }
+
+      error_codes:
+        - { code: "NIG00000", message: "请求成功", handling: "无" }
+        - { code: "NIG00001", message: "必填参数有误", handling: "检查参数" }
+        - { code: "NIG00002", message: "数据验证有误", handling: "检查参数" }
+        - { code: "NIG99999", message: "系统未知异常", handling: "联系技术支持" }
+
+    # ========== API-MER-003: 商户入网进度查询接口 ==========
+    API-MER-003:
+      api_name: "商户入网进度查询接口"
+      api_path: "/rest/v2.0/mer/register/saas/query"
+      method: "POST"
+      requires_signature: true
+      request_params:
+        - { field: "requestNo", type: "string(64)", required: false, description: "入网请求号（与merchantNo二选一必传）", source_type: "upstream_api", source_api: "API-MER-001/API-MER-002", source_field: "requestNo", encryption: "none", semantic_role: "IDEMPOTENT_KEY" }
+        - { field: "merchantNo", type: "string", required: false, description: "商户编号（与requestNo二选一必传）", source_type: "upstream_api", source_api: "异步通知", source_field: "merchantNo", encryption: "none", semantic_role: "PRIMARY_KEY" }
+
+      response_params:
+        - { field: "returnCode", type: "string", required: true, description: "响应编码", semantic_role: "RESPONSE_META" }
+        - { field: "returnMsg", type: "string", required: true, description: "响应描述", semantic_role: "RESPONSE_META" }
+        - { field: "applicationNo", type: "string", required: false, description: "申请单编号", semantic_role: "PRIMARY_KEY" }
+        - { field: "applicationStatus", type: "string", required: false, description: "申请状态", enum_values: ["REVIEW_BACK", "AUTHENTICITY_VERIFYING", "AGREEMENT_SIGNING", "BUSINESS_OPENING", "COMPLETED"], semantic_role: "STATUS" }
+        - { field: "merchantNo", type: "string(32)", required: false, description: "易宝内部商户编号", semantic_role: "PRIMARY_KEY" }
+
+      error_codes:
+        - { code: "NIG00000", message: "请求成功", handling: "无" }
+        - { code: "NIG00001", message: "必填参数有误", handling: "requestNo和merchantNo至少传一个" }
+
+    # ========== API-MER-004: 获取H5入网链接 ==========
+    API-MER-004:
+      api_name: "获取H5入网链接"
+      api_path: "/rest/v2.0/mer/register/saas/h5/link"
+      method: "POST"
+      requires_signature: true
+      request_params:
+        - { field: "requestNo", type: "string(64)", required: true, description: "商户请求流水号", source_type: "user_input", encryption: "none", semantic_role: "IDEMPOTENT_KEY" }
+        - { field: "notifyUrl", type: "string(256)", required: true, description: "商户回调地址（接收各节点状态/驳回原因通知）", source_type: "config", encryption: "none", semantic_role: "BUSINESS_PARAM" }
+        - { field: "directAgentNo", type: "string(32)", required: false, description: "直属代理编号（代理商拓展下级子商户时传）", source_type: "config", encryption: "none", semantic_role: "REFERENCE" }
+        - { field: "parentMerchantNo", type: "string(32)", required: false, description: "上级商户编号（二级平台商/连锁总店入下级商户）", source_type: "config", encryption: "none", semantic_role: "REFERENCE" }
+        - { field: "productInfoList", type: "array<object>", required: false, description: "产品列表（设置产品信息及费率）", source_type: "user_input", encryption: "none", semantic_role: "BUSINESS_PARAM" }
+
+      response_params:
+        - { field: "code", type: "string(64)", required: true, description: "返回码", enum_values: ["MAS000000(成功)"], semantic_role: "RESPONSE_META" }
+        - { field: "msg", type: "string(256)", required: true, description: "错误信息（code!=MAS000000时返回失败原因）", semantic_role: "RESPONSE_META" }
+        - { field: "requestNo", type: "string(64)", required: true, description: "请求号（回传）", semantic_role: "IDEMPOTENT_KEY", downstream_usage: ["API-MER-005"] }
+        - { field: "netInUrl", type: "string(256)", required: true, description: "H5入网页面链接", semantic_role: "BUSINESS_PARAM" }
+
+      notification_params:
+        notification_event: "H5入网回调通知"
+        correlation_field: "requestNo"
+        params:
+          - { field: "requestNo", type: "string(64)", required: true, description: "商户请求流水号", semantic_role: "IDEMPOTENT_KEY" }
+          - { field: "applicationStatus", type: "string(64)", required: true, description: "申请状态", enum_values: ["WAIT_SIGN(编辑中)", "REVIEWING(申请审核中)", "REVIEW_BACK(申请已驳回)", "AUTHENTICITY_VERIFYING(真实性验证中)", "AGREEMENT_SIGNING(协议待签署)", "BUSINESS_OPENING(业务开通中)", "COMPLETED(申请已完成)"], semantic_role: "STATUS" }
+          - { field: "merchantNo", type: "string(32)", required: false, description: "易宝内部商户编号", semantic_role: "PRIMARY_KEY", downstream_usage: ["全部需merchantNo的API"] }
+
+      error_codes:
+        - { code: "MAS000000", message: "请求成功", handling: "无" }
+        - { code: "NIG00001", message: "必填参数有误", handling: "检查参数" }
+
+    # ========== API-MER-005: H5入网进度查询 ==========
+    API-MER-005:
+      api_name: "H5入网进度查询"
+      api_path: "/rest/v2.0/mer/register/saas/h5/query"
+      method: "POST"
+      requires_signature: true
+      request_params:
+        - { field: "requestNo", type: "string(64)", required: true, description: "商户请求流水号（上送请求入网h5页面的流水号）", source_type: "upstream_api", source_api: "API-MER-004", source_field: "requestNo", encryption: "none", semantic_role: "IDEMPOTENT_KEY" }
+
+      response_params:
+        - { field: "code", type: "string(64)", required: true, description: "响应编码", enum_values: ["MAS000000(成功)"], semantic_role: "RESPONSE_META" }
+        - { field: "msg", type: "string(256)", required: true, description: "错误信息", semantic_role: "RESPONSE_META" }
+        - { field: "applicationStatus", type: "string(64)", required: true, description: "申请状态", enum_values: ["WAIT_SIGN", "REVIEWING", "REVIEW_BACK", "AUTHENTICITY_VERIFYING", "AGREEMENT_SIGNING", "BUSINESS_OPENING", "COMPLETED"], semantic_role: "STATUS" }
+        - { field: "netInUrl", type: "string(256)", required: true, description: "H5入网链接地址", semantic_role: "BUSINESS_PARAM" }
+
+      error_codes:
+        - { code: "MAS000000", message: "请求成功", handling: "无" }
+        - { code: "NIG00001", message: "必填参数有误", handling: "检查requestNo" }
+
+    # ========== API-MER-006: 子商户入网资质文件上传 ==========
+    API-MER-006:
+      api_name: "子商户入网资质文件上传"
+      api_path: "/rest/v2.0/mer/register/saas/qualification/upload"
+      method: "POST"
+      requires_signature: true
+      request_params:
+        - { field: "merQual", type: "string(binary)", required: true, description: "商户资质文件（二进制文件流）", source_type: "user_input", encryption: "none", semantic_role: "BUSINESS_PARAM" }
+
+      response_params:
+        - { field: "returnCode", type: "string", required: true, description: "响应编码", semantic_role: "RESPONSE_META" }
+        - { field: "returnMsg", type: "string", required: true, description: "响应信息", semantic_role: "RESPONSE_META" }
+        - { field: "merQualUrl", type: "string", required: false, description: "商户资质存储URL（易宝内网专用链接，仅供接口调用时使用，不支持直接预览）", semantic_role: "BUSINESS_PARAM", downstream_usage: ["API-MER-001（作为merchantCorporationInfo等字段的文件URL）"] }
+
+      error_codes:
+        - { code: "NIG00000", message: "请求成功", handling: "无" }
+        - { code: "NIG00001", message: "必填参数有误", handling: "检查merQual文件" }
+
+  # ============================================
+  # Part 13: 参数流转图（V2.1.0 新增）
+  # 入网类场景参数流转分析
+  # ============================================
+  param_flow:
+    description: "V2.1.0增量学习：入网类场景参数流转分析（场景内+跨场景+来源溯源+依赖矩阵）"
+
+    # ========== 场景内参数流转 ==========
+    intra_scene_param_flow:
+      - scene_id: "SC-MER-001"
+        scene_name: "特约商户入网（企业/个体）"
+        flows:
+          - { from_api: "API-MER-001", from_field: "requestNo", to_api: "API-MER-003", to_field: "requestNo", dependency: "optional", note: "查询入网进度，requestNo与merchantNo二选一" }
+          - { from_api: "API-MER-001", from_field: "applicationNo", to_api: "异步通知", to_field: "applicationNo", dependency: "required", note: "申请单编号回传异步通知" }
+          - { from_api: "异步通知", from_field: "merchantNo", to_api: "API-MER-003", to_field: "merchantNo", dependency: "optional", note: "商户编号查询入网进度" }
+          - { from_api: "API-MER-006", from_field: "merQualUrl", to_api: "API-MER-001", to_field: "merchantCorporationInfo.legalLicenceFrontUrl等", dependency: "optional", note: "资质文件URL作为入网API的JSON子字段" }
+        mermaid: |
+          flowchart LR
+            API-MER-001["API-MER-001<br/>入网(企业/个体)"] -->|"requestNo"| API-MER-003["API-MER-003<br/>进度查询"]
+            API-MER-001 -->|"applicationNo"| ASYNC1["异步通知<br/>入网结果"]
+            ASYNC1 -->|"merchantNo"| API-MER-003
+            API-MER-006["API-MER-006<br/>资质文件上传"] -->|"merQualUrl"| API-MER-001
+
+      - scene_id: "SC-MER-002"
+        scene_name: "特约商户入网（小微）"
+        flows:
+          - { from_api: "API-MER-002", from_field: "requestNo", to_api: "API-MER-003", to_field: "requestNo", dependency: "optional" }
+          - { from_api: "API-MER-002", from_field: "applicationNo", to_api: "异步通知", to_field: "applicationNo", dependency: "required" }
+          - { from_api: "异步通知", from_field: "merchantNo", to_api: "API-MER-003", to_field: "merchantNo", dependency: "optional" }
+        mermaid: |
+          flowchart LR
+            API-MER-002["API-MER-002<br/>入网(小微)"] -->|"requestNo"| API-MER-003["API-MER-003<br/>进度查询"]
+            API-MER-002 -->|"applicationNo"| ASYNC2["异步通知<br/>入网结果"]
+            ASYNC2 -->|"merchantNo"| API-MER-003
+
+      - scene_id: "SC-MER-003"
+        scene_name: "H5自助入网"
+        flows:
+          - { from_api: "API-MER-004", from_field: "requestNo", to_api: "API-MER-005", to_field: "requestNo", dependency: "required", note: "H5进度查询必须传获取H5链接时的requestNo" }
+          - { from_api: "API-MER-004", from_field: "netInUrl", to_api: "商户前端", to_field: "H5页面", dependency: "required", note: "返回H5入网页面URL给商户" }
+        mermaid: |
+          flowchart LR
+            API-MER-004["API-MER-004<br/>获取H5链接"] -->|"requestNo"| API-MER-005["API-MER-005<br/>H5进度查询"]
+            API-MER-004 -->|"netInUrl"| MERCHANT["商户H5页面"]
+
+    # ========== 跨场景参数流转 ==========
+    cross_scene_param_flow:
+      - from_scene: "SC-MER-001/002"
+        from_api: "异步通知"
+        from_field: "merchantNo"
+        to_scene: "SC-CHG-001~003"
+        to_api: "API-CHG-001~007"
+        to_field: "merchantNo"
+        dependency: "required"
+        note: "商户变更类API均需merchantNo作为入参"
+
+      - from_scene: "SC-MER-001/002"
+        from_api: "异步通知"
+        from_field: "merchantNo"
+        to_scene: "SC-ACC-001~003"
+        to_api: "API-ACC-001~014"
+        to_field: "merchantNo"
+        dependency: "required"
+        note: "账户服务类API均需merchantNo"
+
+      - from_scene: "SC-MER-001/002"
+        from_api: "异步通知"
+        from_field: "merchantNo"
+        to_scene: "SC-PAY-001~004"
+        to_api: "API-PAY-001~031"
+        to_field: "merchantNo"
+        dependency: "required"
+        note: "资金收付类API均需merchantNo（前置条件：applicationStatus=COMPLETED）"
+
+      - from_scene: "SC-MER-001/002"
+        from_api: "异步通知"
+        from_field: "merchantNo"
+        to_scene: "SC-AGG-001~003"
+        to_api: "API-AGG-001~009"
+        to_field: "merchantNo"
+        dependency: "required"
+        note: "聚合支付类API均需merchantNo"
+
+      - from_scene: "SC-MER-001/002"
+        from_api: "异步通知"
+        from_field: "merchantNo"
+        to_scene: "SC-RPT-001/002"
+        to_api: "API-RPT-001~014"
+        to_field: "merchantNo"
+        dependency: "required"
+        note: "渠道报备类API均需merchantNo"
+
+      mermaid: |
+        flowchart TD
+          SC-MER["SC-MER-001/002<br/>商户入网"] -->|"merchantNo<br/>(异步通知)"| SC-CHG["SC-CHG<br/>商户变更"]
+          SC-MER -->|"merchantNo"| SC-ACC["SC-ACC<br/>账户服务"]
+          SC-MER -->|"merchantNo"| SC-PAY["SC-PAY<br/>资金收付"]
+          SC-MER -->|"merchantNo"| SC-AGG["SC-AGG<br/>聚合支付"]
+          SC-MER -->|"merchantNo"| SC-RPT["SC-RPT<br/>渠道报备"]
+          SC-MER -->|"merchantNo"| SC-LED["SC-LED<br/>记账簿"]
+          SC-MER -->|"merchantNo"| SC-CRD["SC-CRD<br/>信用分"]
+          SC-MER -->|"merchantNo"| SC-CMP["SC-CMP<br/>投诉处理"]
+
+    # ========== 参数来源溯源 ==========
+    param_source_trace:
+      - param_name: "requestNo"
+        semantic_role: "IDEMPOTENT_KEY"
+        origin:
+          api_id: "API-MER-001/API-MER-002/API-MER-004"
+          source_type: "user_input"
+        flows_to: ["API-MER-003(查询)", "异步通知(关联)", "API-MER-005(H5进度查询)"]
+        trace_chain: "服务商生成requestNo → 传入API-MER-001 → 返回applicationNo → 异步通知回传requestNo+applicationStatus+merchantNo → 可用requestNo调API-MER-003查询进度"
+
+      - param_name: "merchantNo"
+        semantic_role: "PRIMARY_KEY"
+        origin:
+          api_id: "异步通知（入网结果通知）"
+          source_type: "system_generated"
+        flows_to: ["API-MER-003", "API-CHG-001~007", "API-ACC-001~014", "API-PAY-001~031", "API-AGG-001~009", "API-RPT-001~014", "API-LED-001~011", "API-CRD-001~007", "API-CMP-001~010", "API-SET-001~003", "API-BNK-001~004", "API-OTH-001~014"]
+        trace_chain: "入网API提交 → 易宝审核 → 开户成功 → 异步通知返回merchantNo → 服务商存储merchantNo → 后续全部业务场景API均以merchantNo为主键"
+
+      - param_name: "applicationNo"
+        semantic_role: "PRIMARY_KEY"
+        origin:
+          api_id: "API-MER-001/API-MER-002"
+          source_type: "system_generated"
+        flows_to: ["异步通知"]
+        trace_chain: "入网API校验通过 → 返回applicationNo → 异步通知回传applicationNo+applicationStatus"
+
+      - param_name: "applicationStatus"
+        semantic_role: "STATUS"
+        origin:
+          api_id: "异步通知/API-MER-003/API-MER-005"
+          source_type: "system_generated"
+        flows_to: ["业务流程状态机"]
+        trace_chain: "入网API提交 → 审核流程推进 → applicationStatus流转：REVIEW_BACK→AUTHENTICITY_VERIFYING→AGREEMENT_SIGNING→BUSINESS_OPENING→COMPLETED"
+
+      - param_name: "parentMerchantNo"
+        semantic_role: "REFERENCE"
+        origin:
+          api_id: "N/A（配置项）"
+          source_type: "config"
+        flows_to: ["API-MER-001", "API-MER-002", "API-MER-004"]
+        trace_chain: "SAAS服务商入网时获得自己的merchantNo → 作为parentMerchantNo传入子商户入网API"
+
+      - param_name: "merQualUrl"
+        semantic_role: "BUSINESS_PARAM"
+        origin:
+          api_id: "API-MER-006"
+          source_type: "system_generated"
+        flows_to: ["API-MER-001（作为JSON子字段值）"]
+        trace_chain: "上传资质文件 → API-MER-006返回merQualUrl → 作为API-MER-001的merchantCorporationInfo.legalLicenceFrontUrl等字段值"
+
+    # ========== 参数依赖矩阵 ==========
+    param_dependency_matrix:
+      description: "行=消费者API，列=生产者API，单元格=依赖参数列表"
+      matrix:
+        - { consumer_api: "API-MER-003", producer_api: "API-MER-001", params: ["requestNo"], dependency: "optional" }
+        - { consumer_api: "API-MER-003", producer_api: "异步通知", params: ["merchantNo"], dependency: "optional" }
+        - { consumer_api: "API-MER-005", producer_api: "API-MER-004", params: ["requestNo"], dependency: "required" }
+        - { consumer_api: "API-MER-001", producer_api: "API-MER-006", params: ["merQualUrl(作为JSON子字段)"], dependency: "optional" }
+        - { consumer_api: "API-CHG-001~007", producer_api: "异步通知(SC-MER)", params: ["merchantNo"], dependency: "required" }
+        - { consumer_api: "API-ACC-001~014", producer_api: "异步通知(SC-MER)", params: ["merchantNo"], dependency: "required" }
+        - { consumer_api: "API-PAY-001~031", producer_api: "异步通知(SC-MER)", params: ["merchantNo"], dependency: "required" }
+        - { consumer_api: "API-AGG-001~009", producer_api: "异步通知(SC-MER)", params: ["merchantNo"], dependency: "required" }
+        - { consumer_api: "API-RPT-001~014", producer_api: "异步通知(SC-MER)", params: ["merchantNo"], dependency: "required" }
+
+    # ========== 参数×状态机关联 ==========
+    param_state_association:
+      - param_name: "applicationStatus"
+        state_machine: "商户入网状态机"
+        effect: "入网流程核心状态字段，驱动状态流转：REVIEW_BACK(驳回)→重新提交 / AUTHENTICITY_VERIFYING(待意愿认证)→完成认证 / AGREEMENT_SIGNING(待签署)→签署协议 / BUSINESS_OPENING(开通中)→等待完成 / COMPLETED(完成)"
+      - param_name: "merchantNo"
+        state_machine: "商户入网状态机"
+        effect: "merchantNo生成=开户成功标志，生成后所有状态都会返回此字段；merchantNo是后续所有业务场景的前置条件"
+      - param_name: "openAccountResult.openAccountStatus"
+        state_machine: "商户入网状态机"
+        effect: "SUCCESS→开户成功→进入绑卡流程 / FAIL→开户失败→流程终止"
+      - param_name: "openAccountResult.bindBankStatus"
+        state_machine: "商户入网状态机"
+        effect: "SUCCESS→绑卡成功→商户ACTIVE / PROCESS→绑卡处理中→等待 / FAIL→绑卡失败→需重新绑卡"
+
+    # ========== 参数×业务规则关联 ==========
+    param_rule_association:
+      - rule_id: "BR-PAY-001"
+        related_params: ["applicationStatus", "merchantNo"]
+        note: "商户入网须先完成开户和绑卡（applicationStatus=COMPLETED且merchantNo已生成）才能进行资金收付"
+      - rule_id: "BR-PAY-002"
+        related_params: ["requestNo"]
+        note: "所有交易请求须带唯一requestNo实现幂等控制（非驳回状态不允许同requestNo重复发起）"
+      - rule_id: "BR-PAY-003"
+        related_params: ["merchantCorporationInfo.legalLicenceNo", "accountInfo.bankCardNo"]
+        note: "敏感数据（法人身份证号/银行卡号）须RSA加密传输"
+
+    # ========== 参数安全分析 ==========
+    param_security_analysis:
+      sensitive_fields:
+        - { param_name: "merchantCorporationInfo.legalLicenceNo", api_id: "API-MER-001/002", encryption: "rsa", risk: "法人身份证号，明文传输违反PCI-DSS" }
+        - { param_name: "accountInfo.bankCardNo", api_id: "API-MER-001/002", encryption: "rsa", risk: "银行卡号，明文传输违反PCI-DSS" }
+        - { param_name: "merchantCorporationInfo.mobile", api_id: "API-MER-001/002", encryption: "none", risk: "法人手机号，建议加密传输" }
+      idempotent_keys:
+        - { param_name: "requestNo", api_id: "API-MER-001/002/003/004/005", uniqueness_mechanism: "服务商自定义生成，非驳回状态不允许重复；驳回状态可同requestNo重新发起（商编不变）" }
+      amount_fields:
+        - { param_name: "productInfo.percentRate", api_id: "API-MER-001/002", validation: "费率百分比", precision: "视产品而定" }
+        - { param_name: "productInfo.fixedRate", api_id: "API-MER-001/002", validation: "固定费率", precision: "视产品而定" }
+      signature_analysis:
+        algorithm: "RSA"
+        sign_scope: "全部请求参数按字典序拼接+RSA私钥签名"
+        verify_scope: "易宝返回参数+RSA公钥验签"
+        note: "所有API均需签名验签，请求头携带签名信息"
+
+  # ============================================
+  # 参数融合报告（V2.1.0 新增）
+  # ============================================
+  param_fusion_report:
+    param_extraction_coverage: "6/150+ API（入网类全覆盖，4.0%）"
+    param_flow_completeness: "85%（入网类参数流转已建立，跨场景merchantNo流转已建立）"
+    param_state_association_count: 4
+    param_rule_association_count: 3
+    security_risks:
+      - "merchantCorporationInfo.mobile（法人手机号）encryption=none，建议加密"
+      - "productInfo.percentRate/fixedRate（费率字段）缺少validation校验规则"
+    uncovered_apis: "144个API待强化学习选项f)补充参数"
+
+  # V3.0.0 SugarMate: 收单场景→商编映射
+  # 来源: https://open.yeepay.com/docs/products/ptssfk/api/options__rest__v2.0__mer__register__contribute__merchant
+  # 易宝按收单环境(WEB/WAP/APP/MINI_PROGRAM)和收单场景(DRUG_RETAIL/MEDICAL_SERVICE/LIVE_COMMERCE/COURSE_TRAINING等)分配不同商编(merchant_no)
+  # 同一商户可持有多个商编（不同场景独立结算）
+  sugarMate_onboard_knowledge:
+    learned_for: "SugarMate v3.0.0 入驻与入网架构分离"
+    learn_date: "2026-07-28"
+    key_concepts:
+      receive_environment:
+        description: "收单环境决定支付技术通道，影响API调用方式"
+        types:
+          WEB: "PC浏览器支付·电脑端收银台"
+          WAP: "移动H5支付·手机浏览器/公众号H5收银台"
+          APP: "APP内原生支付·SDK集成收银台"
+          MINI_PROGRAM: "小程序支付·微信小程序内支付"
+      receive_scenario:
+        description: "收单场景决定商编类型，影响结算规则和费率"
+        types:
+          DRUG_RETAIL: "药品零售·药房向用户收款"
+          MEDICAL_SERVICE: "医疗服务·医生/药剂师/营养师/HM服务收费"
+          LIVE_COMMERCE: "直播电商·达人/主播带货收款"
+          COURSE_TRAINING: "课程培训·培训机构课程收费"
+      merchant_no:
+        description: "商编是易宝给每个商户×场景分配的唯一编号"
+        rule: "同一主体(yeepay_merchant_id)×不同收单场景→不同merchant_no"
+        example: "药房DRUG_RETAIL商编≠药房旗下直播LIVE_COMMERCE商编"
+      onboard_flow_standalone:
+        description: "入网为独立流程，不入驻自动触发"
+        trigger: "入驻角色管理员在PC后台【财务中心→开通支付·易宝入网】自主发起"
+        prerequisite: "入驻审核通过"
+        auto_load: "自动引用入驻资质(证照/身份信息)，仅需补充银行账户+收单场景等支付特有要素"
+    integration_points:
+      - "SM-18独立入网状态机(§7.13)"
+      - "BR-SUG-121~128入网业务规则(§11.10)"
+      - "UC-SUG-PC-030开通支付用例(§11.11)"
+      - "§26 UI元素编号·PG-SUG-PC-002财务中心页面"
+      - "§27 SM-18仿真Mock方案·SimYeepayCallbackAdapter"

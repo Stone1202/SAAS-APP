@@ -1,0 +1,1067 @@
+# ============================================
+# CodeBuddy 主配置文件
+# 版本：v4.0.0
+# 最后更新：2026-07-21
+# 变更：
+#   v4.0.0 多人多项目部署运营方案
+#     - 新增 port_pool 端口池配置（4000-4099自动分配）
+#     - 新增 access_control 访问控制配置引用（.access-control.yml）
+#     - 新增 deploy_config/deploy_manifest/access_portal 部署配置引用
+#     - pm-agent 注册 deploy-manager Skill
+#     - 新增 /deploy 命令注册（手动部署/重试/查看状态）
+#   v3.5.0 AI增强Agent思考能力——系统常识补全
+#     - 新增 system-blueprints.yml（AI系统常识推理框架）
+#     - 新增 Skill：system-common-sense-analyzer（AI驱动常识补全分析器）
+#     - requirement-flow.yml V3.1.0：§0.5c常识盲区探测 + §2 5W2H盲区展开
+#     - ba-agent.md V3.3.0：注册常识推理分析能力
+#     - iron-rules-registry.yml：新增 BA-25 系统常识完整性
+#     - gates-registry.yml：新增 G-REQ-15 系统常识完整性门禁
+#   v3.2.0 命令规范统一
+#     - 新增 command-spec.yml 命令规范文件
+#     - --brainstorm-type 替代 /brainstorm --type（语义隔离）
+#     - --report-type 替代 /report --type（语义隔离）
+#     - /accept 描述更新为四人模拟验收
+#     - /close --type 改为可选（自动选当前进行中需求流）
+#   v3.1.0 PO Agent + 分层流程
+#     - 新增 PO Agent（产品负责人，三层能力金字塔）
+#     - 脑暴分层类型（strategic/planning/regular）
+#     - 分层流程路由（战略级/规划级/常规级/修复级）
+#     - PO产物路径 projects/{project}/docs/00.5-product/
+#   v3.0.0 多项目模式落地 + 可插拔架构骨架
+#     - 根目录=治理框架仓库，项目实例在 projects/{project}/ 下
+#     - 骨架增加根级构建配置（package.json/vite.config/tsconfig/.env）
+#     - 骨架增加五维可插拔分层目录（contracts/adapters/services）
+#     - 骨架增加后端示例 + 测试架构
+#   v2.1.0 骨架智能检测
+# ============================================
+
+project:
+  name: "AI-SCRM"
+  mode: "new"
+  industry: "ecommerce"
+  # V3.2.1新增：多项目模式实际项目信息见 PROJECT-INDEX.yml
+  # project.name/industry 为兼容保留，会话恢复时优先读 PROJECT-INDEX.yml active_project
+
+# ============================================
+# 机器校验配置（YML）路径引用
+# 说明：v2.0.0 已统一为 YML 单一事实源架构。
+#       所有 Agent/Workflow/Skill 定义统一在 .codebuddy/configs/ 下以 YML 维护，
+#       原 .codebuddy/agents/*.md 与 .codebuddy/workflows/*.md 已废弃。
+# ============================================
+configs:
+  agents_dir: ".codebuddy/configs/agents/"
+  workflows_dir: ".codebuddy/configs/workflows/"
+  skills_dir: ".codebuddy/configs/skills/"
+  project_index: ".codebuddy/knowledge/PROJECT-INDEX.yml"  # V3.2.1新增：全局项目注册表
+  gates_registry: ".codebuddy/knowledge/common/gates-registry.yml"  # V3.2.2新增：门禁注册中心
+  iron_rules_registry: ".codebuddy/knowledge/common/iron-rules-registry.yml"  # V3.2.2新增：铁律注册中心
+  redlines: ".codebuddy/knowledge/common/redlines.yml"  # V3.2.2新增：红线补充清单（补注册）
+  doc_standard: ".codebuddy/knowledge/common/doc-standards.yml"
+  command_spec: ".codebuddy/knowledge/common/command-spec.yml"
+  metrics_standards: ".codebuddy/knowledge/common/metrics-standards.yml"  # V3.3.0新增
+  expert_registry: ".codebuddy/knowledge/common/expert-registry.yml"  # V3.4.0新增：专家统一配置（18盲区+7系统划分×3流程）
+  api_learner: ".codebuddy/knowledge/common/api-learner.yml"  # V3.4.0新增
+  governance_audit: ".codebuddy/knowledge/common/governance-audit.yml"  # V3.4.0新增
+  system_blueprints: ".codebuddy/knowledge/common/system-blueprints.yml"  # V3.5.0新增：AI系统常识推理框架
+  uml_standards: ".codebuddy/knowledge/common/uml-standards.yml"  # V3.6.0新增：UML 2.5 建模标准（状态机层级+动态交互图）
+  brain_memory_spec: ".codebuddy/knowledge/common/brain-memory-spec.yml"  # V3.6.0新增：大脑记忆规范
+  brain_evolution_engine: ".codebuddy/knowledge/common/brain-evolution-engine.yml"  # V3.6.0新增：大脑进化引擎
+  demand_impact_fusion_flow: ".codebuddy/configs/workflows/demand-impact-fusion-flow.yml"  # V3.5.0新增：需求理解+影响分析+融合分析公共流程（/init和/change共用）
+  dev_change_flow: ".codebuddy/configs/workflows/dev-change-flow.yml"  # V4.1.0新增：开发中实时变更回传（非命令触发，AI自动感知分级回流）
+  demo_flow: ".codebuddy/configs/workflows/demo-flow.yml"  # V5.4.0新增：测试前强制Demo用户验收（逐UC验收+dev-change回流循环）
+  deploy_config: "deploy/edgeone-pages.json"  # V1.0.0新增：部署配置
+  deploy_manifest: "deploy/DEPLOY-MANIFEST.yml"  # V1.0.0新增：部署清单
+  access_portal: "deploy/access-portal/index.html"  # V1.0.0新增：访问门户
+
+# ============================================
+# 项目维度（多项目制）
+# 铁律：除 /learn-project 学习流程外，所有流程产物必须落在 projects/{project}/ 下。
+# projects/{project}/ 下自动构建标准骨架（docs/src/pom），
+# .codebuddy/ 下仅存运行时状态（state.json / reports/ / journal/）和全局共享知识库（knowledge/）。
+# 骨架智能检测：/brainstorm 或 /init 入口先检查 projects/{project}/ 是否存在：
+#   - 已存在 → 跳过构建，直接复用现有目录，产物输出到 projects/{project}/
+#   - 不存在 → 自动构建骨架（运行 ensure-project.sh）
+# 未指定 --project 时使用 default_project（默认「未命名」）。
+# ============================================
+projects:
+  default_project: "未命名"
+  auto_build: true            # 项目目录缺失时自动创建标准骨架（脑暴/init 双入口均触发）
+  layout:                     # 项目产物骨架（位于 projects/{project}/ 下）
+    # 根级构建配置（V3.0.0新增）
+    package_json: "projects/{project}/package.json"
+    vite_config: "projects/{project}/vite.config.ts"
+    tsconfig: "projects/{project}/tsconfig.json"
+    tsconfig_node: "projects/{project}/tsconfig.node.json"
+    vitest_config: "projects/{project}/vitest.config.ts"
+    env_development: "projects/{project}/.env.development"
+    env_production: "projects/{project}/.env.production"
+    env_example: "projects/{project}/.env.example"
+    # 文档与治理
+    docs: "projects/{project}/docs/"
+    product: "projects/{project}/docs/00.5-product/"  # V3.1.0新增：PO Agent产物
+    pom: "projects/{project}/pom/"
+    # 源码分层（五维可插拔架构）
+    src: "projects/{project}/src/"
+    contracts: "projects/{project}/src/contracts/schemas/"
+    contracts_api: "projects/{project}/src/contracts/api/"                    # V3.1.0新增：API契约(request/response Zod)
+    contracts_state_machine: "projects/{project}/src/contracts/state-machine/" # V3.1.0新增：状态机契约
+    adapters_sim: "projects/{project}/src/adapters/sim/repositories/"
+    adapters_real: "projects/{project}/src/adapters/real/repositories/"
+    services: "projects/{project}/src/services/"
+    # Mock后端（V3.1.0新增——跨端数据流转核心）
+    mock_server: "projects/{project}/mock-server/"
+    # 跨端验收（V3.1.0新增——原型阶段和真实系统阶段统一验收框架）
+    e2e_acceptance: "projects/{project}/e2e-acceptance/"
+    # 后端示例与测试
+    backend_examples: "projects/{project}/backend-examples/"
+    tests: "projects/{project}/tests/"
+    # 运行时状态
+    state: "projects/{project}/.codebuddy/state.json"
+    journal: "projects/{project}/.codebuddy/journal/"
+    reports: ".codebuddy/reports/"
+    blind_spot_reports: ".codebuddy/reports/blind-spot-reports/"  # V3.5.0新增：系统常识盲区报告
+    # V5.0新增：三级把关 + 版本差异（议题六/七）
+    sprint_guard: "projects/{project}/docs/06-sprint-guard/"      # Sprint把关报告（SM产出）
+    version_guard: "projects/{project}/docs/07-version-guard/"    # 版本把关报告（PM产出）
+    project_guard: "projects/{project}/docs/08-project-guard/"    # 项目把关报告（PO产出）
+    versions: "projects/{project}/docs/09-versions/"              # 版本快照+差异报告+时间线+HTML需求文档
+  # 全局共享（跨项目复用，不随项目复制）
+  shared:
+    agents: ".codebuddy/agents/"
+    configs: ".codebuddy/configs/"
+    knowledge: ".codebuddy/knowledge/"  # /learn-project 流程专用知识库
+
+  # V1.0.0新增：端口池配置（多人多项目部署运营方案）
+  port_pool:
+    range: [4000, 4099]          # 端口池范围
+    allocation: "auto"           # auto（自动分配空闲端口）| manual（手动指定）
+    reserved:                    # 已分配端口（ensure-project.sh 自动维护）
+      - { project: "SugarMate", port: 4001 }
+      - { project: "SAAS", port: 4000 }
+      - { project: "AI-SCRM", port: 3333 }
+
+  # V1.0.0新增：访问控制配置引用
+  access_control:
+    config_file: ".access-control.yml"
+    enforcement: "logic"         # logic（AI行为约束）| physical（Git子模块隔离，第二阶段）
+
+# ============================================
+# 模式配置
+# ============================================
+modes:
+  learn-project:
+    entry_command: "/learn-project"
+    workflow: "learn-project"
+    description: "项目学习V7.0.0：场景深度还原引擎——双态标注(显式照录+隐式挖掘还原)+五大业务产物深度还原(场景/流程/信息/状态机/操作矩阵)+8项深度能力+依据链审计。10种来源→深度抓取+AI自动识别业务系统与终端+全量/增量学习策略+忠实提取→专家Review→PRD+学习报告。未指定--module时全量学习覆盖已有知识库，指定--module时增量学习。产出 knowledge/{project}/需求文档/"
+  rebuild:
+    entry_command: "/rebuild"
+    workflow: "learn-project"
+    description: "将已学项目的 PRD（全部卷）+ 学习报告（含问题清单）回投脑暴流程，基于问题清单逐项讨论后定稿"
+  new:
+    entry_command: "/init"
+    workflow: "project-lifecycle"
+    description: "立项创建新项目并初始化仿真系统（已并入 PM 生命周期阶段2）"
+
+# ============================================
+# Agent 注册（11个：bs/po/ba/pm/sm/ux/fd/qa/ac/doc/arch）
+# V5.0新增：sm-agent（敏捷教练，Sprint级总体把关人）
+# ============================================
+agents:
+  bs-agent:
+    yml_file: .codebuddy/configs/agents/bs-agent.yml
+    skills: []
+    description: "脑暴主持人 - 主持脑暴会议，输出脑暴文档（含领域知识加载V3.2.0）"
+
+  po-agent:
+    yml_file: .codebuddy/configs/agents/po-agent.yml
+    skills: [backlog-prioritizer, business-analyzer, roadmap-planner, req-impact-analyzer, value-assessor]
+    description: "产品负责人 - 三层能力金字塔+项目级总体把关人+四层价值+7要素评估（V5.0）"
+
+  ba-agent:
+    yml_file: .codebuddy/configs/agents/ba-agent.yml
+    skills: [state-enumerator, uml-state-modeler, uml-interaction-modeler, req-impact-analyzer, change-impact-analyzer, doc-processor, doc-splitter, instruction-card-generator, api-learner, faithful-analysis, feedback-processor, system-common-sense-analyzer]
+    description: "业务分析师+UML建模专家 - 需求分析，按 PM 方法论产出 REQ 产物体系（含UML 2.5层级状态机+动态交互图）。V3.5.0新增UML专业建模能力。"
+
+  pm-agent:
+    yml_file: .codebuddy/configs/agents/pm-agent.yml
+    skills: [task-scheduler, knowledge-integrator, human-confirm-handler, version-manager, feedback-processor, deploy-manager, member-manager, process-improvement-collector]
+    description: "项目管理 - 版本守护人（V5.0：专注版本级把关，Sprint级交给SM）"
+
+  sm-agent:
+    yml_file: .codebuddy/configs/agents/sm-agent.yml
+    skills: [sprint-planner, human-confirm-handler, feedback-processor]
+    description: "敏捷教练 - Sprint级总体把关人，把控BA/UX/FD/QA交付符合敏捷条件，保障Scrum事件（V5.0新增）"
+
+  ux-agent:
+    yml_file: .codebuddy/configs/agents/ux-agent.yml
+    skills: [design-contract-aligner, change-impact-analyzer, instruction-card-generator, prototype-annotator]
+    description: "设计协同 - 交互设计，视觉设计，设计规范+三位一体仿真原型+用例卡片（V5.0）"
+
+  fd-agent:
+    yml_file: .codebuddy/configs/agents/fd-agent.yml
+    skills: [sim-code-generator, component-builder, compliance-checker, prototype-annotator, multi-platform-code-generator, uml-to-code-mapper, instruction-card-generator]
+    description: "前端开发+UML驱动实现 - 将需求转化为可运行仿真系统+用例卡片嵌入+版本切换器。V3.1.0新增UML驱动实现能力。"
+
+  qa-agent:
+    yml_file: .codebuddy/configs/agents/qa-agent.yml
+    skills: [test-runner, bug-tracker, uml-test-extractor]
+    description: "质量保障+UML驱动测试 - 基于BA产出的UML 2.5模型提取测试用例，五层测试执行。V2.0.0新增UML驱动测试能力。"
+
+  ac-agent:
+    yml_file: .codebuddy/configs/agents/ac-agent.yml
+    skills: [requirement-checker, business-flow-tester, ux-acceptance, bug-tracker]
+    description: "验收交付 - 模拟人验收，业务流程走查"
+
+  doc-agent:
+    yml_file: .codebuddy/configs/agents/doc-agent.yml
+    skills: [doc-processor]
+    description: "文档管理 - 文档索引，模板执行，关联维护"
+
+  arch-agent:
+    yml_file: .codebuddy/configs/agents/arch-agent.yml
+    skills: [arch-tech-stack-keeper, arch-contract-definer, arch-scaffold-reviewer, uml-architecture-mapper, api-learner, mock-server-generator, e2e-scaffold-generator]
+    description: "高保真前端开发架构师+UML消费分析器 - 定技术栈/三层契约/五维可插拔/Mock后端/跨端验收脚手架，做架构评审（守门员）。V3.2.0新增UML 2.5模型消费能力。"
+
+# ============================================
+# 命令注册（4 核心生命周期指令 + 高级调试指令 + 特殊入口）
+# 设计原则：4 个核心指令受 PM 管控（阶段2~7）；其余降级为流水线内部步骤并保留为调试指令。
+# ============================================
+commands:
+  # ============================================
+  # 对话范式铁律（全部指令统一）：
+  #  - 项目一律 --project=X（缺省取 projects.default_project，绝不写位置参数项目名）
+  #  - 类型一律 --type=Y
+  #  - 版本号永不出现在用户指令中（系统按同 type 上次 close 版本自动+1）
+  #  - 需求流单位 = project × type × version（非整个 project）
+  # ============================================
+
+  # ---------- 核心生命周期指令（受 PM 管控，需求流级别） ----------
+  brainstorm:
+    command: "/brainstorm"
+    description: "【阶段1·脑暴V3.5.0/V4.1.0】启动脑暴会议，产出脑暴文档。V3.5.0优化：①反馈模板从通过/补充/驳回改为多选项交互（确认→/init、补充→重新脑暴、调整方案→局部修改），移除驳回；②confirmed/只保留一份确认稿覆盖式更新+版本概要表格，历史版本归档到process/。V4.1.0：--goal业务目标参数统一命名+Stage 1.5 API分析注入。V3.3.0分层类型。V3.2.0领域知识整合。"
+    lifecycle: "stage-1"
+    pm_controlled: false
+    workflow: "brainstorm"
+    workflow_file: ".codebuddy/configs/workflows/brainstorm.yml"
+    usage: "/brainstorm --industry=行业 --brainstorm-type=strategic|planning|regular --goal=业务目标 [--project=项目名] [--goal-title=中文标题] [--source=local-dir:./docs] [--source=http-url:https://...] [--stakeholders=干系人清单.md]"
+    example: "/brainstorm --industry=live --brainstorm-type=regular --goal=live-audit --goal-title=直播音频审核 --project=SAAS --source=http-url:https://cloud.tencent.com/..."
+    required_args: ["--industry", "--brainstorm-type", "--goal"]
+    optional_args: ["--project", "--goal-title", "--source", "--stakeholders"]
+    interactive_flow:
+      description: "V4.2.0对齐：保留参数说明展示+必填项缺失指引。项目性质由--project参数自动检测。"
+      auto_detect: "扫描 projects/{--project}/ 是否存在 → 存在=存量项目(加载知识库PRD) / 不存在=新项目(构建骨架)"
+
+  init:
+    command: "/init"
+    description: "【开启需求流V4.1.0】PM 接管，针对某项目某类型开启一条需求流（自动生成版本号，V4.1.0：goal维度隔离版本链），进入需求分析。PM 组装参数路由包传递给 BA，BA 从§0.5需求深度分析整合开始（6维需求分析+8维影响扫描+融合全景图），再进入旅行地图。支持外部文档(--source)和HTTP内容作为需求输入补充。V4.1.0：--goal替代--topic，必填参数。"
+    lifecycle: "stream-start"
+    pm_controlled: true
+    orchestrator: "pm-agent"
+    workflow: "project-lifecycle"
+    workflow_file: ".codebuddy/configs/workflows/project-lifecycle.yml"
+    usage: "/init --project=X --goal=业务目标 --type=新增|变更|迭代|修复 --desc=需求描述 [--goal-title=中文标题] [--file=外部需求文件.md] [--api=外部接口文档.md] [--source=local-dir:./docs] [--source=http-url:https://...] [--priority=P0|P1|P2|P3]"
+    example: "/init --project=SAAS --goal=live-audit --type=新增 --desc=直播音频违禁词检测与静音处理 --goal-title=直播音频审核 --priority=P0"
+    required_args: ["--project", "--goal", "--type", "--desc"]
+    optional_args: ["--goal-title", "--file", "--api", "--source", "--priority"]
+    interactive_flow:
+      description: "取消交互式问答，改为自动检测+参数路由包。保留参数说明展示+必填项缺失指引。V4.1.0：--goal替代--topic，必填。"
+      auto_detect: "扫描 projects/{--project}/ 是否存在 → 存在=存量项目 / 不存在=新项目"
+      brainstorm_goal_link: "若提供--goal，PM按目标查找 projects/{--project}/docs/00-brainstorm/{goal}/confirmed/BR-脑暴文档-确认稿.md 作为BA背景输入；同时加载脑暴confirmed中的领域知识清单+API分析清单传递给BA和Arch；goal写入state.json作为业务目标标识（V4.1.0）。若未提供但00-brainstorm/下只有一个目标子目录，自动加载该目标；多个目标时提示用户选择。"
+
+  feedback:
+    command: "/feedback"
+    description: "【回流】在需求流 close 之前，将测试反馈/验收反馈/你主动补充的内容路由回需求阶段（BA 调整）；不带 --type 时自动绑定当前未 close 的需求流"
+    lifecycle: "stream-feedback"
+    pm_controlled: true
+    orchestrator: "pm-agent"
+    workflow: "project-lifecycle"
+    workflow_file: ".codebuddy/configs/workflows/project-lifecycle.yml"
+    usage: "/feedback --project=X [--type=Y] [--msg=反馈内容]   （--type 可省略，自动选当前进行中需求流）"
+    example: "/feedback --project=AI-SCRM --type=新增 --msg=app端秒杀按钮点击无响应"
+    required_args: ["--project"]
+    optional_args: ["--type", "--msg"]
+
+  close:
+    command: "/close"
+    description: "【结束需求流】PM 收尾单条需求流（按 type 粒度），冻结该流版本；当项目全部进行中需求流均 close 且无未决项时，自动标记 released_baseline 为上线基线"
+    lifecycle: "stream-end"
+    pm_controlled: true
+    orchestrator: "pm-agent"
+    workflow: "project-lifecycle"
+    workflow_file: ".codebuddy/configs/workflows/project-lifecycle.yml"
+    usage: "/close --project=X [--goal=业务目标] [--type=Y]   （--type 可省略，自动选当前进行中需求流）"
+    example: "/close --project=SAAS --goal=live-audit --type=新增"
+    required_args: ["--project"]
+    optional_args: ["--goal", "--type"]
+
+  handoff:
+    command: "/handoff"
+    description: "【交付标注与回传闭环 V3.0.0】验收(AC)通过后、/close之前执行。三步流程：①校验对应性(FN/UC→标注【？】) → ②用户编辑交互卡(新增/修改/补充) → ③回传BA增量重跑。4级标注粒度(page/button/metric/field)。循环校验直到无变更才进入/close。"
+    lifecycle: "stage-7.5（V4.1.1移到close前）"
+    pm_controlled: false
+    workflow: "handoff"
+    workflow_file: ".codebuddy/configs/workflows/handoff.yml"
+    usage: "/handoff --project=X [--type=Y] [--module=模块名]"
+    example: "/handoff --project=AI-SCRM --type=新增"
+
+  # ---------- 内部自动流水线（PM 调度，用户不介入；架构/研发/测试仅看结果） ----------
+  plan:
+    command: "/plan"
+    description: "【内部】生成研发排期（PM 在需求流前置自动调用）"
+    lifecycle: "internal"
+    pm_controlled: true
+    usage: "/plan --project=X [--type=Y]   （--type 可省略，自动选当前进行中需求流）"
+    example: "/plan --project=AI-SCRM --type=新增"
+
+  test:
+    command: "/test"
+    description: "【内部】执行 QA 五层测试（PM 在需求流 test 阶段自动调用；你仅看结果）"
+    lifecycle: "internal"
+    pm_controlled: true
+    usage: "/test --project=X [--type=Y] [--platform=pc,miniapp,app]   （--type 可省略，自动选当前进行中需求流）"
+    example: "/test --project=AI-SCRM --type=新增"
+
+  accept:
+    command: "/accept"
+    description: "【内部】执行 AC 四人模拟验收（新用户/VIP/管理员/PO Agent；PM 在需求流 accept 阶段自动调用；你仅看结果）"
+    lifecycle: "internal"
+    pm_controlled: true
+    usage: "/accept --project=X [--type=Y] [--platform=pc,miniapp,app]   （--type 可省略，自动选当前进行中需求流）"
+    example: "/accept --project=AI-SCRM --type=新增"
+
+  report:
+    command: "/report"
+    description: "【内部】生成测试/验收/文档索引报告"
+    lifecycle: "internal"
+    pm_controlled: false
+    usage: "/report --report-type=test|accept|doc-index --project=X"
+    example: "/report --report-type=accept --project=AI-SCRM"
+
+  # ---------- 特殊入口（非需求流生命周期） ----------
+  learn-project:
+    command: "/learn-project"
+    description: "【独立流程·项目学习V7.0.0】以忠实还原为第一原则，将项目资料全面深入解析为结构化PRD。V7.0.0核心：场景深度还原引擎——双态标注(显式照录+隐式挖掘还原)+五大业务产物深度还原+8项深度能力+依据链审计。V6.1.0优化：①移除领域知识加载（项目学习目的是理解现有文档以便后续迭代评估影响面）；②新增Stage1.2 AI自动识别业务系统与终端（从源文档自动识别系统缩写PREFIX和终端缩码，无需用户输入）；③新增--module可选参数（指定模块/流程时增量学习，未指定时全量学习覆盖已有知识库）。10种来源：local-dir/file/http-url/website/video/audio/image/pdf/api-endpoint/paste。支持--cookie/--auth/--transcript/--module。产出到 knowledge/{project}/需求文档/ + 学习报告/。"
+    lifecycle: "special"
+    pm_controlled: false
+    workflow: "learn-project"
+    workflow_file: ".codebuddy/configs/workflows/learn-project.yml"
+    usage: "/learn-project --project=项目名 --source=local-dir:./docs [--source=...] [--module=模块名] [--cookie=xxx] [--auth=xxx] [--transcript=文字稿.txt]"
+    examples:
+      - "/learn-project --project=AI-SCRM --source=local-dir:./原型文档（全量学习）"
+      - "/learn-project --project=AI-SCRM --source=local-dir:./新模块文档 --module=订阅模块（增量学习）"
+      - "/learn-project --project=AI-SCRM --source=http-url:https://wiki.example.com（全量学习）"
+      - "/learn-project --project=AI-SCRM --source=video:https://www.bilibili.com/video/BV1xxx（全量学习）"
+      - "/learn-project --project=AI-SCRM --source=website:https://admin.example.com --cookie=session_id=xxx（全量学习）"
+      - "/learn-project --project=AI-SCRM --source=local-dir:./原型 --source=video:https://培训视频 --source=image:./截图.png（混合学习）"
+    required_args: ["--project", "--source"]
+    optional_args: ["--module", "--cookie", "--auth", "--transcript"]
+    missing_arg_prompt:
+      "--project": "请提供项目名称（例如：--project=AI-SCRM）。"
+      "--source": "请提供至少一个来源（例如：--source=local-dir:./docs 或 --source=video:https://...）。"
+
+  learn-domain:
+    command: "/learn-domain"
+    description: "【独立流程·领域知识学习V4.0.0】V4.0.0核心：场景驱动学习法（SDL）——商业问题先行→场景主动构建→跨域衔接→角色视角。V3.4.0反爬策略全面升级：7层容错机制（HTTP错误容错URL变体/JS渲染降级/嵌入式内容处理/速率控制/URL智能推断/多源互补/质量评估）。与learn-project方法论统一，来源从3种扩展到10种。新增thirdparty分类（第三方API文档学习）。API学习技能公共化（引用common/api-learner.yml）。11步智能流程：来源处理(10种)→领域匹配预检→AI主题→AI场景→业务产物(7部分)→API学习技能(条件触发)→业务分析建模(7项)→接口参数级校验→专家Review(11项)→用户确认+强化深入学习(6选项)。支持--focus/--deep-params/--cookie/--auth、增量学习、版本管理、多领域拆分。--category=thirdparty时跳过领域匹配预检。产物13部分。产出三库。"
+    lifecycle: "special"
+    pm_controlled: false
+    workflow: "learn-domain"
+    workflow_file: ".codebuddy/configs/workflows/learn-domain.yml"
+    usage: "/learn-domain [--domain=领域名] [--category=分类] --source=scheme:value [--source=...] [--focus=学习重点说明] [--allow-split] [--incremental] [--transcript=文字稿.txt] [--deep-params]"
+    examples:
+      - "/learn-domain --domain=退款流 --category=售后 --source=https://pay.weixin.qq.com/docs/refund"
+      - "/learn-domain --domain=退款流 --category=售后 --source=video:https://www.bilibili.com/video/BV1xxx（视频学习）"
+      - "/learn-domain --domain=退款流 --source=https://网页 --source=video:https://视频（混合学习）"
+      - "/learn-domain --domain=易宝服务商 --category=payment --source=https://open.yeepay.com/docs/... --focus='重点学习商户入网和资金收付API参数' --deep-params（V2.1.0深度参数提取）"
+    required_args: ["--source"]
+    optional_args: ["--domain", "--category", "--focus", "--allow-split", "--incremental", "--transcript", "--deep-params"]
+    missing_arg_prompt:
+      "--source": "请提供至少一个来源（例如：--source=https://... 或 --source=video:https://...）。"
+
+  learn-domain-check:
+    command: "/learn-domain-check"
+    description: "【独立流程·领域知识巡检V4.0.0】巡检所有已学习领域知识，检测源网页是否有变更。有变更的领域触发增量学习（minor+1版本）。V4.0.0支持场景驱动学习法(SDL)与反爬策略。支持 --auto-update 自动更新模式。可通过 automations 定时触发（如每月1日）。引用 learn-domain.yml v4.0.0。"
+    lifecycle: "special"
+    pm_controlled: false
+    workflow: "learn-domain"
+    workflow_file: ".codebuddy/configs/workflows/learn-domain.yml"
+    usage: "/learn-domain-check [--domain=退款流] [--auto-update]"
+    examples:
+      - "/learn-domain-check（巡检全部领域）"
+      - "/learn-domain-check --domain=退款流（仅巡检退款流）"
+      - "/learn-domain-check --auto-update（自动增量更新）"
+    required_args: []
+    optional_args: ["--domain", "--auto-update"]
+
+  rebuild:
+    command: "/rebuild"
+    description: "【特殊入口】将已学项目的 PRD（全部卷）+ 学习报告（含问题清单）重新提交给脑暴流程，基于问题清单逐项讨论后得出最终确认的需求定稿"
+    lifecycle: "special"
+    pm_controlled: false
+    workflow: "learn-project"
+    workflow_file: ".codebuddy/configs/workflows/learn-project.yml"
+    usage: "/rebuild [--project=项目名]"
+    example: "/rebuild --project=AI-SCRM"
+    required_args: ["--project"]
+
+  migrate:
+    command: "/migrate"
+    description: "【特殊入口】迁移知识库（跨项目复用经验，非生命周期指令）"
+    lifecycle: "special"
+    pm_controlled: false
+    workflow: "migrate"
+    workflow_file: ".codebuddy/configs/workflows/migrate.yml"
+    usage: "/migrate --from=旧项目路径 [--project=项目名]"
+    example: "/migrate --from=./projects/OldSCRM --project=AI-SCRM"
+
+  change:
+    command: "/change"
+    description: "【变更请求】需求变更流程（文档先行更新→代码更新→回归测试→验收闭环）"
+    lifecycle: "stream-start"
+    pm_controlled: true
+    orchestrator: "pm-agent"
+    workflow: "change-request"
+    workflow_file: ".codebuddy/configs/workflows/change-request.yml"
+    usage: "/change --project=X --desc=变更概述 [--module=模块] [--file=变更文档] [--api=接口文档] [--source=来源] [--platform=pc,app] [--priority=P0|P1|P2|P3]"
+    required_args: ["--project", "--desc"]
+    optional_args: ["--module", "--file", "--api", "--source", "--platform", "--priority"]
+
+  fix:
+    command: "/fix"
+    description: "【Bug修复】Bug修复流程（Bug分析→修复实施→回归验证→验收关闭）"
+    lifecycle: "stream-start"
+    pm_controlled: true
+    orchestrator: "pm-agent"
+    workflow: "change-request"
+    workflow_file: ".codebuddy/configs/workflows/change-request.yml"
+    usage: "/fix --project=X --desc=Bug概述 [--module=模块] [--file=Bug详细文档] [--platform=pc] [--bug-id=xxx] [--priority=P0|P1|P2|P3]"
+    required_args: ["--project", "--desc"]
+    optional_args: ["--module", "--file", "--platform", "--bug-id", "--priority"]
+
+  # ---------- V1.0.0 新增：部署运营指令 ----------
+  deploy:
+    command: "/deploy"
+    description: "【部署运营V1.0.0】手动触发仿真原型部署到 EdgeOne Pages，或重试失败部署，或查看部署状态。/close 时 stage-9 自动执行，此命令用于手动场景。"
+    lifecycle: "stage-9（自动触发）/ 手动"
+    pm_controlled: true
+    orchestrator: "pm-agent"
+    workflow: "project-lifecycle"
+    workflow_file: ".codebuddy/configs/workflows/project-lifecycle.yml"
+    skill: "deploy-manager"
+    usage: "/deploy --project=X [--version=v1.0.0] [--retry] [--status]"
+    example: "/deploy --project=AI-SCRM"
+    required_args: ["--project"]
+    optional_args: ["--version", "--retry", "--status"]
+
+  # ---------- V1.1.0 新增：成员注册命令 ----------
+  register-member:
+    command: "/register-member"
+    description: "【成员注册V1.1.0】管理员一个命令完成成员注册+项目创建。自动更新.access-control.yml+PROJECT-INDEX.yml+端口分配+CODEOWNERS+项目骨架+部署配置。管理员无需手动编辑任何文件。"
+    lifecycle: "管理员操作"
+    pm_controlled: true
+    orchestrator: "pm-agent"
+    skill: "member-manager"
+    usage: "/register-member --name=姓名 --git=Gitee用户名 --project=项目名 [--role=admin|member]"
+    example: "/register-member --name=李四 --git=lisi --project=crm-portal"
+    required_args: ["--name", "--git", "--project"]
+    optional_args: ["--role"]
+
+  review-process-improvements:
+    command: "/review-process-improvements"
+    description: "【流程改进审核V1.0.0】管理员定期审查各项目/close后积累的流程改进建议，审核_pending经验，生成流程升级方案。闭环：成员/close→_pending建议→管理员审核→流程升级。"
+    lifecycle: "管理员操作"
+    pm_controlled: true
+    orchestrator: "pm-agent"
+    skill: "process-improvement-collector"
+    usage: "/review-process-improvements [--mode=list|review|approve|reject|apply] [--project=项目名]"
+    example: "/review-process-improvements --mode=list"
+    required_args: []
+    optional_args: ["--mode", "--project"]
+
+# ============================================
+# 生命周期与阶段模型（PM 总控编排依据）
+# ============================================
+lifecycle:
+  # ============================================
+  # 需求流模型（stream_model=true）：流水线单位 = 需求流(project × type × version)
+  # - 用户永不输入版本号；版本由系统按同 type 上次 close 版本自动 +1
+  # - 用户只输入需求描述；影响范围由 BA 在需求阶段经 req-impact-analyzer 自动识别
+  # - close 按 type 粒度关单条需求流；全 close 且无未决项时自动标记 released_baseline
+  # ============================================
+  stream_model: true
+  # 阶段定义（从上至下为需求→验收；从下至上为问题回流）
+  stages:
+    - id: "project-setup"
+      name: "项目性质确认与骨架检测（v3.1.0 新增）"
+      pm_controlled: true
+      orchestrator: "pm-agent"
+      description: "/brainstorm 或 /init 入口前置：询问新项目/存量项目 → 存量项目先检查骨架存在性（存在则跳过构建）→ 再检查知识库上下文。新项目自动构建骨架。"
+    - id: "brainstorm"
+      name: "脑暴（分层类型，v3.1.0 增强）"
+      pm_controlled: false
+      workflow: "brainstorm"
+      brainstorm_types:
+        - id: "strategic"
+          name: "战略型脑暴"
+          trigger: "新项目/重大方向转型"
+          outputs: [脑暴文档, 战略分析, 商业分析]
+          next: "po-agent（战略级激活）"
+        - id: "planning"
+          name: "规划型脑暴"
+          trigger: "新模块/大版本迭代"
+          outputs: [脑暴文档]
+          next: "po-agent（规划级激活）"
+        - id: "regular"
+          name: "常规型脑暴"
+          trigger: "功能优化/中版本迭代"
+          outputs: [脑暴文档]
+          next: "pm-agent直接立项（跳过PO）"
+      stakeholder_identification: true   # O-01: 脑暴阶段须识别干系人
+      conflict_arbitration: true          # O-02: 脑暴冲突须有仲裁机制
+    - id: "product"
+      name: "产品架构与规划（V3.1.0新增，PO Agent）"
+      pm_controlled: false
+      agent: "po-agent"
+      activation: "脑暴类型=strategic或planning时激活；regular/fix跳过"
+      description: "PO Agent按脑暴类型分层激活：战略级→产品线战略+商业分析+产品架构+路线图+Backlog；规划级→产品架构+路线图+Backlog。产物输出到docs/00.5-product/。完成后通知PM立项。"
+    - id: "init"
+      name: "开启需求流"
+      pm_controlled: true
+      orchestrator: "pm-agent"
+      resource_lock: true                 # O-08: 资源锁，防止并发修改同一模块
+    - id: "requirement"
+      name: "需求分析"
+      pm_controlled: true
+      orchestrator: "pm-agent"
+      agent: "ba-agent"
+      checkpoint: true          # 人工卡点①：可补充内容后重跑
+      impact_analysis: true      # BA 第一步跑 req-impact-analyzer 自动识别影响范围（0-1 首版除外）
+      priority_sort: true        # O-06: PRD须包含优先级排序
+    - id: "design"
+      name: "设计"
+      pm_controlled: true
+      orchestrator: "pm-agent"
+      agent: "ux-agent"
+      checkpoint: true          # 人工卡点②
+      platform_aware: true       # O-07: 多端栅格系统+设计语言
+      design_token_enforcement: true  # O-07: Design Token 强制
+    - id: "arch"
+      name: "架构评审"
+      pm_controlled: true
+      orchestrator: "pm-agent"
+      agent: "arch-agent"
+      checkpoint: true          # 人工卡点③（架构守门员）
+      interface_contract: true  # O-05: 架构阶段产出接口契约初稿
+    - id: "dev"
+      name: "开发"
+      pm_controlled: true
+      orchestrator: "pm-agent"
+      agent: "fd-agent"
+      visual_regression: true   # O-07: 视觉回归校验
+    - id: "test"
+      name: "测试"
+      pm_controlled: true
+      orchestrator: "pm-agent"
+      agent: "qa-agent"
+      checkpoint: true          # 人工卡点④：可补充内容后重跑（你仅看结果）
+      visual_regression: true   # O-07: 视觉回归校验
+    - id: "accept"
+      name: "验收"
+      pm_controlled: true
+      orchestrator: "pm-agent"
+      agent: "ac-agent"
+      checkpoint: true          # 人工卡点⑤：可补充内容后重跑（你仅看结果）
+    - id: "close"
+      name: "结束需求流"
+      pm_controlled: true
+      orchestrator: "pm-agent"
+      traceability_check: true  # O-10: close前校验追溯链完整性
+      rollback_metadata: true   # O-12: 记录回退元数据
+    - id: "handoff"
+      name: "交付标注"
+      pm_controlled: false
+      workflow: "handoff"
+      precondition: "ac_passed_and_prototype_done_and_no_open_bug（V4.1.1：移到close前）"
+  # 知识热加载配置（O-14）
+  knowledge_hotload:
+    enabled: true
+    trigger_on: ["requirement", "design", "arch"]
+    sources: [".codebuddy/knowledge/common/", ".codebuddy/knowledge/projects/{project}/"]
+    strategy: "relevance_match"  # 按当前需求描述语义匹配加载相关知识条目
+    auto_load: ["system-blueprints.yml"]  # V3.5.0新增：需求分析阶段自动加载系统常识推理框架
+  # 终端类型（高保真系统运行终端，立项时冻结，直接影响设计规范类技能）
+  # 注：原 terminals/platforms 两段重复定义已合并为本单一 platforms（见下方"终端类型配置"段）
+  # ============================================
+  # 需求类型 → 处理方式映射
+  # 【用户文档铁律】无论何种类型，凡需求变动，受影响模块 REQ 产物必须同步更新；
+  #   当前立项存在未 close 需求流时，开工新版本前 BA 须补齐历史版本 REQ 产物缺口（见 requirement-flow §0.0.0）。
+  #   故所有类型的 update_req_doc 均为 true（修复=至少同步受影响模块）。
+  # ============================================
+  requirement_types:
+    新增:
+      desc: "全新功能模块"
+      version_bump: "minor"      # 次版本+1
+      touch_stages: [requirement, design, arch, dev, test, accept]
+      update_req_doc: true
+      impact_analysis: true        # 需求阶段自动识别影响范围（首版除外）
+      default_priority: "P1"       # O-06: 默认优先级
+    迭代:
+      desc: "已有版本功能增强"
+      version_bump: "minor"      # 次版本+1
+      touch_stages: [requirement, design, arch, dev, test, accept]
+      update_req_doc: true
+      impact_analysis: true
+      default_priority: "P2"       # O-06: 默认优先级
+    变更:
+      desc: "已有需求的修改"
+      version_bump: "patch"      # 修订号+1
+      touch_stages: [requirement, design, arch, dev, test, accept]
+      update_req_doc: true
+      impact_analysis: true
+      default_priority: "P1"       # O-06: 默认优先级（变更常为紧急）
+    修复:
+      desc: "高保真原型 Bug → 生成开发待办修复（改仿真代码，并同步受影响模块需求文档）"
+      version_bump: "patch"      # 修订号+1
+      touch_stages: [dev, test, accept]
+      update_req_doc: true       # 用户铁律：修复亦须同步受影响模块 REQ 产物（禁止"不修订需求文档"）
+      generates: "dev-todo"
+      impact_analysis: true
+      default_priority: "P0"       # O-06: 修复默认最高优先级
+  # 优先级定义（O-06）
+  priority_levels:
+    P0:
+      label: "紧急/阻塞"
+      sla: "24小时内"
+      description: "阻塞核心流程，必须立即处理"
+    P1:
+      label: "高优先级"
+      sla: "3天内"
+      description: "重要功能，本版本必须完成"
+    P2:
+      label: "中优先级"
+      sla: "本迭代内"
+      description: "一般功能，本迭代完成"
+    P3:
+      label: "低优先级"
+      sla: "下迭代"
+      description: "锦上添花，可排入下个迭代"
+  # 版本号策略（用户绝不输入版本号，系统自动生成）
+  # V4.1.0：新增 goal 维度——每个业务目标（goal）有独立版本链，互不干扰
+  versioning:
+    scheme: "v{主}.{次}.{修订}"
+    init: "v1.0.0"
+    # 自动链算法（V4.1.0 goal 感知）：
+    #  取 streams 中同 type + 同 goal 且已 closed 的最大版本 → 按 version_bump 生成新版本；
+    #  若无历史（新 goal）→ 使用 init 值 v1.0.0。
+    #  goal 为空（老项目）→ 兼容原有逻辑：仅按 type 匹配。
+    auto_chain: true
+    auto_chain_filter: "[type, goal]"   # V4.1.0：版本扫描条件从 [type] 扩展为 [type, goal]
+    bump:
+      major: "重大重构（手动触发，罕见）"
+      minor: "新增 / 迭代（次版本+1）"
+      patch: "变更 / 修复（修订号+1）"
+    # V4.1.0新增：main聚合版本策略
+    # 每次任意 goal close 并 merge 到 main 后，main 版本自动递增。
+    # 仅一个 goal 合并 → patch+1；新 goal 首次合并 → minor+1。
+    main_aggregation:
+      init: "v1.0.0"
+      auto_chain: true
+  # 上线基线自动标记（用户已确认：自动，但必须准确）
+  released_baseline:
+    auto_mark: true
+    # 仅在以下全部满足时由 close 标记，避免误标导致影响分析基线错乱：
+    #  1) 该项目所有进行中需求流均已 closed
+    #  2) projects/{project}/docs/04-testing/bugs/ 下无 open Bug
+    #  3) 所有 closed 需求流 feedbacks[] 中无 pending 项
+    strict_guard: true
+  # 缺陷回流：验收/测试问题按归属版本回流修复条目，重走 dev→test→accept
+  defect_reflow:
+    enabled: true
+    target_type: "修复"
+    rerun_stages: [dev, test, accept]
+    rule: "问题归属当前版本某条需求 → PM 生成 type=修复 条目挂同版本 → 重走闭环直至验收通过"
+
+# ============================================
+# 上下文管理配置
+# ============================================
+context:
+  max_doc_size: 3000
+  progressive_loading: true
+  summary_first: true
+  auto_split_threshold: 3000
+
+# ============================================
+# 文档管理配置
+# ============================================
+documents:
+  root: "projects/{project}/docs/"
+  auto_index: true
+  auto_traceability: true
+  template_enforcement: strict
+  naming:
+    prefix_map:
+      BR: "脑暴文档"
+      REQ: "需求文档"
+      PLAN: "规划文档"
+      UI: "设计文档"
+      ARCH: "架构评审文档"
+      DEV: "开发报告"
+      TC: "测试用例"
+      TR: "测试报告"
+      BUG: "Bug文档"
+      ACR: "验收报告"
+      CHG: "变更记录"
+      MEET: "会议记录"
+    version_format: "v{主版本}.{次版本}"
+    date_format: "YYYYMMDD"
+
+# ============================================
+# 测试配置
+# ============================================
+testing:
+  auto_trigger: true
+  layers:
+    - name: contract
+      skill: test-runner
+      layer: contract
+      description: "契约测试：Zod Schema一致性校验、sim/real响应结构一致性（V5.1.0合并到test-runner）"
+    - name: unit
+      skill: test-runner
+      layer: unit
+      description: "代码测试：单元测试、集成测试、Schema校验"
+    - name: browser
+      skill: test-runner
+      layer: browser
+      description: "浏览器模拟测试：Playwright自动化、截图对比"
+    - name: whitebox
+      skill: test-runner
+      layer: whitebox
+      description: "白盒测试：状态覆盖、路径覆盖、边界注入"
+    - name: visual
+      skill: test-runner
+      layer: visual
+      description: "视觉回归：设计稿→代码视觉一致性校验（V5.1.0合并到test-runner）"
+  bug_dir: "projects/{project}/docs/04-testing/bugs/"
+
+# ============================================
+# 验收配置
+# ============================================
+acceptance:
+  auto_trigger: true
+  personas:
+    - name: "新用户"
+      role: "user"
+      scenario: "empty"
+      platform: ["pc", "app", "miniapp"]
+      description: "模拟新用户首次使用的完整体验"
+    - name: "VIP用户"
+      role: "vip"
+      scenario: "dense"
+      platform: ["pc", "app"]
+      description: "模拟资深用户的大数据量场景"
+    - name: "管理员"
+      role: "admin"
+      scenario: "normal"
+      platform: ["pc"]
+      description: "模拟管理员的日常管理操作"
+    - name: "PO Agent"
+      role: "product_owner"
+      scenario: "all"
+      platform: ["all"]
+      description: "商业价值验收：BO/BG是否实现+ROI验证+用户场景覆盖+竞争力（V4.1.0新增）"
+  stages:
+    - name: requirement
+      skill: requirement-checker
+      description: "需求对照验收：逐条对比POM与系统行为"
+    - name: business-flow
+      skill: business-flow-tester
+      description: "业务流程闭环验收：模拟完整操作链路"
+    - name: ux
+      skill: ux-acceptance
+      description: "用户体验验收：错误提示可理解性检查"
+    - name: po-value
+      skill: backlog-prioritizer
+      description: "PO商业价值验收：BO/BG实现+ROI验证+用户场景覆盖+竞争力（V4.1.0新增）"
+
+# ============================================
+# 终端类型配置（高保真系统运行终端，立项时冻结）
+# 用户明确：平台 = PC / 小程序 / APP 三个终端，直接影响设计规范类技能
+# ============================================
+platforms:
+  pc:
+    name: "PC（Web 管理/业务后台）"
+    type: "web"
+    description: "面向运营/管理人员的 PC 端后台（原 web-admin/web-business/h5 收敛为此终端），信息密度高、表格表单多、权限复杂、流程导向"
+    capabilities: ["大屏表格", "批量操作", "复杂筛选", "数据看板", "权限矩阵", "流程向导", "工单处理", "审批流", "响应式布局"]
+    design_spec: "ux-agent: Web 后台设计规范（栅格/表单/表格/权限矩阵）"
+  miniapp:
+    name: "微信小程序"
+    type: "miniprogram"
+    description: "微信小程序，分包加载、审核合规严格、API 受微信限制"
+    capabilities: ["分包路由", "微信登录", "微信支付", "订阅消息", "合规审核"]
+    design_spec: "ux-agent: 小程序设计规范（分包/尺寸限制/审核合规）"
+  app:
+    name: "APP（iOS/Android 原生）"
+    type: "native"
+    description: "移动原生应用，可调用相机/定位/推送等原生能力，离线可部分使用"
+    capabilities: ["原生导航栈", "推送", "相机/相册", "定位", "生物识别", "离线缓存"]
+    design_spec: "ux-agent: 原生导航设计规范（导航栈/原生手势/原生能力）"
+
+# ============================================
+# 终端冻结约定（PM 治理：立项时一次性冻结，禁止后续零散重复确认）
+# BA 在需求分析 §0.0 必须按「业务子系统」维度拆出端映射，而非笼统问"支持哪些端"。
+# 冻结结果写入 stream.platforms（见 project-lifecycle state.json schema），
+# 后续 UX/Arch/FD/QA/AC 一律以冻结映射为单一事实源，不得再向用户询问端。
+# 格式示例：
+#   business_systems:
+#     - id: "运营系统"
+#       suggest_terminals: [pc]            # BA 基于 capabilities 给建议
+#       reason: "后台管理与审核，信息密度高"
+#     - id: "客户入网系统"
+#       suggest_terminals: [pc, miniapp, app]
+#       reason: "商户多端自助提交"
+#   → 用户确认/修正后冻结为 stream.platforms = { "运营系统": ["pc"], "客户入网系统": ["pc","miniapp","app"] }
+# ============================================
+
+# ============================================
+# 行业模板配置
+# ============================================
+industries:
+  ecommerce:
+    name: "电商行业"
+    features: ["商品管理", "订单管理", "购物车", "支付", "物流", "售后"]
+  private_domain:
+    name: "私域电商"
+    features: ["企微社群", "会员体系", "私域引流", "裂变分销", "SCRM", "内容种草", "微信生态运营"]
+  social:
+    name: "社交行业"
+    features: ["好友关系", "动态feed", "IM即时通讯", "社群", "互动点赞", "裂变传播"]
+  game:
+    name: "游戏行业"
+    features: ["账号体系", "充值付费", "道具皮肤", "排行榜", "活动运营", "防沉迷"]
+  erp:
+    name: "ERP/企业级应用"
+    features: ["组织架构", "审批流", "进销存", "财务报表", "权限矩阵", "工单", "多角色协同"]
+  finance:
+    name: "金融行业"
+    features: ["账户管理", "交易", "资产总览", "风控", "报表"]
+  saas:
+    name: "SaaS多租户"
+    features: ["租户管理", "订阅", "用量监控", "权限"]
+  live:
+    name: "直播行业"
+    features: ["直播间", "商品讲解", "互动", "数据看板"]
+  advertising:
+    name: "广告行业"
+    features: ["广告投放", "数据监测", "素材管理"]
+  tourism:
+    name: "旅游行业"
+    features: ["线路管理", "订单", "导游", "评价"]
+  general:
+    name: "通用"
+    features: ["注册", "登录", "微信登录", "忘记密码", "RBAC", "站内信", "帮助中心", "退出登录", "修改信息"]
+
+# ============================================
+# 多端栅格系统与设计语言配置（O-07）
+# 03-design 根据端类型自动选择对应栅格和设计语言
+# ============================================
+platform_grid_systems:
+  pc:
+    name: "PC（Web 管理/业务后台）"
+    grid_columns: 24
+    grid_gutter: 16
+    breakpoints:
+      xl: 1600
+      lg: 1200
+      md: 992
+      sm: 768
+      xs: 480
+    design_system: "Ant Design"
+    design_tokens_source: ".codebuddy/knowledge/common/ux/design-system.yml"
+    component_library: "@ant-design/pro-components"
+    layout_mode: "flex"
+  app:
+    name: "APP（iOS/Android 原生）"
+    grid_columns: 4
+    grid_gutter: 8
+    breakpoints:
+      lg: 428
+      md: 390
+      sm: 360
+    design_system: "iOS HIG / Material Design"
+    design_tokens_source: ".codebuddy/knowledge/common/ux/design-system.yml"
+    component_library: "antd-mobile"
+    layout_mode: "flex"
+    navigation: "native-stack"
+  miniapp:
+    name: "微信小程序"
+    grid_columns: 4
+    grid_gutter: 8
+    breakpoints:
+      default: 375
+    design_system: "WeUI / 微信小程序设计指南"
+    design_tokens_source: ".codebuddy/knowledge/common/ux/design-system.yml"
+    component_library: "@tarojs/components"
+    layout_mode: "flex"
+    navigation: "mini-program-nav"
+    constraints: ["分包限制2MB", "API白名单", "审核合规"]
+
+# ============================================
+# 资源锁配置（O-08）
+# 防止同一模块/文档被多个需求流并发修改
+# ============================================
+resource_lock:
+  enabled: true
+  lock_scope: "module"  # 锁粒度：module | document | function
+  auto_release_minutes: 120  # 自动释放时间（分钟）
+  lock_strategy: "optimistic"  # optimistic（乐观锁）| pessimistic（悲观锁）
+  conflict_resolution: "merge_and_notify"  # 冲突解决策略
+
+# ============================================
+# 视觉回归配置（O-07）
+# 设计→开发阶段的视觉一致性校验
+# ============================================
+visual_regression:
+  enabled: true
+  compare_stages: ["design", "dev", "test"]
+  threshold: 0.95  # 相似度阈值（低于此值报警）
+  screenshot_dir: ".codebuddy/reports/visual-regression/"
+  baseline_source: "projects/{project}/docs/03-design/"
+
+# ============================================
+# 追溯链完整性校验（O-10）
+# close 阶段自动校验需求→设计→架构→代码追溯链
+# ============================================
+traceability:
+  enabled: true
+  chain: ["requirement", "design", "arch", "dev"]
+  strict_mode: true  # 缺失任一节点拒绝 close
+  auto_fix_gaps: false  # 不自动修补，需人工确认
+  report_path: ".codebuddy/reports/traceability/"
+
+# ============================================
+# 回退元数据记录（O-12）
+# 需求回退时记录原因和影响范围
+# ============================================
+rollback:
+  enabled: true
+  record_path: ".codebuddy/reports/rollbacks/"
+  fields: ["rollback_id", "stream_id", "version", "reason", "affected_modules", "rollback_date", "operator", "recovery_plan"]
+
+# ============================================
+# BR 依赖关系配置（O-04）
+# 业务规则可声明 depends_on 依赖链
+# ============================================
+business_rules:
+  dependency_tracking: true
+  dependency_format: "BR-{MODULE}-{NNN} depends_on [BR-{MODULE}-{NNN}, ...]"
+  circular_detection: true
+  impact_analysis_on_change: true
+
+# ============================================
+# V3.6.0新增：Agent AI大脑编排全局配置
+# ============================================
+brain_orchestration:
+  enabled: true
+  description: |
+    Agent AI大脑体系全局配置。每个Agent在各自Stage拥有独立大脑（模式库+预测记录+跨脑协同），
+    PM编排器统一调度brain_sync_chain脑力协同链和brain_evolution_trigger大脑进化触发。
+  
+  # 大脑激活链——每个Stage激活的大脑
+  brain_activation_chain:
+    - stage: "stage-0 (脑暴)"
+      brain: "BS创意大脑"
+      workflow: "brainstorm.yml"
+      ai_brain_section: "尚未注入（V5.1.0范围外）"
+    - stage: "stage-0.5 (PO规划)"
+      brain: "PO战略大脑"
+      workflow: "po-planning-flow.yml"
+      ai_brain_section: "尚未注入（V5.1.0范围外）"
+    - stage: "stage-2 (需求分析)"
+      brain: "BA需求洞察大脑"
+      workflow: "requirement-flow.yml"
+      ai_brain_section: "ai_brain (v3.2.1统一)"
+      gates: ["G-REQ-16"]
+    - stage: "stage-3 (设计)"
+      brain: "UX体验洞察大脑"
+      workflow: "design-flow.yml"
+      ai_brain_section: "ai_brain (v3.3.0注入)"
+      gates: ["G-DES-06"]
+    - stage: "stage-4 (架构)"
+      brain: "Arch架构决策大脑"
+      workflow: "arch-flow.yml"
+      ai_brain_section: "ai_brain (v3.1.0注入)"
+      gates: ["G-ARCH-05"]
+    - stage: "stage-5 (开发)"
+      brain: "FD实现模式大脑"
+      workflow: "dev-flow.yml"
+      ai_brain_section: "ai_brain (v2.1.0注入)"
+      gates: ["G-DEV-03"]
+    - stage: "stage-6 (测试)"
+      brain: "QA质量推理大脑"
+      workflow: "test-flow.yml"
+      ai_brain_section: "ai_brain (v3.1.0注入)"
+      gates: ["G-TEST-03"]
+    - stage: "stage-7 (验收)"
+      brain: "AC+PO验收大脑"
+      workflow: "acceptance-flow.yml"
+      ai_brain_section: "ai_brain (v2.2.0注入)"
+      gates: ["G-ACC-03"]
+    - stage: "stage-8 (关闭)"
+      brain: "PM大脑编排"
+      workflow: "project-lifecycle.yml"
+      ai_brain_section: "brain_orchestration (v5.1.0)"
+      gates: ["G-CLOSE-05"]
+  
+  # 脑力协同链——上游大脑输出到下游的传递关系
+  brain_sync_chain:
+    - from: "BA大脑(brain_sync_export)"
+      to: ["UX大脑(to_ux)", "Arch大脑(to_arch)", "QA大脑(to_qa)"]
+    - from: "UX大脑(brain_sync_export)"
+      to: ["Arch大脑(to_arch)", "FD大脑(to_fd)"]
+    - from: "Arch大脑(brain_sync_export)"
+      to: ["FD大脑(to_fd)", "QA大脑(to_qa)"]
+    - from: "FD大脑(brain_sync_export)"
+      to: ["QA大脑(to_qa)"]
+    - from: "QA大脑(brain_sync_export)"
+      to: ["AC大脑(to_ac)", "BA大脑(to_ba)"]
+    - from: "AC大脑(brain_sync_export)"
+      to: ["BA大脑(to_ba)", "PM大脑(to_pm)"]
+  
+  # 大脑进化触发——/close时触发全Agent大脑进化
+  brain_evolution_trigger:
+    trigger_point: "/close第一个动作"
+    engine: ".codebuddy/knowledge/common/brain-evolution-engine.yml"
+    steps:
+      - "各Agent导出大脑记忆快照（prediction记录+实际结果）"
+      - "brain_evolution_engine执行prediction vs actual对比"
+      - "按brain-evolution-engine.yml权重调整算法更新各模块权重"
+      - "产出BRAIN-EVOLUTION-REPORT（进化摘要+权重变更+因果链）"
+      - "新版本/init时加载更新后的大脑记忆"
+    gate: "G-CLOSE-05"
+  
+  # 大脑记忆持久化目录
+  brain_memory_dir: ".codebuddy/knowledge/projects/{project}/大脑记忆/{version}/"
+  brain_memory_agents:
+    - "ba_brain_memory.yml"
+    - "ux_brain_memory.yml"
+    - "arch_brain_memory.yml"
+    - "fd_brain_memory.yml"
+    - "qa_brain_memory.yml"
+    - "ac_brain_memory.yml"
+    - "po_brain_memory.yml"
+    - "pm_brain_memory.yml"
+    - "sm_brain_memory.yml"
+  
+  # 大脑能力矩阵（各Agent的大脑状态一览）
+  brain_capability_matrix:
+    BA: {status: "active", injected_version: "v3.2.1", modules: 2, gates: 1, iron_rules: 1}
+    UX: {status: "active", injected_version: "v3.3.0", modules: 4, gates: 1, iron_rules: 1}
+    Arch: {status: "active", injected_version: "v3.1.0", modules: 3, gates: 1, iron_rules: 1}
+    FD: {status: "active", injected_version: "v2.1.0", modules: 4, gates: 1, iron_rules: 1}
+    QA: {status: "active", injected_version: "v3.1.0", modules: 4, gates: 1, iron_rules: 1}
+    AC: {status: "active", injected_version: "v2.2.0", modules: 4, gates: 1, iron_rules: 1}
+    PO: {status: "active", injected_version: "v2.2.0", modules: 1, gates: 1, iron_rules: 1}
+    PM: {status: "active", injected_version: "v5.1.0", modules: 0, gates: 1, iron_rules: 1}
+    BS: {status: "pending", injected_version: "-", modules: 0, gates: 0, iron_rules: 0}
+    SM: {status: "pending", injected_version: "-", modules: 0, gates: 0, iron_rules: 0}
+    DOC: {status: "pending", injected_version: "-", modules: 0, gates: 0, iron_rules: 0}

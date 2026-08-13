@@ -1,0 +1,22 @@
+# Skill: 任务排期器（Task Scheduler）
+skill:
+  id: "task-scheduler"
+  name: "task-scheduler"
+  agent: "pm-agent"
+  description: "从BA产物体系(含业务操作矩阵)中提取任务、分析依赖、生成研发排期表，含工作量估算与风险提示"
+  triggers:
+    - command: "/plan"
+    - command: "/new"
+      stage: "阶段2"
+  workflow:
+    - name: "任务提取"
+      rule: "场景→页面任务，关键动作→仿真服务，实体→状态管理，流程→集成测试"
+    - name: "工作量估算"
+      rule: "按任务类型映射工时（页面4-24h，仿真4-8h，状态机8-16h，场景2-4h）"
+    - name: "依赖分析"
+      rule: "父页面>子页面，被引用实体先实现，auth>dashboard>业务，页面依赖同模块仿真"
+    - name: "生成排期表"
+      rule: "按周排布任务ID/模块/预估/依赖/状态，附风险提示"
+  output:
+    - type: "PLAN"
+      location: "projects/{project}/docs/02-planning/"

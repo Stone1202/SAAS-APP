@@ -1,0 +1,66 @@
+- generic [ref=e2]:
+  - generic [ref=e329]:
+    - generic [ref=e330]:
+      - generic [ref=e332]: 回放 - LIVE-003
+      - generic [ref=e333]:
+        - generic [ref=e334]: ▶
+        - generic [ref=e335]:
+          - text: 回放播放器区域
+          - button "查看「回放播放器」用例说明" [ref=e336] [cursor=pointer]:
+            - img [ref=e337]
+        - generic [ref=e341]:
+          - generic [ref=e342]: 00:15:32 / 01:30:00
+          - button "查看「时间轴违规标记」用例说明" [ref=e343] [cursor=pointer]:
+            - img [ref=e344]
+      - generic [ref=e347]:
+        - generic [ref=e348]:
+          - text: 擦音前后对比
+          - button "查看「擦音前后对比面板」用例说明" [ref=e349] [cursor=pointer]:
+            - img [ref=e350]
+        - generic [ref=e353]:
+          - generic [ref=e354]:
+            - generic [ref=e355]: 擦音前
+            - generic [ref=e356]: "\"欢迎大家进入直播间，今天我们带来一款xxx产品...\""
+          - generic [ref=e357]:
+            - generic [ref=e358]: 擦音后
+            - generic [ref=e359]: "\"欢迎大家进入直播间，今天我们带来一款***产品...\""
+      - generic [ref=e360]:
+        - generic [ref=e361]:
+          - generic [ref=e362]: 发布状态：
+          - generic [ref=e364]: 待核对
+          - button "查看「发布状态标签」用例说明" [ref=e365] [cursor=pointer]:
+            - img [ref=e366]
+        - generic [ref=e401]:
+          - button "核对通过·发布回放" [ref=e402] [cursor=pointer]:
+            - generic [ref=e403]: 核对通过·发布回放
+          - button "查看「核对通过·发布回放」按钮用例说明" [ref=e404] [cursor=pointer]:
+            - img [ref=e405]
+          - button "驳回重新擦音" [ref=e408] [cursor=pointer]:
+            - generic [ref=e409]: 驳回重新擦音
+          - button "查看「驳回重新擦音」按钮用例说明" [ref=e410] [cursor=pointer]:
+            - img [ref=e411]
+    - generic [ref=e370]:
+      - generic [ref=e371]:
+        - generic [ref=e372]: 场次信息
+        - generic [ref=e373]: 推流ID：LIVE-003
+        - generic [ref=e374]: 开始时间：2026-07-22 14:00:00
+        - generic [ref=e375]: 结束时间：2026-07-22 15:30:00
+        - generic [ref=e376]: 峰值观看：12,580人
+      - generic [ref=e377]:
+        - generic [ref=e378]:
+          - text: 擦音模式
+          - button "擦音模式" [ref=e379] [cursor=pointer]:
+            - img [ref=e380]
+        - generic [ref=e383] [cursor=pointer]:
+          - radio "静音" [ref=e384]
+          - generic [ref=e385]: 静音
+        - generic [ref=e386] [cursor=pointer]:
+          - radio "擦音（滴滴声）" [checked] [ref=e387]
+          - generic [ref=e388]: 擦音（滴滴声）
+      - generic [ref=e390]:
+        - text: 违规记录（0）
+        - button "查看「违规记录列表」用例说明" [ref=e391] [cursor=pointer]:
+          - img [ref=e392]
+  - button "用例卡" [ref=e396] [cursor=pointer]:
+    - img [ref=e397]
+    - generic [ref=e400]: 用例卡

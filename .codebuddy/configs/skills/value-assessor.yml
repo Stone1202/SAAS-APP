@@ -1,0 +1,55 @@
+# Skill: 四层价值评估器（Value Assessor）
+# 版本: v1.0.0
+# 所属议题: POM V5.0 议题三
+# ============================================
+skill:
+  id: "value-assessor"
+  name: "value-assessor"
+  version: "1.0.0"
+  agents: ["po-agent"]
+  description: "AI辅助PO进行四层价值评估+7要素分析，引用 value-assessment-standards.yml 规范"
+
+  triggers:
+    - command: "/brainstorm --brainstorm-type=strategic|planning"
+      stage: "po-2"
+      description: "PO规划阶段2：四层价值评估"
+    - command: "/close"
+      stage: "po商业价值验收"
+      description: "版本验收时评估实际交付的价值"
+
+  workflow:
+    - name: "1.加载评估规范"
+      rule: "读取 common/value-assessment-standards.yml"
+
+    - name: "2.四层价值评估"
+      rule: "对每个Backlog项评估商业价值/交付价值/客户价值/场景闭环四维度，每维度1-10分+评分依据"
+
+    - name: "3.公司7要素分析"
+      rule: "对每个Backlog项评估对运营/资源/财务/渠道/业务/组织/技术7要素的影响(positive/negative/neutral)+影响描述"
+
+    - name: "4.阻塞因子识别"
+      rule: "识别impact=negative且不可接受的要素，标记为blocking_factors"
+
+    - name: "5.权重配置"
+      rule: "PO声明本次版本的四层价值权重配置（默认商业0.3+交付0.2+客户0.3+闭环0.2），需人确认（Q3优先级排序型）"
+
+    - name: "6.优先级排序"
+      rule: "按priority_algorithm计算新优先级得分，排序Backlog"
+
+    - name: "7.输出评估报告"
+      rule: "产出 VALUE-ASSESSMENT-{project}-v{version}.yml"
+
+  inputs:
+    - "Backlog项清单（来自脑暴/上一版本沉淀）"
+    - "领域知识（参考行业价值标准）"
+    - "上一版本验收结论（迭代场景）"
+
+  outputs:
+    - type: "value-assessment-report"
+      format: "YAML"
+      path: "projects/{project}/docs/00.5-product/VALUE-ASSESSMENT-{project}-v{version}.yml"
+      description: "四层价值+7要素评估报告"
+
+  dependencies:
+    - "common/value-assessment-standards.yml"
+    - "common/human-confirm-protocol.yml（权重配置需人确认）"

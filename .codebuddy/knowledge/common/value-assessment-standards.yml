@@ -1,0 +1,195 @@
+# ============================================
+# 四层价值 + 公司7要素 + 实现方式评估规范（Value Assessment Standards）
+# 版本: v1.1.0
+# 创建日期: 2026-07-18
+# 所属议题: POM V5.0 议题三
+# V1.1.0升级：新增实现方式维度（后台可配置 vs 代码开发）+ 小版本迭代支持
+# ============================================
+version: "1.1.0"
+name: "value-assessment-standards"
+description: "四层价值+公司7要素+实现方式评估框架——Backlog优先级排序升级"
+
+# ============================================
+# 一、四层价值评估框架
+# ============================================
+four_layer_value:
+
+  commercial_value:
+    name: "商业价值"
+    score_range: [1, 10]
+    sub_dimensions:
+      revenue_impact: "收入影响（直接/间接）"
+      cost_reduction: "成本节约"
+      growth_contribution: "增长贡献（用户/订单/GMV）"
+
+  delivery_value:
+    name: "交付价值"
+    score_range: [1, 10]
+    sub_dimensions:
+      unblock_others: "是否解锁其他Backlog项（依赖关系）"
+      foundation_for_future: "是否为未来版本打基础"
+      technical_debt_reduction: "是否减少技术债"
+
+  customer_value:
+    name: "客户价值"
+    score_range: [1, 10]
+    sub_dimensions:
+      pain_point_resolution: "痛点解决程度"
+      experience_improvement: "体验提升程度"
+      usage_frequency: "使用频率影响"
+
+  scenario_closure:
+    name: "场景闭环"
+    score_range: [1, 10]
+    sub_dimensions:
+      involved_scenarios: "参与哪些场景闭环（SC编号列表）"
+      closure_criticality: "对闭环的关键性（critical/important/nice_to_have）"
+      is_blocking_closure: "是否阻塞闭环完成（true/false）"
+
+  composite_score:
+    formula: "加权平均"
+    default_weights:
+      commercial: 0.3
+      delivery: 0.2
+      customer: 0.3
+      scenario_closure: 0.2
+    weight_adjustable: true
+    weight_adjust_note: "不同项目阶段权重不同。早期项目场景闭环权重高（先跑通再优化），成熟期商业价值权重高（变现优先）。PO在规划时声明本次版本的权重配置，需人确认（Q3优先级排序型）"
+
+# ============================================
+# 二、公司7要素影响评估
+# ============================================
+company_seven_factors:
+
+  operations:
+    name: "运营"
+    impact_values: ["positive", "negative", "neutral"]
+    example: "新增审核流程 → 运营需增加审核人员 → impact=negative"
+
+  resources:
+    name: "资源"
+    impact_values: ["positive", "negative", "neutral"]
+    example: "直播间禁言 → 需增加音频识别算力 → impact=negative"
+
+  finance:
+    name: "财务"
+    impact_values: ["positive", "negative", "neutral"]
+    example: "对接第三方支付 → 增加支付通道成本 → impact=negative"
+
+  channels:
+    name: "渠道"
+    impact_values: ["positive", "negative", "neutral"]
+    example: "APP端直播间 → 新增APP获客渠道 → impact=positive"
+
+  business:
+    name: "业务"
+    impact_values: ["positive", "negative", "neutral"]
+    example: "订阅制 → 业务模式从买断变订阅 → impact=positive"
+
+  organization:
+    name: "组织"
+    impact_values: ["positive", "negative", "neutral"]
+    example: "新增客服系统 → 需组建客服团队 → impact=negative"
+
+  technology:
+    name: "技术"
+    impact_values: ["positive", "negative", "neutral"]
+    example: "引入实时音视频 → 技术栈新增WebRTC → impact=neutral"
+
+  blocking_factors_rule:
+    description: "哪些要素是阻塞项（如财务预算未批则不能做）"
+    rule: "blocking_factors列出impact=negative且不可接受的要素，含blocking_factors的Backlog项优先级降级"
+
+# ============================================
+# 三、实现方式维度（V1.1.0新增——后台可配置 vs 代码开发）
+# ============================================
+implementation_approach:
+  description: |
+    V1.1.0新增：评估Backlog项的实现方式——是否可通过后台配置实现而非代码开发。
+    核心原则：配置优先于开发。如果一个需求可以通过后台配置（如云直播模板配置、MPS擦音模板配置、
+    系统参数配置）实现，则不应作为代码开发项，而应标记为config项，复杂度大幅降低。
+  types:
+    backend_config:
+      name: "后台可配置"
+      description: "需求可通过后台/控制台配置实现，无需代码开发"
+      examples: ["云直播录制模板配置", "MPS擦音任务模板配置", "审核规则阈值配置", "通知模板配置"]
+      complexity_modifier: "complexity × 0.2（配置项复杂度仅为开发的20%）"
+      priority_boost: "优先级得分 +1.0（配置项优先交付）"
+    code_development:
+      name: "代码开发"
+      description: "需求需要前端/后端代码开发实现"
+      examples: ["新页面开发", "新交互功能", "新数据实体", "新API接口"]
+      complexity_modifier: "无调整"
+      priority_boost: "无调整"
+    hybrid:
+      name: "混合（配置+开发）"
+      description: "需求部分通过配置实现，部分需要代码开发"
+      examples: ["审核流程配置+前端审核页面开发", "订阅计划配置+订阅管理页面开发"]
+      complexity_modifier: "complexity × 0.6（混合项复杂度为开发的60%）"
+      priority_boost: "优先级得分 +0.5"
+  ai_assist_rule: |
+    AI辅助PO识别实现方式——AI基于领域知识+第三方平台能力文档，推理每个Backlog项的实现方式。
+    AI输入：Backlog项描述 + 领域知识 + 第三方平台能力清单（如腾讯云直播/MPS支持哪些配置）
+    AI输出：实现方式建议（backend_config/code_development/hybrid）+ 置信度 + 依据
+    PO决策：AI建议仅供参考，PO做最终确认。PO可推翻AI建议但需说明理由。
+
+# ============================================
+# 四、优先级排序算法（V1.1.0升级——纳入实现方式维度）
+# ============================================
+priority_algorithm:
+  formula: |
+    V1.1.0升级公式：
+    基础得分 = 四层价值加权得分 × 0.5 + (10 - adjusted_complexity) × 0.2 + (1 - blocking_factors_count / 7) × 0.15
+    实现方式加成 = implementation_boost（backend_config=1.0, hybrid=0.5, code_development=0）
+    最终得分 = 基础得分 × 0.85 + 实现方式加成 × 0.15
+
+    其中 adjusted_complexity = complexity × complexity_modifier（配置项×0.2，混合项×0.6，开发项×1.0）
+  sorting_rules:
+    - "blocking_factors = 0 的项优先"
+    - "同等blocking下，按最终得分降序"
+    - "同分时，implementation_approach=backend_config 优先（配置优先于开发）"
+    - "仍同分时，scenario_closure.closure_criticality = critical 优先"
+    - "仍同分时，MoSCoW Must > Should > Could > Won't"
+  v1_1_0_change_note: |
+    V1.0.0公式权重：价值0.6 + 复杂度0.2 + 阻塞0.2
+    V1.1.0公式权重：价值0.5 + 复杂度0.2 + 阻塞0.15 + 实现方式0.15
+    变更原因：纳入实现方式维度后需调整权重分配，价值权重从0.6降至0.5释放0.1给实现方式维度，
+    阻塞因子从0.2降至0.15释放0.05给实现方式维度。
+
+# ============================================
+# 四、Backlog项升级Schema
+# ============================================
+backlog_item_schema:
+  id: "BL-{NNN}"
+  name: "功能名称"
+  moscow: "M|S|C|W"
+
+  value_assessment:
+    commercial: { score: "1-10", reasoning: "评分依据" }
+    delivery: { score: "1-10", reasoning: "评分依据" }
+    customer: { score: "1-10", reasoning: "评分依据" }
+    scenario_closure:
+      score: "1-10"
+      involved_scenarios: ["SC-001"]
+      closure_criticality: "critical|important|nice_to_have"
+      is_blocking_closure: true
+    composite: "加权得分"
+
+  company_factors:
+    operations: { impact: "positive|negative|neutral", description: "影响描述" }
+    resources: { impact: "positive|negative|neutral", description: "影响描述" }
+    finance: { impact: "positive|negative|neutral", description: "影响描述" }
+    channels: { impact: "positive|negative|neutral", description: "影响描述" }
+    business: { impact: "positive|negative|neutral", description: "影响描述" }
+    organization: { impact: "positive|negative|neutral", description: "影响描述" }
+    technology: { impact: "positive|negative|neutral", description: "影响描述" }
+    blocking_factors: []
+
+  complexity: "1-10"
+  implementation_approach: "backend_config|code_development|hybrid（V1.1.0新增）"
+  implementation_reasoning: "实现方式判定依据（V1.1.0新增）"
+  adjusted_complexity: "调整后复杂度=complexity×complexity_modifier（V1.1.0新增）"
+  priority_score: "算法计算（V1.1.0升级公式）"
+  target_sprint: "S1|S2|..."
+  target_version: "v1.0.0|v1.0.1|v1.1.0|...（V1.1.0新增——支持小版本）"
+  dependencies: ["BL-001"]

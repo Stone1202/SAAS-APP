@@ -1,0 +1,17 @@
+skill:
+  id: "multi-platform-code-generator"
+  name: "多端代码生成器"
+  version: "1.0.0"
+  agents: ["fd-agent"]
+  triggers: ["/new 阶段3 --platform", "/change 阶段A5 --platform"]
+  description: "生成各端仿真代码，共享领域逻辑抽到 src/shared/，逐端运行合规校验"
+  inputs:
+    - "需求文档（含多端差异矩阵）"
+    - "各端设计文档"
+    - "config.yml 的 platforms 节点"
+  outputs:
+    - type: "platform-code"
+      description: "各端仿真代码，存入 src/{platform}/"
+    - type: "shared-code"
+      description: "共享领域逻辑，存入 src/shared/"
+  dependencies: ["compliance-checker"]

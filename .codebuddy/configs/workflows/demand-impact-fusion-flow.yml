@@ -1,0 +1,885 @@
+# ============================================
+# Workflow: demand-impact-fusion-flow（需求理解+影响分析+融合分析公共流程）
+# 版本: v1.1.0
+# 创建日期: 2026-07-22
+# ============================================
+#
+# 定位：/init 和 /change 共用的前置分析公共流程（1个文件，三层架构）
+# 参考：api-learner.yml 公共流程抽取模式
+#
+# 三层架构：
+#   Layer1: 需求理解层 — 对用户输入做深度分析+知识库映射
+#   Layer2: 影响分析层 — 5层知识库全量检索+10维影响扫描+2轮人机交互收窄
+#   Layer3: 融合分析层 — 三维业务融合度+综合评分+AI预测+版本规划判断
+#
+# 核心设计原则：
+#   1. 影响分析不是一次性单向扫描，而是人机交互的迭代收敛过程
+#   2. AI扫描给"最大范围"，用户收窄到"聚焦范围"
+#   3. 收窄过程留痕（排除原因+风险标记），收窄后冻结传入下一层
+#   4. 综合评分（宽度×深度）而非硬阈值，XL触发版本规划判断
+#   5. 新项目(--type=新增)跳过Layer2/L3（无存量可扫描）
+#
+# 调用方：
+#   - requirement-flow §0.5（/init 存量项目，full模式）
+#   - change-request A1（/change，standard模式）
+#   - change-request B1（/fix 判定为需求缺陷时，lite模式）
+# ============================================
+
+workflow:
+  id: "demand-impact-fusion-flow"
+  name: "需求理解+影响分析+融合分析公共流程（V1.1.0）"
+  version: "1.1.0"
+  trigger_commands: ["/init", "/change", "/fix"]
+  owner: "ba-agent"
+  supervisor: "pm-agent"
+
+  doc_standard_reference: ".codebuddy/knowledge/common/doc-standards.yml"
+  brain_memory_spec: ".codebuddy/knowledge/common/brain-memory-spec.yml"
+
+  # ============================================
+  # 触发条件与深度模式
+  # ============================================
+  trigger_conditions:
+    - condition: "/init --type=迭代|变更（存量项目）"
+      caller: "requirement-flow §0.5"
+      depth_mode: "full"
+      layers: ["L1", "L2", "L3"]
+    - condition: "/init --type=修复（存量项目）"
+      caller: "requirement-flow §0.5"
+      depth_mode: "lite"
+      layers: ["L1精简", "L2精简", "L3跳过"]
+    - condition: "/change（任何变更）"
+      caller: "change-request A1"
+      depth_mode: "standard"
+      layers: ["L1", "L2", "L3精简"]
+      note: "/change有--file时升级为full模式；--module指定时Layer2收窄空间小但仍执行"
+    - condition: "/fix 判定为需求缺陷"
+      caller: "change-request B1"
+      depth_mode: "lite"
+      layers: ["L1精简", "L2精简"]
+      note: "/fix判定为代码Bug时跳过本流程"
+
+  depth_modes:
+    - mode: "lite"
+      desc: "修复/Bug精简模式"
+      scan_dimensions: [1, 5]  # 仅模块拓扑+接口契约
+      fusion: "跳过三维融合度，仅做影响面规模评分"
+      round_2: "跳过（精简模式不触发版本规划）"
+    - mode: "standard"
+      desc: "变更默认模式"
+      scan_dimensions: [1, 2, 3, 4, 5, 9]  # 模块+ENT+SM+BR+接口+跨端
+      fusion: "三维融合度+综合评分"
+      round_2: "仅L/XL触发"
+    - mode: "full"
+      desc: "迭代/变更完整模式"
+      scan_dimensions: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  # 全10维
+      fusion: "三维融合度+综合评分+AI预测"
+      round_2: "仅L/XL触发"
+
+  # ============================================
+  # Layer1: 需求理解层
+  # ============================================
+  layer1_requirement_understanding:
+    id: "L1"
+    name: "需求理解层（对用户输入做深度分析+知识库映射）"
+    agent: "ba-agent"
+    skills: ["system-common-sense-analyzer"]
+
+    description: |
+      对用户输入做深度分析，产出需求深度分析报告+知识库映射表。
+      这是影响分析(L2)和融合分析(L3)的前置——先搞清楚"需求是什么"，
+      再分析"影响了什么"和"如何融合"。
+      适用：/init + /change + /fix(需求缺陷)
+
+    input: |
+      用户输入源（--desc/--file/--api/--source）
+      + 项目知识库上下文（A0/stage-00已加载的PRD+版本沉淀+经验库+领域知识）
+
+    steps:
+      # ---- L1.1 需求描述AI深度分析（6维，从§0.5a抽取）----
+      - id: "L1.1"
+        name: "需求描述AI深度分析（6维）"
+        condition: "full/standard模式全跑；lite模式精简（仅维度1语义提取+维度4隐含需求）"
+        input: "--desc/--file/--api/--source 全部输入源 + 领域知识 + 行业指标规则"
+        output: "需求深度分析报告（demand_analysis_report）"
+        methodology: |
+          BA对全部输入源进行6维深度分析：
+
+          维度1-语义提取：从--desc/--file提取核心业务概念、操作动词、角色主体、状态变化、约束条件
+          维度2-意图识别：表面意图vs深层意图（如"积分兑换"深层含积分体系+库存+限流+防刷+退换货+过期）
+          维度3-业务概念抽取：实体概念/流程概念/规则概念/角色概念
+          维度4-隐含需求挖掘：基于业务逻辑推导未提及但必须有的需求（有A→必有B/C/D）
+          维度5-领域知识深度结合：
+            - 需求概念×领域知识业务流程（标准流程参考）
+            - 需求概念×Part12 API参数字典（接口参数对齐）
+            - 需求概念×Part13参数流转图（参数流转关系）
+            - 需求概念×领域知识BR（标准业务规则参考）
+            - 需求概念×领域知识状态机（标准状态机参考）
+          维度6-外部接口融合：
+            - --api接口vs领域知识api_chain接口对齐
+            - --api参数vs Part12参数字典对齐
+            - --api调用顺序vs Part13参数流转图对齐
+            - 缺口识别（--api有但领域知识没有的接口→需补充学习）
+            - 产出接口参数×业务流程映射表
+
+      # ---- L1.2 知识库映射（新增——新需求概念×项目知识库映射）----
+      - id: "L1.2"
+        name: "知识库映射（新需求概念×项目知识库）"
+        input: "需求深度分析报告(L1.1) + 项目知识库（PRD+版本沉淀+领域知识）"
+        output: "知识库映射表（knowledge_mapping_table）"
+        methodology: |
+          将L1.1的需求概念与项目知识库进行映射，回答"这个需求对应项目里已有什么"：
+
+          映射1-新需求概念×项目PRD的FN：
+            "这个需求对应已有哪些FN？是新增FN还是修改已有FN？"
+            产出：fn_mapping [{ new_concept, existing_fn, relationship: "new|modify|reuse" }]
+
+          映射2-新需求概念×项目PRD的ENT：
+            "涉及哪些已有实体？需要新增字段？"
+            产出：ent_mapping [{ new_concept, existing_ent, fields_change }]
+
+          映射3-新需求概念×项目PRD的BR：
+            "涉及哪些已有规则？是否冲突？"
+            产出：br_mapping [{ new_concept, existing_br, conflict: true|false }]
+
+          映射4-新需求概念×领域知识：
+            "行业标准是什么？"
+            产出：domain_reference [{ concept, domain_standard, reference }]
+
+          映射5-新需求概念×已close版本：
+            "历史上类似需求做过吗？"
+            产出：history_match [{ version, similar_requirement, similarity }]
+
+          知识库映射是Layer2影响分析的输入基础——
+          知道"对应已有什么"才能准确判断"影响了什么"。
+
+      # ---- L1.3 用例维度多视角识别（V1.1.0新增——AI模拟专家视角）----
+      - id: "L1.3"
+        name: "用例维度多视角识别（AI模拟专家视角）"
+        input: "需求深度分析报告(L1.1) + 知识库映射表(L1.2) + expert-registry.yml dimension_expert_mapping"
+        output: "用例维度初版清单（dimension_checklist_v1）"
+        methodology: |
+          V1.1.0新增——14维度从"文档标准"前移到"分析过程"。
+          AI不是真的专家，但AI可以模拟专家视角。
+          基于14维度×专家映射表（expert-registry.yml），AI逐一模拟每个专家视角，
+          结合领域知识库+经验库+历史Bug模式做维度识别。
+
+          AI模拟专家视角的流程：
+          1. 加载14维度×专家映射表（expert-registry.yml dimension_expert_mapping）
+          2. 加载领域知识库（domains/中匹配的领域知识）
+          3. 加载经验库（common/经验库/中的踩坑记录）
+          4. 加载历史Bug模式（版本沉淀中的Bug记录）
+
+          5. AI逐一模拟专家视角（按映射表的primary_experts）：
+             模拟数据专家视角：
+               - keyword_hints匹配："计算/积分/金额"→识别"算法公式区"+"精度兜底区"
+               - 知识库匹配：domains/中有相关计算规则→确认
+               - Bug模式匹配：经验库有精度Bug→确认精度兜底区
+             模拟架构专家视角：
+               - keyword_hints匹配："冻结/解冻/审核"→识别"状态依赖区"
+               - keyword_hints匹配："跨模块"→识别"跨模块影响"
+             模拟财务专家视角：
+               - keyword_hints匹配："优惠/运费/手续费"→识别"金额计算链区"
+               - keyword_hints匹配："分佣/比例"→识别"多角色分配区"
+             模拟QA专家视角：
+               - keyword_hints匹配："退款/退货/取消"→识别"逆向流程区"
+             ...（按映射表逐一模拟）
+
+          6. 每个维度标注"识别依据"：
+             - 来自需求描述关键词匹配（keyword_hints）
+             - 来自领域知识库匹配（domains/）
+             - 来自经验库Bug模式（经验库/）
+             - 来自历史版本教训（版本沉淀/）
+             - AI置信度（high/medium/low）
+
+          局限说明：
+            AI预判初期准确率可能50-60%，专家在§2.5补盲兜底。
+            版本迭代+经验库积累后AI逐步进化（目标90%+）。
+            AI遗漏的维度在§2.5专家补盲时补充，补充结果反馈AI学习。
+
+        output_structure: |
+          dimension_checklist_v1:
+            - fn: "FN-{系统}-{终端}-{NNN}"
+              dimensions:
+                - dimension: "算法公式区"
+                  identified_by: "AI模拟数据专家"
+                  basis: "需求描述含'积分抵扣'→keyword_hints匹配'积分'"
+                  confidence: "high"
+                - dimension: "精度兜底区"
+                  identified_by: "AI模拟数据专家"
+                  basis: "经验库/精度Bug记录：积分计算曾出精度问题"
+                  confidence: "high"
+                - dimension: "逆向流程区"
+                  identified_by: "AI模拟QA专家"
+                  basis: "需求描述含'退款'→keyword_hints匹配'退款'"
+                  confidence: "high"
+              ai_prediction_accuracy: "待§2.5专家补盲后统计"
+        note: |
+          维度清单在后续阶段增量更新：
+          - Layer3融合分析：基于影响分析确认+补充跨模块维度
+          - §2.5多专家盲区审查：专家补盲遗漏维度
+          - §3/§3.5/§3.8三阶段分析：每阶段冻结时增量更新
+          - §5用例设计：基于最终维度清单结构化输出（不是从头想该写什么）
+
+    output_structure: |
+      layer1_output:
+        demand_analysis_report:
+          semantic_extraction: { concepts, operations, roles, states, constraints }
+          intent_analysis: { surface_intent, deep_intent }
+          business_concepts: { entities, processes, rules, roles }
+          implicit_requirements: [{ requirement, derivation, priority }]
+          domain_knowledge_fusion:
+            matched_domains: [...]
+            api_param_references: [...]
+            param_flow_references: [...]
+            br_references: [...]
+            state_machine_references: [...]
+          external_api_fusion:
+            api_alignment: [...]
+            param_flow_mapping: [...]
+        knowledge_mapping_table:
+          fn_mapping: [{ new_concept, existing_fn, relationship }]
+          ent_mapping: [{ new_concept, existing_ent, fields_change }]
+          br_mapping: [{ new_concept, existing_br, conflict }]
+          domain_reference: [{ concept, domain_standard, reference }]
+          history_match: [{ version, similar_requirement, similarity }]
+
+  # ============================================
+  # Layer2: 影响分析层（含2轮收窄机制）
+  # ============================================
+  layer2_impact_analysis:
+    id: "L2"
+    name: "影响分析层（5层知识库全量检索+10维影响扫描+2轮人机交互收窄）"
+    agent: "ba-agent"
+    skills: ["req-impact-analyzer", "change-impact-analyzer"]
+
+    description: |
+      5层知识库全量检索+10维影响扫描+2轮人机交互收窄。
+      核心原则：AI扫描给"最大范围"，用户收窄到"聚焦范围"。
+      收窄过程留痕，收窄后冻结传入Layer3。
+
+    input: |
+      Layer1产出（需求深度分析报告+知识库映射表+用例维度初版清单dimension_checklist_v1）
+      + 项目知识库（PRD+版本沉淀+经验库+领域知识）
+      + 多端差异矩阵（如有）
+
+    # ---- 2.1 AI执行：5层检索+10维扫描 ----
+    ai_execution:
+
+      # ========== 5层知识库全量检索 ==========
+      knowledge_retrieval:
+        description: |
+          5层知识库全量检索，每层记录检索日志。
+          核心诉求：影响分析必须结合知识库找旧项目所有相关信息，
+          不只是扫描当前PRD，而是全量检索5层知识库。
+        layers:
+          - layer: 1
+            name: "项目PRD（当前最新）"
+            path: "knowledge/projects/{project}/需求文档/"
+            retrieve: "FN/UC/BR/ENT/SM/IF/CONFIG/METRIC全量"
+            purpose: "扫描当前最新需求产物的完整结构"
+
+          - layer: 2
+            name: "版本沉淀（逐版本扫描）"
+            path: "knowledge/projects/{project}/版本沉淀/"
+            retrieve: |
+              每个已close版本逐版本扫描：
+              - 需求快照（这个版本做了什么需求）
+              - Review经验（这个版本Review发现什么）
+              - lessons-learned（这个版本踩了什么坑）
+              - 追溯链快照（这个版本的FN→代码映射）
+            purpose: "匹配历史版本相似需求/相关模块，复用经验避坑"
+            note: "当前成员(git user.name)对应的project下所有已close版本必须全部扫描"
+
+          - layer: 3
+            name: "项目经验"
+            path: "knowledge/projects/{project}/经验/"
+            retrieve: "项目级踩坑+最佳实践+Review模式"
+            purpose: "复用本项目历史经验"
+
+          - layer: 4
+            name: "通用经验库"
+            path: "knowledge/common/经验库/"
+            retrieve: "跨项目踩坑+最佳实践+Review模式"
+            purpose: "复用跨项目经验"
+
+          - layer: 5
+            name: "领域知识库"
+            path: "knowledge/domains/"
+            retrieve: "行业标准BR/状态机/API参数/业务流程"
+            purpose: "对标行业标准"
+
+        retrieval_log_required: true
+        retrieval_log_structure: |
+          retrieval_log:
+            layers_accessed: [{ layer, path, items_count, items_matched }]
+            versions_scanned: [{ version, scan_date, matched_items }]
+            total_items_matched: N
+
+      # ========== 10维影响扫描 ==========
+      scan_dimensions:
+        description: "10维影响扫描（8维需求产物+跨端+组件域）"
+        dimensions:
+          # --- 需求产物维度（8维）---
+          - id: 1
+            name: "模块拓扑影响（广度）"
+            object: "business-topology.json"
+            method: "对比topology，受影响模块+级别"
+          - id: 2
+            name: "数据实体影响（深度）"
+            object: "ENT"
+            method: "扫描ENT，新增/修改/删除实体+字段级变更"
+          - id: 3
+            name: "状态机影响（深度）"
+            object: "SM + 状态过渡操作表"
+            method: "扫描SM，新增状态/修改转换/新增转换路径"
+          - id: 4
+            name: "业务规则影响（深度）"
+            object: "BR + BR依赖链"
+            method: "扫描BR，新增/修改/冲突规则"
+          - id: 5
+            name: "接口契约影响（深度）"
+            object: "接口初稿 + API参数字典(Part12)"
+            method: "扫描接口初稿，新增/修改/废弃接口"
+          - id: 6
+            name: "跨模块信息流影响（广度）"
+            object: "IF"
+            method: "扫描IF，新增支路/修改路径/新增信息主体"
+          - id: 7
+            name: "集中配置影响（广度）"
+            object: "CONFIG"
+            method: "扫描CONFIG，新增/修改配置项+依赖"
+          - id: 8
+            name: "统计指标影响（广度）"
+            object: "METRIC"
+            method: "扫描METRIC，新增/修改指标+依赖"
+          # --- 新增维度 ---
+          - id: 9
+            name: "跨端影响（广度）"
+            object: "多端差异矩阵 + 终端清单"
+            method: "逐端分析+跨端一致性风险"
+            note: "来自原change-request A1跨端分析"
+          - id: 10
+            name: "组件/页面/字段影响（深度）"
+            object: "component-library + mapping.json + 页面树"
+            method: "组件级+页面级+数据流三维度"
+            note: "来自原change-impact-analyzer(UX skill)"
+
+      # ========== 影响面规模评分（宽度×深度）==========
+      impact_scale_scoring:
+        description: |
+          影响面综合评分 = f(宽度, 深度)
+          宽度=横向扩散范围，深度=纵向穿透程度
+          评分是呈现给用户的参考，不是替用户做决策。
+        breadth_factors:
+          - factor: "影响模块数"
+            scale: "1-3=S, 4-6=M, 7-10=L, >10=XL"
+          - factor: "影响系统数"
+            scale: "1=S, 2=M, 3=L, >3=XL"
+          - factor: "影响终端数"
+            scale: "1=S, 2=M, 3=L, >3=XL"
+          breadth_formula: "max(模块, 系统, 终端) 的加权评估"
+        depth_factors:
+          - factor: "影响维度数"
+            scale: "1-3=S, 4-6=M, 7-8=L, 9-10=XL"
+          - factor: "ENT变更字段数"
+            scale: "0-5=S, 6-15=M, 16-30=L, >30=XL"
+          - factor: "SM新增状态数"
+            scale: "0=S, 1-2=M, 3-5=L, >5=XL"
+          - factor: "BR新增/修改数"
+            scale: "0-2=S, 3-5=M, 6-10=L, >10=XL"
+          - factor: "接口新增/修改数"
+            scale: "0-2=S, 3-5=M, 6-10=L, >10=XL"
+          depth_formula: "各维度深度的加权评估"
+        overall_matrix: |
+                     深度S   深度M   深度L   深度XL
+          宽度S      S      S      M      M
+          宽度M      S      M      M      L
+          宽度L      M      M      L      XL
+          宽度XL     M      L      XL     XL
+
+      # ========== 影响面初版产出 ==========
+      initial_output: |
+        impact_surface_v1:
+          affected_modules:
+            - module: "模块名"
+              impact_level: "P0|P1|P2"
+              dimensions_hit: [1-10]
+              confidence: "high|medium|low"
+          impact_matrix: [{ module, dimensions: {1-10} }]
+          affected_artifacts: { new, modified, deprecated }
+          affected_documents:
+            requirement_chapters: [...]
+            design_chapters: [...]
+            test_cases: [...]
+            code_files: [...]
+          impact_chain: "Mermaid图（新需求→模块→实体→状态→规则→接口→组件→页面）"
+          cross_terminal_risk: [...]
+          version_match:
+            - version: "v1.2"
+              matched_items: [...]
+              relevance: "high|medium|low"
+              reusable: "状态机/BR/UC/设计模式"
+          retrieval_log:
+            layers_accessed: [...]
+            versions_scanned: [...]
+            total_items_matched: N
+          impact_scale:
+            breadth: "S|M|L|XL"
+            depth: "S|M|L|XL"
+            overall: "S|M|L|XL"
+
+    # ---- 2.2 第1轮收窄：影响范围+版本匹配 一起呈现 ----
+    round_1_narrowing:
+      name: "第1轮收窄（影响范围+版本匹配，用户一次性反馈）"
+      description: |
+        AI呈现影响面初版+版本匹配结果，用户一次性收窄。
+        大多数S/M综合评分在此轮确认后直接进入Layer3（不需要第2轮）。
+        核心原则：AI给最大范围，用户收窄到聚焦范围。
+
+      ai_presentation: |
+        AI向用户呈现（结构化清单）：
+        ┌──────────────────────────────────────────────────────────┐
+        │ 影响分析初版报告                                          │
+        ├──────────────────────────────────────────────────────────┤
+        │ 1. 影响模块清单（按影响级别分组）                         │
+        │    核心影响（P0）：模块A / 模块B / 模块C                  │
+        │    重要影响（P1）：模块D / 模块E                          │
+        │    边缘影响（P2）：模块F / 模块G / 模块H                  │
+        │                                                          │
+        │ 2. 影响面规模评分                                         │
+        │    宽度：L（6模块×2系统×2终端）                           │
+        │    深度：M（5维度×12字段变更×2状态新增）                  │
+        │    综合：L                                               │
+        │                                                          │
+        │ 3. 已close版本匹配清单                                    │
+        │    v1.2 做过'订单退款'（相似度85%）→ 可复用：状态机/BR/UC │
+        │    v1.5 改过'模块D'（相关度70%）→ 可参考：踩坑/Review经验 │
+        │    v1.8 做过'模块A增强'（相似度60%）→ 可参考：设计模式    │
+        │                                                          │
+        │ 4. AI建议                                                 │
+        │    聚焦：P0+P1（5模块），P2标记后续版本                   │
+        │    版本参考：v1.2+v1.5（v1.8过旧跳过）                    │
+        └──────────────────────────────────────────────────────────┘
+
+      user_feedback:
+        scope_narrowing_options:
+          - option: "采纳建议"
+            desc: "聚焦AI建议的范围，排除项标记后续版本风险"
+            action: "focused=P0+P1, excluded=P2(标记后续风险)"
+          - option: "进一步收窄"
+            desc: "用户指定只做部分模块（如'本期只做P0核心3模块'）"
+            action: "focused=用户指定, excluded=其余(标记后续风险)"
+          - option: "补充遗漏"
+            desc: "用户补充AI未识别的模块"
+            action: "focused=AI建议+用户补充"
+          - option: "需讨论"
+            desc: "某个模块的影响不确定，展开讨论"
+            action: "展开讨论后转为上述之一"
+
+        version_reference_options:
+          - option: "参考全部"
+            desc: "加载所有匹配版本的经验"
+          - option: "选择性参考"
+            desc: "用户指定参考哪些版本"
+          - option: "不参考"
+            desc: "跳过历史经验加载"
+
+      output: |
+        round_1_output:
+          focused_modules: [...]  # 聚焦模块清单
+          excluded_modules:
+            - module: "模块名"
+              reason: "排除原因"
+              risk_flag: "后续版本风险标记"
+          supplemented_modules: [...]  # 用户补充的模块
+          referenced_versions: [...]  # 参考的历史版本
+          excluded_versions:
+            - version: "v1.8"
+              reason: "版本过旧，设计模式已变更"
+          impact_range_frozen: true  # 影响范围冻结
+
+      narrowing_log:
+        description: "收窄日志，记录每轮收窄的决策（排除项必须有原因+风险标记）"
+        path: "projects/{project}/docs/01-requirements/impact-narrowing-log-{version}.yml"
+        rule: "禁止无原因排除，禁止无风险标记排除"
+
+    # ---- Layer2 最终产出 ----
+    output: |
+      layer2_output:
+        impact_report:
+          impact_matrix: [{ module, dimensions: {1-10} }]
+          affected_artifacts: { new, modified, deprecated }
+          affected_documents: { requirement_chapters, design_chapters, test_cases, code_files }
+          impact_chain: "Mermaid图"
+          cross_terminal_risk: [...]
+          version_match: [...]
+          retrieval_log: { layers_accessed, versions_scanned, total_items_matched }
+          impact_scale: { breadth, depth, overall }
+        narrowing_log:
+          round_1:
+            initial_scope: [...]      # AI初扫范围
+            user_action: "采纳|收窄|补充|讨论"
+            focused_scope: [...]      # 收窄后聚焦范围
+            excluded: [{ module, reason, risk_flag }]
+            supplemented: [...]
+            referenced_versions: [...]
+        frozen_scope:
+          modules: [...]              # 冻结的影响模块
+          versions_referenced: [...]  # 冻结的参考版本
+
+  # ============================================
+  # Layer3: 融合分析层（含版本规划判断）
+  # ============================================
+  layer3_fusion_analysis:
+    id: "L3"
+    name: "融合分析层（三维业务融合度+综合评分+AI预测+版本规划判断）"
+    agent: "ba-agent"
+    skills: ["system-common-sense-analyzer"]
+
+    description: |
+      新需求与现有项目的业务融合度分析+AI预测+版本规划判断。
+      回答"新需求如何融入现有项目"的业务问题。
+      仅当综合评分为L/XL时触发第2轮版本规划决策。
+      适用：/init(存量) + /change(精简版，不触发版本规划)
+
+    input: |
+      Layer1产出（需求深度分析报告+知识库映射表）
+      + Layer2产出（影响报告+冻结的影响范围）
+      + 跨版本QA Bug模式 + AC验收Bug模式（从大脑记忆加载）
+
+    # ---- 3.1 AI执行 ----
+    ai_execution:
+
+      # ========== 三维业务融合度评估 ==========
+      business_fusion_3d:
+        description: |
+          从三个业务维度评估新需求与现有项目的融合度。
+          这不是技术影响面评分，而是业务视角的融合度评估。
+        dimensions:
+          - id: "A"
+            name: "流程衔接度"
+            question: "新需求的业务流程与现有业务流程的衔接点"
+            method: "新需求流程节点 × 现有流程节点 → 衔接点清单"
+            output: "流程衔接图（新需求接入点+上下游影响）"
+            example: "新需求'退款'→ 衔接现有'订单完成'节点 → 下游'财务对账'"
+
+          - id: "B"
+            name: "角色权限交叉度"
+            question: "新需求的业务角色与现有业务角色的权限交叉"
+            method: "新需求角色 × 现有角色 → 权限交叉矩阵"
+            output: "角色权限交叉矩阵（角色×操作×现有/新增/冲突）"
+            example: "新需求'退款审批'→ 涉及'财务专员'角色 → 现有'订单管理'也有该角色 → 权限交叉"
+
+          - id: "C"
+            name: "数据流交叉度"
+            question: "新需求的业务数据与现有业务数据的数据流交叉"
+            method: "新需求数据流 × 现有数据流 → 交叉点清单"
+            output: "数据流交叉图（新需求数据流×现有数据流交叉点）"
+            example: "新需求'退款'→ 读取'订单'数据 → 写入'退款单' → 影响'财务流水'数据流"
+
+        fusion_level_judgment:
+          all_high_overlap: "增强现有功能（增量更新，单版本可完成）"
+          all_low_overlap: "新增功能域（新模块开发，需评估是否独立版本）"
+          conflict_exists: "需求冲突处理（优先级判断，可能需PO介入）"
+          mixed: "部分增强+部分新增（按模块拆分版本）"
+
+      # ========== 影响面规模重评（基于收窄后范围）==========
+      impact_scale_reassessment:
+        description: "基于收窄后的影响范围重新评分"
+        method: "宽度×深度矩阵重新计算"
+        output: "scale_after_narrowing（可能从XL降为L/M）"
+        note: "收窄后重新评分是关键——初版XL收窄后可能降为L甚至M"
+
+      # ========== AI预测（从§0.5c下沉）==========
+      ai_prediction:
+        history_correlator:
+          description: "相似需求→相似问题模式关联预警"
+          input: "当前需求特征指纹 + 跨版本PRD指纹库 + Bug关联"
+          output: "关联需求清单+引以为戒清单"
+          example: |
+            本次'批量导入违禁词'需求 →
+            指纹：批量操作+文件上传+数据校验+状态变更
+            相似：v1.2'批量导出'（交互相似）+ v1.5'客户导入'（业务相似）
+            v1.2问题：未覆盖大文件超时场景（PBL-023）
+            v1.5问题：校验规则与前端不一致（PBL-045）+ 并发冲突（PBL-047）
+            预警：本次同样需要注意→文件大小限制+校验规则定义+并发锁
+
+        quality_predictor:
+          description: "跨版本Bug模式→高风险FN预判"
+          input: "QA Bug模式 + AC验收Bug + 当前FN清单 + 变更范围"
+          output: "FN级风险评分(CRITICAL/HIGH/MEDIUM/LOW)+风险类型"
+          example: |
+            FN-退款-003 退款流程 →
+            历史：跨3个版本共11个Bug（状态机Bug 6个+金额Bug 3个+通知Bug 2个）
+            本次变更：状态机新增2个状态+新增3条BR
+            推理：综合风险评分 85/100 (CRITICAL)
+            风险类型：状态机完整性(60%) + 金额精度(25%) + 通知时序(15%)
+            建议：重点设计状态过渡+金额字段用整数+异步通知重试
+
+      # ========== 版本规划建议 ==========
+      version_planning_suggestion:
+        description: "基于综合评分的版本规划建议"
+        rules:
+          - scale: "S|M"
+            action: "单版本可完成，不需要拆分"
+            trigger_round_2: false
+          - scale: "L"
+            action: "询问用户是否拆分"
+            trigger_round_2: true
+          - scale: "XL"
+            action: "建议拆分，提供拆分方案"
+            trigger_round_2: true
+
+        split_strategy:
+          description: "拆分策略（XL时AI建议）"
+          strategies:
+            - strategy: "按核心流程闭环拆分"
+              rule: "每个版本完成一个业务流程闭环"
+            - strategy: "按模块拆分"
+              rule: "关联度高的模块放同一版本"
+            - strategy: "按终端拆分"
+              rule: "PC端先行，APP/H5后续"
+            - strategy: "混合拆分"
+              rule: "核心流程闭环+模块关联+终端优先级综合"
+
+    # ---- 3.2 第2轮收敛：版本规划决策（仅L/XL触发）----
+    round_2_planning:
+      name: "第2轮收敛（版本规划决策，仅L/XL触发）"
+      condition: "综合评分=L或XL时触发；S/M跳过直接输出"
+      description: |
+        AI呈现融合分析报告+版本规划建议，用户做版本规划决策。
+        综合评分S/M时跳过此轮，直接产出融合报告。
+
+      ai_presentation: |
+        场景1（综合评分S/M，跳过第2轮）：
+        ┌──────────────────────────────────────────────────────────┐
+        │ 融合分析报告（单版本）                                    │
+        ├──────────────────────────────────────────────────────────┤
+        │ 业务融合度：流程衔接高/角色权限中/数据流高 → 增强现有功能  │
+        │ 影响面规模：M（3模块×1系统×1终端，收窄后从L降为M）        │
+        │ 高风险FN：FN-退款-003（历史3次金额Bug）                   │
+        │ 版本规划：M级适中，单版本可完成                           │
+        └──────────────────────────────────────────────────────────┘
+
+        场景2（综合评分L/XL，触发第2轮）：
+        ┌──────────────────────────────────────────────────────────┐
+        │ 融合分析报告 + 版本规划建议                               │
+        ├──────────────────────────────────────────────────────────┤
+        │ 业务融合度：流程衔接高/角色权限高/数据流高 → 增强现有功能  │
+        │ 影响面规模：XL（8模块×3系统×2终端，收窄后仍XL）           │
+        │ 高风险FN：FN-退款-003（CRITICAL）/ FN-对账-005（HIGH）   │
+        │ 历史预警：v1.2'批量退款'曾出并发冲突Bug                   │
+        │ 版本规划建议：拆分为3个版本                               │
+        │   v2.1.0：模块A+B（核心退款流程闭环）                     │
+        │   v2.2.0：模块C+D（对账增强+财务适配）                    │
+        │   v2.3.0：模块E（APP/H5跨端适配）                         │
+        │ 是否采纳拆分？                                            │
+        └──────────────────────────────────────────────────────────┘
+
+      user_feedback:
+        - option: "确认单版本"
+          desc: "综合评分S/M/L时可选，继续单版本流程"
+          action: "planning_decision=single_version"
+        - option: "采纳拆分"
+          desc: "综合评分XL时可选，按拆分方案路由"
+          action: "planning_decision=split, 每版本走完整/init流程"
+        - option: "调整拆分"
+          desc: "用户修改拆分方案后确认"
+          action: "planning_decision=split(adjusted)"
+        - option: "不拆分"
+          desc: "标记风险（版本过大），继续单版本"
+          action: "planning_decision=single_version, risk_flag=版本过大"
+        - option: "需讨论"
+          desc: "展开讨论某个版本的scope"
+          action: "展开讨论后转为上述之一"
+
+      output: |
+        round_2_output:
+          planning_decision: "single_version | split"
+          split_plan:
+            - version: "v2.1.0"
+              scope: "模块A+B（核心流程闭环）"
+              modules: [A, B]
+            - version: "v2.2.0"
+              scope: "模块C+D（增强功能）"
+              modules: [C, D]
+          risk_flag: "null | 版本过大风险标记（如不拆分）"
+
+    # ---- Layer3 最终产出 ----
+    output: |
+      layer3_output:
+        fusion_report:
+          business_fusion:
+            process_integration: { level: "high|medium|low", details }
+            role_permission: { level: "high|medium|low", details }
+            data_flow: { level: "high|medium|low", details }
+            overall: "enhance | new_module | conflict | mixed"
+          impact_scale:
+            before_narrowing: "S|M|L|XL"
+            after_narrowing: "S|M|L|XL"
+          history_correlation:
+            similar_requirements: [{ version, req_name, fingerprint_match, problems_encountered }]
+            warnings: [{ type, description, source_version, source_pbl }]
+          quality_forecast:
+            high_risk_fns: [{ fn_id, risk_score, risk_types, confidence, reasoning }]
+            risk_summary: { total_fns, high_risk_count, medium_risk_count, low_risk_count }
+          version_planning:
+            need_planning: true|false
+            decision: "single_version | split"
+            split_plan: [...]
+            risk_flag: null|string
+        fusion_frozen: true  # 融合分析冻结，传入三阶段分析
+
+  # ============================================
+  # 调用方引用方式
+  # ============================================
+  caller_integration:
+
+    requirement_flow:
+      trigger: "§0.5（/init 存量项目时执行）"
+      depth_mode: "full(迭代/变更) | lite(修复)"
+      layers: ["L1", "L2", "L3"]
+      output_integration: |
+        Layer1产出（需求深度分析报告+知识库映射表）
+          → 替代原 requirement-flow §0.5a
+        Layer2产出（影响报告+收窄日志+冻结范围）
+          → 替代原 requirement-flow §0.5b
+        Layer3产出（融合分析报告+版本规划决策）
+          → 替代原 requirement-flow §0.5c 的 history_correlation + quality_forecast
+        原 §0.5c 的 journey_map_input 和 system_common_sense_blind_spots
+          → 保留在 requirement-flow（基于Layer1-3产出组装全景图）
+      note: |
+        新项目(--type=新增)跳过Layer2/L3（无存量项目可扫描），只执行Layer1。
+        /fix(--type=修复)走lite模式：L1精简+L2精简+L3跳过。
+
+    change_request:
+      trigger: "A1（/change）"
+      depth_mode: "standard(默认) | full(有--file)"
+      layers: ["L1", "L2", "L3精简版"]
+      output_integration: |
+        Layer1产出 → A1需求理解
+        Layer2产出 → A1影响分析（含收窄机制）
+        Layer3产出 → A1融合分析（精简版：不触发版本规划判断，
+          因为变更本身已在某个版本内，不需要再拆分版本）
+      note: |
+        /change有--module时，Layer2收窄空间小但仍执行收窄机制。
+        /change有--file时升级为full模式（10维全扫描）。
+        /change的A0知识库加载产出传入Layer1作为知识库上下文。
+
+    fix_request:
+      trigger: "B1（/fix判定为需求缺陷时）"
+      depth_mode: "lite"
+      layers: ["L1精简", "L2精简"]
+      output_integration: |
+        Layer1精简 → B1需求理解（仅维度1语义提取+维度4隐含需求）
+        Layer2精简 → B1影响分析（仅维度1模块拓扑+维度5接口契约，仍执行收窄）
+      note: "/fix判定为代码Bug时跳过本流程，直接B3修复"
+
+  # ============================================
+  # 质量指标
+  # ============================================
+  quality_metrics:
+    - { metric: "知识库检索覆盖率", formula: "实际检索层数/应检索层数", target: "100%" }
+    - { metric: "影响维度覆盖率", formula: "已扫描维度数/应扫描维度数", target: "≥80%" }
+    - { metric: "追溯链完整度", formula: "有追溯链的FN数/受影响FN数", target: "100%" }
+    - { metric: "风险预判命中率", formula: "预判高风险FN中实际出Bug的FN数/预判高风险FN数", target: "≥60%" }
+    - { metric: "收窄决策留痕率", formula: "有排除原因记录的排除模块数/排除模块总数", target: "100%" }
+    - { metric: "版本规划准确度", formula: "实际版本规模与预判一致的版本数/总版本数", target: "≥70%" }
+    - { metric: "已close版本扫描覆盖率", formula: "已扫描的已close版本数/总已close版本数", target: "100%" }
+
+  # ============================================
+  # 铁律
+  # ============================================
+  iron_rules:
+    - id: "IMPACT-01"
+      rule: "知识库5层全量检索：影响分析必须5层知识库全量检索（PRD+版本沉淀逐版本+项目经验+通用经验+领域知识），禁止只扫描当前PRD不扫描版本沉淀。当前成员对应的project下所有已close版本必须全部扫描。"
+      enforcement: "hard"
+      workflow_check: "demand-impact-fusion-flow Layer2 knowledge_retrieval"
+
+    - id: "IMPACT-02"
+      rule: "2轮收窄机制：影响分析必须执行收窄机制（第1轮影响范围+版本匹配一起呈现；第2轮版本规划决策仅L/XL触发）。禁止AI一次性给定影响范围不与用户交互。S/M综合评分可只走第1轮。"
+      enforcement: "hard"
+      workflow_check: "demand-impact-fusion-flow Layer2 round_1_narrowing + Layer3 round_2_planning"
+
+    - id: "IMPACT-03"
+      rule: "收窄排除留痕：收窄排除项必须记录排除原因+风险标记（后续版本处理标记），禁止无原因排除、禁止无风险标记排除。排除原因记录到impact-narrowing-log，后续版本自动加载排除项的风险标记。"
+      enforcement: "hard"
+      workflow_check: "demand-impact-fusion-flow Layer2 narrowing_log"
+
+    - id: "IMPACT-04"
+      rule: "三维业务融合度：融合分析必须执行三维业务融合度评估（流程衔接度+角色权限交叉度+数据流交叉度），禁止只做技术影响面评分不做业务融合度。三维融合度判定业务关系（增强现有/新增功能域/需求冲突/混合），直接影响版本规划决策。"
+      enforcement: "hard"
+      workflow_check: "demand-impact-fusion-flow Layer3 business_fusion_3d"
+
+    - id: "IMPACT-05"
+      rule: "版本规划判断：综合评分XL必须触发第2轮版本规划判断，禁止XL不拆分直接单版本（用户可选择不拆分但必须标记风险）。综合评分L须询问用户是否拆分。综合评分S/M可跳过第2轮直接单版本。"
+      enforcement: "hard"
+      workflow_check: "demand-impact-fusion-flow Layer3 round_2_planning"
+
+    - id: "IMPACT-06"
+      rule: "需求理解前置：需求理解(Layer1)是影响分析(Layer2)和融合分析(Layer3)的前置，禁止跳过需求理解直接做影响分析。Layer1的知识库映射是Layer2影响扫描的输入基础——先知道'对应已有什么'才能准确判断'影响了什么'。"
+      enforcement: "hard"
+      workflow_check: "demand-impact-fusion-flow Layer1 → Layer2 → Layer3 顺序"
+
+  # ============================================
+  # 门禁
+  # ============================================
+  gates:
+    - id: "G-IMPACT-01"
+      name: "知识库5层检索完整性"
+      check: "retrieval_log中5层全部accessed + 当前project所有已close版本全部scanned"
+      severity: "hard"
+      iron_rule: "IMPACT-01"
+
+    - id: "G-IMPACT-02"
+      name: "10维影响扫描完整性（按深度模式）"
+      check: "按depth_mode的dimensions清单逐条校验，每维有扫描结果"
+      severity: "hard"
+
+    - id: "G-IMPACT-03"
+      name: "收窄日志完整性"
+      check: "narrowing_log中排除项全部有reason+risk_flag，无原因排除视为不通过"
+      severity: "hard"
+      iron_rule: "IMPACT-03"
+
+    - id: "G-IMPACT-04"
+      name: "三维融合度评估完整性"
+      check: "business_fusion三维(A/B/C)全部有level+details，overall判定存在"
+      severity: "hard"
+      iron_rule: "IMPACT-04"
+
+    - id: "G-IMPACT-05"
+      name: "版本规划决策完整性"
+      check: "综合评分L/XL时必须有round_2_planning产出；XL必须有planning_decision（split或single_version+risk_flag）"
+      severity: "hard"
+      iron_rule: "IMPACT-05"
+
+  # ============================================
+  # 与现有体系的关系
+  # ============================================
+  relationships:
+    human_confirm_protocol: |
+      收窄机制的4选项（采纳/收窄/补充/讨论）和版本规划的5选项（确认单版本/采纳拆分/
+      调整拆分/不拆分/需讨论）是human-confirm-protocol.yml Q2(边界确认)+Q5(范围确认)
+      在影响分析阶段的具体应用，作为本flow内部定义，不注册到human-confirm-protocol。
+
+    brainstorm_feedback: |
+      收窄机制的4选项与brainstorm V3.5.0反馈模板（确认/补充/调整）对齐，
+      保持用户交互体验一致性。
+
+    three_stage_freeze: |
+      收窄后的影响范围走冻结机制（与三阶段分析的冻结机制一致）：
+      用户确认→冻结→传入Layer3→传入三阶段分析。
+      三阶段每阶段冻结时增量更新影响报告（非独立回扫环节）。
+
+    ai_brain: |
+      history_correlator + quality_predictor 从 requirement-flow §0.5c 下沉到 Layer3。
+      Layer1的system-common-sense-analyzer保留（需求理解阶段的盲区探测）。
+      Layer3的AI预测产出注入BA大脑的brain_sync_export（向UX/Arch/QA输出高风险FN）。
+
+    po_planning_flow: |
+      版本规划前置判断（Layer3 round_2）与po-planning-flow互补：
+      - po-planning-flow是"从脑暴/Backlog出发做规划"（战略级/规划级）
+      - 版本规划前置判断是"从影响面出发判断是否需要拆分"（任何级别可能触发）
+      如果已有PO Backlog，版本规划前置判断参考PO Backlog的Sprint计划。

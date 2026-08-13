@@ -1,0 +1,64 @@
+# AI-SCRM 服务契约总表（Arch Agent 维护，单一事实源）
+# 前端评审后免二次开发；后端按契约直开发。
+version: "1.0.0"
+
+base_url: /api/v1
+
+# ---- 跨系统契约（M-cust ↔ M-ops）----
+contracts:
+  - key: session.sync
+    direction: M-cust → M-ops
+    transport: websocket
+    payload: { sessionId, customerId, state: "进行中(AI)|进行中(人工)|已关闭" }
+    timeout_ms: 8000
+  - key: transfer.request
+    direction: M-cust → M-ops
+    transport: websocket
+    payload: { sessionId, reason }
+    response: { accepted: bool, agentName? }
+  - key: ticket.notify
+    direction: M-ops → M-cust
+    transport: websocket
+    payload: { ticketId, state: "新建|处理中|待确认|已关闭" }
+
+# ---- 运营系统内部契约 ----
+  - key: customer.import
+    method: POST
+    path: /ops/customer/import
+    req: { fileUrl, fieldMap }
+    res: { imported: int, failed: int, failDetailUrl? }
+    errors: [FILE_TOO_LARGE, FIELD_MISMATCH]
+  - key: bot.kb.publish
+    method: POST
+    path: /ops/bot/kb/publish
+    req: { kbId, version }
+    res: { published: bool, rollbackVersion? }
+    errors: [ALREADY_PUBLISHING, PUBLISH_FAIL]
+  - key: ticket.confirm
+    method: POST
+    path: /ops/ticket/:id/confirm
+    req: { action: "confirm|reject", comment? }
+    res: { state: "已关闭|处理中(重申)" }
+    errors: [STATE_CHANGED]
+
+# ---- 客户业务系统内部契约 ----
+  - key: cust.chat.send
+    method: POST
+    path: /cust/chat/send
+    req: { message }
+    res: { reply, state: "进行中(AI)|进行中(人工)" }
+  - key: cust.profile.update
+    method: PUT
+    path: /cust/profile
+    req: { nickname?, phone?, industry? }
+    res: { ok: bool }
+    errors: [PHONE_INVALID]
+
+auth:
+  type: bearer
+  guard_roles:
+    ops: [运营, 客服主管, 质检员, 管理员]
+    cust: [客户]
+pagination:
+  default_size: 20
+  cursor: true

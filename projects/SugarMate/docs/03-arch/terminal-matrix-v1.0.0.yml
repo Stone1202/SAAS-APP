@@ -1,0 +1,283 @@
+# ============================================
+# SugarMate 终端能力矩阵 v1.0.0
+# 阻断性产物——架构设计第一步，定义所有终端的物理边界和能力映射
+# ============================================
+version: "1.0.0"
+project: "SugarMate"
+date: "2026-07-29"
+owner: "Arch Agent"
+
+# ============================================
+# 一、物理终端定义（PRD §1唯一事实源）
+# ============================================
+physical_terminals:
+  - id: "MP"
+    name: "微信小程序"
+    type: "MiniProgram"
+    tech_stack: "uni-app → 微信小程序"
+    deployment: "微信审核发布"
+    base_path: "/miniapp"
+    users:
+      - "C端糖友"
+      - "C端家属"
+    key_characteristics:
+      - "轻量入口·快速触达"
+      - "主包≤2MB·总包≤20MB（含分包）"
+      - "WebSocket并发连接≤5"
+      - "受微信平台审核限制"
+    modules:
+      - "科普内容浏览"
+      - "AI风险评估"
+      - "轻问诊（IM咨询）"
+      - "直播预告/回放入口"
+      - "家属血糖监控"
+
+  - id: "APP"
+    name: "移动APP（iOS+Android）"
+    type: "MobileApp"
+    tech_stack: "uni-app → iOS/Android"
+    deployment: "应用商店发布"
+    base_path: "/app"
+    users:
+      - "C端糖友·深度体验"
+      - "B端·医生（接诊开方）"
+      - "B端·营养师（1v1方案）"
+      - "B端·HM（预警回访）"
+    key_characteristics:
+      - "平台深度体验主阵地"
+      - "4角色视图（患者/医生/营养师/HM）"
+      - "支持CGM蓝牙设备连接"
+      - "支持处方CA手写签名"
+      - "支持画中画直播"
+    role_views:
+      - id: "PATIENT"
+        name: "患者视图"
+        tabs: ["首页", "服务", "社区", "会员", "我的"]
+        key_modules:
+          - "健康管理（CGM血糖/运动/饮食）"
+          - "在线问诊（图文/语音/视频）"
+          - "处方流转+商城购物"
+          - "社区互动"
+          - "会员权益"
+      - id: "DOCTOR"
+        name: "医生视图"
+        tabs: ["工作台", "问诊", "患者", "直播", "我的"]
+        key_modules:
+          - "接诊工作台（待接诊/进行中列表）"
+          - "在线问诊（接诊/开处方/CA签名）"
+          - "患者管理（历史病历/随访）"
+          - "直播推流（科普讲座/互动）"
+      - id: "NUTRITIONIST"
+        name: "营养师视图"
+        tabs: ["工作台", "患者", "饮食方案", "直播", "我的"]
+        key_modules:
+          - "工作台（待处理/进行中）"
+          - "患者管理+数据查看"
+          - "饮食方案制定与跟踪"
+          - "直播推流（饮食指导）"
+      - id: "HM"
+        name: "健康管理师视图"
+        tabs: ["工作台", "患者管理", "回访", "我的"]
+        key_modules:
+          - "HM工作台（预警列表/待回访）"
+          - "患者管理（血糖监控/健康档案）"
+          - "回访管理（计划/执行/记录）"
+
+  - id: "LIVE"
+    name: "直播APP（独立应用）"
+    type: "MobileApp"
+    tech_stack: "独立APP·腾讯云直播SDK"
+    deployment: "应用商店发布"
+    base_path: "/live"
+    users:
+      - "C端观众"
+      - "B端主播（医生/营养师）"
+    key_characteristics:
+      - "直播专注场景"
+      - "腾讯云CSS推拉流"
+      - "IM弹幕互动"
+      - "支持直播带货"
+      - "回放点播"
+    modules:
+      - "直播间（推流/拉流/弹幕/礼物）"
+      - "直播预约+开播提醒"
+      - "回放列表"
+      - "直播带货（商品讲解+一键购买）"
+
+  - id: "PC"
+    name: "PC业务后台"
+    type: "WebAdmin"
+    tech_stack: "React 18 + Ant Design·24列栅格"
+    deployment: "Web部署"
+    base_path: "/admin"
+    users:
+      - "平台运营方"
+      - "入驻商家（药房/医生/药剂师/营养师/HM）"
+    key_characteristics:
+      - "全链路业务管理中心"
+      - "入驻审核+资质管理"
+      - "SCRM客户管理"
+      - "订单/商品/内容/数据看板"
+      - "财务结算与分账"
+      - "系统配置（RBAC/参数）"
+    modules:
+      - "工作台（数据概览+快捷入口）"
+      - "入驻管理（审核/签约/培训/启用）"
+      - "SCRM（客户画像/标签/群组/触达）"
+      - "商品管理（上架/审核/冷链/库存）"
+      - "订单管理（订单/售后/物流/冷链轨迹）"
+      - "财务管理（结算/分账/发票/对账）"
+      - "运营管理（内容审核/客服/营销/风控）"
+      - "数据看板（经营分析/用户分析/商机）"
+      - "系统设置（角色权限/参数配置/日志）"
+
+# ============================================
+# 二、角色×终端×操作三维映射（防混淆核心表）
+# ============================================
+role_terminal_operations:
+  - role: "PH"  # 药店
+    onboarding: { terminal: "PC", description: "PC后台·入驻申请→资质提交→审核→签约→培训" }
+    management: { terminal: "PC", description: "PC后台·药房管理·商品上架·订单处理·冷链调度·财务对账" }
+    operation: { terminal: "PC", description: "PC后台·接单→配药→发货→冷链追踪→售后处理" }
+    payment_onboarding: { terminal: "PC", description: "PC后台·财务中心→易宝入网（独立于入驻·药房+旗下药剂师）" }
+    
+  - role: "DR"  # 医生
+    onboarding: { terminal: "PC", description: "PC后台·入驻申请→资质提交→审核→签约→培训" }
+    management: { terminal: "PC", description: "PC后台·价格设置·排班管理·结算查看" }
+    operation_primary: { terminal: "APP", role_view: "DOCTOR", description: "APP·接诊→开方→CA签名→患者随访" }
+    operation_secondary: { terminal: "LIVE", description: "LIVE·直播推流→科普讲座→互动问答" }
+    payment_onboarding: { terminal: "PC", description: "PC后台·财务中心→易宝入网·个人认证" }
+    
+  - role: "PR"  # 药剂师
+    onboarding: { terminal: "PC", description: "PC后台·入驻申请→资质提交→审核·归属药店校验→签约→培训" }
+    management: { terminal: "PC", description: "PC后台·执业资质管理·所属药店绑定" }
+    operation: { terminal: "PC", description: "PC后台·审方→用药指导→禁忌核查→处方调配监督" }
+    payment_onboarding: { terminal: "PC", description: "PC后台·依托所属药房入网（不单独入网）" }
+    
+  - role: "NT"  # 营养师
+    onboarding: { terminal: "PC", description: "PC后台·入驻申请→资质提交→审核→签约→培训" }
+    management: { terminal: "PC", description: "PC后台·价格设置·擅长领域声明·结算查看" }
+    operation_primary: { terminal: "APP", role_view: "NUTRITIONIST", description: "APP·1v1指导→饮食方案制定→跟踪调整" }
+    operation_secondary: { terminal: "LIVE", description: "LIVE·直播推流→饮食科普→互动指导" }
+    payment_onboarding: { terminal: "PC", description: "PC后台·财务中心→易宝入网·个人认证" }
+    
+  - role: "HM"  # 健康管理师
+    onboarding: { terminal: "PC", description: "PC后台·入驻申请→资质提交→审核→签约→培训" }
+    management: { terminal: "PC", description: "PC后台·预警规则配置·用户绑定管理" }
+    operation: { terminal: "APP", role_view: "HM", description: "APP·回访→预警响应→健康管理" }
+    payment_onboarding: null  # HM不涉及支付入网
+    
+  - role: "PT"  # 患者
+    onboarding: { terminal: "APP/MP", description: "APP/MP·注册即入驻·完善健康档案" }
+    management: null  # 患者无管理端
+    operation: { terminal: "APP/MP", description: "APP/MP·问诊→商城→CGM→社区→会员·家属可关联监控" }
+    payment_onboarding: null  # 患者无需商户入网
+    
+  - role: "OPS"  # 平台运营
+    onboarding: null
+    management: { terminal: "PC", description: "PC后台·全平台管理台" }
+    operation: { terminal: "PC", description: "PC后台·入驻审核·客服·风控·内容审核·数据看板" }
+    payment_onboarding: null
+
+# ============================================
+# 三、角色视图在APP内的架构约束
+# ============================================
+app_role_view_constraints:
+  principle: "APP内4个角色视图共享同一前端代码·路由守卫+角色鉴权切换"
+  routing: "基于身份切换路由前缀 /app/{patient,doctor,nutritionist,hm}/"
+  state_management: "统一Zustand Store·角色隔离通过scope字段过滤"
+  multi_role_logic:
+    - "一个账号(N个身份)·登录后默认上次活跃身份"
+    - "角色切换前二次确认（草稿保存提示）"
+    - "切换时300ms过渡动画"
+    - "不同角色独立会话状态（问诊/直播/后台）"
+  forbidden:
+    - "禁止为每个角色视图创建独立代码库"
+    - "禁止角色间Store数据泄漏"
+    - "禁止硬编码角色判断（用RBAC声明式）"
+
+# ============================================
+# 四、终端间数据互通需求矩阵
+# ============================================
+terminal_data_interop:
+  - data_type: "用户身份与档案"
+    source: "APP/MP（注册）+ PC（入驻审核）"
+    consumers: [MP, APP, PC]
+    sync: "统一用户中心·实时同步"
+    consistency: "强一致"
+    
+  - data_type: "CGM血糖读数"
+    source: "APP（设备蓝牙→APP→后端）"
+    consumers: [PC(HM), MP(家属)]
+    sync: "WebSocket推送 ≤3s"
+    consistency: "最终一致（≤3s窗口）"
+    
+  - data_type: "处方与CA签名"
+    source: "APP（医生）"
+    consumers: [PC(药房审核), APP(患者), MP(患者)]
+    sync: "状态机事件+推送 ≤5s"
+    consistency: "强一致"
+    
+  - data_type: "入驻状态"
+    source: "PC（审核）"
+    consumers: [APP(B端角色工作台)]
+    sync: "状态机事件+推送 ≤10s"
+    consistency: "最终一致"
+    
+  - data_type: "问诊消息"
+    source: "APP（医↔患双向）"
+    consumers: [PC(客服监督)]
+    sync: "WebSocket IM ≤1s"
+    consistency: "强一致"
+    
+  - data_type: "订单与物流（含冷链）"
+    source: "APP(下单) + PC(药房) + IoT(冷链)"
+    consumers: [APP, MP, PC]
+    sync: "状态机事件+MQTT(冷链) ≤5s/≤30s"
+    consistency: "最终一致"
+    
+  - data_type: "商城库存"
+    source: "PC（商家）"
+    consumers: [APP, MP]
+    sync: "乐观锁+库存预占"
+    consistency: "读写一致"
+    
+  - data_type: "直播状态"
+    source: "LIVE（开播/下播）"
+    consumers: [APP, MP]
+    sync: "直播服务推送 ≤3s"
+    consistency: "最终一致"
+
+# ============================================
+# 五、关键架构决策记录（ADR）
+# ============================================
+architecture_decisions:
+  - id: "ADR-001"
+    topic: "物理终端数量"
+    decision: "4个物理终端（MP/APP/LIVE/PC）·DR/PH/PR是角色ID非终端"
+    rationale: "PRD §1·终端架构一致性修复§28"
+    alternatives: "按角色拆分APP为多个独立APP（被否决——共享代码·统一维护）"
+    
+  - id: "ADR-002"
+    topic: "APP角色视图实现"
+    decision: "单代码库+路由守卫+RBAC声明式角色控制"
+    rationale: "避免重复代码·统一状态管理·简化部署"
+    alternatives: "多独立APP（被否决——代码重复·维护成本高）"
+    
+  - id: "ADR-003"
+    topic: "LIVE端独立部署"
+    decision: "独立APP（腾讯云直播SDK）·与主APP通过DeepLink互通"
+    rationale: "直播场景SDK耦合度高·独立部署便于性能优化和审核"
+    alternatives: "APP内嵌直播（被否决——SDK冲突·体积过大）"
+    
+  - id: "ADR-004"
+    topic: "PC后台同源多端"
+    decision: "同一React App·base path隔离（/admin/ops/·/admin/merchant/）"
+    rationale: "技术栈统一·共享组件库·维护成本低"
+    alternatives: "独立子系统（被否决——重复开发）"
+    
+  - id: "ADR-005"
+    topic: "同角色管理端≠经营端"
+    decision: "医生/营养师/HM的管理端（PC）和经营端（APP）使用独立API合同"
+    rationale: "防止权限泄漏·明确契约边界·历史错误#1根因修复"
+    alternatives: "统一API+参数过滤（被否决——易导致权限泄漏）"

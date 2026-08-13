@@ -1,0 +1,62 @@
+skill:
+  id: "business-analyzer"
+  name: "商业分析器"
+  owner: "po-agent"
+  version: "1.0.0"
+  
+  description: |
+    使用商业模式画布 + ROI分析对项目进行商业分析。
+    仅战略级项目激活。
+  
+  triggers:
+    - command: "PO Agent战略级激活"
+      stage: "阶段0.5·产品规划"
+      condition: "脑暴类型=strategic"
+  
+  input:
+    - type: "brainstorm_confirmed"
+      description: "脑暴确认稿（含BO/BG映射+市场部/商业部观点）"
+    - type: "domain_knowledge"
+      description: "领域知识库中相关行业的商业模式参考"
+  
+  output:
+    - type: "PROD-BUSINESS"
+      location: "projects/{project}/docs/00.5-product/PROD-BUSINESS-{project}-v{version}.md"
+      format: "Markdown"
+  
+  methodology: |
+    1. 商业模式画布分析
+       - 价值主张
+       - 客户细分
+       - 渠道通路
+       - 客户关系
+       - 收入来源
+       - 核心资源
+       - 关键业务
+       - 重要合作
+       - 成本结构
+    2. 盈利模式设计
+       - 收入流分析
+       - 定价策略
+       - 成本结构分析
+    3. ROI分析
+       - 开发成本估算
+       - 预期收益估算
+       - 投资回报率计算
+       - 盈亏平衡点分析
+    4. 商业风险识别
+  
+  canvas_template: |
+    ## 商业模式画布
+    
+    | 模块 | 内容 |
+    |------|------|
+    | 价值主张 | {产品/服务为客户解决什么问题} |
+    | 客户细分 | {目标客户群体} |
+    | 渠道通路 | {如何触达客户} |
+    | 客户关系 | {与客户建立什么关系} |
+    | 收入来源 | {如何赚钱} |
+    | 核心资源 | {需要什么资源} |
+    | 关键业务 | {需要做什么} |
+    | 重要合作 | | {需要谁的合作} |
+    | 成本结构 | {主要成本} |

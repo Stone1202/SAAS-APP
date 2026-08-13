@@ -1,0 +1,233 @@
+# ============================================
+# 设计系统知识库 — Design Tokens 完整定义
+# 版本：v3.0.0
+# 最后更新：2026-07-16
+version: "3.0.0"
+# ============================================
+#
+# 参考：Apple HIG视觉标准 + Ant Design + 主流设计系统
+# 核心原则：清晰(Clarity) + 顺应(Deference) + 深度(Depth)
+# 色彩理念：语义化颜色（按用途调用，非指定具体色值），自动适配浅色/深色模式
+# ============================================
+
+design_system:
+  core_principles: ["清晰(Clarity)", "顺应(Deference)", "深度(Depth)"]
+
+  # ============================================
+  # 1. 栅格系统（三大主流体系 + 8点网格）
+  # ============================================
+  grid_systems:
+    atomic_unit:
+      default: 8px
+      high_density: 4px
+      rule: "所有间距和尺寸遵循4或8的倍数"
+
+    systems:
+      - id: "grid-24"
+        name: "24列栅格系统"
+        cols: 24
+        core_advantage: "布局精度高，适合复杂模块划分"
+        typical_scenarios: ["B端后台管理系统", "数据仪表盘", "数据大屏"]
+        design_languages: ["Ant Design", "TDesign", "Arco Design"]
+        gutter: 16
+        container: 1440
+        density: high
+
+      - id: "grid-12"
+        name: "12列栅格系统"
+        cols: 12
+        core_advantage: "灵活性极高（12=1×2×3×4×6），通用性之王"
+        typical_scenarios: ["电商首页", "企业官网", "资讯类网站", "C端Web"]
+        design_languages: ["Bootstrap", "自定义"]
+        gutter: 16
+        container: 1280
+        density: medium
+
+      - id: "grid-6"
+        name: "6列栅格系统"
+        cols: 6
+        core_advantage: "避免小屏幕下列宽过窄，组合简单"
+        typical_scenarios: ["移动端H5", "轻量级应用", "活动页"]
+        design_languages: ["Vant", "自定义移动端"]
+        gutter: 8
+        container: 375
+        density: low
+
+    terminal_mapping:
+      pc:
+        backend_system:
+          recommended_grid: "grid-24"
+          design_language: "Ant Design"
+          density: high
+        frontend_system:
+          recommended_grid: "grid-12"
+          design_language: "自定义/Bootstrap"
+          density: medium
+      app:
+        recommended_grid: "grid-6"
+        design_language: "HIG(iOS) / Material Design(Android)"
+        density: low
+      miniapp:
+        recommended_grid: "grid-6"
+        design_language: "WeUI"
+        density: low
+      h5:
+        recommended_grid: "grid-12"
+        design_language: "响应式/Vant"
+        density: low
+      data_screen:
+        recommended_grid: "custom"
+        design_language: "数据可视化"
+        density: ultra_high
+
+    core_params:
+      container: "内容区域总宽度，设计基准常为1440px"
+      columns: "列数（12/24/6）"
+      gutter: "列间距，固定不变，常用16/24/32px"
+      margin: "页边距，响应式中会变化"
+      grid_unit: "原子单位，8px主流，高密度场景4px"
+
+    breakpoints:
+      - { name: "xl", min: 1200, description: "大屏桌面" }
+      - { name: "lg", min: 992, max: 1199, description: "桌面" }
+      - { name: "md", min: 768, max: 991, description: "平板" }
+      - { name: "sm", min: 576, max: 767, description: "大手机" }
+      - { name: "xs", max: 575, description: "小手机" }
+
+  # ============================================
+  # 2. 色彩系统（语义化颜色，自动适配浅色/深色模式）
+  # ============================================
+  color_system:
+    philosophy: "使用语义化颜色（按用途调用），非指定具体色值"
+    advantage: "自动适配浅色/深色模式及辅助功能设置"
+    rule: "禁止直接使用硬编码十六进制颜色值，优先使用语义化Token"
+    dark_mode: "所有自定义颜色必须提供浅色/深色变体"
+
+    primary:
+      - { token: "--color-primary-500", value: "#1890FF", usage: "主操作按钮、链接、选中态" }
+      - { token: "--color-primary-400", value: "#40A9FF", usage: "hover态" }
+      - { token: "--color-primary-600", value: "#096DD9", usage: "active态" }
+      - { token: "--color-primary-100", value: "#E6F7FF", usage: "浅色背景/标签" }
+
+    secondary:
+      - { token: "--color-secondary-500", value: "#722ED1", usage: "辅助色（次要强调）" }
+
+    neutral:
+      - { token: "--color-neutral-50", value: "#FAFAFA", usage: "页面背景" }
+      - { token: "--color-neutral-100", value: "#F5F5F5", usage: "卡片/区域背景" }
+      - { token: "--color-neutral-200", value: "#F0F0F0", usage: "禁用态背景" }
+      - { token: "--color-neutral-300", value: "#D9D9D9", usage: "边框" }
+      - { token: "--color-neutral-500", value: "#8C8C8C", usage: "次要文字" }
+      - { token: "--color-neutral-700", value: "#595959", usage: "正文" }
+      - { token: "--color-neutral-900", value: "#262626", usage: "标题/强调文字" }
+
+    functional:
+      - { token: "--color-success", value: "#52C41A", usage: "成功状态、正向操作" }
+      - { token: "--color-warning", value: "#FAAD14", usage: "警告提示、需注意状态" }
+      - { token: "--color-danger", value: "#FF4D4F", usage: "危险操作、错误状态、删除" }
+      - { token: "--color-info", value: "#1890FF", usage: "信息提示" }
+
+    functional_bg:
+      - { token: "--color-success-bg", value: "#F6FFED", usage: "成功提示背景" }
+      - { token: "--color-warning-bg", value: "#FFFBE6", usage: "警告提示背景" }
+      - { token: "--color-danger-bg", value: "#FFF2F0", usage: "错误提示背景" }
+      - { token: "--color-info-bg", value: "#E6F7FF", usage: "信息提示背景" }
+
+    foreground_levels:
+      primary: "最重要文本（标题）"
+      secondary: "次要信息（副标题）"
+      tertiary: "占位符文本"
+      quaternary: "禁用状态文本"
+
+  # ============================================
+  # 3. 字体层级（遵循HIG：避免极细字重）
+  # ============================================
+  typography:
+    system_font: "San Francisco (SF) — Apple默认；其他平台用对应系统字体"
+    weight_rule: "避免极细字重(Ultralight/Thin/Light)，优先常规/中粗/半粗/粗体"
+    dynamic_type: "支持用户全局调整字体大小，应用内文字无缝缩放"
+    hierarchy:
+      - { token: "--font-size-h1", size: 28, weight: 700, line_height: 1.4, usage: "页面主标题" }
+      - { token: "--font-size-h2", size: 24, weight: 700, line_height: 1.4, usage: "模块标题" }
+      - { token: "--font-size-h3", size: 20, weight: 600, line_height: 1.4, usage: "区域标题" }
+      - { token: "--font-size-h4", size: 18, weight: 600, line_height: 1.5, usage: "卡片标题" }
+      - { token: "--font-size-h5", size: 16, weight: 500, line_height: 1.5, usage: "列表项标题" }
+      - { token: "--font-size-h6", size: 14, weight: 500, line_height: 1.5, usage: "表头/标签标题" }
+      - { token: "--font-size-body", size: 14, weight: 400, line_height: 1.6, usage: "正文" }
+      - { token: "--font-size-caption", size: 12, weight: 400, line_height: 1.5, usage: "辅助说明/时间戳" }
+      - { token: "--font-size-small", size: 11, weight: 400, line_height: 1.5, usage: "角标/极小文字" }
+
+  # ============================================
+  # 4. 间距阶梯（8点网格系统）
+  # ============================================
+  spacing:
+    rule: "8点网格系统 — 所有间距遵循8的倍数（微调用4pt）"
+    tokens:
+      - { token: "--spacing-4", value: 4, usage: "紧密关联元素间距（图标与文字）" }
+      - { token: "--spacing-8", value: 8, usage: "组件内小间距（标签间距、表单内边距）" }
+      - { token: "--spacing-12", value: 12, usage: "组件内标准间距（按钮组间距）" }
+      - { token: "--spacing-16", value: 16, usage: "区域内标准间距（卡片内边距、表单项间距）" }
+      - { token: "--spacing-24", value: 24, usage: "区域间标准间距（模块间距）" }
+      - { token: "--spacing-32", value: 32, usage: "页面级间距（页面内边距）" }
+      - { token: "--spacing-48", value: 48, usage: "大区块间距（页面头部与内容区）" }
+
+  # ============================================
+  # 5. 圆角规范
+  # ============================================
+  border_radius:
+    tokens:
+      - { token: "--radius-sm", value: 2, usage: "输入框内部标签、小徽标" }
+      - { token: "--radius-button", value: 4, usage: "按钮、输入框、下拉框、标签" }
+      - { token: "--radius-card", value: 8, usage: "卡片、面板、表格容器" }
+      - { token: "--radius-modal", value: 12, usage: "弹窗、抽屉、大面板" }
+      - { token: "--radius-round", value: 9999, usage: "圆形头像、圆形按钮" }
+
+  # ============================================
+  # 6. 阴影层级
+  # ============================================
+  shadows:
+    tokens:
+      - { token: "--shadow-none", value: "none", usage: "默认无阴影" }
+      - { token: "--shadow-sm", value: "0 1px 2px rgba(0,0,0,0.06)", usage: "卡片hover、下拉面板" }
+      - { token: "--shadow-md", value: "0 4px 12px rgba(0,0,0,0.08)", usage: "弹窗、抽屉" }
+      - { token: "--shadow-lg", value: "0 8px 24px rgba(0,0,0,0.12)", usage: "模态框、全局通知" }
+      - { token: "--shadow-xl", value: "0 20px 48px rgba(0,0,0,0.16)", usage: "全屏编辑器" }
+
+  # ============================================
+  # 7. 图标规范
+  # ============================================
+  icons:
+    library: "统一使用项目指定图标库（如Element Plus Icons / SF Symbols）"
+    sizes:
+      - { size: 16, usage: "行内图标" }
+      - { size: 20, usage: "按钮内图标 / 导航图标" }
+      - { size: 24, usage: "独立图标 / 卡片装饰" }
+      - { size: 48, usage: "大数字图标（驾驶舱）" }
+    style: "线性图标（outline），特殊强调场景可使用面性图标（filled）"
+    color: "继承父元素文字颜色，或使用--color-primary-500/--color-neutral-500"
+    dark_mode: "自定义图标需适配深色模式"
+
+  # ============================================
+  # 8. 材质与效果（V3.0.0新增）
+  # ============================================
+  materials:
+    liquid_glass: "WWDC25新一代设计语言 — 模拟真实玻璃质感、光影折射和动态反射"
+    usage: "谨慎使用，主要应用于控件/导航栏等需强调层级处"
+    caution: "明亮内容上使用时需增加深色遮罩保证可读性"
+    trend: "从极致扁平转向加入'数字纹理'，更具质感和真实感"
+
+  # ============================================
+  # 9. 无障碍设计
+  # ============================================
+  accessibility:
+    standards:
+      - "WCAG 2.2（Web内容无障碍指南，国际公认）"
+      - "GB/T 37668—2019（互联网内容无障碍技术要求）"
+      - "GB/T 45445-2025（电商平台适老化通用要求）"
+    requirements:
+      color_contrast: "WCAG AA 4.5:1"
+      touch_target: "最小可点击区域44×44pt（HIG标准）"
+      list_row: "列表行高至少44pt"
+      dynamic_type: "支持系统级字体大小调整"
+      voice_over: "支持屏幕阅读器"
+      safe_area: "内容不应延伸到状态栏/Home Indicator等系统区域之下"

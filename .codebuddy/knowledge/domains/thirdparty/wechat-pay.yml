@@ -1,0 +1,1647 @@
+# ============================================
+# 第三方领域知识库 — 微信支付 V2
+# 版本：v1.0.0
+# 学习日期：2026-07-18
+# 来源：https://pay.weixin.qq.com/doc/v2
+# 分类：thirdparty（第三方API文档）
+# ============================================
+# 学习策略：深度场景分析（非接口罗列）
+#   AI核心任务：
+#     1. 识别微信支付的全部业务场景（主场景→子场景）
+#     2. 分析每个场景内API的调度关系（入参/出参如何串联）
+#     3. 标注API之间的数据依赖（上游输出→下游输入）
+#     4. 区分异步通知与同步查询的时序关系
+#   不做的事：
+#     - 不做简单的接口列表翻译
+#     - 不记录过时/已废弃功能（如现金红包新商户、刷卡支付旧接口）
+#     - 不记录与业务无关的协议细节（签名算法MD5/SHA256标准流程）
+# ============================================
+# 场景覆盖：8大主场景 → 27+子场景 → 完整接口调度链
+# API总览：15+核心API，按场景组合，非独立罗列
+# ============================================
+
+domain:
+  name: "微信支付 V2"
+  category: "thirdparty"
+  version: "v2.0.0"
+  learning_method: "scenario_driven_v1.0.0"
+  learned_at: "2026-07-18"
+  source_urls:
+    - "https://pay.weixin.qq.com/doc/v2"
+  description: |
+    微信支付V2（普通商户版）完整业务场景深度分析。
+    从官方产品文档+开发指引+API列表三层拆解，聚焦「业务做什么→用什么接口→按什么顺序调→参数怎么串」。
+    不做接口字典翻译，而是还原真实业务中接口的调度逻辑。
+
+    覆盖7大支付产品（JSAPI/Native/APP/H5/小程序/付款码/刷脸）+ 5大支付工具（分账/红包/企业付款/代金券）+ 报关接口。
+  curation_policy: |
+    已过滤：
+    - 现金红包新商户（官方已停止开通，建议迁移商家转账V3）
+    - 代金券/立减 API（已迁移至V3）
+    - 付款到银行卡（新商户停止开通）
+    - 刷卡支付V1（已被付款码支付V2替代）
+    - 旧版企业付款到零钱（已有新版本限制）
+    保留：所有现行可用API及核心业务场景
+
+# ============================================
+# SDL V1.0.0 四层块 — 场景驱动学习结构
+# ============================================
+
+# --- Step 0a: 领域角色识别 ---
+domain_roles:
+  description: "微信支付体系中涉及的关键角色，每个角色在支付场景中有不同的视角和职责"
+  roles:
+    - role_id: "R-WXPAY-01"
+      name: "商户（收款方）"
+      type: "merchant"
+      description: "使用微信支付收款的商家，在SCRM场景中是使用SCRM系统的企业客户"
+      concerns:
+        - "用户支付是否成功？钱到账了没有？"
+        - "退款怎么操作？部分退款和全额退款的流程有什么区别？"
+        - "每天的交易和手续费对不对？怎么对账？"
+        - "分账给合作伙伴怎么操作？分账比例怎么设置？"
+        - "H5支付的域名白名单配置对了吗？"
+      actions_across_scenes:
+        - "C端支付：提供统一下单接口，生成预支付订单"
+        - "退款处理：审核退款申请，发起退款API调用"
+        - "分账管理：添加分账接收方，执行分账，完结分账"
+        - "对账：每日下载对账单，核对交易流水和资金流水"
+        - "收款：线下收银扫码收款（付款码支付）"
+    - role_id: "R-WXPAY-02"
+      name: "顾客（付款方）"
+      type: "customer"
+      description: "使用微信支付的最终消费者，在SCRM系统中是被服务和营销的对象"
+      concerns:
+        - "支付过程安全吗？钱会不会扣错？"
+        - "支付密码输入后页面卡住了，到底付成功没有？"
+        - "怎么申请退款？退款什么时候到账？"
+        - "扫码支付时网络不好怎么办？"
+      actions_across_scenes:
+        - "JSAPI支付：在微信内H5点击支付→输入密码→完成"
+        - "小程序支付：在小程序内调起wx.requestPayment→输入密码"
+        - "APP支付：APP内点击支付→跳转微信→确认支付→返回APP"
+        - "H5支付：手机浏览器点击支付→跳转微信APP→支付→返回浏览器"
+        - "Native支付：打开微信扫一扫→扫描商户二维码→确认支付"
+        - "付款码支付：打开微信付款码→出示给收银员扫码"
+    - role_id: "R-WXPAY-03"
+      name: "SCRM平台/SaaS服务商"
+      type: "platform"
+      description: "为商户提供SCRM系统的平台方，集成微信支付能力，管理多商户的支付配置"
+      concerns:
+        - "如何为多个商户配置独立的微信支付参数（商户号/API密钥/证书）？"
+        - "支付结果通知如何正确路由到对应商户？"
+        - "如何统一处理多商户的支付异常（通知丢失/重复通知/金额不一致）？"
+        - "是否需要聚合支付路由（微信支付+易宝支付+其他）？"
+        - "分账场景下平台佣金如何自动计算和分账？"
+      actions_across_scenes:
+        - "支付配置：为每个商户管理appid/mch_id/API密钥/证书"
+        - "通知路由：接收微信支付异步通知，按商户号路由到对应商户处理逻辑"
+        - "异常监控：支付超时/通知丢失/重复通知的兜底处理"
+        - "聚合路由：根据金额/渠道/费率策略选择微信支付或其他支付通道"
+        - "分账自动化：平台型业务中自动计算平台佣金并执行分账"
+    - role_id: "R-WXPAY-04"
+      name: "微信支付平台"
+      type: "infrastructure"
+      description: "微信提供的支付基础设施，处理资金流转、结算、风控"
+      concerns:
+        - "交易合规性（反洗钱/反欺诈）"
+        - "支付安全和风控（异常交易识别）"
+        - "资金结算准确性和时效性"
+        - "API调用频率和稳定性"
+      actions_across_scenes:
+        - "统一下单：生成prepay_id，返回支付凭证"
+        - "支付结果通知：异步推送支付结果到商户notify_url"
+        - "资金结算：T+1结算到商户账户"
+        - "分账资金管理：冻结→分账→解冻"
+
+# --- Step 0b: 业务问题识别 ---
+business_problems:
+  description: "微信支付在SCRM业务场景中要解决的核心业务问题"
+  problems:
+    - problem_id: "BP-WXPAY-01"
+      title: "多渠道支付统一收银"
+      severity: "critical"
+      description: |
+        SCRM系统需要支持用户在多个终端完成支付：微信内H5(JSAPI)、小程序、APP、
+        手机浏览器(H5)、PC扫码(Native)、线下扫码(付款码)。每个渠道的支付接入方式、
+        参数要求、回调处理各不相同，需要统一抽象。
+      root_cause: "微信支付按trade_type区分支付渠道，不同渠道的统一下单参数和调起方式差异大"
+      solution_summary: "以统一下单为统一入口，按trade_type分支处理参数差异；前端调起层封装为统一SDK适配不同终端"
+      related_concepts: ["trade_type: JSAPI/NATIVE/APP/MWEB", "统一下单(WXPAY-API-001)"]
+      related_scenes: ["S-001a(JSAPI)", "S-001b(小程序)", "S-001c(APP)", "S-001d(H5)", "S-001e(Native)"]
+    - problem_id: "BP-WXPAY-02"
+      title: "支付结果可靠性保障"
+      severity: "critical"
+      description: |
+        支付结果确认是所有后续业务（发货/权益发放/分账/退款）的前提。
+        但前端JS回调不可靠（用户关闭微信/APP崩溃），后端异步通知可能延迟或丢失，
+        如何确保100%拿到支付结果？
+      root_cause: "分布式系统中的消息可靠投递问题——前端回调、后端通知、主动查询三种确认方式各有缺陷"
+      solution_summary: "三重确认机制：①后端异步通知（主依据，幂等处理）②前端回调（仅UI优化）③定时主动查单（兜底，扫描未确认订单）"
+      related_concepts: ["支付结果通知(WXPAY-API-015)", "查询订单(WXPAY-API-003)", "异步通知重试机制"]
+      related_scenes: ["async_notification_model", "所有C端支付场景"]
+    - problem_id: "BP-WXPAY-03"
+      title: "退款流程复杂性"
+      severity: "high"
+      description: |
+        退款涉及：全额退款/部分退款/多次退款、7天内撤销vs标准退款、分账订单退款需先回退分账、
+        退款资金来源选择、手续费按比例退还。不同退款路径的API调用链和前置条件完全不同。
+      root_cause: "退款不是单一API调用——需要查询订单确认状态→计算可退金额→选择退款路径→异步等待结果→查询退款确认"
+      solution_summary: "封装退款决策引擎：输入订单号→自动查询订单状态→判断退款路径(撤销/标准退款)→检查分账状态→计算可退金额→执行退款→异步确认"
+      related_concepts: ["申请退款(WXPAY-API-005)", "撤销订单(WXPAY-API-007)", "查询退款(WXPAY-API-006)"]
+      related_scenes: ["S-004a(全额退款)", "S-004b(部分退款)", "S-004c(付款码撤销退款)"]
+    - problem_id: "BP-WXPAY-04"
+      title: "分账资金生命周期管理"
+      severity: "high"
+      description: |
+        平台型业务（如电商平台、分销系统）需要将用户支付的资金分配给多个参与方。
+        分账涉及：添加接收方→资金冻结→单次/多次分账→分账回退→完结分账→资金解冻。
+        任何一个环节出错（如忘记完结分账导致资金永久冻结）都会造成资金损失。
+      root_cause: "分账是资金冻结-分配-解冻的多步骤流程，步骤之间有严格的前置依赖和顺序要求"
+      solution_summary: "分账状态机管理：记录每个订单的分账阶段(未分账/分账中/部分分账/已完结)，自动化完结提醒（30天到期前告警），分账回退→退款联动"
+      related_concepts: ["单次分账(WXPAY-API-009)", "完结分账(WXPAY-API-012)", "分账回退(WXPAY-API-011)"]
+      related_scenes: ["S-005a(单次分账)", "S-005b(多次分账)", "S-005c(分账回退)", "profit_sharing_lifecycle"]
+    - problem_id: "BP-WXPAY-05"
+      title: "对账与资金一致性"
+      severity: "high"
+      description: |
+        商户内部订单系统与微信支付的交易记录需要每日对账。长款（微信有商户无）和
+        短款（商户有微信无）都需要及时发现和处理。资金账单还需要核对手续费、退款、
+        分账等资金变动。
+      root_cause: "两套系统（商户订单系统+微信支付系统）独立运行，异步通知可能丢失导致数据不一致"
+      solution_summary: "T+1自动对账流程：下载对账单→解析CSV→按out_trade_no逐条比对→生成差异报告→自动/人工处理差异"
+      related_concepts: ["下载对账单(WXPAY-API-013)", "下载资金账单(WXPAY-API-014)"]
+      related_scenes: ["S-006a(每日交易对账)", "S-006b(资金流水对账)"]
+    - problem_id: "BP-WXPAY-06"
+      title: "多商户支付配置与隔离"
+      severity: "medium"
+      description: |
+        SCRM SaaS平台管理多个商户时，每个商户有独立的微信支付商户号、API密钥、
+        证书、通知地址。支付配置错误可能导致A商户的钱入到B商户账户。
+      root_cause: "微信支付V2的商户参数（mch_id/appid/key/cert）是商户级别的，SaaS平台需要严格隔离"
+      solution_summary: "按商户维度管理支付配置，支付请求和回调处理时通过mch_id/appid路由到正确商户，配置变更需要审核和灰度"
+
+# --- Step 1: 场景地图 ---
+scenario_maps:
+  description: "微信支付8大业务场景的场景地图，标注触发条件、参与角色、API链路、场景闭环"
+
+  - scene_map_id: "SM-WXPAY-01"
+    scene_name: "C端用户主动支付（5种终端）"
+    mapped_to: "S-001"
+    trigger: "用户在商户端确认下单，发起支付请求"
+    participant_roles: ["顾客", "商户", "微信支付平台"]
+    api_chain_summary:
+      - phase: "统一下单"
+        apis: ["WXPAY-API-001 (统一下单)"]
+        actor: "商户后台 → 微信支付"
+        key_decision: "trade_type选择: JSAPI(微信H5) / JSAPI(小程序) / APP(原生APP) / MWEB(手机浏览器H5) / NATIVE(扫码)"
+        data_flow: "out_trade_no + total_fee + trade_type + [openid/trade_type-dependent] → prepay_id"
+      - phase: "前端调起支付"
+        apis: ["JSAPI调起 / wx.requestPayment / APP SDK / mweb_url重定向 / 二维码展示"]
+        actor: "商户前端 → 微信支付"
+        data_flow: "prepay_id → 用户输入密码"
+      - phase: "结果确认"
+        apis: ["WXPAY-API-015 (支付结果通知) + WXPAY-API-003 (查询订单兜底)"]
+        actor: "微信 → 商户后台"
+        data_flow: "transaction_id + out_trade_no + total_fee → 业务处理"
+    closure:
+      success: "用户支付成功，商户收到异步通知，触发发货/权益发放"
+      failure: "用户取消支付/密码错误/余额不足 → 订单保持待支付状态，引导用户重试"
+      timeout: "prepay_id 2小时过期 → 关闭订单或重新下单"
+      notification_lost: "未收到异步通知 → 主动查询订单确认状态"
+    sub_scenes: ["S-001a(JSAPI)", "S-001b(小程序)", "S-001c(APP)", "S-001d(H5)", "S-001e(Native)", "S-001f(刷脸)"]
+
+  - scene_map_id: "SM-WXPAY-02"
+    scene_name: "商户主动收款（付款码支付）"
+    mapped_to: "S-002"
+    trigger: "线下收银场景，收银员使用扫码设备扫描用户微信付款码"
+    participant_roles: ["顾客", "商户(收银员)", "微信支付平台"]
+    api_chain_summary:
+      - phase: "扫码支付"
+        apis: ["WXPAY-API-002 (付款码支付)"]
+        actor: "商户收银系统 → 微信支付"
+        data_flow: "auth_code(18位付款码) + out_trade_no + total_fee → trade_state"
+      - phase: "轮询确认（USERPAYING时）"
+        apis: ["WXPAY-API-003 (查询订单)"]
+        actor: "商户收银系统 → 微信支付"
+        data_flow: "每5秒轮询一次，直到trade_state ≠ USERPAYING"
+      - phase: "异常处理"
+        apis: ["WXPAY-API-007 (撤销订单) / WXPAY-API-005 (申请退款)"]
+        actor: "商户收银系统 → 微信支付"
+        data_flow: "轮询超时30秒 → 撤销订单；7天内撤销；7天以上退款"
+    closure:
+      success: "trade_state=SUCCESS，打印小票，交易完成"
+      user_paying_timeout: "轮询超30秒仍USERPAYING → 撤销订单，避免用户已扣款但商户未确认"
+      pay_error: "付款码过期/无效/余额不足 → 引导用户刷新付款码重试"
+    sub_scenes: ["S-002a(正常流程)", "S-002b(异常处理)"]
+    key_risk: "付款码支付是同步返回+轮询模式，撤销决策窗口短（建议30秒内），超时后需走退款流程"
+
+  - scene_map_id: "SM-WXPAY-03"
+    scene_name: "订单管理"
+    mapped_to: "S-003"
+    trigger: "订单状态未知或需要关闭未支付订单"
+    participant_roles: ["商户", "微信支付平台"]
+    api_chain_summary:
+      - phase: "状态查询"
+        apis: ["WXPAY-API-003 (查询订单)"]
+        actor: "商户后台 → 微信支付"
+        data_flow: "out_trade_no/transaction_id → trade_state"
+      - phase: "关单（条件触发）"
+        apis: ["WXPAY-API-004 (关闭订单)"]
+        actor: "商户后台 → 微信支付"
+        precondition: "trade_state=NOTPAY"
+    closure:
+      trade_state_meanings:
+        SUCCESS: "支付成功 → 可退款/分账"
+        NOTPAY: "等待支付 → 可关单"
+        CLOSED: "已关闭 → 通知用户重新下单"
+        REFUND: "已退款 → 查看退款详情"
+
+  - scene_map_id: "SM-WXPAY-04"
+    scene_name: "退款处理"
+    mapped_to: "S-004"
+    trigger: "用户申请退款或商户主动退款"
+    participant_roles: ["顾客", "商户", "微信支付平台"]
+    api_chain_summary:
+      - phase: "前置确认"
+        apis: ["WXPAY-API-003 (查询订单)"]
+        actor: "商户后台 → 微信支付"
+        data_flow: "确认trade_state=SUCCESS，获取total_fee + transaction_id"
+      - phase: "执行退款"
+        apis: ["WXPAY-API-005 (申请退款) / WXPAY-API-007 (撤销-仅付款码7天内)"]
+        actor: "商户后台 → 微信支付"
+        data_flow: "transaction_id + out_refund_no + total_fee + refund_fee → refund_id"
+      - phase: "结果确认"
+        apis: ["退款结果通知(异步) + WXPAY-API-006 (查询退款兜底)"]
+        actor: "微信 → 商户后台"
+    closure:
+      success: "退款成功，资金原路返回（零钱实时到账，银行卡1-3工作日）"
+      partial: "部分退款成功，剩余可退金额=total_fee-累计已退"
+      failed: "退款失败（余额不足/订单状态不符）→ 人工处理"
+    sub_scenes: ["S-004a(全额退款)", "S-004b(部分退款)", "S-004c(付款码撤销退款)"]
+
+  - scene_map_id: "SM-WXPAY-05"
+    scene_name: "分账"
+    mapped_to: "S-005"
+    trigger: "订单支付成功，资金进入待分账状态，按规则分配给参与方"
+    participant_roles: ["商户", "分账接收方(合作方/员工/个人)", "微信支付平台"]
+    api_chain_summary:
+      - phase: "前置准备"
+        apis: ["WXPAY-API-008 (添加分账接收方)"]
+        actor: "商户后台 → 微信支付"
+        data_flow: "接收方信息(type/account/name/relation_type)"
+      - phase: "执行分账"
+        apis: ["WXPAY-API-009 (单次分账)"]
+        actor: "商户后台 → 微信支付"
+        data_flow: "transaction_id + receivers[{account, amount}] → order_id"
+      - phase: "分账管理"
+        apis: ["WXPAY-API-010 (查询分账) / WXPAY-API-011 (分账回退)"]
+        actor: "商户后台 → 微信支付"
+      - phase: "完结"
+        apis: ["WXPAY-API-012 (完结分账)"]
+        actor: "商户后台 → 微信支付"
+        data_flow: "剩余未分资金解冻返还分账方"
+    closure:
+      success: "所有分账完成+完结分账 → 剩余资金解冻"
+      partial: "部分分账完成 → 可继续分账（≤50次，≤30天）"
+      rollback: "分账回退 → 资金回到待分账状态 → 可重新分账"
+    sub_scenes: ["S-005a(单次分账)", "S-005b(多次分账)", "S-005c(分账回退)"]
+    key_constraint: "30天内必须完结分账，否则资金永久冻结。分账后不可直接退款，需先回退分账→完结→退款"
+
+  - scene_map_id: "SM-WXPAY-06"
+    scene_name: "对账与资金管理"
+    mapped_to: "S-006"
+    trigger: "每日定时任务 / 财务月结"
+    participant_roles: ["商户(财务)", "微信支付平台"]
+    api_chain_summary:
+      - phase: "下载对账单"
+        apis: ["WXPAY-API-013 (下载对账单)"]
+        actor: "商户后台 → 微信支付"
+        data_flow: "bill_date + bill_type → 交易CSV"
+      - phase: "下载资金账单"
+        apis: ["WXPAY-API-014 (下载资金账单)"]
+        actor: "商户后台 → 微信支付"
+        data_flow: "bill_date + account_type → 资金流水CSV"
+      - phase: "比对处理"
+        apis: ["商户内部系统"]
+        actor: "商户后台"
+        data_flow: "逐条比对 → 差异报告 → 差异处理"
+    closure:
+      success: "对账平账，无差异"
+      long_money: "微信有记录商户无 → 查询订单确认 → 补录订单"
+      short_money: "商户有记录微信无 → 确认是否关单或未支付"
+    sub_scenes: ["S-006a(每日交易对账)", "S-006b(资金流水对账)"]
+
+  - scene_map_id: "SM-WXPAY-07"
+    scene_name: "营销发放（存量商户）"
+    mapped_to: "S-007"
+    trigger: "营销活动触发红包发放（如首单红包、邀请奖励）"
+    participant_roles: ["商户", "顾客", "微信支付平台"]
+    api_chain_summary:
+      - phase: "发放红包"
+        apis: ["WXPAY-API-016 (发放现金红包)"]
+        actor: "商户后台 → 微信支付"
+        data_flow: "re_openid(←来自支付/授权) + total_amount → send_listid"
+    closure:
+      success: "红包发放成功，用户微信零钱到账"
+      unclaimed: "24小时未领取 → 自动退回商户账户"
+    status: "已停止新商户开通，存量商户可用"
+
+# --- Step 2: 跨域桥接 ---
+cross_domain_bridges:
+  description: "微信支付与相邻领域的连接关系——openid、订单、聚合支付路由"
+
+  - bridge_id: "CDB-WXPAY-01"
+    source_domain: "wechat-pay"
+    target_domain: "wechat-account"
+    bridge_name: "支付 → 用户身份（OpenID依赖）"
+    description: |
+      微信支付JSAPI支付和小程序支付强依赖微信账号体系提供的openid。
+      统一下单时trade_type=JSAPI必须传入openid参数，该openid必须来自微信OAuth授权或wx.login。
+      支付域不负责获取openid，只消费账号域提供的身份标识。
+      支付结果通知中也返回openid，可用于后续营销（如支付成功后发红包）。
+    data_flow:
+      - from: "wechat-account: OAuth授权/wx.login"
+        to: "wechat-pay: 统一下单 openid参数"
+        param: "openid"
+        relationship: "支付必须知道是谁在付钱——JSAPI/小程序支付的前置依赖"
+      - from: "wechat-pay: 支付结果通知"
+        to: "wechat-account: openid反查用户"
+        param: "openid"
+        relationship: "支付成功后通过openid关联到SCRM用户，触发后续业务"
+      - from: "wechat-pay: 分账"
+        to: "wechat-account: PERSONAL_OPENID"
+        param: "openid"
+        relationship: "分账到个人时，用openid标识接收方"
+    key_dependency: "没有openid → JSAPI/小程序支付无法发起。账号域必须先完成用户授权/登录"
+
+  - bridge_id: "CDB-WXPAY-02"
+    source_domain: "wechat-pay"
+    target_domain: "yeepay (易宝支付)"
+    bridge_name: "聚合支付路由"
+    description: |
+      SCRM SaaS平台可能同时接入微信支付和易宝支付等多个支付通道。
+      聚合支付路由层根据策略（费率最低/渠道可用性/金额限制/用户偏好）选择最优支付通道。
+      微信支付作为主流通道，易宝支付作为备用或特定场景通道。
+    data_flow:
+      - from: "wechat-pay: 统一下单"
+        to: "聚合路由层: 支付请求"
+        param: "out_trade_no + total_fee + channel"
+        relationship: "路由层决定走微信支付还是易宝支付"
+      - from: "wechat-pay: 支付结果通知"
+        to: "聚合路由层: 统一支付结果"
+        param: "transaction_id + out_trade_no + channel + status"
+        relationship: "不同通道的支付结果统一格式化后通知业务层"
+    integration_point: "聚合路由层需要抽象统一的支付接口（下单/查询/退款/通知），微信支付和易宝支付分别实现适配器"
+
+  - bridge_id: "CDB-WXPAY-03"
+    source_domain: "wechat-pay"
+    target_domain: "trade (交易/订单域)"
+    bridge_name: "支付 → 订单流转"
+    description: |
+      微信支付是整个交易闭环的核心环节。支付结果直接驱动订单状态变更：
+      支付成功 → 订单状态从「待支付」变为「已支付」→ 触发发货/权益发放。
+      退款 → 订单状态变为「已退款」或「部分退款」。
+      out_trade_no是支付域和订单域的双向关联键。
+    data_flow:
+      - from: "trade: 订单创建"
+        to: "wechat-pay: 统一下单 out_trade_no"
+        param: "out_trade_no"
+        relationship: "订单号作为支付请求的幂等键，贯穿支付全生命周期"
+      - from: "wechat-pay: 支付结果通知"
+        to: "trade: 订单状态更新"
+        param: "out_trade_no + transaction_id + trade_state"
+        relationship: "支付成功 → 订单已支付；退款成功 → 订单已退款"
+      - from: "wechat-pay: 退款结果"
+        to: "trade: 退款单创建/更新"
+        param: "out_refund_no + refund_id + refund_fee"
+        relationship: "退款结果同步到订单域，更新退款状态"
+    key_constraint: "out_trade_no在商户侧全局唯一，建议与订单系统的订单号保持一致或建立一对一映射"
+
+  - bridge_id: "CDB-WXPAY-04"
+    source_domain: "wechat-pay"
+    target_domain: "finance (财务/结算域)"
+    bridge_name: "支付 → 资金结算与对账"
+    description: |
+      微信支付的交易数据和资金流水需要同步到财务域进行结算和对账。
+      每日下载的对账单和资金账单是财务核算的基础数据。
+    data_flow:
+      - from: "wechat-pay: 下载对账单"
+        to: "finance: 交易明细导入"
+        param: "交易CSV"
+        relationship: "逐条交易记录导入财务系统"
+      - from: "wechat-pay: 下载资金账单"
+        to: "finance: 资金流水导入"
+        param: "资金流水CSV"
+        relationship: "含手续费/退款/分账等资金变动明细"
+
+# --- Step 3: 角色视角展开 ---
+role_perspectives:
+  description: "关键场景按角色视角展开，帮助不同角色在需求分析和设计时聚焦自己的关注点"
+
+  - perspective_id: "RP-WXPAY-01"
+    scene: "C端用户主动支付"
+    mapped_to: "S-001"
+    perspectives:
+      - role: "商户"
+        focus_areas:
+          - title: "支付渠道选择策略"
+            detail: |
+              5种支付终端的选择逻辑：
+              - 微信内H5 → JSAPI（唯一选择，依赖OAuth获取openid）
+              - 小程序内 → JSAPI（trade_type=JSAPI，但openid来自wx.login而非OAuth）
+              - 原生APP → APP（不需要openid，用户通过微信SDK自动获取身份）
+              - 手机浏览器 → MWEB/H5（不需要openid，但需配置域名白名单和Referer）
+              - PC网页/线下 → NATIVE（扫码支付，不需要openid，code_url生成二维码）
+            decision_factor: "用户在哪个终端发起支付 → 选择对应的trade_type → 准备对应参数"
+          - title: "H5支付的额外配置"
+            detail: "MWEB支付需要在商户平台配置H5支付域名白名单。mweb_url拼接redirect_url时注意urlencode。Referer头必须与配置的域名一致，否则被微信拦截。这是H5支付最常见的踩坑点"
+          - title: "金额精度"
+            detail: "total_fee单位为分（整数）。金额计算全部后端完成，前端仅展示元为单位的金额。浮点数转分时注意精度（如19.9元→1990分，不是1989.999...）"
+      - role: "顾客"
+        focus_areas:
+          - title: "支付体验对比"
+            detail: |
+              JSAPI/小程序: 最流畅——在微信内直接弹起收银台，输入密码即完成
+              APP: 需跳转微信APP→支付→返回——有应用切换的割裂感
+              H5: 需跳转微信APP→支付→返回浏览器——流程最长，用户可能关闭微信后不返回
+              Native: 需打开微信→扫一扫→扫码→支付——多一步扫码操作
+              付款码: 最便捷——用户只需出示付款码，收银员扫码即完成
+          - title: "支付失败怎么办"
+            detail: "常见失败原因：余额不足/密码错误/银行卡限额/网络超时。用户应能看到明确的失败原因和重试入口。H5支付如果用户在微信支付后关闭微信未返回浏览器，需要有订单查询入口"
+          - title: "支付安全感知"
+            detail: "微信支付收银台显示商户名称和金额，用户确认后输入密码。用户信任微信支付的安全体系，商户名称不匹配会导致用户取消支付"
+      - role: "SCRM平台"
+        focus_areas:
+          - title: "多商户支付参数管理"
+            detail: "每个商户独立配置：appid(公众号/小程序/APP的appid)、mch_id(商户号)、API密钥(用于签名)、API证书(用于退款/分账等敏感操作)。配置变更需要：①审核 ②灰度验证 ③全量发布"
+          - title: "支付监控告警"
+            detail: "关键监控指标：①支付成功率(支付成功/统一下单) ②通知到达率(收到通知/支付成功) ③通知处理延迟 ④重复通知比例。异常阈值告警+自动兜底查单"
+
+  - perspective_id: "RP-WXPAY-02"
+    scene: "退款处理"
+    mapped_to: "S-004"
+    perspectives:
+      - role: "商户"
+        focus_areas:
+          - title: "退款路径决策"
+            detail: |
+              退款路径选择：
+              ① 付款码支付且≤7天 → 优先撤销(reverse)，无需额外审核，原路返回更快
+              ② 其他场景 → 申请退款(refund)，需要API证书
+              ③ 分账订单 → 先回退分账→完结分账→再退款（顺序不可颠倒！）
+            decision_logic: "检查订单来源(付款码?) → 检查时间(≤7天?) → 检查分账状态(已分账?) → 选择退款路径"
+          - title: "部分退款金额计算"
+            detail: "可退金额 = total_fee - 累计已退金额。需要先调用查询退款接口获取历史退款记录并累加。out_refund_no每次退款必须不同（全局唯一）"
+          - title: "退款资金来源"
+            detail: "默认从可用余额（基本户）退款。如果基本户余额不足，退款会失败。需要确保商户账户有足够余额用于退款"
+      - role: "顾客"
+        focus_areas:
+          - title: "退款到账时间"
+            detail: "零钱支付→退回零钱（实时到账）。银行卡支付→退回银行卡（1-3个工作日）。用户最关心「退款什么时候到账」，需要在退款页面明确告知预计到账时间"
+          - title: "退款通知"
+            detail: "退款成功后应有明确的通知（小程序消息/短信/公众号模板消息），告知退款金额和预计到账时间"
+      - role: "SCRM平台"
+        focus_areas:
+          - title: "退款风控"
+            detail: "监控异常退款模式：①同一用户高频退款 ②大额退款集中爆发 ③退款金额与订单金额不匹配。异常模式触发人工审核"
+          - title: "退款失败处理"
+            detail: "退款API可能返回失败（余额不足/订单状态不符/证书问题）。失败退款进入重试队列，超过重试次数后转人工处理"
+
+  - perspective_id: "RP-WXPAY-03"
+    scene: "分账"
+    mapped_to: "S-005"
+    perspectives:
+      - role: "商户"
+        focus_areas:
+          - title: "分账比例设置"
+            detail: "最大分账比例由商户超管在微信商户平台设置（如30%）。分账总金额不能超过订单金额×最大比例。剩余未分资金在完结分账后解冻给分账方"
+          - title: "分账接收方管理"
+            detail: "接收方类型：MERCHANT_ID(其他商户号) / PERSONAL_OPENID(个人用户)。添加接收方需要微信审核（通常实时生效）。接收方列表有数量限制"
+          - title: "30天完结deadline"
+            detail: "订单支付成功后30天内必须完结分账，否则资金永久冻结。强烈建议设置到期前告警（如第25天开始每日提醒）"
+      - role: "SCRM平台"
+        focus_areas:
+          - title: "分账自动化"
+            detail: "平台型业务的分账规则：①平台佣金自动计算 ②供应商/渠道方按比例自动分账 ③分账状态机自动流转。分账失败时自动重试+告警"
+          - title: "分账→退款联动"
+            detail: "分账中的订单需要退款时：①自动触发分账回退 ②回退成功后自动完结分账 ③完结后自动发起退款。三步联动避免人工操作遗漏"
+
+  - perspective_id: "RP-WXPAY-04"
+    scene: "对账与资金管理"
+    mapped_to: "S-006"
+    perspectives:
+      - role: "商户(财务)"
+        focus_areas:
+          - title: "每日对账流程"
+            detail: "T+1上午9点后下载前一日对账单 → 解析CSV → 按out_trade_no与内部订单系统逐条比对 → 核对金额/交易时间/手续费 → 生成对账报告 → 差异标记"
+          - title: "差异处理SOP"
+            detail: |
+              长款(微信有记录，商户无)：查询订单确认 → 可能原因：异步通知丢失 → 补录订单
+              短款(商户有记录，微信无)：确认订单状态 → 可能原因：用户未支付/订单已关闭 → 标记为未支付或关单
+              金额不一致：以微信为准（微信是资金实际流转方）→ 标记差异 → 人工核查
+          - title: "手续费核对"
+            detail: "资金账单中含每笔交易的手续费。需要核对：手续费率是否正确、退款是否按比例退还手续费"
+      - role: "SCRM平台"
+        focus_areas:
+          - title: "自动对账系统"
+            detail: "定时任务自动下载对账单→自动解析→自动比对→生成差异报告→P0差异(金额不一致)自动告警→P1差异(长款/短款)汇总通知→人工确认处理"
+          - title: "多商户对账"
+            detail: "SaaS平台需要为每个商户独立执行对账流程。按商户号分别下载对账单，分别比对，分别生成对账报告"
+
+# ============================================
+# Part 1: 全局API注册表（场景调度的基础）
+# ============================================
+api_registry:
+  description: |
+    所有微信支付V2 API的统一注册表。每个API标注了：
+    - 所属类型（支付/退款/分账/营销/资金/辅助）
+    - 请求URL与证书要求
+    - 核心入参（业务语义字段，非全量字段）
+    - 核心出参（驱动下游API的字段）
+    - 被哪些场景引用
+
+  apis:
+
+    # ===== 支付核心 =====
+    - id: "WXPAY-API-001"
+      name: "统一下单"
+      url: "POST /pay/unifiedorder"
+      cert_required: false
+      type: "payment"
+      description: "所有主动支付场景的统一入口。根据trade_type区分支付方式"
+      key_input:
+        - { param: "appid", type: "string(32)", required: true, role: "APP_IDENTITY", desc: "应用ID（公众号/小程序/APP的appid）" }
+        - { param: "mch_id", type: "string(32)", required: true, role: "MERCHANT_ID", desc: "商户号" }
+        - { param: "out_trade_no", type: "string(32)", required: true, role: "IDEMPOTENT_KEY", desc: "商户订单号，全局唯一" }
+        - { param: "total_fee", type: "int", required: true, role: "AMOUNT", desc: "订单金额（分）" }
+        - { param: "body", type: "string(128)", required: true, role: "BUSINESS_PARAM", desc: "商品描述" }
+        - { param: "trade_type", type: "string(16)", required: true, role: "STATUS", desc: "交易类型：JSAPI/NATIVE/APP/MWEB" }
+        - { param: "openid", type: "string(128)", required: "JSAPI必填", role: "USER_IDENTITY", desc: "用户openid（JSAPI/小程序支付使用）" }
+        - { param: "notify_url", type: "string(256)", required: true, role: "REFERENCE", desc: "异步通知地址" }
+        - { param: "spbill_create_ip", type: "string(64)", required: true, role: "BUSINESS_PARAM", desc: "终端IP" }
+        - { param: "product_id", type: "string(32)", required: "NATIVE必填", role: "BUSINESS_PARAM", desc: "商品ID（Native支付扫码后展示商品信息）" }
+        - { param: "scene_info", type: "json", required: "H5必填", role: "BUSINESS_PARAM", desc: "场景信息（H5支付需要，含type=Wap+wap_url+ip）" }
+      key_output:
+        - { param: "return_code", desc: "通信标识：SUCCESS/FAIL" }
+        - { param: "return_msg", desc: "通信失败时的错误描述" }
+        - { param: "result_code", desc: "业务结果：SUCCESS/FAIL" }
+        - { param: "prepay_id", type: "string(64)", desc: "预支付交易会话标识，2小时内有效 → 驱动：调起支付 / 生成二维码 / mweb_url前缀" }
+        - { param: "trade_type", desc: "交易类型回传，与请求一致" }
+        - { param: "code_url", type: "string(256)", desc: "扫码URL（仅NATIVE支付返回），→ 驱动：生成二维码" }
+        - { param: "mweb_url", type: "string(512)", desc: "支付跳转URL（仅H5支付返回），→ 驱动：浏览器重定向" }
+      used_in_scenarios: ["C端支付-全部子场景"]
+      drives_next_api: ["调起支付SDK", "查询订单"]
+
+    - id: "WXPAY-API-002"
+      name: "付款码支付"
+      url: "POST /pay/micropay"
+      cert_required: false
+      type: "payment"
+      description: "商户扫描用户付款码完成支付。同步返回结果，区别于统一下单的异步模式"
+      key_input:
+        - { param: "auth_code", type: "string(128)", required: true, role: "SENSITIVE", desc: "扫码设备获取的用户付款码（18位纯数字）" }
+        - { param: "out_trade_no", type: "string(32)", required: true, role: "IDEMPOTENT_KEY", desc: "商户订单号" }
+        - { param: "total_fee", type: "int", required: true, role: "AMOUNT", desc: "金额（分）" }
+        - { param: "body", type: "string(128)", required: true, role: "BUSINESS_PARAM", desc: "商品描述" }
+        - { param: "spbill_create_ip", type: "string(64)", required: true, role: "BUSINESS_PARAM", desc: "终端IP" }
+      key_output:
+        - { param: "trade_state", desc: "交易状态：SUCCESS(支付成功)/REFUND(转入退款)/NOTPAY(未支付)/CLOSED/REVOKED(已撤销)/USERPAYING(用户支付中,需轮询)/PAYERROR(支付失败)" }
+        - { param: "transaction_id", type: "string(32)", desc: "微信支付订单号" }
+        - { param: "time_end", desc: "支付完成时间" }
+      used_in_scenarios: ["商户收款-付款码支付"]
+      drives_next_api: ["查询订单(USERPAYING时)", "撤销订单(需撤销时)", "申请退款"]
+
+    # ===== 订单管理 =====
+    - id: "WXPAY-API-003"
+      name: "查询订单"
+      url: "POST /pay/orderquery"
+      cert_required: false
+      type: "order"
+      description: "根据商户订单号或微信订单号查询订单状态。所有支付场景的兜底查询"
+      key_input:
+        - { param: "transaction_id", type: "string(32)", required: "二选一", role: "REFERENCE", desc: "微信支付订单号" }
+        - { param: "out_trade_no", type: "string(32)", required: "二选一", role: "REFERENCE", desc: "商户订单号" }
+      key_output:
+        - { param: "trade_state", desc: "SUCCESS/REFUND/NOTPAY/CLOSED/REVOKED/USERPAYING/PAYERROR" }
+        - { param: "total_fee", desc: "订单金额 → 驱动：退款时计算可退金额" }
+        - { param: "cash_fee", desc: "现金支付金额" }
+        - { param: "openid", desc: "用户标识 → 驱动：营销/退款时确认用户" }
+        - { param: "transaction_id", desc: "微信支付订单号 → 驱动：退款/分账时必填" }
+      used_in_scenarios: ["所有场景(兜底)", "付款码支付-轮询", "退款-前置确认"]
+      drives_next_api: ["申请退款(用transaction_id+total_fee)", "分账", "关闭订单"]
+
+    - id: "WXPAY-API-004"
+      name: "关闭订单"
+      url: "POST /pay/closeorder"
+      cert_required: false
+      type: "order"
+      description: "关闭未支付的订单，释放用户支付额度（统一下单的prepay_id 2小时过期后可选择关闭）"
+      key_input:
+        - { param: "out_trade_no", type: "string(32)", required: true, role: "REFERENCE", desc: "商户订单号" }
+      key_output:
+        - { param: "result_code", desc: "SUCCESS表示关单成功" }
+        - { param: "err_code", desc: "ORDERPAID(订单已支付不可关闭) / ORDERCLOSED(已关闭) / ORDERNOTEXIST" }
+      used_in_scenarios: ["C端支付-关单", "超时订单清理"]
+
+    # ===== 退款 =====
+    - id: "WXPAY-API-005"
+      name: "申请退款"
+      url: "POST /secapi/pay/refund"
+      cert_required: true   # 需要API证书
+      type: "refund"
+      description: "对已支付订单发起退款。支持全额或部分退款，单笔订单可多次退款（退到余额为0止）"
+      key_input:
+        - { param: "transaction_id", type: "string(32)", required: "与out_trade_no二选一", role: "REFERENCE", desc: "微信订单号 ← 来自：查询订单/支付结果通知" }
+        - { param: "out_trade_no", type: "string(32)", required: "与transaction_id二选一", role: "REFERENCE", desc: "商户订单号" }
+        - { param: "out_refund_no", type: "string(32)", required: true, role: "IDEMPOTENT_KEY", desc: "商户退款单号，全局唯一" }
+        - { param: "total_fee", type: "int", required: true, role: "AMOUNT", desc: "原订单金额 ← 来自：查询订单结果" }
+        - { param: "refund_fee", type: "int", required: true, role: "AMOUNT", desc: "退款金额 ≤ total_fee - 已退款金额" }
+        - { param: "refund_desc", type: "string(80)", required: false, role: "BUSINESS_PARAM", desc: "退款原因" }
+        - { param: "notify_url", type: "string(256)", required: false, role: "REFERENCE", desc: "退款结果异步通知地址" }
+      key_output:
+        - { param: "refund_id", type: "string(32)", desc: "微信退款单号 → 驱动：退款查询" }
+        - { param: "refund_fee", desc: "实际退款金额" }
+        - { param: "cash_refund_fee", desc: "现金退款金额" }
+      used_in_scenarios: ["退款-全额/部分", "付款码支付-退款后撤销"]
+      drives_next_api: ["查询退款"]
+
+    - id: "WXPAY-API-006"
+      name: "查询退款"
+      url: "POST /pay/refundquery"
+      cert_required: false
+      type: "refund"
+      description: "查询退款状态。支持4种查询方式"
+      key_input:
+        - { param: "refund_id", type: "string(32)", required: "四选一", role: "REFERENCE", desc: "微信退款单号 ← 来自：申请退款返回" }
+        - { param: "out_refund_no", type: "string(32)", required: "四选一", role: "REFERENCE", desc: "商户退款单号" }
+        - { param: "transaction_id", type: "string(32)", required: "四选一", role: "REFERENCE", desc: "微信订单号" }
+        - { param: "out_trade_no", type: "string(32)", required: "四选一", role: "REFERENCE", desc: "商户订单号" }
+      key_output:
+        - { param: "refund_status_$n", desc: "SUCCESS(退款成功)/CHANGE(退款异常)/REFUNDCLOSE(退款关闭)/PROCESSING(退款处理中)" }
+        - { param: "refund_count", desc: "当前订单退款总笔数" }
+        - { param: "refund_fee_$n", desc: "第n笔退款金额" }
+      used_in_scenarios: ["退款-状态确认"]
+
+    # ===== 付款码撤销 =====
+    - id: "WXPAY-API-007"
+      name: "撤销订单"
+      url: "POST /secapi/pay/reverse"
+      cert_required: true
+      type: "payment_reverse"
+      description: "仅付款码支付场景可用。7天内可撤销已支付订单，退款原路返回。7天以上需走退款流程"
+      key_input:
+        - { param: "transaction_id", type: "string(32)", required: "与out_trade_no二选一", role: "REFERENCE", desc: "微信订单号" }
+        - { param: "out_trade_no", type: "string(32)", required: "与transaction_id二选一", role: "REFERENCE", desc: "商户订单号" }
+      key_output:
+        - { param: "recall", desc: "是否需重试：Y(需要) / N(不需要)" }
+      used_in_scenarios: ["付款码支付-撤销", "付款码支付-退款失败补救"]
+
+    # ===== 分账 =====
+    - id: "WXPAY-API-008"
+      name: "添加分账接收方"
+      url: "POST /pay/profitsharingaddreceiver"
+      cert_required: true
+      type: "profitsharing"
+      description: "添加分账接收方到商户分账接收方列表，每次请求最多5个"
+      key_input:
+        - { param: "receiver", type: "json", required: true, role: "BUSINESS_PARAM", desc: "接收方json：type(MERCHANT_ID/PERSONAL_OPENID)/account/name/relation_type/custom_relation" }
+      key_output:
+        - { param: "receiver", desc: "添加成功的接收方信息" }
+      used_in_scenarios: ["分账-全部子场景"]
+      drives_next_api: ["单次分账"]
+
+    - id: "WXPAY-API-009"
+      name: "单次分账"
+      url: "POST /secapi/pay/profitsharing"
+      cert_required: true
+      type: "profitsharing"
+      description: "将已支付订单冻结资金按比例分给接收方"
+      key_input:
+        - { param: "transaction_id", type: "string(32)", required: true, role: "REFERENCE", desc: "微信订单号 ← 来自：支付结果通知" }
+        - { param: "out_order_no", type: "string(32)", required: true, role: "IDEMPOTENT_KEY", desc: "商户分账单号" }
+        - { param: "receivers", type: "json", required: true, role: "BUSINESS_PARAM", desc: "分账接收方json数组：type/account/amount/description（amount单位分）" }
+      key_output:
+        - { param: "transaction_id", desc: "微信订单号" }
+        - { param: "order_id", type: "string(64)", desc: "微信分账单号 → 驱动：分账查询/回退" }
+      used_in_scenarios: ["分账-单次/多次分账"]
+      drives_next_api: ["分账查询", "分账回退", "完结分账"]
+
+    - id: "WXPAY-API-010"
+      name: "查询分账结果"
+      url: "POST /pay/profitsharingquery"
+      cert_required: false
+      type: "profitsharing"
+      description: "查询分账结果状态"
+      key_input:
+        - { param: "transaction_id", type: "string(32)", required: true, role: "REFERENCE", desc: "微信订单号" }
+        - { param: "out_order_no", type: "string(32)", required: true, role: "REFERENCE", desc: "商户分账单号" }
+      key_output:
+        - { param: "status", desc: "PROCESSING(处理中)/FINISHED(分账完成)" }
+        - { param: "receivers", desc: "各接收方分账详情" }
+      used_in_scenarios: ["分账-状态查询"]
+
+    - id: "WXPAY-API-011"
+      name: "分账回退"
+      url: "POST /secapi/pay/profitsharingreturn"
+      cert_required: true
+      type: "profitsharing"
+      description: "对已分账给接收方的资金回退给分账方"
+      key_input:
+        - { param: "order_id", type: "string(64)", required: true, role: "REFERENCE", desc: "微信分账单号 ← 来自：单次分账返回" }
+        - { param: "out_return_no", type: "string(32)", required: true, role: "IDEMPOTENT_KEY", desc: "商户回退单号" }
+        - { param: "return_account_type", type: "string", required: true, role: "BUSINESS_PARAM", desc: "回退方类型" }
+        - { param: "return_account", type: "string", required: true, role: "BUSINESS_PARAM", desc: "回退方账号" }
+        - { param: "return_amount", type: "int", required: true, role: "AMOUNT", desc: "回退金额（分）" }
+        - { param: "description", type: "string(80)", required: true, role: "BUSINESS_PARAM", desc: "回退原因" }
+      key_output:
+        - { param: "return_no", desc: "微信分账回退单号" }
+      used_in_scenarios: ["分账-回退"]
+
+    - id: "WXPAY-API-012"
+      name: "完结分账"
+      url: "POST /secapi/pay/profitsharingfinish"
+      cert_required: true
+      type: "profitsharing"
+      description: "完结分账，将剩余未分账的资金解冻给分账方。分账完结后不可再分账"
+      key_input:
+        - { param: "transaction_id", type: "string(32)", required: true, role: "REFERENCE", desc: "微信订单号" }
+        - { param: "out_order_no", type: "string(32)", required: true, role: "REFERENCE", desc: "商户分账单号" }
+        - { param: "description", type: "string(80)", required: true, role: "BUSINESS_PARAM", desc: "完结描述" }
+      key_output:
+        - { param: "transaction_id + order_id", desc: "完结确认" }
+      used_in_scenarios: ["分账-完结", "分账-解冻剩余资金"]
+
+    # ===== 对账 =====
+    - id: "WXPAY-API-013"
+      name: "下载对账单"
+      url: "POST /pay/downloadbill"
+      cert_required: false
+      type: "reconciliation"
+      description: "下载交易对账单（按日），用于商户与微信支付对账"
+      key_input:
+        - { param: "bill_date", type: "string(8)", required: true, role: "BUSINESS_PARAM", desc: "账单日期 YYYYMMDD" }
+        - { param: "bill_type", type: "string(8)", required: false, role: "STATUS", desc: "ALL(默认)/SUCCESS/REFUND" }
+      key_output:
+        - { param: "data", desc: "账单CSV文本数据（return_code=SUCCESS时在data字段，否则直接返回文本）" }
+      used_in_scenarios: ["资金结算-对账"]
+
+    - id: "WXPAY-API-014"
+      name: "下载资金账单"
+      url: "POST /pay/downloadfundflow"
+      cert_required: true
+      type: "reconciliation"
+      description: "下载资金流水账单，比交易账单更详细（含手续费等信息）"
+      key_input:
+        - { param: "bill_date", type: "string(8)", required: true, role: "BUSINESS_PARAM", desc: "账单日期" }
+        - { param: "account_type", type: "string(8)", required: true, role: "STATUS", desc: "Basic/Role/Operation" }
+      key_output:
+        - { param: "data", desc: "资金流水CSV" }
+      used_in_scenarios: ["资金结算-资金对账"]
+
+    # ===== 支付通知（被动接收） =====
+    - id: "WXPAY-API-015"
+      name: "支付结果通知"
+      url: "POST {商户notify_url}"
+      cert_required: false
+      type: "callback"
+      description: "支付成功后微信服务器异步通知商户后台。商户收到后必须返回SUCCESS确认"
+      key_params:
+        - { param: "return_code", desc: "SUCCESS" }
+        - { param: "result_code", desc: "SUCCESS" }
+        - { param: "transaction_id", type: "string(32)", desc: "微信订单号 → 驱动：退款/分账/查询" }
+        - { param: "out_trade_no", type: "string(32)", desc: "商户订单号 → 驱动：业务系统订单关联" }
+        - { param: "total_fee", type: "int", desc: "订单金额 → 驱动：退款金额上限" }
+        - { param: "openid", type: "string", desc: "用户标识 → 驱动：营销/退款用户确认" }
+        - { param: "time_end", desc: "支付完成时间" }
+      used_in_scenarios: ["所有C端支付场景"]
+      drives_next_api: ["申请退款", "分账", "查询订单(兜底)"]
+
+    # ===== 营销（已停止新商户，仅存量） =====
+    - id: "WXPAY-API-016"
+      name: "发放现金红包"
+      url: "POST /mmpaymkttransfers/sendredpack"
+      cert_required: true
+      type: "marketing"
+      status: "deprecated_new_merchant"
+      description: "⚠️ 已停止新商户开通。存量商户可用。向用户发放现金红包到微信零钱"
+      key_input:
+        - { param: "mch_billno", type: "string(28)", required: true, role: "IDEMPOTENT_KEY", desc: "商户红包单号" }
+        - { param: "send_name", type: "string(32)", required: true, role: "BUSINESS_PARAM", desc: "红包发送者名称" }
+        - { param: "re_openid", type: "string(32)", required: true, role: "USER_IDENTITY", desc: "接收红包的用户openid" }
+        - { param: "total_amount", type: "int", required: true, role: "AMOUNT", desc: "付款金额（分），≥100分" }
+        - { param: "total_num", type: "int", required: true, role: "BUSINESS_PARAM", desc: "红包发放总人数" }
+        - { param: "wishing", type: "string(128)", required: true, role: "BUSINESS_PARAM", desc: "红包祝福语" }
+        - { param: "act_name", type: "string(32)", required: true, role: "BUSINESS_PARAM", desc: "活动名称" }
+        - { param: "remark", type: "string(256)", required: true, role: "BUSINESS_PARAM", desc: "备注" }
+        - { param: "scene_id", type: "string(32)", desc: "场景id" }
+      key_output:
+        - { param: "send_listid", type: "string(32)", desc: "红包发放单号 → 驱动：红包查询" }
+      used_in_scenarios: ["营销-现金红包(存量)"]
+
+# ============================================
+# Part 2: 业务场景深度分析
+# 核心产出：主场景→子场景→接口调度链→参数流转关系
+# ============================================
+scenarios:
+
+  # ==========================================
+  # 场景1：C端用户主动支付
+  # ==========================================
+  - id: "S-001"
+    name: "C端用户主动支付"
+    description: "用户在商户端发起支付请求，通过微信支付完成付款。覆盖5种支付终端"
+    entry_trigger: "用户确认下单"
+    business_value: "核心营收场景，占微信支付流量的80%+"
+
+    sub_scenarios:
+
+      # --- 子场景 1a: JSAPI支付 ---
+      - id: "S-001a"
+        name: "JSAPI支付（微信内H5）"
+        terminal: "微信内置浏览器"
+        user_flow: "用户在公众号文章/菜单→进入商户H5商城→选商品→点支付→弹起微信支付收银台→输入密码→支付完成→跳回商户页面"
+        trade_type: "JSAPI"
+
+        api_sequence:
+          - step: 1
+            api: "统一下单(WXPAY-API-001)"
+            caller: "商户后台→微信支付"
+            key_params: { trade_type: "JSAPI", openid: "用户openid(←来自微信OAuth授权)", out_trade_no: "商户生成的唯一订单号", total_fee: "订单金额(分)", notify_url: "支付结果通知地址" }
+            output_used: "prepay_id=预支付ID → 驱动步骤2"
+            note: "openid必须通过微信OAuth授权获取（静默授权snsapi_base即可）"
+
+          - step: 2
+            api: "JSAPI调起支付（前端SDK）"
+            caller: "商户H5前端→微信JS-SDK"
+            key_params: "{ appId, timeStamp, nonceStr, package: 'prepay_id=xxx', signType: 'MD5', paySign: '二次签名' }"
+            output_used: "用户输入密码→支付结果返回给前端JS回调"
+            note: "paySign必须使用商户API密钥重新签名，不能直接使用统一下单返回的sign"
+
+          - step: 3
+            api: "支付结果通知(WXPAY-API-015) [异步]"
+            caller: "微信服务器→商户后台notify_url"
+            input_flow: "transaction_id(微信订单号)/out_trade_no(商户订单号)/total_fee(订单金额)→驱动后续业务"
+            note: "必须返回<xml><return_code>SUCCESS</return_code></xml>给微信，否则微信会重试通知（最多8次）"
+
+          - step: 4
+            api: "查询订单(WXPAY-API-003) [兜底]"
+            caller: "商户后台→微信支付"
+            condition: "未收到异步通知时主动查询，或前端JS返回值与后端通知不一致时兜底"
+            key_params: { out_trade_no: "商户订单号 ← 来自：步骤1" }
+            note: "前端JS回调与后端异步通知不保证先后顺序，必须以通知为准"
+
+        param_flow:
+          - { from: "OAuth授权", from_param: "openid", to: "统一下单", to_param: "openid", relationship: "用户身份标识" }
+          - { from: "统一下单", from_param: "prepay_id", to: "JSAPI调起", to_param: "package(prepay_id=xxx)", relationship: "支付会话凭证" }
+          - { from: "支付结果通知", from_param: "transaction_id", to: "查询订单/申请退款/分账", to_param: "transaction_id", relationship: "微信交易凭证" }
+
+        state_machine:
+          states:
+            - { state: "INIT", transitions: [{ trigger: "统一下单成功", target: "WAIT_PAY", side_effect: "prepay_id生成" }] }
+            - { state: "WAIT_PAY", transitions: [{ trigger: "用户支付", target: "SUCCESS" }, { trigger: "2小时过期", target: "CLOSED" }] }
+            - { state: "SUCCESS", transitions: [{ trigger: "退款", target: "REFUND" }] }
+            - { state: "CLOSED", transitions: [] }
+
+      # --- 子场景 1b: 小程序支付 ---
+      - id: "S-001b"
+        name: "小程序支付"
+        terminal: "微信小程序"
+        user_flow: "用户在小程序内选商品→点支付→调起wx.requestPayment→输入密码→完成→小程序展示结果"
+        trade_type: "JSAPI"
+
+        api_sequence:
+          - step: 1
+            api: "统一下单(WXPAY-API-001)"
+            caller: "小程序后端→微信支付"
+            key_params: { trade_type: "JSAPI", openid: "用户openid(←wx.login获取code→code2session获得)", appid: "小程序appid" }
+            output_used: "prepay_id → 驱动步骤2"
+            note: "小程序的openid与公众号openid不同（同一用户在不同应用中有不同openid，unionid才唯一）"
+
+          - step: 2
+            api: "wx.requestPayment（小程序端）"
+            caller: "小程序前端→微信支付"
+            key_params: "{ timeStamp, nonceStr, package: 'prepay_id=xxx', signType, paySign }"
+            output_used: "success/fail回调"
+            note: "paySign用小程序的appId和API密钥进行二次签名"
+
+          - step: 3
+            api: "支付结果通知(WXPAY-API-015) [异步]"
+            note: "与JSAPI支付相同的异步通知处理逻辑"
+
+          - step: 4
+            api: "查询订单(WXPAY-API-003) [兜底]"
+            condition: "小程序onShow时可能支付完成但未收到回调，主动查单"
+
+        param_flow:
+          - { from: "wx.login", from_param: "code", to: "code2session", to_param: "code", relationship: "换取openid+session_key" }
+          - { from: "code2session", from_param: "openid", to: "统一下单", to_param: "openid", relationship: "用户身份" }
+          - { from: "统一下单", from_param: "prepay_id", to: "wx.requestPayment", to_param: "package", relationship: "支付会话" }
+
+      # --- 子场景 1c: APP支付 ---
+      - id: "S-001c"
+        name: "APP支付"
+        terminal: "原生APP（iOS/Android）"
+        user_flow: "用户在商户APP选商品→点支付→APP调起微信→确认支付→输入密码→自动跳回商户APP"
+        trade_type: "APP"
+
+        api_sequence:
+          - step: 1
+            api: "统一下单(WXPAY-API-001)"
+            caller: "APP后端→微信支付"
+            key_params: { trade_type: "APP", appid: "APP的appid（在微信开放平台申请）" }
+            output_used: "prepay_id → 驱动步骤2"
+            note: "APP支付不需要openid！用户身份通过APP端微信SDK自动获取"
+
+          - step: 2
+            api: "APP调起支付（微信SDK）"
+            caller: "商户APP→微信APP"
+            key_params: "{ appid, partnerid, prepayid, package: 'Sign=WXPay', noncestr, timestamp, sign(二次签名) }"
+            note: "iOS: sendReq / Android: sendReq (WXPayEntryActivity接收结果)"
+
+          - step: 3
+            api: "支付结果通知(WXPAY-API-015) [异步]"
+
+          - step: 4
+            api: "查询订单(WXPAY-API-003) [兜底]"
+            note: "APP收到微信SDK回调+商户后台收到异步通知双重确认"
+
+        param_flow:
+          - { from: "微信SDK", from_param: "用户登录态", to: "统一下单", to_param: "(无需openid)", relationship: "APP支付不依赖openid" }
+          - { from: "统一下单", from_param: "prepay_id", to: "APP SDK", to_param: "prepayid", relationship: "支付会话" }
+
+      # --- 子场景 1d: H5支付 ---
+      - id: "S-001d"
+        name: "H5支付（手机浏览器）"
+        terminal: "手机浏览器（Safari/Chrome等，非微信内）"
+        user_flow: "用户在手机浏览器访问商户H5→下单一网络环境检测→跳转微信App支付→支付完成→跳回浏览器"
+        trade_type: "MWEB"
+
+        api_sequence:
+          - step: 1
+            api: "统一下单(WXPAY-API-001)"
+            caller: "商户后台→微信支付"
+            key_params: { trade_type: "MWEB", scene_info: '{"h5_info":{"type":"Wap","wap_url":"商户H5页面URL","wap_name":"商户名称"}}', spbill_create_ip: "用户真实IP" }
+            output_used: "mweb_url → 驱动步骤2"
+            note: "scene_info必填，wap_url用于支付完成后跳回商户页面。Referer限制严格"
+
+          - step: 2
+            api: "浏览器重定向到mweb_url"
+            caller: "用户浏览器→微信支付中间页"
+            key_params: "mweb_url（含redirect_url参数拼接在mweb_url后：mweb_url + '&redirect_url=' + urlencode(回调URL)）"
+            output_used: "中间页校验→唤起微信App→用户支付"
+            note: "⚠️ 常见错误点：商户域名未在商户平台配置H5支付域名白名单、Referer头不合法"
+
+          - step: 3
+            api: "支付结果通知(WXPAY-API-015) [异步]"
+
+          - step: 4
+            api: "查询订单(WXPAY-API-003) [强兜底]"
+            note: "⚠️ H5支付流程最长，用户可能关闭微信后不跳回浏览器，必须：①前端页面轮询查单 ②后端定时查单 ③异步通知三重保障"
+
+        param_flow:
+          - { from: "统一下单", from_param: "mweb_url", to: "浏览器重定向", to_param: "mweb_url", relationship: "H5支付核心凭证" }
+          - { from: "商户后台", from_param: "redirect_url", to: "mweb_url拼接", to_param: "redirect_url参数", relationship: "支付完成后跳回地址" }
+
+      # --- 子场景 1e: Native支付 ---
+      - id: "S-001e"
+        name: "Native支付（扫码支付）"
+        terminal: "用户扫商户二维码"
+        user_flow: "商户展示二维码→用户打开微信扫一扫→扫码→进入支付页→确认→输入密码→完成"
+        trade_type: "NATIVE"
+
+        api_sequence:
+          - step: 1
+            api: "统一下单(WXPAY-API-001)"
+            caller: "商户后台→微信支付"
+            key_params: { trade_type: "NATIVE", product_id: "商品ID（可选但推荐，扫码后展示商品信息）" }
+            output_used: "code_url → 驱动步骤2"
+            note: "code_url有效期2小时（与prepay_id一致）"
+
+          - step: 2
+            api: "生成二维码"
+            caller: "商户系统内部"
+            key_params: "code_url → 转换为二维码图片（QR Code）展示给用户"
+            note: "建议：定时刷新二维码（场景：固定金额二维码）或动态生成（场景：用户下单后生成专属二维码）"
+
+          - step: 3
+            api: "支付结果通知(WXPAY-API-015) [异步]"
+
+          - step: 4
+            api: "查询订单(WXPAY-API-003) [推荐轮询]"
+            note: "Native支付页面推荐前端轮询查单（每2-3秒），用户扫码后页面自动跳转"
+
+        param_flow:
+          - { from: "统一下单", from_param: "code_url", to: "QR生成", to_param: "code_url", relationship: "二维码数据源" }
+
+      # --- 子场景 1f: 刷脸支付 ---
+      - id: "S-001f"
+        name: "刷脸支付"
+        terminal: "线下刷脸设备（青蛙Pro等）"
+        trade_type: "FACE"
+        note: "刷脸支付接口路径与标准支付不同（/wiki/doc/wxfacepay/），此处仅记录场景存在，详细API需单独学习"
+
+    # 子场景对比矩阵
+    sub_scenario_comparison:
+      dimensions:
+        - { dimension: "trade_type", jsapi: "JSAPI", mini_program: "JSAPI", app: "APP", h5: "MWEB", native: "NATIVE" }
+        - { dimension: "是否需要openid", jsapi: "是（OAuth获取）", mini_program: "是（wx.login获取）", app: "否", h5: "否", native: "否" }
+        - { dimension: "调起方式", jsapi: "WeixinJSBridge/getBrandWCPayRequest", mini_program: "wx.requestPayment", app: "微信SDK sendReq", h5: "mweb_url浏览器重定向", native: "用户扫码" }
+        - { dimension: "支付确认方式", jsapi: "异步通知+JS回调", mini_program: "异步通知+success回调", app: "异步通知+SDK回调", h5: "异步通知+轮询(必须)", native: "异步通知+推荐轮询" }
+        - { dimension: "签名要求", jsapi: "统一下单sign+二次paySign", mini_program: "统一下单sign+二次paySign(小程序appId)", app: "统一下单sign+APP端sign", h5: "仅统一下单sign", native: "仅统一下单sign" }
+
+  # ==========================================
+  # 场景2：商户主动收款（付款码支付）
+  # ==========================================
+  - id: "S-002"
+    name: "商户主动收款（付款码支付）"
+    description: "线下收银场景，商户扫描用户展示的微信付款码完成收款"
+    entry_trigger: "收银员扫码"
+    business_value: "线下零售核心收款场景，高频交易"
+
+    sub_scenarios:
+
+      - id: "S-002a"
+        name: "付款码支付-正常流程"
+        terminal: "线下收银设备"
+        user_flow: "用户打开微信→我→支付→收付款→展示付款码(18位数字)→收银员扫码→扣款完成→用户收到支付凭证"
+
+        api_sequence:
+          - step: 1
+            api: "付款码支付(WXPAY-API-002)"
+            caller: "商户收银系统→微信支付"
+            key_params: { auth_code: "扫码设备读取的18位付款码 ← 来自：扫码枪/摄像头", out_trade_no: "商户订单号", total_fee: "金额(分)", body: "商品描述" }
+            output_used: "trade_state=SUCCESS → 支付完成 / USERPAYING → 进入步骤2轮询 / PAYERROR → 支付失败"
+            note: "auth_code一次有效，支付失败不能再使用；付款码每1分钟自动刷新"
+
+          - step: 2
+            api: "查询订单(WXPAY-API-003) [轮询]"
+            caller: "商户收银系统→微信支付"
+            condition: "步骤1返回USERPAYING时，每5秒轮询一次"
+            key_params: { out_trade_no: "← 来自：步骤1" }
+            output_used: "trade_state不再为USERPAYING时结束轮询"
+            note: "建议轮询总时长≤30秒，超时后建议撤销或告知用户"
+
+          - step: 3 (分支A: 正常完成)
+            api: "支付结果确认"
+            note: "trade_state=SUCCESS，展示支付成功给用户，打印小票"
+
+          - step: 3 (分支B: 需要退款)
+            api: "申请退款(WXPAY-API-005) / 撤销订单(WXPAY-API-007)"
+            condition: "需要撤销交易时（如商品缺货/用户取消）"
+            note: "7天内可调用撤销（reverse）直接退款，7天以上必须走退款流程（refund）"
+
+        param_flow:
+          - { from: "扫码设备", from_param: "auth_code", to: "付款码支付", to_param: "auth_code", relationship: "用户付款凭证（一次有效）" }
+          - { from: "付款码支付", from_param: "out_trade_no", to: "查询订单+撤销+退款", to_param: "out_trade_no", relationship: "订单追溯键" }
+
+      - id: "S-002b"
+        name: "付款码支付-异常处理"
+        description: "付款码支付特有的异常处理流程：轮询超时→撤销→退款"
+
+        api_sequence:
+          - step: 1
+            api: "付款码支付(WXPAY-API-002) → trade_state=USERPAYING"
+          - step: 2
+            api: "查询订单(WXPAY-API-003) → 轮询超过30秒仍USERPAYING"
+            note: "此时调用撤销（reverse），避免用户已扣款但商户未确认导致客诉"
+          - step: 3
+            api: "撤销订单(WXPAY-API-007) → 返回recall=Y"
+            note: "recall=Y表示需要重新调用撤销，说明第一次撤销未确认"
+          - step: 4
+            api: "撤销订单(WXPAY-API-007) 重试 → recall=N"
+            note: "撤销成功，资金退回用户账户"
+
+    # 付款码支付状态机（关键！）
+    micropay_state_machine:
+      states:
+        - { state: "付款码展示", transitions: [{ trigger: "扫码", target: "SUCCESS/PAYERROR/USERPAYING" }] }
+        - { state: "USERPAYING", transitions: [{ trigger: "轮询→SUCCESS", target: "SUCCESS" }, { trigger: "轮询超时→撤销", target: "REVOKED" }] }
+        - { state: "SUCCESS", transitions: [{ trigger: "撤销(reverse)", target: "REVOKED", condition: "≤7天" }, { trigger: "退款(refund)", target: "REFUND" }] }
+        - { state: "PAYERROR", transitions: [{ trigger: "重新扫码", target: "付款码展示" }] }
+        - { state: "REVOKED", transitions: [] }
+        - { state: "REFUND", transitions: [] }
+
+  # ==========================================
+  # 场景3：订单管理
+  # ==========================================
+  - id: "S-003"
+    name: "订单管理"
+    description: "对已生成但未支付的订单进行管理，包括查询和关闭"
+    entry_trigger: "订单状态未知或需要关单"
+
+    sub_scenarios:
+
+      - id: "S-003a"
+        name: "订单状态查询"
+        description: "主动查询订单当前状态，用于所有支付场景的兜底确认"
+        api_sequence:
+          - step: 1
+            api: "查询订单(WXPAY-API-003)"
+            key_params: "{ out_trade_no: 商户订单号 OR transaction_id: 微信订单号 }"
+            note: "out_trade_no和transaction_id至少传一个。推荐优先用out_trade_no（商户侧有记录）"
+        decision_tree:
+          trade_state_meanings:
+            - { state: "SUCCESS", action: "支付成功→触发发货/权益发放→可发起退款/分账" }
+            - { state: "REFUND", action: "已退款→查看退款详情" }
+            - { state: "NOTPAY", action: "等待支付→继续展示支付页或引导用户支付" }
+            - { state: "CLOSED", action: "已关闭→通知用户重新下单" }
+            - { state: "REVOKED", action: "已撤销（仅付款码）→通知收银员" }
+            - { state: "USERPAYING", action: "用户支付中（仅付款码）→等待或轮询" }
+            - { state: "PAYERROR", action: "支付失败→引导用户重试" }
+
+      - id: "S-003b"
+        name: "关闭未支付订单"
+        description: "对于不再需要的未支付订单主动关单，释放用户支付额度"
+        api_sequence:
+          - step: 1
+            api: "查询订单(WXPAY-API-003)" 
+            condition: "确认订单状态为NOTPAY"
+          - step: 2
+            api: "关闭订单(WXPAY-API-004)"
+            key_params: { out_trade_no: "← 来自：步骤1" }
+            note: "已支付的订单无法关闭（会返回ORDERPAID）；已关闭的订单重复关单也是成功；订单不存在返回ORDERNOTEXIST"
+        trigger_timing:
+          - "超时关单：用户30分钟未支付自动关闭"
+          - "库存释放：秒杀场景下用户未在规定时间内支付，释放库存"
+          - "重复下单：用户重新下单后关闭旧订单"
+
+  # ==========================================
+  # 场景4：退款处理
+  # ==========================================
+  - id: "S-004"
+    name: "退款处理"
+    description: "对已支付订单发起退款，支持全额/部分退款"
+    entry_trigger: "用户申请退款/商户主动退款"
+    business_value: "售后核心环节，退款时效直接影响用户体验"
+
+    sub_scenarios:
+
+      - id: "S-004a"
+        name: "全额退款"
+        description: "将订单全部金额退回用户支付账户"
+
+        api_sequence:
+          - step: 1
+            api: "查询订单(WXPAY-API-003)"
+            purpose: "确认订单状态为SUCCESS，获取total_fee和transaction_id"
+            key_params: { out_trade_no: "商户订单号" }
+            output_used: "total_fee=全额退款金额 / transaction_id → 驱动步骤2"
+
+          - step: 2
+            api: "申请退款(WXPAY-API-005)"
+            key_params: { transaction_id: "← 来自：步骤1", out_refund_no: "商户退款单号（全局唯一）", total_fee: "← 来自：步骤1", refund_fee: "← total_fee（全额）", refund_desc: "退款原因" }
+            output_used: "refund_id=微信退款单号 → 驱动步骤3/4"
+
+          - step: 3
+            api: "退款结果通知 [异步]"
+            note: "微信异步通知退款结果。收到SUCCESS后更新订单退款状态"
+
+          - step: 4
+            api: "查询退款(WXPAY-API-006) [兜底]"
+            condition: "未收到退款通知或需要主动确认时"
+            key_params: { refund_id: "← 来自：步骤2" }
+
+        param_flow:
+          - { from: "查询订单", from_param: "transaction_id", to: "申请退款", to_param: "transaction_id", relationship: "退款原单凭证" }
+          - { from: "查询订单", from_param: "total_fee", to: "申请退款", to_param: "total_fee + refund_fee", relationship: "退款金额上限约束" }
+          - { from: "申请退款", from_param: "refund_id", to: "查询退款", to_param: "refund_id", relationship: "退款追溯凭证" }
+
+      - id: "S-004b"
+        name: "部分退款"
+        description: "退款金额小于订单总金额。可多次退款直到退完为止"
+        api_sequence:
+          - step: 1
+            api: "查询订单(WXPAY-API-003)"
+            purpose: "获取total_fee"
+          - step: 2
+            api: "查询退款(WXPAY-API-006)"
+            purpose: "获取已退款总金额，计算可退余额 = total_fee - 累计已退"
+            key_params: { out_trade_no: "商户订单号" }
+            output_used: "refund_fee_$n → 累加得到已退总金额"
+          - step: 3
+            api: "申请退款(WXPAY-API-005)"
+            key_params: { refund_fee: "部分金额 ≤ 可退余额", out_refund_no: "新的退款单号（不能重复）" }
+            note: "每次退款使用不同的out_refund_no"
+
+      - id: "S-004c"
+        name: "付款码支付-撤销退款"
+        description: "付款码支付7天内可通过撤销接口快速退款（原路返回），无需走标准退款流程"
+        api_sequence:
+          - step: 1
+            api: "撤销订单(WXPAY-API-007)"
+            note: "7天内优先使用撤销（更快，无需额外审核）；超过7天必须走申请退款流程"
+            key_params: { transaction_id: "OR out_trade_no" }
+
+    refund_rules:
+      - "退款去向：原路返回（零钱付→退回零钱，银行卡付→退回银行卡）"
+      - "退款到账时间：零钱实时到账，银行卡1-3个工作日"
+      - "退款频次限制：无限制，直到余额为0"
+      - "退款资金来源：可用余额（基本户）或运营账户"
+      - "分账订单退款：需先回退分账，再退款"
+      - "手续费退还：退款时按比例退还已收手续费"
+
+  # ==========================================
+  # 场景5：分账
+  # ==========================================
+  - id: "S-005"
+    name: "分账"
+    description: "将交易成功后的资金按一定周期分给其他方（合作伙伴/员工/用户）。资金先冻结，分账后解冻"
+    entry_trigger: "订单支付成功→资金冻结→触发分账"
+    business_value: "平台型业务核心场景（电商平台/分销/员工奖励）"
+
+    key_rules:
+      - "待分账资金冻结：支付成功后资金进入待分账状态"
+      - "分账周期：最长30天内完成分账"
+      - "分账对象：单个订单最多分给50个接收方"
+      - "分账次数：单订单最多分账50次"
+      - "接收方类型：商户号(MERCHANT_ID) 或 个人openid(PERSONAL_OPENID)"
+      - "最大分账比例：商户超管在商户平台设置，分账总额≤订单金额×最大比例"
+      - "手续费：免手续费"
+
+    sub_scenarios:
+
+      - id: "S-005a"
+        name: "单次分账（一次性分完）"
+        description: "订单支付成功后一次性将应分金额全部分给接收方"
+
+        api_sequence:
+          - step: 0
+            api: "添加分账接收方(WXPAY-API-008) [前置]"
+            condition: "接收方未在商户分账接收方列表中时，需要先添加"
+            key_params: { receiver: "{type:'MERCHANT_ID'|'PERSONAL_OPENID', account:'接收方账号', name:'名称', relation_type:'合作类型'}" }
+            note: "添加后需要微信审核（通常实时生效）"
+
+          - step: 1
+            api: "查询订单(WXPAY-API-003)"
+            purpose: "确认订单已支付成功（trade_state=SUCCESS），获取transaction_id"
+            key_params: { out_trade_no: "商户订单号" }
+            output_used: "transaction_id → 驱动步骤2"
+
+          - step: 2
+            api: "单次分账(WXPAY-API-009)"
+            key_params: { 
+              transaction_id: "← 来自：步骤1", 
+              out_order_no: "商户分账单号(唯一)",
+              receivers: "[{type:'MERCHANT_ID', account:'接收方商户号', amount:分账金额(分), description:'分账说明'}]"
+            }
+            output_used: "order_id(微信分账单号) → 驱动步骤3"
+
+          - step: 3
+            api: "查询分账结果(WXPAY-API-010)"
+            purpose: "确认分账状态"
+
+          - step: 4
+            api: "完结分账(WXPAY-API-012)"
+            condition: "全部分账完成后调用，解冻剩余未分资金给分账方"
+            key_params: { transaction_id: "← 来自：步骤1", out_order_no: "← 来自：步骤2", description: "分账完结" }
+
+        param_flow:
+          - { from: "支付结果通知", from_param: "transaction_id", to: "单次分账", to_param: "transaction_id", relationship: "分账原单凭证" }
+          - { from: "单次分账", from_param: "order_id", to: "分账查询/回退", to_param: "order_id", relationship: "分账追溯凭证" }
+
+      - id: "S-005b"
+        name: "多次分账（周期分账）"
+        description: "订单支付后分批分账，如先分给供应商，T+7再分给渠道"
+
+        api_sequence:
+          - step: 1
+            api: "单次分账(WXPAY-API-009)"
+            key_params: { 
+              receivers: "[{account:'供应商A', amount:7000}, {account:'平台', amount:1000}]",
+              out_order_no: "分账单号-001"
+            }
+            note: "第一次分账：分8000/10000"
+
+          - step: 2
+            api: "查询分账结果(WXPAY-API-010)"
+            purpose: "确认第一次分账成功"
+
+          - step: 3
+            api: "单次分账(WXPAY-API-009) 再次调用"
+            key_params: { 
+              receivers: "[{account:'员工提成', amount:500}]",
+              out_order_no: "分账单号-002（新的单号!）"
+            }
+            note: "第二次分账：再分500。分账比例30% = 最多分3000，此时已分8500，还有500额度"
+
+          - step: 4
+            api: "完结分账(WXPAY-API-012)"
+            note: "剩余1500未分→解冻返还给分账方"
+
+      - id: "S-005c"
+        name: "分账回退"
+        description: "将已分账给接收方的资金回退给分账方"
+
+        api_sequence:
+          - step: 1
+            api: "查询分账结果(WXPAY-API-010)"
+            purpose: "确认对应分账单的order_id"
+          - step: 2
+            api: "分账回退(WXPAY-API-011)"
+            key_params: { 
+              order_id: "← 来自：步骤1", 
+              out_return_no: "商户回退单号(唯一)", 
+              return_account_type: "MERCHANT_ID/PERSONAL_OPENID",
+              return_account: "接收方账号",
+              return_amount: "回退金额 ≤ 已分账金额"
+            }
+
+    profit_sharing_lifecycle:
+      stages:
+        - { stage: "支付成功", next: "资金冻结", condition: "订单支付" }
+        - { stage: "资金冻结", next: "添加接收方", condition: "接收方不在列表中" }
+        - { stage: "添加接收方", next: "单次分账", condition: "接收方审核通过" }
+        - { stage: "单次分账", next: "继续分账/完结分账", condition: "分账结果查询确认" }
+        - { stage: "继续分账", next: "单次分账", condition: "还有未分金额且未超最大分账比例" }
+        - { stage: "完结分账", next: "资金解冻", condition: "剩余资金解冻给分账方" }
+        - { stage: "分账回退", next: "重新分账", condition: "回退后资金回到待分账状态" }
+
+  # ==========================================
+  # 场景6：对账与资金
+  # ==========================================
+  - id: "S-006"
+    name: "对账与资金管理"
+    description: "商户日常资金管理：下载对账单核对交易流水、下载资金账单核对资金变动"
+    entry_trigger: "每日定时对账任务 / 财务月结"
+
+    sub_scenarios:
+
+      - id: "S-006a"
+        name: "每日交易对账"
+        description: "下载前一日交易对账单，与商户订单系统比对"
+
+        api_sequence:
+          - step: 1
+            api: "下载对账单(WXPAY-API-013)"
+            key_params: { bill_date: "YYYYMMDD（T-1日）", bill_type: "ALL" }
+            note: "账单一般于次日9点后可下载"
+          - step: 2
+            api: "商户内部：解析CSV→逐条比对"
+            note: "对账维度：订单号(out_trade_no)、金额(total_fee)、交易时间、退款金额、手续费"
+          - step: 3
+            api: "差异处理 [商户内部]"
+            note: "长款（微信有商户无）→ 查询订单确认 / 短款（商户有微信无）→ 确认是否关单或未支付"
+
+      - id: "S-006b"
+        name: "资金流水对账"
+        description: "下载资金账单，核对资金余额变动"
+        api_sequence:
+          - step: 1
+            api: "下载资金账单(WXPAY-API-014)"
+            key_params: { bill_date: "YYYYMMDD", account_type: "Basic(基本户)" }
+            note: "资金账单比交易账单多：账户余额、手续费、充值、提现等资金变动"
+
+  # ==========================================
+  # 场景7：营销发放（存量商户）
+  # ==========================================
+  - id: "S-007"
+    name: "营销发放"
+    description: "⚠️ 现金红包API已停止新商户开通！仅存量已开通商户可用。新商户应使用V3商家转账"
+    status: "存量可用 / 新商户不可用"
+
+    sub_scenarios:
+
+      - id: "S-007a"
+        name: "发放现金红包（存量）"
+        api_sequence:
+          - step: 1
+            api: "发放现金红包(WXPAY-API-016)"
+            key_params: { mch_billno: "红包单号", re_openid: "← 来自：OAuth/支付回调", total_amount: "≥100分=1元", total_num: "发放人数", wishing: "祝福语", act_name: "活动名称" }
+            output_used: "send_listid → 红包查询"
+            note: "未领取24小时后自动退回商户账户"
+
+  # ==========================================
+  # 场景8：跨境/关务
+  # ==========================================
+  - id: "S-008"
+    name: "跨境报关"
+    description: "跨境支付场景下，向海关提交订单附加信息。支付成功后调用"
+    entry_trigger: "跨境订单支付成功"
+
+    sub_scenarios:
+      - id: "S-008a"
+        name: "海关报关"
+        api_sequence:
+          - step: 1
+            api: "支付结果通知(WXPAY-API-015)"
+            condition: "支付成功触发"
+          - step: 2
+            api: "报关接口（customs）"
+            note: "具体API需查阅跨境支付文档。报关需在支付成功后30天内完成，否则将造成清关异常"
+
+# ============================================
+# Part 3: 全局参数流转图
+# 跨场景的核心参数如何流转
+# ============================================
+param_traceability:
+  description: "跨场景的核心参数流转关系，帮助BA理解API之间的数据耦合"
+
+  # out_trade_no（商户订单号）— 贯穿整个生命周期
+  - param_name: "out_trade_no"
+    role: "IDEMPOTENT_KEY"
+    origin: "商户业务系统生成（通常是订单创建时）"
+    flows:
+      - { from: "商户订单系统", to: "统一下单/付款码支付", usage: "创建支付订单" }
+      - { from: "统一下单/付款码支付", to: "支付结果通知", usage: "异步通知中回传，关联订单" }
+      - { from: "统一下单", to: "查询订单/关闭订单", usage: "订单管理" }
+      - { from: "查询订单", to: "申请退款/撤销订单", usage: "退款原单追溯" }
+    lifecycle: "订单创建→支付→退款/分账→对账（全生命周期唯一标识）"
+
+  # transaction_id（微信订单号）— 微信侧全局唯一
+  - param_name: "transaction_id"
+    role: "REFERENCE"
+    origin: "微信支付系统（支付成功后生成）"
+    flows:
+      - { from: "微信支付", to: "支付结果通知", usage: "通知商户" }
+      - { from: "支付结果通知", to: "申请退款/分账", usage: "退款/分账的必要参数" }
+      - { from: "申请退款", to: "查询退款", usage: "按订单查退款" }
+    key_dependency: "依赖支付成功才能获得。未支付订单无transaction_id"
+
+  # prepay_id（预支付ID）— 前端调起的凭证
+  - param_name: "prepay_id"
+    role: "REFERENCE"
+    origin: "统一下单API返回"
+    flows:
+      - { from: "统一下单", to: "JSAPI调起/小程序支付/APP SDK", usage: "前端调起收银台" }
+    lifecycle: "2小时有效，过期后需重新统一下单"
+
+  # openid（用户标识）— 用户身份
+  - param_name: "openid"
+    role: "USER_IDENTITY"
+    origin: "微信OAuth授权 / 小程序wx.login"
+    flows:
+      - { from: "OAuth/wx.login", to: "统一下单(JSAPI/小程序)", usage: "指定支付用户" }
+      - { from: "统一下单/支付通知", to: "营销-现金红包", usage: "指定红包接收人" }
+      - { from: "支付结果通知", to: "分账-添加个人接收方", usage: "分账到个人零钱" }
+
+# ============================================
+# Part 4: 异步通知处理模型
+# 微信支付核心非功能性但极易出错的环节
+# ============================================
+async_notification_model:
+  description: "微信支付的三种结果确认方式及可靠性保障"
+
+  channels:
+    - channel: "前端SDK回调"
+      timing: "支付完成后即时"
+      reliability: "不可靠（用户可能关闭微信/APP崩溃）"
+      usage: "仅用于UI展示优化，不可作为业务处理依据"
+      note: "⚠️ 前端回调与后端通知无先后顺序保证"
+
+    - channel: "后端异步通知"
+      timing: "支付成功后微信服务器推送"
+      reliability: "高（微信重试8次，间隔逐渐延长：15s/15s/30s/3m/10m/20m/30m/30m）"
+      usage: "⭐ 唯一可信的业务处理依据"
+      idempotency: "必须做好幂等处理！通知可能重复到达"
+
+    - channel: "主动查询订单"
+      timing: "商户主动调用"
+      reliability: "取决于调用时机"
+      usage: "兜底补充：未收到通知时主动确认 / 前端回调速度快于通知时主动查"
+
+  best_practices:
+    - practice: "三重确认机制"
+      description: "前端回调→更新UI / 后端通知→处理业务 / 定时任务查单→扫描未通知订单（间隔30分钟-2小时）"
+
+    - practice: "幂等性设计"
+      description: "收到通知先查数据库订单状态，已处理则直接返回SUCCESS，不重复发货"
+
+    - practice: "回调地址安全"
+      description: "notify_url必须为公网可达的HTTPS地址，响应必须在5秒内返回"
+
+# ============================================
+# Part 5: 场景间联动关系
+# ============================================
+cross_scenario_linkage:
+  description: "业务场景之间不是独立的，一个页面/功能可能同时涉及多个场景"
+
+  linkages:
+    - name: "支付+退款"
+      trigger: "支付成功→用户申请退款"
+      api_chain: "统一下单→支付通知→查询订单→申请退款→退款通知→查询退款"
+      data_coupling: "out_trade_no贯穿全链路"
+
+    - name: "支付+分账"
+      trigger: "支付成功→自动/手动分账"
+      api_chain: "统一下单→支付通知→添加接收方→单次分账→查询分账→完结分账"
+      data_coupling: "transaction_id从支付通知传递到分账API"
+
+    - name: "支付+退款+分账回退"
+      trigger: "分账后需退款"
+      api_chain: "支付→分账→分账回退→完结分账→解冻→退款"
+      constraint: "分账后的资金不能直接退款，必须先回退分账→完结解冻→退款"
+      note: "⚠️ 该顺序不可颠倒——分账中的资金处于冻结状态，无法退款"
+
+    - name: "支付+营销红包"
+      trigger: "支付成功后发放红包（如首单红包）"
+      api_chain: "统一下单→支付通知→发放现金红包"
+      data_coupling: "支付通知中的openid→红包接收人"
+
+    - name: "对账+全场景"
+      trigger: "每日T+1自动对账"
+      api_chain: "下载对账单→商户订单表比对→差异→查询订单确认"
+      data_coupling: "out_trade_no是双向关联的键"
+
+# ============================================
+# Part 6: API依赖矩阵
+# 哪些API必须在前置API调用成功后才能调用
+# ============================================
+api_dependency_matrix:
+  description: "API调用前提条件的矩阵，标注「必须先调谁」"
+
+  matrix:
+    - downstream_api: "查询订单/关闭订单"
+      requires: "统一下单(已调用)"
+      requires_params: "out_trade_no"
+      note: "必须先有订单才能查/关"
+
+    - downstream_api: "申请退款"
+      requires: "查询订单(支付成功)"
+      requires_params: "transaction_id + total_fee"
+      note: "必须确认支付成功且获取微信订单号"
+
+    - downstream_api: "撤销订单(reverse)"
+      requires: "付款码支付"
+      requires_params: "transaction_id OR out_trade_no"
+      note: "仅付款码支付场景可用，7天内"
+
+    - downstream_api: "单次分账"
+      requires: "查询订单(支付成功) + 添加接收方(已添加)"
+      requires_params: "transaction_id"
+      note: "需确保transaction_id来自支付成功的订单"
+
+    - downstream_api: "分账回退"
+      requires: "单次分账(已完成)"
+      requires_params: "order_id"
+      note: "需确认分账已完成且order_id有效"
+
+    - downstream_api: "完结分账"
+      requires: "单次分账(所有分账完成)"
+      requires_params: "transaction_id + out_order_no"
+      note: "完结后不可再分账"
+
+    - downstream_api: "查询退款"
+      requires: "申请退款(已调用)"
+      requires_params: "refund_id OR out_refund_no OR transaction_id OR out_trade_no"
+      note: "四种方式至少提供一种"
+
+# ============================================
+# Part 7: 设计开发要点
+# ============================================
+design_dev_checklist:
+  description: "集成微信支付时的关键设计和技术注意点"
+
+  key_points:
+    - category: "安全"
+      items:
+        - "API密钥绝对不能出现在前端代码中"
+        - "二次签名（paySign）必须在后端完成，不能前端签名"
+        - "notify_url建议使用HTTPS，数据校验必须包括签名验证"
+        - "total_fee必须以分为单位（整数），避免浮点数精度问题"
+        - "金额计算全部后端完成，前端仅展示"
+
+    - category: "可靠性"
+      items:
+        - "必须实现通知接收+主动查询双重结果确认"
+        - "异步通知处理必须幂等（防止重复发货）"
+        - "out_trade_no全生命周期唯一，不可复用"
+        - "prepay_id有2小时有效期，过期需重新获取"
+        - "H5支付的mweb_url有Referer限制，需在商户平台配置白名单"
+
+    - category: "用户体验"
+      items:
+        - "前端JS回调仅用于UI优化，不可作为是否发货的依据"
+        - "支付成功页面需提供主动刷新/查询入口"
+        - "Native支付页面建议前端轮询查单（每2-3秒）"
+        - "付款码支付建议30秒内完成轮询+撤销决策"
+
+    - category: "分账特有"
+      items:
+        - "分账前必须先添加接收方（需审核）"
+        - "分账后不可直接退款，需先回退分账→完结→退款"
+        - "最大分账比例由商户超管设置，分账金额不能超限"
+        - "完结分账后剩余资金自动解冻，不可再发起分账"
+
+    - category: "已废弃/迁移"
+      items:
+        - "现金红包：新商户不可用，建议迁移V3商家转账"
+        - "代金券/立减：已完全迁移V3"
+        - "付款到银行卡：新商户不可用"
+        - "V2整体趋势：微信官方逐步引导商户迁移至V3"
+
+# ============================================
+# 增量学习配置
+# ============================================
+incremental_config:
+  suggested_next_topics:
+    - "微信支付V3 API对比学习（API V3是未来方向）"
+    - "服务商模式下子商户关联场景（服务商统一下单sub_mch_id）"
+    - "刷脸支付完整API文档学习（wiki/doc/wxfacepay/）"
+    - "委托代扣/免密支付场景学习"
+    - "报关接口详细文档学习"
+    - "退款异常处理：退款到银行卡失败→转账"
+  auto_learning_rules:
+    - rule: "当用户询问微信支付场景中的API调用顺序时，自动参考本文件的scenario层"
+    - rule: "当BA设计涉及支付流程时，自动匹配对应子场景的接口调度链"
+    - rule: "当FD实现支付功能时，按api_dependency_matrix检查依赖关系"

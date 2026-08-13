@@ -1,0 +1,199 @@
+# ============================================
+# Sprint计划 — AI-SCRM v1.0.0
+# SM Agent 产出（sprint-planning-standards.yml）
+# 拆解策略：模块闭环（每个Sprint交付1-2个完整模块）
+# ============================================
+
+version: "1.0.0"
+project: "AI-SCRM"
+created: "2026-07-18"
+owner: "sm-agent"
+total_sprints: 6
+total_weeks: 12
+sprint_duration: "2周"
+
+# ============================================
+# Sprint定义
+# ============================================
+sprints:
+  - id: "Sprint-1"
+    name: "双系统骨架"
+    week: "Week 1-2"
+    goal: "双系统可独立访问，工作台可展示核心KPI"
+    strategy: "MVP"
+    backlog_items: ["PBL-001", "PBL-002", "PBL-003"]
+    definition_of_done:
+      - "租户登录→租户工作台可达"
+      - "运营登录→运营工作台可达"
+      - "工作台KPI卡片渲染"
+      - "npm run dev 可运行"
+      - "代码通过Lint检查"
+    dependencies: []
+    risks:
+      - "双系统路由设计复杂度"
+
+  - id: "Sprint-2"
+    name: "客户管理 + 沟通中心"
+    week: "Week 3-4"
+    goal: "租户可管理客户、进行统一沟通"
+    strategy: "模块闭环"
+    backlog_items: ["PBL-004", "PBL-005"]
+    definition_of_done:
+      - "客户CRUD全流程可走通"
+      - "客户分群+标签可用"
+      - "沟通工作台可发送消息"
+      - "沟通记录可查询"
+      - "契约测试通过"
+    dependencies:
+      - from: "PBL-004"
+        to: "PBL-001"
+        type: "data"
+      - from: "PBL-005"
+        to: "PBL-004"
+        type: "scenario"
+
+  - id: "Sprint-3"
+    name: "SOP引擎 + 待办任务"
+    week: "Week 5-6"
+    goal: "SOP流程可编排、任务可分配追踪"
+    strategy: "模块闭环"
+    backlog_items: ["PBL-006", "PBL-007"]
+    definition_of_done:
+      - "SOP模板库≥5个"
+      - "可视化编排器可用"
+      - "自动执行引擎运行"
+      - "待办CRUD+日历视图"
+      - "SOP执行报告生成"
+    dependencies:
+      - from: "PBL-006"
+        to: "PBL-004"
+        type: "data"
+      - from: "PBL-006"
+        to: "PBL-005"
+        type: "data"
+      - from: "PBL-007"
+        to: "PBL-006"
+        type: "scenario"
+
+  - id: "Sprint-4"
+    name: "运营后台商业引擎"
+    week: "Week 7-8"
+    goal: "运营后台可管理租户、配置版本、查看营收"
+    strategy: "模块闭环"
+    backlog_items: ["PBL-008", "PBL-009", "PBL-010", "PBL-011"]
+    definition_of_done:
+      - "租户CRUD+健康度评分"
+      - "版本矩阵+定价配置"
+      - "订单+退款+发票"
+      - "营收分析看板"
+    dependencies:
+      - from: "PBL-008"
+        to: "PBL-001"
+        type: "data"
+      - from: "PBL-009"
+        to: "PBL-008"
+        type: "data"
+      - from: "PBL-010"
+        to: "PBL-009"
+        type: "scenario"
+      - from: "PBL-011"
+        to: "PBL-010"
+        type: "data"
+
+  - id: "Sprint-5"
+    name: "AI智能体 + 数据看板 + 系统设置"
+    week: "Week 9-10"
+    goal: "AI智能体集成、数据看板可用、系统设置完善"
+    strategy: "混合"
+    backlog_items: ["PBL-012", "PBL-013", "PBL-016", "PBL-017"]
+    definition_of_done:
+      - "AI智能回复可用"
+      - "AI自动处理链可用"
+      - "AI用量统计+计费"
+      - "数据看板三板块"
+      - "行业模板可切换"
+    dependencies:
+      - from: "PBL-012"
+        to: "PBL-005"
+        type: "component"
+      - from: "PBL-012"
+        to: "PBL-006"
+        type: "component"
+      - from: "PBL-013"
+        to: "PBL-012"
+        type: "data"
+      - from: "PBL-016"
+        to: "PBL-004"
+        type: "data"
+
+  - id: "Sprint-6"
+    name: "权限 + 移动H5"
+    week: "Week 11-12"
+    goal: "权限体系完善、移动H5核心功能可用"
+    strategy: "混合"
+    backlog_items: ["PBL-014", "PBL-015"]
+    definition_of_done:
+      - "RBAC三级角色可用"
+      - "数据域权限生效"
+      - "字段级权限生效"
+      - "移动H5客户+待办+通知"
+      - "全链路契约测试通过"
+    dependencies:
+      - from: "PBL-014"
+        to: "PBL-004"
+        type: "data"
+      - from: "PBL-015"
+        to: "PBL-004"
+        type: "component"
+      - from: "PBL-015"
+        to: "PBL-005"
+        type: "component"
+      - from: "PBL-015"
+        to: "PBL-007"
+        type: "component"
+
+# ============================================
+# Sprint依赖图（关键路径）
+# ============================================
+critical_path:
+  - "Sprint 1 → Sprint 2 → Sprint 3 → Sprint 6"
+  - "Sprint 1 → Sprint 4 → Sprint 5 → Sprint 6"
+  parallel_tracks:
+    - track_tenant: "Sprint 2 → Sprint 3 → Sprint 5(AI) → Sprint 6(权限+移动)"
+    - track_operator: "Sprint 4 → Sprint 5(用量+数据)→ Sprint 6(并行)"
+
+# ============================================
+# DoD（完成定义）全局标准
+# ============================================
+global_dod:
+  - "代码通过ESLint+TypeScript类型检查"
+  - "npm run dev 可运行"
+  - "相关契约测试通过（vitest run tests/contract-consistency/）"
+  - "相关单元测试通过"
+  - "CR完成（至少1人Review）"
+  - "SM Sprint Review通过"
+
+# ============================================
+# 风险登记
+# ============================================
+risks:
+  - id: "RSK-001"
+    description: "Coze/火山API文档变更导致AI集成延期"
+    impact: "Sprint 5"
+    mitigation: "提前对接API沙箱，预留2天buffer"
+    severity: "中"
+  - id: "RSK-002"
+    description: "双系统权限体系实现复杂度过高"
+    impact: "Sprint 6"
+    mitigation: "先实现RBAC+数据域，字段级权限P2降级"
+    severity: "中"
+  - id: "RSK-003"
+    description: "移动H5适配工作量超出预估"
+    impact: "Sprint 6"
+    mitigation: "MVP仅覆盖客户+待办+通知，其余P4"
+    severity: "低"
+  - id: "RSK-004"
+    description: "4行业模板需要行业专家参与验证"
+    impact: "Sprint 5"
+    mitigation: "Sprint 1启动行业专家调研"
+    severity: "中"

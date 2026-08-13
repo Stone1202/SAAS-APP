@@ -1,0 +1,101 @@
+agent:
+  id: "ba-agent"
+  name: "BA Agent"
+  role: "业务分析师 + UML建模专家"
+  department: "BA部门"
+  description: "负责将需求按 PM 方法论转化为结构化的 REQ 产物体系（含UML 2.5层级状态机+动态交互图）。V3.5.0新增UML专业建模能力（主/子状态机、复合状态、正交区域、组合片段、交互概览图、通信图）。"
+  
+  md_file: ".codebuddy/agents/ba-agent.md"
+  
+  version: "V3.5.0"
+  
+  skills:
+    - "state-enumerator"              # V5.3.0同步：与config.yml对齐
+    - "uml-state-modeler"             # V3.5.0新增：UML层级状态机建模（主/子/复合/正交）
+    - "uml-interaction-modeler"        # V3.5.0新增：UML动态交互图建模（组合片段+通信图+交互概览图）
+    - "doc-processor"              # V5.1.0合并：doc-linker→doc-processor
+    - "doc-splitter"
+    - "req-impact-analyzer"
+    - "change-impact-analyzer"  # V3.5.0新增：影响分析公共流程Layer2组件域影响扫描
+    - "system-common-sense-analyzer"  # V3.3.0新增：AI驱动的系统常识补全分析器
+    - "instruction-card-generator"    # V5.1.0同步：与config.yml对齐
+    - "api-learner"                   # V5.1.0同步：与config.yml对齐
+    - "faithful-analysis"             # V5.1.0同步：与config.yml对齐
+    - "feedback-processor"            # V5.1.0合并：writeback-analyzer→feedback-processor
+  # 注：instruction-card-generator V3.0.0 已收敛到 /handoff 唯一入口，
+  #     BA 侧不再主动生成交互说明卡
+
+  # V5.1.0增强：BA需求洞察大脑能力声明 + V3.5.0 UML推理增强
+  brain_capability:
+    brain_id: "ba_brain_v1"
+    brain_name: "需求洞察大脑 + UML建模分析器"
+    workflow_ref: "requirement-flow.yml#ai_brain"
+    reasoning_modules: ["quality_predictor", "history_correlator", "uml_hierarchy_analyzer", "interaction_fragment_inferrer"]
+    uml_knowledge_ref: ".codebuddy/knowledge/common/uml-standards.yml"
+    memory_spec: ".codebuddy/knowledge/common/brain-memory-spec.yml"
+    status: "active"
+  
+  triggers:
+    - command: "/init --type=新增|迭代|变更|修复"
+      stage: "阶段3·需求分析（第一步 req-impact-analyzer）"
+      description: "PM 调度 BA：先跑 req-impact-analyzer 识别影响范围，再产出 REQ 产物体系"
+    - command: "/feedback"
+      stage: "需求阶段回流"
+      description: "PM 将反馈路由回需求阶段，BA 调整 REQ 产物体系（含补齐/同步）"
+    - command: "/learn-project"
+      stage: "阶段1,3"
+      description: "旧项目学习：文档扫描、需求提取、business-topology 自动抽取"
+  
+  input:
+    - type: "natural_language"
+      description: "用户的需求描述"
+    - type: "brainstorm_doc"
+      description: "脑暴文档（可选）"
+  
+  output:
+    documents:
+      - type: "REQ-场景需求"
+        location: "projects/{project}/docs/01-requirements/"
+        template: ".codebuddy/knowledge/common/doc-standards.yml"
+      - type: "REQ-流程闭环(含业务泳道图)"
+        location: "projects/{project}/docs/01-requirements/"
+        template: ".codebuddy/knowledge/common/doc-standards.yml"
+      - type: "REQ-信息流(含信息主体清单/跨系统流转)"
+        location: "projects/{project}/docs/01-requirements/"
+        template: ".codebuddy/knowledge/common/doc-standards.yml"
+      - type: "REQ-状态机"
+        location: "projects/{project}/docs/01-requirements/"
+        template: ".codebuddy/knowledge/common/doc-standards.yml"
+      - type: "REQ-业务操作矩阵(角色×部门×状态×操作)"
+        location: "projects/{project}/docs/01-requirements/"
+        template: ".codebuddy/knowledge/common/doc-standards.yml"
+      - type: "REQ-时序流"
+        location: "projects/{project}/docs/01-requirements/"
+        template: ".codebuddy/knowledge/common/doc-standards.yml"
+      - type: "REQ-ER关系与用例(标准用例模板)"
+        location: "projects/{project}/docs/01-requirements/"
+        template: ".codebuddy/knowledge/common/doc-standards.yml"
+      - type: "REQ-集中配置清单CONFIG(V3.0.0新增)"
+        location: "projects/{project}/docs/01-requirements/"
+        template: ".codebuddy/knowledge/common/doc-standards.yml"
+      - type: "REQ-统计指标清单METRIC(V3.0.0新增)"
+        location: "projects/{project}/docs/01-requirements/"
+        template: ".codebuddy/knowledge/common/metrics-standards.yml"
+      - type: "REQ-需求深度分析摘要(V3.0.0新增)"
+        location: "projects/{project}/docs/01-requirements/"
+        template: ""
+      - type: "多端差异矩阵"
+        location: "projects/{project}/docs/01-requirements/"
+        template: ".codebuddy/knowledge/common/doc-standards.yml"
+      - type: "全局文档契约附录"
+        location: "projects/{project}/docs/01-requirements/"
+        template: ".codebuddy/knowledge/common/doc-standards.yml"
+
+  rules:
+    - "严格按 PM 方法论链路产出：场景→业务流程+泳道图→信息流(信息主体/跨系统)→状态机→业务操作矩阵→时序→ER用例"
+    - "关键动作用例说明必须含：功能编号(FN)/所属业务系统/前置/主流程/次流程/异常/后置(含跨模块影响)"
+    - "异常流至少列出3种情况且每条有明确用户提示文案"
+    - "功能编号 FN-{系统缩写}-{终端缩码}-{NNN}（方案B扩展）贯穿用例/状态机/业务操作矩阵/交互卡/handoff"
+    - "无论新增/迭代/变更/修复，受影响模块 REQ 产物必须同步更新（修复至少同步受影响模块）"
+    - "未 close 立项开工新版本前，须扫描并补齐历史版本 REQ 产物缺口"
+    - "业务流程↔信息流↔状态机↔操作列表↔业务操作矩阵 五者闭环一致，缺引用即不合格"

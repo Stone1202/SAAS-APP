@@ -1,0 +1,728 @@
+# ============================================
+# Workflow: dev-change-flow（开发中实时变更回传）
+# 版本: v1.1.0
+# 创建日期: 2026-07-24
+# ============================================
+#
+# 定位：填补 /change 和 /fix 之间的空白——开发过程中用户临时决策导致的
+#       PRD/UX/Arch 产物偏差，不等 handoff 阶段，立即分级回流。
+#
+# 与 /change 的关键差异：
+#   /change：用户主动命令 → 全流程文档更新 → 代码 → 回归 → handoff → close（正式）
+#   dev-change：AI 被动感知 → 复杂度分级 → 影响面扫描 → 选择性增量回流（实时）
+#
+# V1.1.0 核心增强（2026-07-24）：
+#   1. 新增「变更包协议」——结构化BA_PACKET/UX_PACKET/ARCH_PACKET，
+#      将模糊的"通知Agent更新"变为精确的"文件级可执行编辑指令"
+#   2. 变更包可直接被 Agent 消费，完成实际的PRD/设计文档/契约文件级编辑
+#   3. 变更包贯穿 L1/L2/L3 三级，确保每次回流都有明确的文件变更目标
+#   4. V1.0.0 的"ba-agent增量更新UC六段"←只说做什么不说怎么做
+#      V1.1.0 的 BA_PACKET ←精确到"PRD.md §X.Y段落，old→new"
+#
+# 变更包协议（Change Packet Protocol）：
+#   每次 dev-change 必须生成对应级别的变更包：
+#   - L1：仅 RECORD_PACKET（日志级，不产生文件编辑）
+#   - L2：BA_PACKET + UX_PACKET + ARCH_PACKET（选择性，按需）
+#   - L3：BA_PACKET + UX_PACKET + ARCH_PACKET（完整，全部生成）
+#   
+#   变更包结构：
+#   BA_PACKET: 精确指向PRD中哪个UC/BR/状态机/ENT/CONFIG/METRIC的哪个字段，
+#              包含old_content和new_content，可直接用于replace_in_file编辑
+#   UX_PACKET: 精确指向设计文档中哪个页面的哪个UI元素的哪个属性，
+#              包含old和new值，可直接编辑设计文档
+#   ARCH_PACKET: 精确指向哪个契约文件/路由文件/ENT文件的哪个字段，
+#               包含old和new值，可直接编辑代码文件
+#
+# 与 Demo 流程的关系（V1.1.0新增）：
+#   - demo-flow（stage-5.5）产生用户反馈 → 触发 dev-change-flow
+#   - 反馈经过增强的AI识别（自然语言→结构化变更）→ 生成变更包
+#   - BA/UX/Arch 消费变更包 → 增量编辑文档 → FD增量修改代码
+#   - Demo 重新执行 → 循环收敛直到无反馈
+#
+# 核心设计原则：
+#   1. AI 在原型开发中持续监听用户决策，主动识别与 PRD/设计文档/契约的偏差
+#   2. 偏差按复杂度分 3 级（L1/L2/L3），不同级别不同回流路径
+#   3. 不要求用户输入命令，但 L2/L3 会主动展示影响范围并请求用户确认
+#   4. 回流是增量的——只更新受影响的 UC/BR/页面/契约，不重跑完整流程
+#   5. 回流结果自动记录到 PRD 的「handoff 回传区」和 JOURNAL
+#   6. 所有决策留痕（变更原因+时间+确认人），供 handoff 阶段溯源
+#   7. 【V1.1.0新增】变更必须产出结构化变更包，不支持空泛的"通知XX更新XX"
+#
+# 触发条件（4 种）：
+#   a) 用户说"把 X 改成 Y"——直接变更意图
+#   b) 原型实现与 PRD 描述不一致——AI 主动比对发现
+#   c) 用户跳过某个 PRD 要求的交互而自行实现——实现偏差
+#   d) 用户说"这个先这么做，后续再改"——显式临时决策
+#   e) 【V1.1.0新增】Demo验收中的用户反馈——自然语言→结构化变更
+#
+# 复杂度分级：
+#   L1 局部调整：改文案/样式/组件变体/字段名         → 自动记录，不中断
+#   L2 单域变更：改交互模式/入口/数据字段/新增状态     → AI 扫描影响面 + 用户确认
+#   L3 跨域流程：增删 UC/改业务流程/改状态机/改契约    → mini 需求分析循环
+#
+# 与现有流程的关系：
+#   - L3 复用 demand-impact-fusion-flow lite/standard 模式做影响分析
+#   - L2/L3 的变更包直接写入各 Agent 的输出文件
+#   - handoff 阶段（G-CLOSE-07）校验回传区变更已被各 Agent 确认
+#   - demo-flow（stage-5.5）产出用户反馈 → dev-change-flow 消费并回流
+#   - 回流产物供 knowledge-sedimentation 做跨版本经验提炼
+# ============================================
+
+workflow:
+  id: "dev-change-flow"
+  name: "开发中实时变更回传流程（V1.1.0）"
+  version: "1.1.0"
+  trigger_mode: "auto_detect"   # AI 被动感知，非用户命令触发
+  owner: "fd-agent"
+  coordinator: "pm-agent"
+  reflow_targets: ["ba-agent", "ux-agent", "arch-agent"]
+
+  # ============================================
+  # 阶段 0：变更捕获 & 复杂度分级
+  # ============================================
+  stage_0_detect:
+    id: "D0"
+    name: "变更捕获与复杂度分级"
+    auto_trigger: true
+    owner: "fd-agent"
+    steps:
+      - id: "D0.1"
+        action: "AI检测用户决策"
+        mechanism: |
+          FD开发过程中，AI持续监听以下模式：
+          - 用户明确说"改成XX"、"不要YY了"、"先这样"
+          - FD实现的代码与PRD描述不一致（组件类型/交互模式/入口方式/数据字段）
+          - FD实现的代码与UX设计文档不一致（布局/颜色/尺寸/交互细节）
+          - FD实现的代码与Arch契约不一致（接口字段/Schema/状态机事件）
+          以上任一触发时，立即暂停开发，进入 D0.2。
+        
+      - id: "D0.2"
+        action: "提取变更内容"
+        output:
+          what_changed: "变更了哪个FN/页面/组件/字段的什么内容"
+          original: "PRD/UX/Arch中的原始定义"
+          current: "当前实现或用户最新的决策"
+          user_reason: "用户给出的变更原因（如有）"
+          decision_type: "explicit_change | implicit_deviation | temp_decision"
+
+      - id: "D0.3"
+        action: "复杂度分级"
+        logic:
+          # 复杂度矩阵：变更深度 × 波及广度
+          # 深度：components(组件) < interaction(交互) < data(数据) < state(状态) < flow(流程) < contract(契约)
+          # 广度：1页 < 2-3页 < 1终端全部 < 跨终端
+          
+          L1_criteria:
+            depth: ["components"]          # 改组件类型/样式/文案
+            breadth: ["1_page"]           # 只影响 1 个页面
+            uc_impact: 0                  # 不触发UC变更
+            description: "局部调整——改文案、样式、组件变体、图标"
+            action: "AUTO_RECORD"         # 自动记录，不中断
+            
+          L2_criteria:
+            depth: ["interaction", "data"] # 改交互模式/入口/数据字段
+            breadth: ["1-3_pages"]        # 影响 1-3 个页面
+            uc_impact: "1-3"              # 影响 1-3 个 UC
+            description: "单域变更——改入口交互、增删字段、改状态展示"
+            action: "SCAN_AND_CONFIRM"    # AI扫描影响面 + 用户确认
+            
+          L3_criteria:
+            depth: ["state", "flow", "contract"] # 改状态机/业务流程/契约
+            breadth: ["multi_page_or_terminal"]   # 多页或跨终端
+            uc_impact: "3+"              # 影响 3+ UC 或增删 UC
+            description: "跨域流程变更——增删UC、改业务流程、改状态机、改契约"
+            action: "FUSION_MINI_CYCLE"   # 触发 mini 需求分析循环
+
+        # 特殊情况：用户显式说"先这么做，后续再改"
+        special_temp_decision:
+          trigger: "用户明确表达临时决策（'先这样'、'后续再改'、'暂时'）"
+          action: "记录为 temp_deviation，标注预计修复版本，L2/L3 降为 L1 自动记录"
+
+      - id: "D0.4"
+        action: "根据分级决定下一步"
+        routing:
+          L1: "→ D1.1（直接记录回传，不中断用户）"
+          L2: "→ D2.1（展示影响面，等待用户确认范围后回流）"
+          L3: "→ D3.1（触发 mini 需求分析循环）"
+
+  # ============================================
+  # 变更包协议（V1.1.0核心新增）
+  # ============================================
+  # 
+  # 定位：将模糊的"通知Agent更新XX"转化为精确的"文件级可执行编辑指令"。
+  # 每个变更包直接映射到实际文件的某一段落/某个字段，
+  # Agent 收到变更包后，可立即对文件执行 replace_in_file 完成增量编辑。
+  #
+  # 变更包生命周期：
+  #   1. 生成：D0阶段AI提取变更内容后，立即生成对应级别的变更包
+  #   2. 校验：变更包必须通过字段完整性检查（必需字段不可为空）
+  #   3. 消费：各Agent收到变更包后，执行文件编辑操作
+  #   4. 确认：编辑完成后，更新变更包状态为CONSUMED
+  #   5. 归档：变更包写入PRD §19 handoff回传区 + JOURNAL
+  #
+  # 变更包 - Agent 映射：
+  #   BA_PACKET  → ba-agent   → 编辑 PRD.md（UC/BR/状态机/ENT/CONFIG/METRIC段落）
+  #   UX_PACKET  → ux-agent   → 编辑 设计文档.md（页面/组件/交互规范段落）
+  #   ARCH_PACKET → arch-agent → 编辑 .ts 契约文件或确认无变化
+  # ============================================
+  change_packet_protocol:
+    version: "1.0.0"
+    description: |
+      结构化变更包协议——每次 dev-change 必须产出至少一个变更包。
+      变更包是"AI识别到的变更→Agent实际编辑文件"之间的桥梁。
+      
+      核心原则：变更包必须精确到"文件的哪个段落的哪个字段从old变成new"，
+      不允许空泛的"更新UC的六段内容"——必须指明是"UC-AUDIT-001的基本流程步骤3"。
+    
+    # ---- BA_PACKET：需求文档变更包 ----
+    ba_packet:
+      target: "ba-agent"
+      output_file: "projects/{project}/docs/01-requirements/{模块}-PRD-{版本}.md"
+      
+      structure:
+        required_fields:
+          - field: "packet_id"
+            description: "唯一标识，格式 CP-BA-{YYMMDD}-{序号}"
+          - field: "change_type"
+            description: "变更类型枚举"
+            enum:
+              - "uc_update"         # 更新已有UC的六段内容
+              - "uc_add"            # 新增UC（含完整六段）
+              - "uc_remove"         # 作废UC（标记deprecated不删除）
+              - "br_update"         # 更新业务规则
+              - "br_add"            # 新增业务规则
+              - "state_machine_update"  # 更新状态机+过渡操作表
+              - "ent_field_change"  # 数据实体字段变更
+              - "config_add"        # CONFIG新增项
+              - "metric_add"        # METRIC新增项
+              - "description_sync"  # 描述性同步（无结构性变更，仅统一描述）
+          
+          - field: "affected_objects"
+            description: "受影响的PRD对象列表"
+            format:
+              - type: "UC | BR | ENT | CONFIG | METRIC | 状态机"
+                id: "对象编号"
+                section: "PRD中的章节号"
+          
+          - field: "edits"
+            description: "精确编辑指令列表——每个edit可直接映射到replace_in_file调用"
+            format:
+              - target_section: "PRD §X.Y.Z（如 §4.2.1.3 基本流程-步骤3）"
+                edit_type: "replace | insert_after | insert_before | delete"
+                old_content: "原文内容（用于replace_in_file的old_str）"
+                new_content: "新内容（用于replace_in_file的new_str）"
+                reason: "变更原因（用户反馈/交互偏差/...）"
+          
+          - field: "dependency_check"
+            description: "变更的连锁影响——此变更是否要求其他段落同步调整"
+            format:
+              - target: "PRD §X.Y.Z"
+                reason: "为什么需要同步调整"
+                auto_applied: "是/否（AI可自动处理还是需人工判断）"
+        
+        quality_gates:
+          - "每个edit必须有old_content和new_content（不可为空）"
+          - "affected_objects必须引用实际存在的PRD对象编号"
+          - "dependency_check中的auto_applied=是时，必须在同一packet中提供对应edit"
+      
+      # 示例：弹窗→Switch的BA_PACKET
+      example_L2:
+        packet_id: "CP-BA-240724-001"
+        change_type: "uc_update"
+        affected_objects:
+          - type: "UC"
+            id: "UC-AUDIT-PC-001"
+            section: "§4.2.1"
+          - type: "BR"
+            id: "BR-AUDIT-018"
+            section: "§5.4"
+        edits:
+          - target_section: "§4.2.1 UC-AUDIT-PC-001 基本流程-步骤3"
+            edit_type: "replace"
+            old_content: |
+              步骤3：[手动] 运营人员点击「开启审查」按钮，弹出确认弹窗，显示「确认开启/取消」
+            new_content: |
+              步骤3：[手动] 运营人员将审查开关Switch切换至ON状态，系统立即生效，无需弹窗确认
+            reason: "用户决策：弹窗确认改为Switch直切，减少操作步骤"
+          - target_section: "§4.2.1 UC-AUDIT-PC-001 备选流程-关闭审查"
+            edit_type: "replace"
+            old_content: |
+              备选流程A（关闭审查）：用户在弹窗中点击「确认关闭」→ 触发审查关闭清理链（BR-AUDIT-018）
+            new_content: |
+              备选流程A（关闭审查）：用户将Switch切换至OFF状态→ 系统立即触发审查关闭清理链（BR-AUDIT-018），清理所有正在进行中的审查任务
+            reason: "交互模式从弹窗确认变为Switch直切，关闭流程同步调整"
+          - target_section: "§5.4 BR-AUDIT-018 审查关闭清理链"
+            edit_type: "replace"
+            old_content: |
+              触发条件：用户在弹窗中点击「确认关闭」且确认操作完成
+            new_content: |
+              触发条件：审查开关Switch从ON切换为OFF状态
+            reason: "交互模式变更，触发条件从弹窗确认事件变为Switch状态变更事件"
+        dependency_check:
+          - target: "§4.2.1 UC-AUDIT-001 后置条件"
+            reason: "后置条件不再需要'弹窗确认'环节"
+            auto_applied: "是"
+    
+    # ---- UX_PACKET：设计文档变更包 ----
+    ux_packet:
+      target: "ux-agent"
+      output_file: "projects/{project}/docs/03-design/{模块}-设计文档-{版本}.md"
+      
+      structure:
+        required_fields:
+          - field: "packet_id"
+            description: "唯一标识，格式 CP-UX-{YYMMDD}-{序号}"
+          - field: "change_type"
+            enum:
+              - "component_replace"    # 组件级替换（弹窗→Switch、下拉→单选组）
+              - "layout_adjust"        # 布局调整（侧滑→独立页、单列→双列）
+              - "interaction_flow"     # 交互流程变更（新增步骤/减少步骤）
+              - "visual_spec"          # 视觉规范变更（颜色/间距/字体）
+              - "new_page"             # 新增页面设计
+              - "page_remove"          # 移除页面
+          
+          - field: "affected_pages"
+            format:
+              - page_id: "PG-{系统}-{终端}-{NNN}"
+                section: "设计文档中的章节号"
+          
+          - field: "ui_elements"
+            description: "涉及的UI元素变更"
+            format:
+              - element_id: "元素编号（BTN/IPT/SW/MODAL/...）"
+                element_type: "button | input | switch | modal | drawer | select | ..."
+                change:
+                  old: "旧组件/值"
+                  new: "新组件/值"
+                layout_impact: "对页面布局的影响描述"
+          
+          - field: "design_doc_edits"
+            description: "设计文档的精确编辑位置"
+            format:
+              - target_section: "§X.Y.Z"
+                edit_type: "replace | insert_after | insert_before | delete"
+                old_content: "旧设计描述"
+                new_content: "新设计描述"
+      
+      example_L2:
+        packet_id: "CP-UX-240724-001"
+        change_type: "component_replace"
+        affected_pages:
+          - page_id: "PG-AUDIT-PC-001"
+            section: "§3.2 审查开关设置页"
+        ui_elements:
+          - element_id: "SW-AUDIT-001"
+            element_type: "switch"
+            change:
+              old: "Button组件 + Modal弹窗（确认/取消）"
+              new: "Switch开关（直接ON/OFF，无弹窗）"
+            layout_impact: "移除弹窗容器，Switch内联到页面头部操作区，减少约80px高度"
+        design_doc_edits:
+          - target_section: "§3.2.1 审查开关区域"
+            edit_type: "replace"
+            old_content: "区域包含[开启审查]按钮，点击后弹出确认弹窗"
+            new_content: "区域包含Switch开关，ON/OFF即时生效，无弹窗"
+    
+    # ---- ARCH_PACKET：架构变更包 ----
+    arch_packet:
+      target: "arch-agent"
+      output_files:
+        - "src/contracts/{domain}.ts"      # Zod契约文件
+        - "src/router/index.ts"            # 路由配置
+        - "src/types/{module}.ts"          # 类型定义
+      
+      structure:
+        required_fields:
+          - field: "packet_id"
+            description: "唯一标识，格式 CP-ARCH-{YYMMDD}-{序号}"
+          - field: "change_type"
+            enum:
+              - "no_change"              # 确认无变化（L2常见）
+              - "schema_field"           # 契约Schema字段变更
+              - "state_event"            # 状态机事件变更
+              - "route_change"           # 路由变更
+              - "type_definition"        # 类型定义变更
+              - "new_contract"           # 新增契约
+          
+          - field: "affected_files"
+            format:
+              - file: "完整文件路径"
+                change_description: "变更描述"
+          
+          - field: "code_edits"
+            description: "代码文件的精确编辑位置"
+            format:
+              - target_file: "完整路径"
+                target_location: "函数/接口/字段名称（用于定位）"
+                old_code: "旧代码片段（用于replace_in_file）"
+                new_code: "新代码片段（用于replace_in_file）"
+      
+      example_L2:
+        packet_id: "CP-ARCH-240724-001"
+        change_type: "no_change"
+        affected_files: []
+        code_edits: []
+        note: "L2单域变更（弹窗→Switch）不触及契约层，Arch确认无变化即可"
+
+  # ============================================
+  # 阶段 1：L1 自动记录（无感知）
+  # ============================================
+  stage_1_L1_auto:
+    id: "D1"
+    name: "L1 局部调整自动记录"
+    trigger: "D0.4 → L1"
+    owner: "fd-agent"
+    
+    steps:
+      - id: "D1.1"
+        action: "写入手回传区"
+        target: "PRD §19 handoff回传区"
+        format: |
+          ### [L1-AUTO] {变更摘要} | {日期时间}
+          - **变更内容**: {原始} → {当前}
+          - **影响范围**: {页面/FN编号}
+          - **影响Agent**: {BA/UX/Arch 中受影响的}
+          - **用户原因**: {用户给出的原因或推断原因}
+          - **AI判定**: L1，无需额外处理
+
+      - id: "D1.2"
+        action: "判断归属并通知"
+        logic: |
+          变更内容属于：
+          - 文案/规则 → 通知 BA（仅记录，不要求重跑）
+          - 组件/样式/布局 → 通知 UX（仅记录，不要求重跑）
+          - 字段/Schema → 通知 Arch（仅记录，不要求重跑）
+          通知方式：写入各 Agent 的待办列表，handoff 时校验是否已确认
+
+      - id: "D1.3"
+        action: "恢复开发"
+        note: "不中断用户，继续当前开发任务"
+
+  # ============================================
+  # 阶段 2：L2 单域变更（AI扫描+用户确认+选择性回流）
+  # ============================================
+  stage_2_L2_selective:
+    id: "D2"
+    name: "L2 单域变更影响面扫描与选择性回流"
+    trigger: "D0.4 → L2"
+    owner: "fd-agent"
+    coordinator: "pm-agent"
+
+    steps:
+      - id: "D2.1"
+        action: "影响面快速扫描"
+        mechanism: "复用 demand-impact-fusion-flow Layer2 lite 模式"
+        scan_dimensions:
+          - dimension: "UC级别"
+            query: "哪些 UC 的基本流程/备选流程/前置条件/后置条件受此变更影响？"
+          - dimension: "BR级别"
+            query: "哪些 BR 的触发条件/行为描述与此变更相关？"
+          - dimension: "页面级别"
+            query: "哪些页面（含未实现页面）的交互/布局依赖此变更的入口？"
+          - dimension: "状态机级别"
+            query: "此变更是否引入新状态/新事件/新过渡？（L2通常无，但需确认）"
+          - dimension: "契约级别"
+            query: "此变更是否影响 ENT 字段/API 入参出参/状态机事件？"
+        
+        output:
+          affected_fns: ["FN-{系统}-{终端}-{NNN}"]
+          affected_ucs: ["UC-{系统}-{终端}-{NNN}"]
+          affected_brs: ["BR-{系统}-{NNN}"]
+          affected_pages: ["PG-{系统}-{终端}-{NNN}"]
+          affected_ents: ["ENT-{系统}-{NNN}"]
+          affected_state_machines: ["状态机名称"]
+          cross_terminal_risk: "none | low | medium | high"
+          impact_summary: "1-2句话总结影响面"
+
+      - id: "D2.2"
+        action: "展示影响面给用户"
+        display_format: |
+          ⚠️ **你的变更「{变更摘要}」可能影响以下产物：**
+          
+          | 产物类型 | 受影响项 | 变更描述 |
+          |---------|---------|---------|
+          | UC | {affected_ucs} | {变更描述} |
+          | BR | {affected_brs} | {变更描述} |
+          | 页面 | {affected_pages} | {变更描述} |
+          | ENT | {affected_ents} | {变更描述} |
+          
+          **建议回流**：
+          ① BA更新 {X}个UC 和 {Y}条BR
+          ② UX更新 {Z}个页面的设计规范
+          ③ Arch确认 ENT/状态机无变化
+          
+          **你的选择**：
+          - `确认全部回流` → 执行①②③
+          - `仅回流BA` → 只执行①
+          - `仅记录，handoff时再改` → 写入回传区，不中断
+          - `这不是偏差，PRD本身就错了` → 标记为PRD缺陷，走/fix
+
+        user_action: "required"  # 必须用户确认
+
+      - id: "D2.3"
+        action: "生成变更包并执行选择性回流"
+        based_on: "D2.2用户选择"
+        change_packet_generation:
+          mandatory: true  # V1.1.0强制要求
+          rules:
+            - "每次 L2 变更必须生成 BA_PACKET（如影响UC/BR）+ UX_PACKET（如影响页面）"
+            - "ARCH_PACKET 在 L2 通常是 no_change 类型（需显式确认）"
+            - "变更包必须通过字段完整性检查（required_fields 不可为空）"
+            - "变更包中的 edits 必须精确到 PRD/设计文档的具体段落"
+        reflow_branches:
+          full_reflow:
+            actions:
+              - target: "ba-agent"
+                task: "消费 BA_PACKET → 对PRD文件执行replace_in_file编辑 → 验证编辑后PRD通过G-REQ-17"
+                validate: "编辑后PRD中引用对象编号一致（UC/BR/CONFIG/METRIC）+ 章节顺序不变"
+              - target: "ux-agent"
+                task: "消费 UX_PACKET → 对设计文档执行replace_in_file编辑 → 更新元素编号体系"
+                validate: "设计文档中UI元素编号体系完整（PG/BTN/IPT/MODAL...）"
+              - target: "arch-agent"
+                task: "消费 ARCH_PACKET → 如为no_change则确认无变化 → 如为其他类型则执行代码编辑"
+              - target: "fd-agent"
+                task: "根据消费后的 BA/UX 增量文档调整对应页面代码 → 确保实现与增量PRD/UX对齐"
+          ba_only:
+            actions:
+              - target: "ba-agent"
+                task: "消费 BA_PACKET → 编辑PRD → UX和Arch变更标记为handoff待确认"
+          record_only:
+            actions:
+              - target: "all"
+                task: "变更包写入回传区（不执行文件编辑），标记为handoff待处理"
+          prd_defect:
+            actions:
+              - target: "pm-agent"
+                task: "创建 /fix 任务，标记为需求缺陷，变更包作为修复参考"
+
+      - id: "D2.4"
+        action: "验证与恢复"
+        checks:
+          - "回传产物已写入 PRD §19 handoff回传区"
+          - "受影响 Agent 已产出增量更新（如有）"
+          - "JOURNAL 记录了本次dev-change"
+        resume: "FD可继续开发，后续handoff校验回传区变更是否已消费"
+
+  # ============================================
+  # 阶段 3：L3 跨域流程变更（mini需求分析循环）
+  # ============================================
+  stage_3_L3_mini_cycle:
+    id: "D3"
+    name: "L3 跨域流程变更——mini需求分析循环"
+    trigger: "D0.4 → L3"
+    owner: "pm-agent"
+    coordinator: "pm-agent"
+
+    steps:
+      - id: "D3.1"
+        action: "全影响面深度扫描"
+        mechanism: "复用 demand-impact-fusion-flow Layer1（需求理解）+ Layer2（影响分析 standard模式）+ Layer3（融合分析精简版）"
+        note: |
+          L3变更的本质是"开发中发现了新的需求"，需要 mini 需求重分析。
+          但不同于完整 /init——只分析变更涉及的部分，不重跑全流程。
+        
+        具体做法：
+        ① Layer1：理解变更内容——这是新增功能还是修改现有功能？
+        ② Layer2：standard模式扫描——10维影响（模块/实体/状态机/规则/契约/信息流/CONFIG/METRIC/跨端/组件域）
+        ③ Layer3精简：三维业务融合度（流程衔接+角色权限交叉+数据流交叉）
+        
+        特殊处理：如果涉及增删UC，需要重新做UC六段定义。
+
+      - id: "D3.2"
+        action: "展示完整影响面 + 版本规划建议"
+        display_format: |
+          🔴 **这是一个跨域流程变更（L3），影响面较大：**
+          
+          **变更摘要**: {变更描述}
+          
+          **影响面矩阵**：
+          | 产物 | 受影响数 | 建议行动 |
+          |------|---------|---------|
+          | UC | {新增x/修改y/作废z} | BA完整重写六段 |
+          | BR | {x}条 | BA更新/新增 |
+          | 状态机 | {x}个 | BA+Arch联合更新 |
+          | ENT | {x}个 | Arch更新契约 |
+          | 页面 | {x}个 | UX+FD联合更新 |
+          | 契约 | {x}个 | Arch更新 |
+          | 测试用例 | {x}条 | QA补充 |
+          | CONFIG | {x}项 | BA补充 |
+          | METRIC | {x}项 | BA补充 |
+          
+          **版本规划建议**：
+          - {影响面宽度}×{影响面深度} = {综合评分}
+          - S·M（<50）建议当前版本消化
+          - L（50-80）建议纳入当前版本但调整Sprint排期
+          - XL（>80）建议拆分为独立版本
+          
+          **你的选择**：
+          - `当前版本消化` → 立即触发 BA→UX→Arch 增量重跑（不影响其他模块）
+          - `下一版本独立` → 回滚当前变更，回归PRD描述，创建Backlog条目
+          - `部分消化部分延期` → 选择哪些在当前版本，哪些延期
+
+        user_action: "required"
+
+      - id: "D3.3"
+        action: "生成完整变更包并执行增量回流（当前版本消化）"
+        condition: "用户选择「当前版本消化」或「部分消化」"
+        change_packet_generation:
+          mandatory: true
+          rules:
+            - "L3 必须生成完整BA_PACKET + UX_PACKET + ARCH_PACKET"
+            - "BA_PACKET 覆盖所有新增/修改/作废的UC六段+BR+状态机过渡操作表+CONFIG+METRIC"
+            - "UX_PACKET 覆盖所有受影响页面的设计规范"
+            - "ARCH_PACKET 覆盖所有受影响的契约/路由/类型定义"
+        sub_steps:
+          - id: "D3.3a"
+            owner: "ba-agent"
+            task: "消费 BA_PACKET → 增量编辑PRD（仅受影响UC/BR/状态机/CONFIG/METRIC段落）→ 验证G-REQ-17"
+            input: "BA_PACKET（含精确的edits列表+affected_objects+dependency_check）"
+            output: "PRD增量章节（以diff标注） + handoff回传区记录"
+          - id: "D3.3b"
+            owner: "ux-agent"
+            task: "消费 UX_PACKET → 增量编辑设计文档（仅受影响页面）→ 更新UI编号体系"
+            input: "UX_PACKET + D3.3a BA增量产出（确保设计对齐需求）"
+            output: "设计文档增量章节 + 交互跳转矩阵更新"
+          - id: "D3.3c"
+            owner: "arch-agent"
+            task: "消费 ARCH_PACKET → 编辑契约/路由/类型定义文件 → 验证G-ARCH-04"
+            input: "ARCH_PACKET + D3.3a BA增量产出"
+            output: "契约增量更新 + 架构影响声明"
+          - id: "D3.3d"
+            owner: "fd-agent"
+            task: "根据消费后的BA/UX/Arch增量文档，修改/新增受影响页面代码"
+            input: "D3.3a + D3.3b + D3.3c 的所有增量产出"
+            scope: "D3.1扫描出的受影响页面"
+        cross_check:
+          - "BA增量UC是否通过G-REQ-17（UC格式完整性）"
+          - "UX增量设计是否通过G-DES-07（设计文档完整性）"
+          - "Arch增量契约是否通过G-ARCH-04（Zod契约完整性）"
+          - "FD代码是否与增量PRD/UX/Arch对齐"
+
+      - id: "D3.4"
+        action: "创建Backlog条目（下一版本独立）"
+        condition: "用户选择「下一版本独立」"
+        sub_steps:
+          - id: "D3.4a"
+            action: "回滚当前变更到PRD描述的原始行为"
+            owner: "fd-agent"
+          - id: "D3.4b"
+            action: "在PRD §20（下一版本规划）或产品Backlog中创建条目"
+            owner: "pm-agent"
+            content:
+              title: "{变更摘要}"
+              priority: "基于D3.2综合评分"
+              depends_on: "当前版本哪些产物"
+              estimated_ucs: "{新增/修改UC数}"
+              estimated_pages: "{新增/修改页面数}"
+
+      - id: "D3.5"
+        action: "验证与恢复"
+        checks:
+          - "所有回流产物已写入对应位置"
+          - "PRD §19 handoff回传区已记录本次L3变更"
+          - "JOURNAL 记录完整决策链"
+        resume: "FD根据D3.3d或D3.4a结果继续开发"
+
+  # ============================================
+  # 与 handoff 的衔接
+  # ============================================
+  handoff_integration:
+    description: |
+      进入 handoff 阶段时，handoff Agent 优先读取 PRD §19 handoff回传区，
+      逐条检查 dev-change 记录是否已被各 Agent 确认/消费。
+      
+      handoff回传区状态：
+      - `RECORDED`   → 已记录，等待Agent确认
+      - `CONFIRMED`  → 对应Agent已确认（BA更新了PRD / UX更新了设计 / Arch确认无变化）
+      - `DEFERRED`   → 标记为延后处理（有Backlog条目或下版本计划）
+      - `CONFLICT`   → 回传区与PRD仍有冲突，需回退到dev-change
+      
+      所有 RECORDED 和 CONFLICT 状态的变更在 handoff 时视为未消费，
+      触发对应Agent确认后方可关闭。
+    
+    gates:
+      - "G-HO-DEVCHANGE-01：handoff回传区无 RECORDED/CONFLICT 状态项"
+      - "G-HO-DEVCHANGE-02：所有 L2/L3 变更已获 Agent 确认或已建Backlog条目"
+      - "G-HO-DEVCHANGE-03：temp_deviation 标注的修复版本 ≤ 当前版本"
+
+  # ============================================
+  # 复杂度判定参考表（AI快速判断用）
+  # ============================================
+  complexity_lookup:
+    examples:
+      L1:
+        - "把按钮颜色改成蓝色"                      → components × 1page = L1
+        - "Tab文字从「内容审查」改成「审查」"        → components × 1page = L1
+        - "图标从🎧改成🔔"                           → components × 1page = L1
+        - "列表加一列「创建时间」"                   → data × 1page = L2（触及数据字段）
+      
+      L2:
+        - "弹窗确认改成Switch开关"                   → interaction × 1page = L2（交互模式改变）
+        - "违规处置增加一个「警告」类型"             → data × 1page = L2（新增枚举值+BR）
+        - "擦音效果增加定时关闭"                     → interaction × 2pages(中控+观众端) = L2
+        - "侧滑面板改成独立路由页面"                 → interaction × 1page = L2（入口架构改变）
+      
+      L3:
+        - "增加一个「人工审核」的处置类型"           → flow × 1page（新UC+状态机事件+BR）= L3
+        - "把处置流程从单步改成多级审批"             → flow × multi（新增UC+改状态机+改契约）= L3
+        - "去掉回放擦音功能，直接展示原始回放"        → flow × multi（删除UC+删除BR+改页面）= L3
+        - "违规处置结果通过WebSocket推送到观众端"     → contract × multi（新增WebSocket通道+跨终端）= L3
+
+  # ============================================
+  # 配套的 Agent 职责
+  # ============================================
+  agent_responsibilities:
+    fd-agent:
+      role: "变更捕获者"
+      duties:
+        - "开发过程中持续监听用户决策，识别偏差"
+        - "D0阶段：提取变更内容、初步分级"
+        - "D1阶段（L1）：自动写入回传区，不中断"
+        - "D2阶段（L2）：展示影响面，等待用户确认"
+        - "D3阶段（L3）：切换到mini需求分析模式，等待BA/UX/Arch产出后继续"
+    
+    pm-agent:
+      role: "流程协调者"
+      duties:
+        - "L2/L3变更的整体流程协调"
+        - "版本规划判断（当前版本消化 vs 下版本）"
+        - "确保回传链路完整闭环"
+    
+    ba-agent:
+      role: "需求同步者"
+      duties:
+        - "收到 L2/L3 回流后，增量更新PRD受影响部分"
+        - "PRD增量更新必须通过G-REQ-17（UC格式完整性）"
+        - "不重跑完整需求分析，仅处理波及项"
+    
+    ux-agent:
+      role: "设计同步者"
+      duties:
+        - "收到 L2/L3 回流后，增量更新受影响页面的设计规范"
+        - "通过G-DES-07（设计文档完整性）"
+    
+    arch-agent:
+      role: "契约守护者"
+      duties:
+        - "收到 L2/L3 回流后，确认 ENT/状态机/契约是否需要微调"
+        - "L3必须检查契约一致性，L2仅确认无变化即可"
+
+  # ============================================
+  # 版本历史
+  # ============================================
+  version_history:
+    - version: "1.1.0"
+      date: "2026-07-24"
+      type: "功能增强"
+      changes:
+        - "新增「变更包协议」——BA_PACKET/UX_PACKET/ARCH_PACKET结构化定义"
+        - "变更包从空泛的'通知Agent更新XX'变为精确的'文件级replace_in_file可执行编辑指令'"
+        - "D2.3/D3.3全部改引用变更包，Agent消费变更包→执行文件编辑→验证"
+        - "新增Demo流程关联（demo-flow→dev-change-flow的反馈闭环）"
+        - "变更包贯穿L1/L2/L3三级，每次回流必须有明确文件变更目标"
+        - "触发条件新增第5种：Demo验收中的用户反馈（自然语言→结构化变更）"
+        - "核心原则新增第7条：变更必须产出结构化变更包"
+    - version: "1.0.0"
+      date: "2026-07-24"
+      type: "新增"
+      summary: "基于SAAS项目handoff失败根因新增——填补开发中临时变更导致的PRD/UX/Arch不同步问题"

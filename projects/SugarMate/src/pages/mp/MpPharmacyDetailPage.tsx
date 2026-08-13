@@ -1,0 +1,1 @@
+import React from 'react';import { Typography, Card } from 'antd';import MpPageFrame from '../../components/MpPageFrame';const Page=()=>(<MpPageFrame title="药房详情"><div style={{padding:16}}><Card style={{borderRadius:10}}><Typography.Title level={5}>药房详情</Typography.Title><Typography.Text type="secondary">内容待补充</Typography.Text></Card></div></MpPageFrame>);export default Page;

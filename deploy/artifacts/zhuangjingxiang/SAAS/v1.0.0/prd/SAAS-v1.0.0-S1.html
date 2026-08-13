@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAAS 内容审查域 v1.0.0 — 需求文档</title>
+<!-- 五类图已预渲染为高清PNG，无需Mermaid JS运行时 -->
+<style>
+:root {
+  --c-bg: #f8f9fa;
+  --c-surface: #ffffff;
+  --c-border: #e2e8f0;
+  --c-text: #1a202c;
+  --c-text-muted: #64748b;
+  --c-accent: #2563eb;
+  --c-accent-light: #eff6ff;
+  --c-red: #dc2626;
+  --c-orange: #ea580c;
+  --c-green: #16a34a;
+  --c-gray: #94a3b8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--c-bg); color: var(--c-text); line-height: 1.7; }
+.container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 64px; }
+
+/* Header */
+.doc-header { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; padding: 28px 32px; margin-bottom: 32px; }
+.doc-header .title { font-size: 22px; font-weight: 700; color: var(--c-text); margin-bottom: 8px; }
+.doc-header .meta { display: flex; flex-wrap: wrap; gap: 12px 20px; font-size: 13px; color: var(--c-text-muted); }
+.doc-header .meta span { display: inline-flex; align-items: center; gap: 4px; }
+.doc-header .badge { display: inline-block; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+.badge-p0 { background: #fef2f2; color: var(--c-red); }
+.badge-scope { background: var(--c-accent-light); color: var(--c-accent); }
+
+/* Section */
+.section { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; padding: 28px 32px; margin-bottom: 24px; }
+.section-title { font-size: 18px; font-weight: 700; color: var(--c-text); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid var(--c-accent); display: flex; align-items: center; gap: 10px; }
+.section-title .num { background: var(--c-accent); color: #fff; width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; }
+
+/* Diagrams */
+.mermaid-wrap { background: #fafbfc; border: 1px solid var(--c-border); border-radius: 8px; padding: 16px 20px; margin-bottom: 16px; overflow-x: auto; }
+.mermaid-wrap .diagram-label { font-size: 13px; font-weight: 600; color: var(--c-text-muted); margin-bottom: 10px; }
+
+/* UC Card */
+.uc-card { border: 1px solid var(--c-border); border-radius: 10px; padding: 24px; margin-bottom: 24px; }
+.uc-card:last-child { margin-bottom: 0; }
+.uc-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.uc-id { font-size: 15px; font-weight: 700; color: var(--c-accent); white-space: nowrap; }
+.uc-name { font-size: 17px; font-weight: 600; color: var(--c-text); }
+.uc-priority { margin-left: auto; }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px; }
+table:last-child { margin-bottom: 0; }
+th, td { padding: 8px 12px; text-align: left; border: 1px solid var(--c-border); }
+th { background: #f8fafc; font-weight: 600; color: var(--c-text-muted); font-size: 12px; white-space: nowrap; }
+td { vertical-align: top; }
+tr:nth-child(even) td { background: #fafbfc; }
+
+/* UC 六段 */
+.uc-segment { margin-bottom: 14px; }
+.uc-segment:last-child { margin-bottom: 0; }
+.uc-segment-title { font-size: 14px; font-weight: 700; color: var(--c-text); margin-bottom: 6px; }
+.uc-segment ol, .uc-segment ul { padding-left: 20px; font-size: 13px; color: var(--c-text-muted); }
+.uc-segment li { margin-bottom: 3px; }
+.uc-segment .tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 11px; font-weight: 600; margin-right: 4px; }
+.tag-manual { background: #dbeafe; color: #1e40af; }
+.tag-auto { background: #dcfce7; color: #166534; }
+.tag-event { background: #fef3c7; color: #92400e; }
+
+/* Screenshot */
+.screenshot-wrap { margin: 16px 0; border: 1px solid var(--c-border); border-radius: 8px; overflow: hidden; }
+.screenshot-wrap img { width: 100%; display: block; }
+.screenshot-caption { padding: 8px 12px; font-size: 12px; color: var(--c-text-muted); background: #f8fafc; border-top: 1px solid var(--c-border); }
+
+/* BR ref */
+.br-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.br-item { padding: 10px 14px; border: 1px solid var(--c-border); border-radius: 8px; font-size: 13px; }
+.br-item .br-id { font-weight: 700; color: var(--c-accent); }
+.br-item .br-text { color: var(--c-text-muted); margin-top: 4px; }
+
+/* Acceptance */
+.accept-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+.accept-stat { text-align: center; padding: 16px 12px; background: var(--c-accent-light); border-radius: 8px; }
+.accept-stat .val { font-size: 28px; font-weight: 700; color: var(--c-accent); }
+.accept-stat .lbl { font-size: 12px; color: var(--c-text-muted); margin-top: 4px; }
+
+/* TOC */
+.toc { list-style: none; }
+.toc li { padding: 4px 0; font-size: 14px; }
+.toc a { color: var(--c-accent); text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container { padding: 16px 12px; }
+  .section { padding: 16px; }
+  .br-grid { grid-template-columns: 1fr; }
+  .accept-stats { grid-template-columns: repeat(2,1fr); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- HEADER -->
+<div class="doc-header">
+  <div class="title">SAAS 内容审查域 — 产品需求文档</div>
+  <div class="meta">
+    <span>版本：v1.0.0</span>
+    <span>需求流：STR-SAAS-001</span>
+    <span>日期：2026-07-27</span>
+    <span class="badge badge-p0">P0</span>
+    <span class="badge badge-scope">三终端：运营后台PC + 租户后台PC + 观众端H5</span>
+    <span>策略：纯前端模拟 · 不对接腾讯云API</span>
+  </div>
+</div>
+
+<!-- 一、五类图（高清PNG，2400dpi） -->
+<div class="section" id="diagrams">
+  <div class="section-title"><span class="num">1</span> 五类图</div>
+
+  <div class="mermaid-wrap">
+    <div class="diagram-label">图1 — 业务流程图</div>
+    <img src="screenshots/DIAG-01-业务流程图.png" alt="业务流程图" style="width:100%;border-radius:6px;" loading="lazy">
+  </div>
+
+  <div class="mermaid-wrap">
+    <div class="diagram-label">图2 — 信息流转图</div>
+    <img src="screenshots/DIAG-02-信息流转图.png" alt="信息流转图" style="width:100%;border-radius:6px;" loading="lazy">
+  </div>
+
+  <div class="mermaid-wrap">
+    <div class="diagram-label">图3 — 违规处置状态机</div>
+    <img src="screenshots/DIAG-03-违规处置状态机.png" alt="违规处置状态机" style="width:100%;border-radius:6px;" loading="lazy">
+  </div>
+
+  <div class="mermaid-wrap">
+    <div class="diagram-label">图4 — 回放发布状态机（v1.0.2新增）</div>
+    <img src="screenshots/DIAG-04-回放发布状态机.png" alt="回放发布状态机" style="width:100%;border-radius:6px;" loading="lazy">
+  </div>
+
+  <div class="mermaid-wrap">
+    <div class="diagram-label">图5 — 业务时序图</div>
+    <img src="screenshots/DIAG-05-业务时序图.png" alt="业务时序图" style="width:100%;border-radius:6px;" loading="lazy">
+  </div>
+
+  <div class="mermaid-wrap">
+    <div class="diagram-label">图6 — 三方接口时序图（V1模拟版）</div>
+    <img src="screenshots/DIAG-06-三方接口时序图.png" alt="三方接口时序图" style="width:100%;border-radius:6px;" loading="lazy">
+  </div>
+</div>
+
+<!-- 二、用例详情 -->
+<div class="section" id="ucs">
+  <div class="section-title"><span class="num">2</span> 用例详情（5个UC）</div>
+
+  <!-- UC-001 -->
+  <div class="uc-card" id="uc-001">
+    <div class="uc-header">
+      <span class="uc-id">UC-AUDIT-001</span>
+      <span class="uc-name">租户内容审查开关管理</span>
+      <span class="uc-priority"><span class="badge badge-p0">P0</span></span>
+    </div>
+
+    <table>
+      <tr><th style="width:100px">所属系统</th><td>SAAS 平台</td><th style="width:100px">所属模块</th><td>内容审查</td></tr>
+      <tr><th>所属页面</th><td>租户管理列表（运营后台）</td><th>页面编号</th><td>PG-AUDIT-PC-001</td></tr>
+      <tr><th>功能编号</th><td>FN-AUDIT-PC-001</td><th>参与人</th><td>平台运营人员</td></tr>
+      <tr><th>影响数据</th><td colspan="3">tenant.audit_enabled, tenant.mute_mode, tenant_audit_log, audit_switch_event</td></tr>
+    </table>
+
+    <!-- L1 锚点截图：租户管理列表 -->
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-AUDIT-PC-001-租户管理列表.png" alt="运营后台-租户管理列表（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption">PG-AUDIT-PC-001 · 运营后台-租户管理列表 · L1 锚点截图 · 2026-07-27 实时截取</div>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">前置条件</div>
+      <ol>
+        <li>运营人员已登录 SAAS 平台运营后台；</li>
+        <li>运营人员已进入「租户管理」页面；</li>
+        <li>当前租户列表已加载。</li>
+      </ol>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">基本流程</div>
+      <ol>
+        <li><span class="tag tag-manual">手动</span> 运营人员在列表中查看「是否启用」列，确认当前租户审查开关状态；</li>
+        <li><span class="tag tag-manual">手动</span> 运营人员点击「操作」列中的「内容审查开关」文字链接；</li>
+        <li><span class="tag tag-auto">系统自动</span> 系统弹出二次确认弹窗，展示租户名称、推流域名、当前状态、今日违规数、5 级联动影响说明；</li>
+        <li><span class="tag tag-manual">手动</span> 运营人员在弹窗内切换开关状态（开启/关闭）；</li>
+        <li><span class="tag tag-manual">手动</span> 运营人员点击「确认」；</li>
+        <li><span class="tag tag-auto">系统自动</span> 系统保存 tenant.audit_enabled 状态，并生成操作日志（操作人/时间/租户/原状态/新状态/租户编号）；</li>
+        <li><span class="tag tag-event">事件驱动</span> 系统通过共享 Store/BroadcastChannel 广播 audit_switch_event，下游页面（直播中控、直播列表、回放任务、观众端、历史违规入口）实时联动。</li>
+      </ol>
+    </div>
+
+    <!-- L2 增量截图：审查开关弹窗 -->
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-AUDIT-PC-001-审查开关弹窗.png" alt="运营后台-审查开关二次确认弹窗（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption">PG-AUDIT-PC-001 · 审查开关二次确认弹窗 · L2 增量截图 · 步骤3触发</div>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">备选流程</div>
+      <ul>
+        <li>5a. 运营人员点击「取消」→ 弹窗关闭，不保存变更；</li>
+        <li>6a. 保存失败 → 系统提示错误并保留原状态；</li>
+        <li>7a. 直播中途关闭审查 → 若该租户有「直播中」场次，弹窗额外提示"当前有 N 场直播正在进行，关闭后中控内容审查 Tab 将立即消失"，运营确认后生效；</li>
+        <li>7b. 平台不可降级类（涉黄/涉暴/公共安全/社会安全/违法乱纪/广告法）仍由腾讯云配置层强制执行。</li>
+      </ul>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">数据范围 (R/W)</div>
+      <p style="font-size:13px;color:var(--c-text-muted)">R: tenant.audit_enabled, tenant.mute_mode, tenant.today_violation_count<br>W: tenant.audit_enabled, tenant_audit_log, audit_switch_event</p>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">后置条件</div>
+      <ol>
+        <li>tenant.audit_enabled 更新；</li>
+        <li>该租户所有审查相关入口/页面按开关状态联动；</li>
+        <li>操作日志已记录。</li>
+      </ol>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">相关用例</div>
+      <ul class="element-list">
+        <li>租户列表中「是否启用」列直接展示审查开关状态（已启用/已停用）</li>
+        <li>点击操作列中的「直播审查开关」链接，弹出二次确认弹窗</li>
+        <li>弹窗展示当前开关状态、租户信息及切换影响说明，确认后生效</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- UC-002 -->
+  <div class="uc-card" id="uc-002">
+    <div class="uc-header">
+      <span class="uc-id">UC-AUDIT-002</span>
+      <span class="uc-name">直播中控内容审查 Tab + 违规处置</span>
+      <span class="uc-priority"><span class="badge badge-p0">P0</span></span>
+    </div>
+
+    <table>
+      <tr><th style="width:100px">所属系统</th><td>SAAS 平台</td><th style="width:100px">所属模块</th><td>内容审查</td></tr>
+      <tr><th>所属页面</th><td>直播中控内容审查 Tab / 历史违规列表面板</td><th>页面编号</th><td>PG-AUDIT-PC-002 / PG-AUDIT-PC-004</td></tr>
+      <tr><th>功能编号</th><td>FN-AUDIT-PC-002 / FN-AUDIT-PC-003</td><th>参与人</th><td>主播 / 运营人员</td></tr>
+      <tr><th>影响数据</th><td colspan="3">violation_record, live_stream.audit_status, callback_lost_event, disposal_log, live_stream.mute_mode</td></tr>
+    </table>
+
+    <!-- L1 锚点截图：直播中控审查Tab -->
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-AUDIT-PC-002-直播中控审查面板.png" alt="直播中控-内容审查面板（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption">PG-AUDIT-PC-002 · 直播中控内容审查Tab · L1 锚点截图 · 2026-07-27 实时截取</div>
+    </div>
+
+    <!-- L2 增量截图：历史违规列表面板 -->
+    <!-- ai:screenshot id=l2-violations page=PG-AUDIT-PC-004 ucs=UC-AUDIT-002 state=违规列表 visible_elements=违规列表/筛选器/详情面板 -->
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-AUDIT-PC-004-历史违规列表.png" alt="历史违规列表面板（L2增量截图）" loading="lazy">
+      <div class="screenshot-caption">PG-AUDIT-PC-004 · 历史违规列表面板 · L2 增量截图 · 从直播中控入口进入</div>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">前置条件</div>
+      <ol>
+        <li>当前租户已开启内容审查开关；</li>
+        <li>直播正在进行中（或已结束但需查看历史违规）；</li>
+        <li>用户已登录直播中控台或回放管理页面。</li>
+      </ol>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">基本流程</div>
+      <ol>
+        <li><span class="tag tag-manual">手动</span> 用户进入直播中控台，点击右侧「内容审查」Tab；</li>
+        <li><span class="tag tag-event">事件驱动</span> 系统接收 FN-AUDIT-INFRA-001 广播的模拟违规事件，刷新顶部告警统计区与违规列表；</li>
+        <li><span class="tag tag-manual">手动</span> 用户在筛选器中选择级别（L1/L2/L3/L4）、状态（待处理/已记录/已断流/已忽略）、排序方式；</li>
+        <li><span class="tag tag-manual">手动</span> 用户点击某条违规记录，查看详情面板（违规时间/类型/级别/内容片段/处置建议/证据文件/模拟回调 JSON）；</li>
+        <li><span class="tag tag-manual">手动</span> 用户根据违规级别与业务规则选择处置操作：
+          <ul>
+            <li><b>记录</b>：弹出确认弹窗，填写处置备注（≥10 字），状态变为「已记录」；</li>
+            <li><b>断流</b>：弹出断流确认弹窗（红色警告），填写处置理由，模拟切断推流，直播状态变为「已结束」，违规状态变为「已断流」；</li>
+            <li><b>忽略</b>：弹出忽略确认弹窗，填写忽略理由，状态变为「已忽略」；</li>
+          </ul>
+        </li>
+        <li><span class="tag tag-auto">系统自动</span> 系统更新 violation_record.disposal_status，写入 disposal_log，同步 live_stream.audit_status；</li>
+        <li><span class="tag tag-manual">手动</span> 用户在场次信息栏切换擦音模式（静音/擦音）；</li>
+        <li><span class="tag tag-event">事件驱动</span> 擦音模式通过共享 Store 广播到观众端。</li>
+      </ol>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">备选流程</div>
+      <ul>
+        <li>2a. 回调丢失 → 顶部显示「回调丢失」提示；</li>
+        <li>2b. 30 秒未处置 → 系统自动记录并告警升级；</li>
+        <li>5b. L1 严重违规点击「忽略」→ 按钮置灰，提示「L1 不可忽略」；</li>
+        <li>5c. L4 低危违规点击「断流」→ 按钮置灰，提示「L4 仅可记录」；</li>
+        <li>5d. 已结束直播的违规列表 → 只读展示，隐藏底部处置按钮；</li>
+        <li>7a. 网络断开 → 列表展示骨架屏，重连后自动刷新。</li>
+      </ul>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">数据范围 (R/W)</div>
+      <p style="font-size:13px;color:var(--c-text-muted)">R: violation_record, live_stream.audit_status, live_stream.mute_mode, callback_lost_event<br>W: violation_record.disposal_status, disposal_log, live_stream.mute_mode, live_stream.audit_status</p>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">后置条件</div>
+      <ol>
+        <li>违规处置完成，历史违规列表可查询；</li>
+        <li>断流处置后直播结束，观众端显示结束提示；</li>
+        <li>擦音模式已同步到观众端。</li>
+      </ol>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">相关用例</div>
+      <ul class="element-list">
+        <li>中控台「内容审查」Tab：切换到审查面板，实时接收违规告警PUSH并高亮显示</li>
+        <li>顶部告警统计区：实时展示各级别（L1-L4）违规数量和处置统计</li>
+        <li>「查看历史违规记录」按钮：打开历史违规列表面板</li>
+        <li>违规列表筛选器：按违规级别、处置状态、时间范围筛选违规记录</li>
+        <li>违规列表项：展示单条违规详情，点击可展开详细信息面板</li>
+        <li>处置操作按钮组：
+          <ul>
+            <li>「记录」：标记违规为已记录状态，不中断直播</li>
+            <li>「断流」：切断推流终止直播，观众端同步显示「直播已结束」</li>
+            <li>「忽略」：标记为非违规，忽略本次告警</li>
+          </ul>
+        </li>
+        <li>擦音模式切换：在静音/嘀声模式间切换，设置实时同步到观众端</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- UC-003 -->
+  <div class="uc-card" id="uc-003">
+    <div class="uc-header">
+      <span class="uc-id">UC-AUDIT-003</span>
+      <span class="uc-name">回放擦音效果模拟 + 人工核对发布</span>
+      <span class="uc-priority"><span class="badge badge-p0">P0</span></span>
+    </div>
+
+    <table>
+      <tr><th style="width:100px">所属系统</th><td>SAAS 平台</td><th style="width:100px">所属模块</th><td>内容审查</td></tr>
+      <tr><th>所属页面</th><td>回放详情审查页（租户后台）</td><th>页面编号</th><td>PG-AUDIT-PC-003</td></tr>
+      <tr><th>功能编号</th><td>FN-AUDIT-PC-004</td><th>参与人</th><td>运营人员 / 审核员</td></tr>
+      <tr><th>影响数据</th><td colspan="3">replay.mute_task_status, replay.publish_status, replay.mute_segments, replay.mute_mode, violation_record, replay.audit_log</td></tr>
+    </table>
+
+    <!-- L1 锚点截图：回放详情审查 -->
+    <!-- ai:screenshot id=l1-replay page=PG-AUDIT-PC-003 ucs=UC-AUDIT-003 state=回放详情-擦音审查 -->
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-AUDIT-PC-003-回放详情审查.png" alt="回放详情-擦音审查（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption">PG-AUDIT-PC-003 · 回放详情审查 · L1 锚点截图 · 2026-07-27 实时截取</div>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">前置条件</div>
+      <ol>
+        <li>直播已结束；</li>
+        <li>回放文件已生成（模拟）；</li>
+        <li>当前租户已开启内容审查；</li>
+        <li>回放擦音任务已创建。</li>
+      </ol>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">基本流程</div>
+      <ol>
+        <li><span class="tag tag-auto">系统自动</span> 回放详情页加载时，系统启动擦音任务，展示进度条（0→100%）；</li>
+        <li><span class="tag tag-event">事件驱动</span> 擦音任务完成后，进度条标记违规时间点，播放器切换为擦音后版本，发布状态变为「待核对」；</li>
+        <li><span class="tag tag-manual">手动</span> 审核员查看擦音前后对比面板、违规列表、时间轴标记；</li>
+        <li><span class="tag tag-manual">手动</span> 审核员选择操作：
+          <ul>
+            <li><b>核对通过·发布回放</b>：点击按钮 → 发布状态变为「已核对」→ 二次点击「确认发布」→ 发布状态变为「已发布」，allow_play=true；</li>
+            <li><b>驳回重新擦音</b>：点击按钮 → 发布状态变为「已驳回」→ 自动触发重新擦音任务；</li>
+          </ul>
+        </li>
+        <li><span class="tag tag-auto">系统自动</span> 若通过，回放开放观众播放；若驳回，回到步骤 1 重新擦音。</li>
+      </ol>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">备选流程</div>
+      <ul>
+        <li>1a. 擦音任务失败 → 提示失败原因，展示原片但标注警告，提供「重新擦音」按钮；</li>
+        <li>1b. 擦音任务超时 → 提示超时，播放器锁定不可播放，提供「手动重试」；</li>
+        <li>2a. 任务进行中点击发布按钮 → 按钮置灰，提示等待完成；</li>
+        <li>4a. 发布状态非「待核对」时 → 隐藏发布/驳回按钮；</li>
+        <li>4b. 重新擦音后再次完成 → 发布状态重置为「待核对」，进入新一轮核对。</li>
+      </ul>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">数据范围 (R/W)</div>
+      <p style="font-size:13px;color:var(--c-text-muted)">R: replay.mute_task_status, replay.publish_status, replay.mute_segments, violation_record, replay.media_url<br>W: replay.mute_task_status, replay.publish_status, replay.mute_mode, replay.audit_log</p>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">后置条件</div>
+      <ol>
+        <li>回放发布状态为 published 或 rejected/待重新擦音；</li>
+        <li>已发布回放观众端可播放；</li>
+        <li>审核日志已记录。</li>
+      </ol>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">相关用例</div>
+      <ul class="element-list">
+        <li>回放播放器：播放已生成的回放视频，展示擦音处理后的实际效果</li>
+        <li>擦音任务进度条：展示擦音处理进度（待处理/进行中/已完成/失败）</li>
+        <li>时间轴违规标记：在时间轴上高亮违规发生的时间点，点击可跳转到对应位置</li>
+        <li>违规记录列表：展示当前回放中的所有违规记录及处置结果</li>
+        <li>擦音模式选择：选择静音或嘀声擦音处理模式</li>
+        <li>操作按钮组：
+          <ul>
+            <li>「核对通过·发布回放」：确认擦音结果无误，正式发布回放供观众观看</li>
+            <li>「驳回重新擦音」：认为擦音结果不合格，驳回重新处理</li>
+            <li>「重新擦音」：驳回后重新触发擦音处理流程</li>
+          </ul>
+        </li>
+        <li>发布状态标签：显示回放当前状态（待核对/已核对/已发布/已驳回）</li>
+        <li>擦音前后对比面板：左右并排展示擦音前后效果，供人工对比核对</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- UC-004 -->
+  <div class="uc-card" id="uc-004">
+    <div class="uc-header">
+      <span class="uc-id">UC-AUDIT-004</span>
+      <span class="uc-name">观众端 — 内容审查效果感知</span>
+      <span class="uc-priority"><span class="badge badge-scope" style="color:var(--c-orange)">P1</span></span>
+    </div>
+
+    <table>
+      <tr><th style="width:100px">所属系统</th><td>SAAS 平台</td><th style="width:100px">所属模块</th><td>内容审查</td></tr>
+      <tr><th>所属页面</th><td>观众端直播间（H5/APP）</td><th>页面编号</th><td>PG-AUDIT-APP-001</td></tr>
+      <tr><th>功能编号</th><td>FN-AUDIT-APP-001</td><th>参与人</th><td>普通观众</td></tr>
+      <tr><th>影响数据</th><td colspan="3">live_stream.mute_mode, callback_lost_event, live_stream.audit_status（只读）</td></tr>
+    </table>
+
+    <!-- L1 锚点截图：H5观众直播间 -->
+    <!-- ai:screenshot id=l1-viewer page=PG-AUDIT-APP-001 ucs=UC-AUDIT-004 terminal=H5 state=直播间审查效果感知 -->
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-AUDIT-APP-001-H5观众直播间.png" alt="H5观众直播间（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption">PG-AUDIT-APP-001 · H5观众直播间 · L1 锚点截图 · 2026-07-27 实时截取（375×812）</div>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">前置条件</div>
+      <ol>
+        <li>当前租户已开启内容审查；</li>
+        <li>观众已进入直播间或正在播放已发布回放；</li>
+        <li>主播正在直播中（或回放已发布）。</li>
+      </ol>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">基本流程</div>
+      <ol>
+        <li><span class="tag tag-event">事件驱动</span> 主播发言触发 AI 违规识别；</li>
+        <li><span class="tag tag-event">事件驱动</span> 运营处置后，系统向观众端推送擦音/静音指令（含模式、时长、级别）；</li>
+        <li><span class="tag tag-auto">系统自动</span> 观众端在视频画面区中央渲染对应效果：
+          <ul>
+            <li><b>静音模式</b>：🔇 图标 + 画面变暗蒙层，持续 2-5 秒后恢复；</li>
+            <li><b>擦音模式</b>：🎧 图标 + 声波动画 + "嘀———" 文字提示，持续 2-5 秒后恢复；</li>
+          </ul>
+        </li>
+        <li><span class="tag tag-event">事件驱动</span> 若回调丢失，观众端显示橙色警告提示"直播中控尚未收到此违规回调"；</li>
+        <li><span class="tag tag-event">事件驱动</span> 若直播被断流，观众端显示"直播已结束，该直播因内容违规已被终止"，音频停止并覆盖结束遮罩。</li>
+      </ol>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">备选流程</div>
+      <ul>
+        <li>3a. 网络抖动导致擦音指令未到达 → 显示回调丢失提示，恢复后自动补发；</li>
+        <li>3b. 直播已结束 → 展示回放入口或结束页；</li>
+        <li>4a. 断流提示覆盖整个视频画面，底部保留"直播已结束"文案。</li>
+      </ul>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">数据范围 (R/W)</div>
+      <p style="font-size:13px;color:var(--c-text-muted)">R: live_stream.mute_mode, callback_lost_event, live_stream.audit_status<br>W: 无（观众端只感知不写入）</p>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">后置条件</div>
+      <ol>
+        <li>观众端始终符合合规要求；</li>
+        <li>观感上无敏感内容；</li>
+        <li>断流后观众看到结束提示并停止播放。</li>
+      </ol>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">相关用例</div>
+      <ul class="element-list">
+        <li>播放器区域：正常观看直播，接收运营端实时同步的擦音/断流效果</li>
+        <li>擦音/静音效果提示：运营执行擦音时观众端展示2-5秒静音或嘀声提示</li>
+        <li>回调丢失提示：模拟回调信号中断场景，展示重连提示</li>
+        <li>直播结束提示：运营执行断流后，展示「直播已结束，因内容违规已终止」</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- UC-005 -->
+  <div class="uc-card" id="uc-005">
+    <div class="uc-header">
+      <span class="uc-id">UC-AUDIT-005</span>
+      <span class="uc-name">直播/回放管理 — 审查入口路由</span>
+      <span class="uc-priority"><span class="badge badge-p0">P0</span></span>
+    </div>
+
+    <table>
+      <tr><th style="width:100px">所属系统</th><td>SAAS 平台</td><th style="width:100px">所属模块</th><td>内容审查</td></tr>
+      <tr><th>所属页面</th><td>直播/回放管理列表（租户后台）</td><th>页面编号</th><td>PG-AUDIT-PC-005</td></tr>
+      <tr><th>功能编号</th><td>FN-AUDIT-PC-002 / FN-AUDIT-PC-004</td><th>参与人</th><td>租户运营人员</td></tr>
+      <tr><th>影响数据</th><td colspan="3">live_stream.status, live_stream.audit_enabled, replay.mute_status, replay.publish_status, tenant.audit_enabled</td></tr>
+    </table>
+
+    <!-- L1 锚点截图：租户仪表板/直播场次列表 -->
+    <!-- ai:screenshot id=l1-dashboard page=PG-AUDIT-PC-005 ucs=UC-AUDIT-005 state=直播场次列表-审查入口 -->
+    <div class="screenshot-wrap">
+      <img src="screenshots/PG-AUDIT-PC-005-租户仪表板.png" alt="租户仪表板-直播场次列表（L1锚点截图）" loading="lazy">
+      <div class="screenshot-caption">PG-AUDIT-PC-005 · 租户仪表板-直播场次列表 · L1 锚点截图 · 2026-07-27 实时截取</div>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">前置条件</div>
+      <ol>
+        <li>当前租户已开启内容审查开关；</li>
+        <li>用户已登录租户后台；</li>
+        <li>直播/回放列表已加载。</li>
+      </ol>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">基本流程</div>
+      <ol>
+        <li><span class="tag tag-manual">手动</span> 用户点击「直播管理」或「回放管理」Tab 切换列表；</li>
+        <li><span class="tag tag-auto">系统自动</span> 列表加载，根据 tenant.audit_enabled 与 live_stream.audit_status 显示审查相关状态标签与操作入口；</li>
+        <li><span class="tag tag-manual">手动</span> 用户在直播列表点击「中控台」或「更多」进入审查流程；</li>
+        <li><span class="tag tag-manual">手动</span> 用户在回放列表点击「核对并发布」进入回放审查详情；</li>
+        <li><span class="tag tag-manual">手动</span> 用户在更多菜单中选择「查看历史违规」打开右侧侧滑面板；</li>
+        <li><span class="tag tag-auto">系统自动</span> 各入口跳转后打开对应页面/面板，并携带 stream_id 等路由参数。</li>
+      </ol>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">备选流程</div>
+      <ul>
+        <li>2a. 租户未开启审查 → 中控台入口隐藏或提示先开启；</li>
+        <li>2b. 回放擦音任务进行中 → 「核对并发布」按钮置灰，显示「擦音处理中…」；</li>
+        <li>2c. 直播状态为「已结束」→ 「中控台」按钮隐藏，「查看回放」入口显示；</li>
+        <li>3a. 已发布回放 → 操作列显示「查看已发布回放」按钮。</li>
+      </ul>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">数据范围 (R/W)</div>
+      <p style="font-size:13px;color:var(--c-text-muted)">R: live_stream.status, live_stream.audit_enabled, replay.mute_status, replay.publish_status, tenant.audit_enabled<br>W: 无（本 UC 以路由跳转为主，不直接写入业务数据）</p>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">后置条件</div>
+      <ol>
+        <li>用户进入正确审查页面；</li>
+        <li>列表状态与审查开关保持一致；</li>
+        <li>路由参数正确传递。</li>
+      </ol>
+    </div>
+
+    <div class="uc-segment">
+      <div class="uc-segment-title">相关用例</div>
+      <ul class="element-list">
+        <li>直播管理/回放管理 Tab：切换直播和回放两个管理视图</li>
+        <li>直播状态标签：展示每场直播的当前状态（直播中/已结束）</li>
+        <li>「中控台」按钮：进入直播中控台，是 UC-AUDIT-002 的核心操作入口</li>
+        <li>「更多」下拉菜单：展开辅助操作入口</li>
+        <li>回放字段标签：
+          <ul>
+            <li>擦音状态标签：展示回放的擦音处理进度</li>
+            <li>发布状态标签：展示回放发布状态（对应 UC-AUDIT-003 的核对发布结果）</li>
+          </ul>
+        </li>
+        <li>「核对并发布」按钮：进入回放详情页，是 UC-AUDIT-003 的核对入口</li>
+        <li>「更多」菜单项：
+          <ul>
+            <li>查看历史违规：进入历史违规记录列表</li>
+            <li>查看回放：进入回放详情页审查擦音结果</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 三、业务规则简表 -->
+<div class="section" id="br">
+  <div class="section-title"><span class="num">3</span> 业务规则（BR）</div>
+  <div class="br-grid">
+    <div class="br-item"><span class="br-id">BR-AUDIT-001</span><div class="br-text">6类不可降级规则：涉黄/涉暴/公共安全/社会安全/违法乱纪/广告法为平台绝对不可降级类</div></div>
+    <div class="br-item"><span class="br-id">BR-AUDIT-003</span><div class="br-text">处置渐进式规则：L4记录→L3警告→L2断流→L1断流+封禁</div></div>
+    <div class="br-item"><span class="br-id">BR-AUDIT-004</span><div class="br-text">回放擦音后人工核对规则：擦音→人工核对→确认发布，发布后才开放回放</div></div>
+    <div class="br-item"><span class="br-id">BR-AUDIT-005</span><div class="br-text">回调全量接收规则（模拟）：模拟回调全量接收+全量展示</div></div>
+    <div class="br-item"><span class="br-id">BR-AUDIT-008</span><div class="br-text">场次状态机联动："直播中"触发实时擦音；"回放中"触发回放擦音</div></div>
+    <div class="br-item"><span class="br-id">BR-AUDIT-009</span><div class="br-text">告警分级规则：L1核心→红/L2高危→红/L3中危→黄/L4低危→蓝</div></div>
+    <div class="br-item"><span class="br-id">BR-AUDIT-010</span><div class="br-text">处置依据完整规则：每条违规处置须附完整依据链</div></div>
+    <div class="br-item"><span class="br-id">BR-AUDIT-011</span><div class="br-text">处置超时规则：违规告警30秒未处置→系统自动记录+告警升级</div></div>
+    <div class="br-item"><span class="br-id">BR-AUDIT-012</span><div class="br-text">关闭审查底线规则：租户关闭审查时平台不可降级类仍由腾讯云强制执行</div></div>
+    <div class="br-item"><span class="br-id">BR-AUDIT-013</span><div class="br-text">入口复用规则：所有审查入口复用已有页面，禁止新增独立菜单</div></div>
+    <div class="br-item"><span class="br-id">BR-AUDIT-014</span><div class="br-text">直播列表操作列统一规则：审查开关开启后才显示审查入口</div></div>
+    <div class="br-item"><span class="br-id">BR-AUDIT-015</span><div class="br-text">回放先擦音后核对再发布：擦音→人工核对→发布，发布后才可播放</div></div>
+    <div class="br-item"><span class="br-id">BR-AUDIT-016</span><div class="br-text">运营后台操作日志规则：内容审查开关变更必须记录操作日志</div></div>
+    <div class="br-item"><span class="br-id">BR-AUDIT-017</span><div class="br-text">场次结束归档规则：场次结束→违规列表只读，定时器停止，BC跨页签同步</div></div>
+    <div class="br-item"><span class="br-id">BR-AUDIT-018</span><div class="br-text">审查关闭清理规则：关闭后隐藏审查入口，已记录违规保留</div></div>
+    <div class="br-item"><span class="br-id">BR-AUDIT-019</span><div class="br-text">回放擦音异常降级规则：超时→播放器锁定；失败→原片+警告</div></div>
+    <div class="br-item"><span class="br-id">BR-AUDIT-020</span><div class="br-text">审查开关运行时变更规则：直播中途关闭→立即只读+归档</div></div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div style="text-align:center;padding:32px;font-size:12px;color:var(--c-gray);">
+  SAAS 内容审查域 v1.0.0 · STR-SAAS-001 · 2026-07-27 · 由 close 阶段生成
+</div>
+
+</div>
+</body>
+</html>

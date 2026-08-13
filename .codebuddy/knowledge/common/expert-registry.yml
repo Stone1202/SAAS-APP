@@ -1,0 +1,549 @@
+# ============================================
+# 专家统一配置注册表 V1.0.0
+# ============================================
+# 定位：脑暴/PO规划/BA分析三个流程的专家统一配置管理
+# 两类专家：
+#   1. 盲区检查专家（18个）—— 发现"有没有遗漏XX场景"
+#   2. 系统划分专家（7个）—— 提供"行业通常怎么划分系统"的经验
+# 三阶段分析中的角色：
+#   阶段1业务还原：行业盲区专家（业务完整性扫盲+NFR技术扫盲）
+#   阶段2系统划分：系统划分专家（系统边界参考）+ 技术盲区专家（系统盲区扫盲+NFR）
+#   阶段3终端划分：终端盲区专家（终端覆盖扫盲+NFR）
+#   架构阶段：技术盲区专家（技术风险扫盲）
+#   测试阶段：QA盲区专家（测试覆盖扫盲）
+# ============================================
+
+version: "1.1.0"
+created: "2026-07-22"
+description: |
+  脑暴流程、PO规划流程、BA分析流程中所有专家的统一配置。
+  每个专家有：特殊领域（触发关键词）、专业领域（深度知识画像）、
+  适用阶段（在哪些环节参与）、适用商业模式（系统专家）。
+
+# ============================================
+# 盲区检查专家（18个，从expert-checklists.yml引用）
+# ============================================
+blindspot_experts:
+  ecommerce:
+    name: "电商交易专家"
+    domains: ["订单", "交易", "购物车", "支付"]
+    professional: ["电商交易全流程", "订单状态机", "支付对账", "退款逆向流程"]
+    stages:
+      stage1_business:
+        role: "行业顾问"
+        blindspots: ["逆向流程", "生命周期", "运营增长", "业务连续性", "数据生命周期"]
+      stage3_terminal:
+        role: "终端顾问"
+        blindspots: ["用户体验", "边界值"]
+    nfr_topics: ["高并发", "数据一致性"]
+
+  live:
+    name: "直播/录播/点播专家"
+    domains: ["直播", "录播", "点播", "推流", "转码"]
+    professional: ["直播全流程", "推拉流架构", "回放转码", "直播数据统计"]
+    stages:
+      stage1_business:
+        role: "行业顾问"
+        blindspots: ["逆向流程", "生命周期", "运营增长", "业务连续性"]
+    nfr_topics: ["高并发", "异步", "时效", "性能"]
+
+  marketing:
+    name: "营销活动专家"
+    domains: ["营销", "活动", "优惠券", "促销", "秒杀", "拼团", "红包"]
+    professional: ["营销活动全流程", "优惠券生命周期", "秒杀库存预占", "拼团成团逻辑"]
+    stages:
+      stage1_business:
+        role: "行业顾问"
+        blindspots: ["逆向流程", "生命周期", "运营增长", "业务连续性"]
+    nfr_topics: ["高并发", "数据一致性"]
+
+  data:
+    name: "数据/报表专家"
+    domains: ["报表", "统计", "指标", "看板", "BI"]
+    professional: ["数据统计口径", "指标定义", "看板设计", "数据归档"]
+    stages:
+      stage2_system:
+        role: "系统顾问"
+        blindspots: ["数据一致性", "数据生命周期"]
+    nfr_topics: ["性能", "异步"]
+
+  finance:
+    name: "财务专家"
+    domains: ["对账", "结算", "发票", "财务", "退款"]
+    professional: ["对账全流程", "结算规则", "发票管理", "红冲作废"]
+    stages:
+      stage2_system:
+        role: "系统顾问"
+        blindspots: ["数据一致性", "法律审计", "业务连续性"]
+    nfr_topics: ["数据一致性", "安全"]
+
+  inventory:
+    name: "库存/进销存专家"
+    domains: ["库存", "入库", "出库", "盘点", "调拨"]
+    professional: ["库存预占/释放", "进销存全流程", "多仓库存", "盘点冻结"]
+    stages:
+      stage2_system:
+        role: "系统顾问"
+        blindspots: ["数据一致性", "第三方依赖"]
+    nfr_topics: ["数据一致性", "同步"]
+
+  procurement:
+    name: "采购专家"
+    domains: ["采购", "供应商", "进货"]
+    professional: ["采购全流程", "供应商管理", "采购退货"]
+    stages:
+      stage2_system:
+        role: "系统顾问"
+        blindspots: ["第三方依赖", "业务连续性"]
+
+  architecture:
+    name: "架构专家"
+    domains: ["定时任务", "调度", "消息队列", "接口", "缓存", "默认匹配"]
+    professional: ["系统架构设计", "接口幂等", "消息队列", "缓存策略", "定时任务调度"]
+    stages:
+      stage2_system:
+        role: "系统顾问"
+        blindspots: ["数据一致性", "涟漪效应", "需求冲突", "第三方依赖"]
+      architecture_stage:
+        role: "技术顾问"
+        blindspots: ["安全风控", "容灾降级", "性能容量"]
+    nfr_topics: ["异步", "同步", "高并发", "可扩展", "可用性", "性能"]
+
+  security:
+    name: "安全专家"
+    domains: ["权限", "角色", "租户", "隔离", "登录", "敏感数据", "默认匹配"]
+    professional: ["权限模型", "数据隔离", "敏感数据加密", "注入防护", "认证授权"]
+    stages:
+      stage3_terminal:
+        role: "终端顾问"
+        blindspots: ["权限隔离", "国际化合规"]
+      architecture_stage:
+        role: "技术顾问"
+        blindspots: ["安全风控", "国际化合规"]
+    nfr_topics: ["安全"]
+
+  qa:
+    name: "QA专家"
+    domains: ["默认匹配", "测试", "边界", "状态"]
+    professional: ["测试策略", "边界值设计", "状态机测试", "异常路径覆盖"]
+    stages:
+      stage3_terminal:
+        role: "终端顾问"
+        blindspots: ["边界值", "状态异常"]
+      test_stage:
+        role: "测试顾问"
+        blindspots: ["异常分支", "状态异常", "数据一致性", "边界值"]
+
+  customer_service:
+    name: "客服/售后专家"
+    domains: ["退款", "退货", "售后", "客诉"]
+    professional: ["售后全流程", "客诉处理", "退换货逻辑"]
+    stages:
+      stage1_business:
+        role: "行业顾问"
+        blindspots: ["逆向流程", "业务连续性"]
+
+  member:
+    name: "会员/用户专家"
+    domains: ["会员", "积分", "等级", "用户体系", "登录", "注册"]
+    professional: ["会员体系", "积分规则", "等级权益", "用户生命周期"]
+    stages:
+      stage1_business:
+        role: "行业顾问"
+        blindspots: ["生命周期", "运营增长"]
+
+  logistics:
+    name: "物流/配送专家"
+    domains: ["物流", "配送", "发货"]
+    professional: ["物流全流程", "配送规则", "物流跟踪", "自提核销"]
+    stages:
+      stage1_business:
+        role: "行业顾问"
+        blindspots: ["逆向流程", "业务连续性"]
+
+  content:
+    name: "内容/审核专家"
+    domains: ["审核", "内容", "UGC", "评论"]
+    professional: ["内容审核流程", "UGC管理", "评论系统"]
+    stages:
+      stage1_business:
+        role: "行业顾问"
+        blindspots: ["生命周期", "业务连续性"]
+
+  social:
+    name: "社交/互动专家"
+    domains: ["消息", "通知", "推送", "私信"]
+    professional: ["消息系统", "推送策略", "实时通信"]
+    stages:
+      stage1_business:
+        role: "行业顾问"
+        blindspots: ["业务连续性"]
+    nfr_topics: ["时效", "异步"]
+
+  payment:
+    name: "支付/结算专家"
+    domains: ["支付", "结算", "对账"]
+    professional: ["支付全流程", "第三方支付对接", "结算规则", "对账逻辑"]
+    stages:
+      stage2_system:
+        role: "系统顾问"
+        blindspots: ["第三方依赖", "数据一致性", "法律审计"]
+    nfr_topics: ["数据一致性", "安全", "同步"]
+
+  operations:
+    name: "运营/DevOps专家"
+    domains: ["默认匹配", "部署", "监控", "配置"]
+    professional: ["部署策略", "监控告警", "配置管理", "容灾降级"]
+    stages:
+      architecture_stage:
+        role: "技术顾问"
+        blindspots: ["容灾降级", "性能容量", "业务连续性"]
+    nfr_topics: ["可用性", "性能"]
+
+  legal:
+    name: "法务/合规专家"
+    domains: ["权限", "审核", "合规"]
+    professional: ["数据合规", "隐私保护", "内容审核合规", "跨境数据传输"]
+    stages:
+      stage3_terminal:
+        role: "终端顾问"
+        blindspots: ["国际化合规", "权限隔离"]
+      architecture_stage:
+        role: "技术顾问"
+        blindspots: ["国际化合规", "法律审计"]
+
+# ============================================
+# 系统划分专家（7个，新增）
+# ============================================
+system_experts:
+  ecommerce_system:
+    name: "电商系统专家"
+    domains: ["电商", "B2C", "C2C", "O2O"]
+    professional:
+      - "电商标准系统：商城/订单/交易/营销/库存/物流/售后"
+      - "系统边界：商城管商品CRUD+浏览，订单管状态流转，交易管支付退款"
+      - "跨系统配合：商城→订单(商品数据)，订单→交易(待支付)，交易→订单(支付结果)，订单→物流(发货)"
+      - "行业对标：淘宝/京东/拼多多的系统架构参考"
+    stages:
+      stage2_system:
+        role: "系统划分顾问"
+        provides: "行业系统划分参考+系统边界建议"
+    business_models: ["B2C", "C2C", "O2O"]
+
+  live_ecommerce_system:
+    name: "直播电商系统专家"
+    domains: ["直播", "直播带货", "直播电商"]
+    professional:
+      - "直播电商标准系统：直播/推流/回放/直播商品/互动/数据统计 + 电商标准系统"
+      - "直播特有系统：直播间(推拉流+弹幕+挂件) + 直播商品(讲解+上架+下架) + 直播数据(观看/互动/GMV)"
+      - "跨系统配合：直播→商城(商品同步) + 直播→订单(直播下单) + 直播→营销(直播优惠券)"
+      - "行业对标：抖音/快手/淘宝直播的系统架构参考"
+    stages:
+      stage2_system:
+        role: "系统划分顾问"
+    business_models: ["B2C", "C2C"]
+
+  saas_system:
+    name: "SAAS平台系统专家"
+    domains: ["SAAS", "多租户", "订阅", "平台"]
+    professional:
+      - "SAAS标准系统：租户管理/订阅/计费/权限/配置/多租户隔离"
+      - "系统边界：租户系统管租户生命周期，订阅管版本+计费，权限管角色+数据隔离"
+      - "跨系统配合：租户→所有业务系统(租户隔离上下文)，订阅→计费(版本功能限制)"
+      - "行业对标：有赞/微盟/销售易的系统架构参考"
+    stages:
+      stage2_system:
+        role: "系统划分顾问"
+    business_models: ["SAAS"]
+
+  erp_system:
+    name: "ERP系统专家"
+    domains: ["ERP", "工厂", "生产", "供应链", "B2B"]
+    professional:
+      - "ERP标准系统：采购/库存/生产/财务/人力资源/供应链"
+      - "系统边界：采购管供应商+进货，库存管出入库+盘点，生产管工单+排产"
+      - "跨系统配合：采购→库存(入库) + 库存→生产(领料) + 生产→库存(成品入库) + 库存→财务(成本核算)"
+      - "行业对标：SAP/用友/金蝶的系统架构参考"
+    stages:
+      stage2_system:
+        role: "系统划分顾问"
+    business_models: ["B2B", "F2B2C"]
+
+  distribution_system:
+    name: "分销系统专家"
+    domains: ["分销", "佣金", "分佣", "裂变", "代理"]
+    professional:
+      - "分销标准系统：分销商管理/佣金/结算/层级/裂变"
+      - "系统边界：分销商管层级+资质，佣金管计算+规则，结算管对账+提现"
+      - "跨系统配合：分销→订单(分销订单标记) + 分销→交易(佣金计算) + 分销→财务(佣金结算)"
+      - "行业对标：有赞分销/微盟分销的系统架构参考"
+    stages:
+      stage2_system:
+        role: "系统划分顾问"
+    business_models: ["B2C", "F2B2C", "C2C"]
+
+  advertising_system:
+    name: "广告平台系统专家"
+    domains: ["广告", "投放", "计费", "创意", "广告位"]
+    professional:
+      - "广告标准系统：广告位/投放/计费/效果追踪/创意管理"
+      - "系统边界：广告位管展示位+定向，投放管预算+出价，计费管CPC/CPM/CPA"
+      - "跨系统配合：广告→商城(商品广告) + 广告→直播(直播推广) + 广告→数据(效果统计)"
+      - "行业对标：巨量引擎/腾讯广告的系统架构参考"
+    stages:
+      stage2_system:
+        role: "系统划分顾问"
+    business_models: ["B2C", "SAAS"]
+
+  midplatform_system:
+    name: "中台系统专家"
+    domains: ["中台", "业务中台", "数据中台", "技术中台", "共享能力"]
+    professional:
+      - "中台标准能力：用户中台(登录/权限/用户中心) + 商品中台(商品/类目/规格) + 订单中台(订单/状态) + 支付中台(支付/退款)"
+      - "中台判断标准：能力被3个以上业务系统复用 → 下沉为中台"
+      - "系统边界：业务系统管业务逻辑，中台管共享能力，业务系统调中台接口"
+      - "跨系统配合：业务系统→中台(共享能力调用) + 中台→数据中台(数据汇总)"
+      - "行业对标：阿里中台/京东中台的系统架构参考"
+    stages:
+      stage2_system:
+        role: "系统划分顾问"
+        provides: "中台能力下沉判断+共享能力识别"
+    business_models: ["B2C", "B2B", "F2B2C", "SAAS"]
+
+# ============================================
+# 匹配规则（三流程×三阶段）
+# ============================================
+matching:
+
+  # 脑暴流程匹配
+  brainstorm:
+    trigger: "根据商业模式匹配行业系统专家参与讨论"
+    rules:
+      - business_model: "B2C"
+        experts: ["ecommerce_system"]
+        nfr_experts: ["architecture"]
+      - business_model: "B2B"
+        experts: ["erp_system"]
+      - business_model: "F2B2C"
+        experts: ["ecommerce_system", "distribution_system", "erp_system"]
+      - business_model: "C2C"
+        experts: ["ecommerce_system"]
+      - business_model: "O2O"
+        experts: ["ecommerce_system"]
+      - business_model: "SAAS"
+        experts: ["saas_system"]
+      - business_model: "含广告"
+        experts: ["advertising_system"]
+      - business_model: "复杂多系统"
+        experts: ["midplatform_system"]
+
+  # PO规划流程匹配
+  po_planning:
+    po_1_5_business_restore:
+      trigger: "po-1.5业务还原，继承BA阶段1或PO自做"
+      experts: "继承BA阶段1的行业盲区专家"
+    po_3_system_partition:
+      trigger: "po-3系统划分，根据商业模式匹配系统专家"
+      rules: "同brainstorm匹配规则"
+    po_3_5_terminal:
+      trigger: "po-3.5终端划分，匹配终端专家"
+      experts: ["security", "qa"]
+
+  # BA分析流程匹配
+  ba_analysis:
+    stage1_business:
+      trigger: "阶段1业务还原，根据需求关键词匹配行业专家"
+      expert_pool: [ecommerce, live, marketing, customer_service, member, logistics, content, social, payment]
+      blindspots: ["逆向流程", "生命周期", "运营增长", "业务连续性", "数据生命周期"]
+      nfr_scan: true  # 技术专家帮产品经理识别NFR
+      nfr_experts: ["architecture", "social"]
+
+    stage2_system:
+      trigger: "阶段2系统划分，根据商业模式匹配系统专家 + 技术盲区专家"
+      system_experts: "根据business_model匹配（同brainstorm规则）"
+      blindspot_experts: [architecture, data, finance, inventory, payment]
+      blindspots: ["数据一致性", "第三方依赖", "涟漪效应", "需求冲突", "法律审计"]
+      nfr_scan: true
+      nfr_experts: ["architecture", "payment", "data"]
+
+    stage3_terminal:
+      trigger: "阶段3终端划分，匹配终端专家"
+      expert_pool: [security, qa, legal]
+      blindspots: ["权限隔离", "用户体验", "边界值", "性能容量", "国际化合规"]
+      nfr_scan: true
+      nfr_experts: ["architecture", "operations"]
+
+    architecture_stage:
+      trigger: "架构阶段，技术专家扫盲"
+      expert_pool: [architecture, security, operations, legal]
+      blindspots: ["安全风控", "容灾降级", "性能容量", "国际化合规"]
+
+    test_stage:
+      trigger: "测试阶段，QA专家扫盲"
+      expert_pool: [qa, data, security]
+      blindspots: ["异常分支", "状态异常", "数据一致性", "边界值"]
+
+# ============================================
+# 冻结机制
+# ============================================
+freeze_mechanism:
+  rule: "每个阶段扫盲完成后，PM展示冻结内容 → 用户确认 → 冻结 → 传入下一步"
+  flow:
+    - step: "阶段分析完成"
+    - step: "PM展示冻结内容清单（场景/系统/终端）"
+    - step: "用户确认"
+      confirm: "冻结 → 内容传入下一步"
+      supplement: "退回重新分析 → 重新展示 → 重新确认"
+  frozen_items:
+    stage1: "场景清单（冻结后作为阶段2输入）"
+    stage2: "系统边界+系统间接口清单（冻结后作为阶段3输入）"
+    stage3: "终端清单+跨端流转路径（冻结后作为架构输入）"
+
+# ============================================
+# 14维度×专家映射表（V1.1.0新增）
+# ============================================
+# 定位：用例细节颗粒度14维度与领域专家的映射关系
+# 作用：
+#   1. AI在Layer1多视角维度识别时，查此表模拟对应专家视角
+#   2. §2.5多专家盲区审查时，各专家按此表检查对应维度是否遗漏
+#   3. 版本沉淀时，统计AI预判准确率→AI学习进化
+# 核心原则：AI不是真的专家，但AI可以模拟专家视角（基于知识库+经验库+Bug模式）
+#           AI预判初期准确率可能50-60%，专家补盲兜底，版本迭代AI逐步进化
+dimension_expert_mapping:
+  description: |
+    14维度×专家映射表。每个维度标注：
+    - primary_experts: 主要负责的专家类型（AI模拟+§2.5补盲）
+    - ai_simulation_sources: AI模拟专家视角的知识来源
+    - checklist_question: §2.5专家补盲时的检查问题
+    - keyword_hints: AI关键词识别提示
+
+  mappings:
+    # ===== B. 计算与精度类 =====
+    - dimension: "算法公式区"
+      id: 3
+      primary_experts: ["data", "finance"]
+      ai_simulation_sources:
+        - "domains/中的行业标准计算公式"
+        - "经验库/精度Bug记录"
+      checklist_question: "有没有金额/积分/数量计算？公式是什么？"
+      keyword_hints: ["计算", "公式", "抵扣", "分佣", "积分", "金额"]
+
+    - dimension: "精度兜底区"
+      id: 13
+      primary_experts: ["data", "finance"]
+      ai_simulation_sources:
+        - "经验库/精度Bug记录（积分精度/金额精度）"
+        - "版本沉淀/历史精度Bug"
+      checklist_question: "舍入规则是什么？最后用减法还是乘法？有没有精度累积误差风险？"
+      keyword_hints: ["小数", "舍入", "取整", "精度", "四舍五入", "保留两位"]
+
+    - dimension: "金额计算链区"
+      id: 11
+      primary_experts: ["finance", "ecommerce"]
+      ai_simulation_sources:
+        - "domains/中的金额流转标准"
+        - "domains/payment/中的支付分账规则"
+      checklist_question: "有没有多层金额扣减？运费/手续费扣不扣？优惠怎么分摊？"
+      keyword_hints: ["优惠", "运费", "手续费", "实付", "到账", "分摊", "扣减"]
+
+    - dimension: "多角色分配区"
+      id: 12
+      primary_experts: ["ecommerce", "finance"]
+      ai_simulation_sources:
+        - "domains/中的分佣/分成规则"
+        - "经验库/分佣Bug记录"
+      checklist_question: "多个角色按比例分配？比例之和=100%？分配模式有几种？"
+      keyword_hints: ["分佣", "分成", "比例", "代理", "店长", "租户", "供应商"]
+
+    # ===== C. 状态与时效类 =====
+    - dimension: "状态依赖区"
+      id: 7
+      primary_experts: ["architecture"]
+      ai_simulation_sources:
+        - "状态机知识库"
+        - "历史状态Bug（冻结/解冻/审核）"
+      checklist_question: "有状态变化影响计算起点？冻结期间算不算？解冻后从哪开始算？"
+      keyword_hints: ["冻结", "解冻", "审核", "待激活", "生效", "状态变化"]
+
+    - dimension: "时效计算区"
+      id: 8
+      primary_experts: ["ecommerce", "operations"]
+      ai_simulation_sources:
+        - "domains/中的有效期/过期规则"
+        - "domains/member/中的会员有效期"
+      checklist_question: "有时间相关计算？规则切换怎么生效？退回按最新还是旧规则？"
+      keyword_hints: ["有效期", "过期", "失效", "到期", "切换", "生效"]
+
+    - dimension: "消耗策略区"
+      id: 9
+      primary_experts: ["ecommerce", "architecture"]
+      ai_simulation_sources:
+        - "domains/中的库存/积分消耗规则"
+        - "经验库/消耗策略Bug"
+      checklist_question: "消耗优先级？先进先出？部分使用怎么处理？部分过期怎么处理？"
+      keyword_hints: ["消耗", "扣减", "使用", "先进先出", "优先", "部分使用"]
+
+    - dimension: "上限控制区"
+      id: 10
+      primary_experts: ["security", "architecture"]
+      ai_simulation_sources:
+        - "经验库/上限Bug记录"
+        - "安全风控知识"
+      checklist_question: "有额度/次数/每日上限？超出怎么处理？判断时机？哪些不受限？"
+      keyword_hints: ["上限", "限额", "次数", "每天", "每月", "超出", "封顶"]
+
+    # ===== D. 流程与影响类 =====
+    - dimension: "逆向流程区"
+      id: 11
+      primary_experts: ["qa", "ecommerce"]
+      ai_simulation_sources:
+        - "经验库/退款Bug记录"
+        - "domains/aftersale/中的退款规则"
+      checklist_question: "有退款/取消/回滚？整单退vs部分退算法差异？最后一个用减法？"
+      keyword_hints: ["退款", "退货", "取消", "回滚", "退还", "撤销", "售后"]
+
+    - dimension: "跨模块影响"
+      id: 12
+      primary_experts: ["architecture", "data"]
+      ai_simulation_sources:
+        - "影响分析10维扫描结果"
+        - "项目topology"
+      checklist_question: "影响哪些其他模块？数据流/状态/规则影响？联动行为？"
+      keyword_hints: ["分佣", "库存", "积分", "订单", "财务", "通知", "跨模块"]
+
+    - dimension: "边界前瞻区"
+      id: 13
+      primary_experts: ["architecture", "qa"]
+      ai_simulation_sources:
+        - "历史版本的经验教训"
+        - "经验库/技术债记录"
+      checklist_question: "当前版本有什么限制？未来需要扩展？本期不做的功能标注了吗？"
+      keyword_hints: ["本期不做", "暂不支持", "后续", "未来", "预留", "限制"]
+
+    - dimension: "提醒触发区"
+      id: 14
+      primary_experts: ["operations", "ecommerce"]
+      ai_simulation_sources:
+        - "domains/中的通知/提醒规则"
+        - "domains/marketing/中的营销提醒"
+      checklist_question: "有定时提醒？触发条件？提醒内容？频率？"
+      keyword_hints: ["提醒", "通知", "预警", "即将过期", "定时", "每月", "推送"]
+
+    # ===== A. 规则与配置类 =====
+    - dimension: "规则约束区"
+      id: 1
+      primary_experts: ["ecommerce"]
+      ai_simulation_sources:
+        - "domains/中的BR/规则标准"
+        - "领域知识业务规则"
+      checklist_question: "有参数配置？取值范围？枚举值？互斥规则？"
+      keyword_hints: ["配置", "设置", "规则", "参数", "枚举", "开关", "限制"]
+
+    - dimension: "配置项矩阵"
+      id: 2
+      primary_experts: ["ecommerce"]
+      ai_simulation_sources:
+        - "domains/中的配置规则"
+        - "领域知识配置项"
+      checklist_question: "有3+配置项可组合？每种组合的行为描述了？"
+      keyword_hints: ["组合", "矩阵", "开关", "选项", "搭配", "多种"]

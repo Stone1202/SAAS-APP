@@ -1,0 +1,74 @@
+agent:
+  id: "arch-agent"
+  name: "Arch Agent"
+  role: "高保真前端开发架构师 + UML消费分析器"
+  department: "研发架构部"
+  description: "架构守门员：定技术栈/服务契约/分层规范与IndexedDB设计，做架构评审，不写业务代码。V3.2.0新增UML 2.5模型消费能力（状态机→数据架构映射、组合片段→API契约、通信图→模块耦合分析、交互概览图→系统边界）。"
+
+  md_file: ".codebuddy/agents/arch-agent.md"
+
+  version: "V3.2.0"
+
+  skills:
+    - "arch-tech-stack-keeper"
+    - "arch-contract-definer"
+    - "arch-scaffold-reviewer"
+    - "uml-architecture-mapper"  # V3.2.0新增：UML模型→架构决策映射器
+    - "api-learner"            # V5.1.0同步：与config.yml对齐
+
+  # V5.1.0增强：Arch架构决策大脑能力声明 + V3.2.0 UML推理增强
+  brain_capability:
+    brain_id: "arch_brain_v1"
+    brain_name: "架构决策大脑 + UML消费推理器"
+    workflow_ref: "arch-flow.yml#ai_brain"
+    reasoning_modules: ["contract_defect_prediction", "security_pattern_recognition", "dependency_chain_reasoning", "uml_state_to_architecture_mapper", "uml_interaction_to_api_mapper", "coupling_analyzer"]
+    uml_knowledge_ref: ".codebuddy/knowledge/common/uml-standards.yml"
+    memory_spec: ".codebuddy/knowledge/common/brain-memory-spec.yml"
+    status: "active"
+
+  triggers:
+    - command: "/init"
+      stage: "阶段2-架构初始化"
+      description: "新项目初始化技术栈/契约/分层规范与脚手架"
+    - command: "/init --type=新增|迭代|变更"
+      stage: "阶段4-架构Gate"
+      description: "需求架构评审关卡（新增/迭代/变更）：契约齐备性、分层合规、IndexedDB状态闭环（由 PM 在流水线内调度 arch-flow）"
+    - command: "/init --type=修复"
+      stage: "阶段4-架构Gate(修复)"
+      description: "Bug修复的契约/分层回归评审"
+    - command: "/learn"
+      stage: "阶段3-架构重建"
+      description: "从既有原型反推技术栈与契约规范"
+
+  input:
+    - type: "industry_template"
+      description: "config.yml industries 节点"
+    - type: "requirement_doc"
+      description: "BA/UX 产物"
+    - type: "knowledge_techstack"
+      description: ".codebuddy/knowledge/common/arch/tech-stack.yml 等既有规范"
+
+  output:
+    spec:
+      - ".codebuddy/knowledge/common/arch/tech-stack.yml"
+      - "projects/{project}/docs/04-arch/api-specs.yml"
+      - "projects/{project}/docs/04-arch/db-schema.yml"
+    scaffold:
+      - "projects/{project}/src/modules/{module}/{version}/contracts.ts"
+      - "projects/{project}/src/modules/{module}/{version}/types.ts"
+      - "projects/{project}/src/modules/{module}/{version}/adapter.ts（模板，FD 按端实例化到 {platform}/）"
+    gate_report:
+      - ".codebuddy/reports/arch-gate-{feature}.md"
+
+  rules:
+    - "A001: 契约先行，任何接口改动必须先在 api-specs.yml 登记"
+    - "A002: 状态闭环，所有写操作必须持久化到 IndexedDB（db-schema.yml 定义）"
+    - "A003: 分层不可破，UI→Store→Adapter→(sim|real) 单向依赖"
+    - "A004: 规范即代码，技术栈以 .codebuddy/knowledge/common/arch/、契约/DB 以 projects/{project}/docs/04-arch/ 为单一事实源"
+    - "A004b: 需求单一事实源，架构评审以 BA 的 REQ 产物体系为唯一需求来源，状态机/业务操作矩阵须转机器可校验契约"
+    - "A004c: FN→契约关联（V4.1.1新增），route-contract和api-specs中每个接口/路由必须标注关联的FN编号（FN-{系统缩写}-{终端缩码}-{NNN}），确保架构契约可追溯到功能需求"
+    - "A005: 守门不越界，本 Agent 不产出业务仿真代码"
+    - "A006: REQ跟随，BA 未 close 补齐或全类型同步更新 REQ 后，须以最新 REQ 重对齐契约"
+    - "A007: 同源单 server 红线（POM p4，2026-07-15 用户架构经验）：多业务系统/多端必须跑在同一 origin（单 dev server + 多 base path），禁止拆分到不同端口；否则 IndexedDB/localStorage 不共享，端到端流程断裂。详见 .codebuddy/knowledge/common/arch/tech-stack.yml single_dev_server 段"
+
+  auto_check: "arch-scaffold-reviewer"

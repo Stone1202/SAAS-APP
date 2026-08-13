@@ -1,0 +1,348 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Users\\STONE\\.workbuddy\\binaries\\node\\versions\\20.18.0\\node.exe",
+      "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/uc-user-flow.spec.ts",
+      "--config=tests/playwright.config.ts",
+      "--output=test-out-qa3"
+    ],
+    "configFile": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\tests\\playwright.config.ts",
+    "rootDir": "C:/Users/STONE/CodeBuddy/SAAS-APP/pom-workspace/projects/SAAS-APP/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/STONE/CodeBuddy/SAAS-APP/pom-workspace/projects/SAAS-APP/test-out-qa3",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/Users/STONE/CodeBuddy/SAAS-APP/pom-workspace/projects/SAAS-APP/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "html",
+        {
+          "outputFolder": "../test-reports/html",
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "../test-reports/json/results.json"
+        }
+      ],
+      [
+        "list",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:5174/app.html",
+      "reuseExistingServer": true,
+      "timeout": 30000
+    }
+  },
+  "suites": [
+    {
+      "title": "uc-user-flow.spec.ts",
+      "file": "uc-user-flow.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "真人路径模拟——端到端测试",
+          "file": "uc-user-flow.spec.ts",
+          "line": 47,
+          "column": 6,
+          "specs": [
+            {
+              "title": "路径1：消费者浏览 → 商城页 → 搜索页 → 返回首页",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10872,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🚀 路径1开始：消费者购物浏览流\n"
+                        },
+                        {
+                          "text": "  📋 01-平台首页: 3 个UC\n"
+                        },
+                        {
+                          "text": "  📋 02-商城页(项目列表): 2 个UC\n"
+                        },
+                        {
+                          "text": "  📋 03-商城页(精选商品): 2 个UC\n"
+                        },
+                        {
+                          "text": "  📋 04-商城页(精选直播): 2 个UC\n"
+                        },
+                        {
+                          "text": "  📋 05-搜索页: 3 个UC\n"
+                        },
+                        {
+                          "text": "✅ 路径1完成：首页→商城(3Tab)→搜索，全部页面UC抽屉正常\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-10T02:17:17.181Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-out-qa3\\uc-user-flow-真人路径模拟——端到端测试-路径1：消费者浏览-→-商城页-→-搜索页-→-返回首页-chromium\\test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "001064041d19657d52e9-8d5f299deaea2b0718b7",
+              "file": "uc-user-flow.spec.ts",
+              "line": 48,
+              "column": 3
+            },
+            {
+              "title": "路径2：消费者 → 项目首页 → 项目商城 → 项目会员 → 返回平台",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 14739,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🚀 路径2开始：项目维度深度浏览\n"
+                        },
+                        {
+                          "text": "  📋 01-项目首页: 1 个UC\n"
+                        },
+                        {
+                          "text": "  📋 02-项目商城(商品Tab): 2 个UC\n"
+                        },
+                        {
+                          "text": "  📋 03-项目商城(直播Tab): 2 个UC\n"
+                        },
+                        {
+                          "text": "  📋 04-项目门店: 1 个UC\n"
+                        },
+                        {
+                          "text": "  📋 05-项目会员: 1 个UC\n"
+                        },
+                        {
+                          "text": "  📋 06-返回平台商城: 2 个UC\n"
+                        },
+                        {
+                          "text": "✅ 路径2完成：项目首页→商城→门店→会员→平台，全部页面UC抽屉正常\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-10T02:17:28.409Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-out-qa3\\uc-user-flow-真人路径模拟——端到端测试-532c5-→-项目首页-→-项目商城-→-项目会员-→-返回平台-chromium\\test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "001064041d19657d52e9-1018476bb0e7da57b397",
+              "file": "uc-user-flow.spec.ts",
+              "line": 85,
+              "column": 3
+            },
+            {
+              "title": "路径3：用户 → 个人中心 → 地址管理 → 会员中心 → 返回",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10367,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🚀 路径3开始：用户服务流\n"
+                        },
+                        {
+                          "text": "  📋 01-个人中心: 2 个UC\n"
+                        },
+                        {
+                          "text": "  📋 02-收货地址管理: 1 个UC\n"
+                        },
+                        {
+                          "text": "  📋 03-平台会员中心: 2 个UC\n"
+                        },
+                        {
+                          "text": "✅ 路径3完成：个人中心→地址管理→会员中心→返回，全部页面UC抽屉正常\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-10T02:17:43.174Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-out-qa3\\uc-user-flow-真人路径模拟——端到端测试-路径3：用户-→-个人中心-→-地址管理-→-会员中心-→-返回-chromium\\test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "001064041d19657d52e9-67ef135b489d64ce6ac1",
+              "file": "uc-user-flow.spec.ts",
+              "line": 124,
+              "column": 3
+            },
+            {
+              "title": "回归验证：首页→项目首页 来回导航，UC列表不混淆",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8379,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🔄 回归验证：跨页面UC不串扰\n"
+                        },
+                        {
+                          "text": "  ✅ 平台首页: UC-SHP-APP-001-01 存在\n"
+                        },
+                        {
+                          "text": "  ✅ 项目首页: 搜索UC已删除，加载UC存在\n"
+                        },
+                        {
+                          "text": "  ✅ 平台首页(返回): UC-SHP-APP-001-01 仍存在\n"
+                        },
+                        {
+                          "text": "✅ 回归验证通过：跨页面UC不串扰\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-10T02:17:53.565Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\STONE\\CodeBuddy\\SAAS-APP\\pom-workspace\\projects\\SAAS-APP\\test-out-qa3\\uc-user-flow-真人路径模拟——端到端测试-回归验证：首页→项目首页-来回导航，UC列表不混淆-chromium\\test-finished-1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "001064041d19657d52e9-4b352948eba1f2672cdf",
+              "file": "uc-user-flow.spec.ts",
+              "line": 149,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-08-10T02:17:16.279Z",
+    "duration": 46663.701,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

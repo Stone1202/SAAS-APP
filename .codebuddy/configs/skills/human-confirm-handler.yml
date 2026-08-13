@@ -1,0 +1,62 @@
+# Skill: AI确认询问处理器（Human Confirm Handler）
+# 版本: v1.0.0
+# 所属议题: POM V5.0 议题一
+# ============================================
+skill:
+  id: "human-confirm-handler"
+  name: "human-confirm-handler"
+  version: "1.0.0"
+  agents: ["pm-agent", "po-agent", "sm-agent", "ba-agent", "ux-agent", "arch-agent", "fd-agent", "qa-agent", "ac-agent", "bs-agent"]
+  description: "AI处理确认询问的技能：构造询问(7种类型)/接收追问/记录决策/回写产物。引用 human-confirm-protocol.yml 规范。"
+
+  triggers:
+    - description: "任何Agent遇到需人确认的决策点时触发"
+      condition: "决策点属于 must_confirm 场景（系统拆分/终端选择/边界归属/视觉调性/技术选型/发布决策/Sprint范围/Backlog优先级等）"
+
+  workflow:
+    - name: "1.识别确认点"
+      rule: "Agent识别当前决策是否属于must_confirm场景，如是则触发本技能"
+
+    - name: "2.确定询问类型"
+      rule: "根据决策性质选择Q1~Q6中合适的类型（Q7自由兜底由人触发）"
+
+    - name: "3.构造询问"
+      rule: "按confirm_request_schema构造询问，必须包含：request_id/request_type/stage/title/background/impact_scope/options(≥2)/ai_recommendation/followup_channels"
+
+    - name: "4.知识库引用"
+      rule: "options和ai_recommendation必须引用knowledge_refs（领域知识/项目知识/通用知识）"
+
+    - name: "5.批量合并"
+      rule: "同一阶段的多个确认点合并为batch_decision_brief，提供fast/detailed/hybrid三模式"
+
+    - name: "6.呈现询问"
+      rule: "PM Agent负责呈现决策清单（PM是编排者），提供三模式选择"
+
+    - name: "7.处理追问"
+      rule: "人对某选项追问时，AI按followup_channels响应：详细解释/替代方案/风险评估/自由输入"
+
+    - name: "8.记录决策"
+      rule: "人决策后，按decision_recording记录到 decision-log.md，包含request_id/decided_option/decision_basis/decided_at/writeback_target"
+
+    - name: "9.回写产物"
+      rule: "根据writeback_target将决策回写到对应产物（PRD/Backlog/Sprint计划/设计文档等）"
+
+  inputs:
+    - "决策点描述（来自Agent识别）"
+    - "knowledge_refs（知识库引用）"
+    - "constraints（约束条件）"
+
+  outputs:
+    - type: "confirm_request"
+      format: "YAML（按confirm_request_schema）"
+      description: "确认询问结构"
+    - type: "batch_decision_brief"
+      format: "YAML"
+      description: "批量决策清单（同阶段多确认点时）"
+    - type: "decision-log"
+      format: "Markdown"
+      path: "projects/{project}/.codebuddy/journal/decisions/decision-log.md"
+      description: "决策记录日志"
+
+  dependencies:
+    - "common/human-confirm-protocol.yml"

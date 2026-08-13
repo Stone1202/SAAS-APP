@@ -1,0 +1,216 @@
+version: 2.3.0
+active_project: SAAS-APP
+current_stream: STR-SAAS-002
+last_activity: 2026-08-07T15:00+08:00 (activate SAAS-APP, deactivate SAAS)
+members:
+- id: jojo
+  name: Jojo
+  role: admin
+  git_name: jojo
+  accessible_projects:
+  - SAAS-APP
+  - AI-SCRM
+  - SAAS
+  - SugarMate
+- id: Eltonliz
+  name: 李政
+  role: member
+  git_name: Eltonliz
+  accessible_projects:
+  - SAAS-APP
+  - SAAS
+  - AI-SCRM
+- id: linjinmei
+  name: 林金梅
+  role: member
+  git_name: linjinmei
+  accessible_projects:
+  - SAAS-APP
+  - SAAS
+- id: fuyongjian
+  name: 付永健
+  role: member
+  git_name: fuyongjian
+  accessible_projects:
+  - SAAS-APP
+  - AI-SCRM
+  - SAAS
+  - SugarMate
+- id: jiangrubin
+  name: 江如彬
+  role: member
+  git_name: jiangrubin
+  accessible_projects:
+  - SAAS-APP
+  - AI-SCRM
+  - SAAS
+  - SugarMate
+- id: zhuangjingxiang
+  name: 庄景翔
+  role: member
+  git_name: zhuangjingxiang
+  accessible_projects:
+  - SAAS-APP
+  - SAAS
+projects:
+- id: AI-SCRM
+  name: AI-SCRM 智能SCRM平台
+  path: projects/AI-SCRM
+  project_prefix: ACRM
+  members:
+  - jojo
+  - Eltonliz
+  - fuyongjian
+  - jiangrubin
+  status: inactive
+  stage: acceptance
+  domain: SAAS/SCRM
+  industries:
+  - 大健康
+  - 药业
+  - 美妆
+  - 百货
+  keywords:
+  - AI-SCRM
+  - SCRM
+  - 运营后台
+  - 租户后台
+  - 租户中控
+  - 客户管理
+  - 统一通信
+  - 待办中心
+  - 跟进日历
+  - 客户360
+  - 话术库
+  - 系统设置
+  - 运营看板
+  - 租户管理
+  - 版本矩阵
+  - 订阅订单
+  - AI用量
+  - 营收分析
+  po_planning_completed: true
+  dev_port: 3333
+  db_name: ai-scrm-sim
+  deploy:
+    current_version: v1.0.0
+    deploy_url: https://ai-scrm-dpzzl2eobkr6.edgeone.dev
+    deploy_history:
+    - version: v1.0.0
+      status: success
+      deployed_at: 2026-07-21T15:45+08:00
+  streams:
+  - id: STR-ACRM-001
+    version: v1.0.0
+    type: 新增
+    priority: P0
+    stage: acceptance
+    po_version: v2.0.0
+    desc: AI-SCRM全面重构：双系统+AI沟通辅助闭环
+- id: SAAS-APP
+  name: SAAS-APP 配置式装修电商SaaS平台
+  path: projects/SAAS-APP
+  project_prefix: SAAS-APP
+  members:
+  - jojo
+  - Eltonliz
+  - linjinmei
+  - fuyongjian
+  - jiangrubin
+  - zhuangjingxiang
+  status: active
+  stage: active
+  domain: SAAS/电商
+  industries:
+  - 日用百货
+  - 健康保健
+  keywords:
+  - SAAS-APP
+  - 配置式装修
+  - 电商平台
+  - APP端
+  - 运营后台
+  - 租户后台
+  - 项目维度
+  - 门店
+  - 直播
+  - 会员
+  - 金刚区
+  - 广告位
+  - 搜索
+  - 推荐
+  - 楼层
+  - 追伴
+  - localStorage持久化
+  - JumpTargetPicker
+  brainstorm_topic: APP端配置式装修电商
+  brainstorm_type: planning
+  brainstorm_confirmed: true
+  dev_port: 5174
+  streams:
+  - id: STR-SAAS-002
+    version: v2.1.0
+    type: 新增
+    priority: P0
+    stage: active
+    desc: APP端配置式装修电商——平台首页+项目维度+运营后台+租户后台+搜索体系+数据持久化
+- id: SAAS
+  name: SAAS直播内容审查系统
+  path: projects/SAAS
+  project_prefix: SAAS
+  members:
+  - jojo
+  - Eltonliz
+  - linjinmei
+  - fuyongjian
+  - jiangrubin
+  - zhuangjingxiang
+  status: inactive
+  stage: closed
+  domain: SAAS
+  industries:
+  - 通用
+  keywords:
+  - SAAS
+  - 直播
+  - 直播审查
+  - 直播内容审查
+  - 擦音
+  - 静音
+  - 实时擦音
+  - 回放擦音
+  - 违规
+  - H5
+  - 直播间
+  - 直播中控
+  - 中控台
+  - 审查开关
+  - 审查入口
+  brainstorm_topic: 直播内容审查
+  brainstorm_type: planning
+  brainstorm_confirmed: true
+  streams:
+  - id: STR-SAAS-001
+    version: v1.0.0
+    type: 新增
+    priority: P0
+    stage: closed
+    desc: 直播内容审查——实时擦音/静音+回放擦音/静音效果模拟（三终端）
+- id: SugarMate
+  name: SugarMate（糖友之家）
+  path: projects/SugarMate
+  members:
+  - jojo
+  - fuyongjian
+  - jiangrubin
+  keywords:
+  - 糖尿病
+  - 慢病管理
+  - 互联网医院
+  - 在线问诊
+  - 糖友
+  - 血糖
+  stage: init
+  status: inactive
+  owner: jojo
+  created_at: 2026-07-27T19:00+08:00

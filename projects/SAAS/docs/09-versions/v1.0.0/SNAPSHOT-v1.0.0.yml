@@ -1,0 +1,137 @@
+# 版本快照 — V1.0.0
+# 项目：SAAS | 需求流：STR-SAAS-001 直播内容审查
+# 快照时间：2026-07-27（首次close 12:00，re-close 更新）
+# re-close 变更：PRD HTML「相关用例」格式优化 + ViolationsPanel 类型修复
+
+version:
+  major: 1
+  minor: 0
+  patch: 0
+  full: "v1.0.0"
+  prerelease: false
+
+project:
+  id: "SAAS"
+  name: "SAAS直播内容审查平台"
+  stream: "STR-SAAS-001"
+  topic: "直播审查"
+
+scope:
+  systems: ["SAAS运营后台", "SAAS租户后台", "SAAS观众端"]
+  terminals: ["PC", "H5"]
+  modules: ["内容审查域"]
+
+artifacts:
+  prd: "docs/01-requirements/16-内容审查域-PRD-v1.0.0.md"
+  prd_html: "docs/09-versions/v1.0.0/prd-html/SAAS-v1.0.0-S1.html"
+  design: "docs/03-design/v1.0.0/内容审查/设计文档-内容审查-v1.0.0.md"
+  architecture: "docs/04-architecture/v1.0.0/架构设计文档-内容审查域-V1.0.0.md"
+  test_report: ".codebuddy/test-report/QA-TEST-REPORT-v1.0.0.md"
+  acceptance_report: "docs/05-acceptance/accept-reports/ACR-audit-v1.0.0-20260727.md"
+  handoff_report: "docs/08-handoff/handoff-对应性校验报告-v1.0.0.md"
+  rev_summary: "docs/版本沉淀/v1.0.0/REV-SUMMARY-v1.0.0.md"
+
+fns:
+  - id: "FN-AUDIT-INFRA-001"
+    name: "模拟回调数据生成器"
+    system: "SAAS"
+    terminal: "PC/APP"
+    priority: "P0"
+
+  - id: "FN-AUDIT-PC-001"
+    name: "租户内容审查开关管理"
+    system: "SAAS运营后台"
+    terminal: "PC"
+    priority: "P0"
+
+  - id: "FN-AUDIT-PC-002"
+    name: "直播中控内容审查Tab-模拟回调+实时告警"
+    system: "SAAS租户后台"
+    terminal: "PC"
+    priority: "P0"
+
+  - id: "FN-AUDIT-PC-003"
+    name: "直播中控违规处置+擦音模式切换"
+    system: "SAAS租户后台"
+    terminal: "PC"
+    priority: "P0"
+
+  - id: "FN-AUDIT-PC-004"
+    name: "回放擦音效果模拟"
+    system: "SAAS租户后台"
+    terminal: "PC"
+    priority: "P0"
+
+  - id: "FN-AUDIT-APP-001"
+    name: "观众端直播模拟+静音/擦音效果+断流提示"
+    system: "SAAS观众端"
+    terminal: "H5(375px)"
+    priority: "P1"
+
+pages:
+  - id: "PG-AUDIT-PC-001"
+    name: "租户管理列表（运营后台）"
+    file: "src/pages/audit-switch/AuditSwitchPage.vue"
+    route: "/admin/tenant"
+    system: "SAAS运营后台"
+    terminal: "PC"
+
+  - id: "PG-AUDIT-PC-002"
+    name: "直播中控内容审查Tab"
+    file: "src/pages/live-control/LiveControlAuditPanel.vue"
+    route: "/tenant/live-control"
+    system: "SAAS租户后台"
+    terminal: "PC"
+
+  - id: "PG-AUDIT-PC-003"
+    name: "回放详情审查页"
+    file: "src/pages/replay/ReplayDetailAudit.vue"
+    route: "/tenant/live/:streamId/replay"
+    system: "SAAS租户后台"
+    terminal: "PC"
+
+  - id: "PG-AUDIT-PC-004"
+    name: "历史违规列表侧滑面板"
+    file: "src/pages/violations/ViolationsPanel.vue"
+    route: "/tenant/live/:streamId/violations"
+    system: "SAAS租户后台"
+    terminal: "PC"
+
+  - id: "PG-AUDIT-PC-005"
+    name: "直播/回放管理列表"
+    file: "src/pages/tenant-dashboard/TenantDashboardEntry.vue"
+    route: "/tenant/dashboard"
+    system: "SAAS租户后台"
+    terminal: "PC"
+
+  - id: "PG-AUDIT-APP-001"
+    name: "观众端直播间"
+    file: "src/pages/viewer/AudienceLiveRoom.vue"
+    route: "/h5/live/:roomId"
+    system: "SAAS观众端"
+    terminal: "H5"
+
+quality:
+  test_pass_rate: 100%
+  acceptance: "4/4通过"
+  rev_score: 92
+  gates:
+    G-REQ-01~14: "通过"
+    G-DES-01~05: "通过"
+    G-ARCH-01~06: "通过"
+    G-TEST-01~02: "通过"
+    G-ACC-01~02: "通过"
+    G-DEMO-01~04: "通过"
+    G-HO-DELIVERY-01~04: "通过"
+    G-CLOSE-07: "通过"
+
+stats:
+  fn_count: 6
+  uc_count: 5
+  br_count: 16
+  ent_count: 5
+  config_count: 8
+  metric_count: 5
+  page_count: 6
+  terminal_count: 3
+  help_element_count: 42

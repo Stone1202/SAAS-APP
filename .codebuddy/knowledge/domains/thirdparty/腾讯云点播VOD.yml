@@ -1,0 +1,582 @@
+# ============================================
+# 领域知识：腾讯云点播VOD
+# 分类：thirdparty（第三方API文档）
+# 版本：v1.0.0
+# 创建日期：2026-07-21
+# 学习方法：场景驱动学习法（SDL V1.0.0）
+# 来源：https://cloud.tencent.com/document/product/266 (产品概述)
+#       https://cloud.tencent.com/document/product/266/31753 (API概览)
+#       https://cloud.tencent.com/document/product/266/33427 (媒体处理)
+# ============================================
+
+meta:
+  domain_name: "腾讯云点播VOD"
+  category: "thirdparty"
+  version: "1.0.0"
+  sdl_version: "1.0.0"
+  created: "2026-07-21"
+  last_updated: "2026-07-21"
+  source_urls:
+    - "https://cloud.tencent.com/document/product/266"
+    - "https://cloud.tencent.com/document/product/266/31753"
+    - "https://cloud.tencent.com/document/product/266/33427"
+  crawling_log:
+    - url: "https://cloud.tencent.com/document/product/881/20191"
+      status: "wrong_content"
+      strategy: "S1-HTTP降级web_search"
+      note: "用户提供的URL返回播放器SDK页面(产品881)而非VOD(产品266)，通过web_search找到正确URL /266"
+    - url: "https://cloud.tencent.com/document/product/266"
+      status: "success"
+      strategy: "direct"
+      content_fidelity: "full"
+    - url: "https://cloud.tencent.com/document/product/266/31753"
+      status: "success"
+      strategy: "direct"
+      content_fidelity: "full"
+    - url: "https://cloud.tencent.com/document/product/266/33427"
+      status: "success"
+      strategy: "direct"
+      content_fidelity: "full"
+
+# ============================================
+# Part A: 商业问题（SDL Layer 0）
+# ============================================
+business_problems:
+  - id: "BP-VOD-001"
+    role: "App开发者"
+    problem: "如何实现音视频的上传、存储和管理？"
+    pain_point: "音视频文件体积大，存储成本高，管理复杂"
+    value: "VOD提供一站式上传（服务端/客户端/拉取上传）+ 云存储 + 媒体管理API"
+    evidence: "4个上传API + 10个媒体管理API（含语义搜索/知识库导入）"
+    scrm_relevance: 3
+    priority: "P1"
+    related_scenes: ["S-VOD-001"]
+
+  - id: "BP-VOD-002"
+    role: "App运营人员"
+    problem: "如何对视频进行转码和处理适配多端播放？"
+    pain_point: "不同终端需要不同格式/码率，转码成本高且复杂"
+    value: "ProcessMedia一体化接口支持转码/截图/水印/动图/自适应码流等10种任务"
+    evidence: "14个媒体处理API + 63个参数模板API + 4个任务流API"
+    scrm_relevance: 3
+    priority: "P1"
+    related_scenes: ["S-VOD-002"]
+
+  - id: "BP-VOD-003"
+    role: "内容审核员"
+    problem: "如何审核点播视频内容确保合规？"
+    pain_point: "视频内容可能包含违规信息（令人反感/不安全/不适宜），人工审核成本高"
+    value: "ReviewAudioVideo音视频审核API + ReviewImage图片审核API + 审核模板可配置"
+    evidence: "审核覆盖3类信息（令人反感/不安全/不适宜），支持审核模板CRUD + 审核结果回调"
+    scrm_relevance: 5
+    priority: "P0"
+    related_scenes: ["S-VOD-003"]
+
+  - id: "BP-VOD-004"
+    role: "内容审核员"
+    problem: "如何处理审核结果和违规视频？"
+    pain_point: "审核结果如何回调？违规内容如何处理？审核统计数据如何查看？"
+    value: "TasksNotifyMode回调配置 + 审核用量统计 + 内容智能识别详情查询"
+    evidence: "5个事件通知API + DescribeImageReviewUsageData/DescribeReviewDetails统计API"
+    scrm_relevance: 5
+    priority: "P0"
+    related_scenes: ["S-VOD-003"]
+
+  - id: "BP-VOD-005"
+    role: "系统管理员"
+    problem: "如何配置审核策略和任务流编排？"
+    pain_point: "不同视频类型需要不同审核策略，处理流程需要灵活编排"
+    value: "审核模板CRUD + 任务流模板（ProcessMediaByProcedure） + 任务优先级控制"
+    evidence: "CreateReviewTemplate/ModifyReviewTemplate + 4个任务流模板API + TasksPriority(-10~10)"
+    scrm_relevance: 4
+    priority: "P1"
+
+  - id: "BP-VOD-006"
+    role: "App开发者"
+    problem: "如何实现视频版权保护？"
+    pain_point: "独播剧/知识付费等版权视频需要防盗链和DRM加密"
+    value: "Key防盗链 + DRM加密 + AB水印 + 动态水印 + 访问控制"
+    evidence: "6个分发API（含DRM密钥配置） + 版权保护综述文档"
+    scrm_relevance: 2
+    priority: "P2"
+
+  - id: "BP-VOD-007"
+    role: "App运营人员"
+    problem: "如何利用AI能力提升视频内容价值？"
+    pain_point: "视频内容中的标签/分类/封面/人脸/文本等需要AI智能识别"
+    value: "内容分析（标签/分类/封面/按帧标签）+ 内容识别（片头片尾/人脸/文本/语音/物体）"
+    evidence: "ProcessMedia支持AiAnalysisTask + AiRecognitionTask，8个AI样本管理API"
+    scrm_relevance: 4
+    priority: "P2"
+    related_scenes: ["S-VOD-002"]
+
+  - id: "BP-VOD-008"
+    role: "App运营人员"
+    problem: "如何使用AIGC能力创作视频内容？"
+    pain_point: "AI生成视频/图片/音频的需求增长，但开发集成成本高"
+    value: "23个AI创作API（AIGC生视频/图片/音频/声音复刻/自定义主体/场景化生成等）"
+    evidence: "CreateAigcVideoTask/CreateAigcImageTask/CreateAigcAudioTask等23个AI创作接口"
+    scrm_relevance: 3
+    priority: "P2"
+
+  - id: "BP-VOD-009"
+    role: "App运营人员"
+    problem: "如何监控视频播放质量和用户数据？"
+    pain_point: "播放卡顿/失败等质量问题需要全链路监控，用户播放数据需要统计分析"
+    value: "15个数据统计API + 7个实时日志API + 播放质量监控"
+    evidence: "DescribeCDNUsageData/DescribeStorageData/DescribeMediaProcessUsageData等15个统计API"
+    scrm_relevance: 3
+    priority: "P2"
+
+# ============================================
+# Part B: 跨域衔接（SDL Layer 2）
+# ============================================
+cross_domain_bridges:
+  - id: "CDB-VOD-001"
+    from_domain: "腾讯云点播VOD"
+    to_domain: "腾讯云MPS"
+    bridge_type: "能力衔接"
+    description: "VOD媒体处理(ProcessMedia)与MPS媒体处理在转码/审核能力上重叠，VOD专注点播场景，MPS专注直播录播处理"
+    integration_point: "ProcessMediaByMPS接口（VOD调用MPS能力处理媒资）"
+    scrm_fusion_value: "直播录播→MPS擦音→VOD存储/转码/审核→分发播放，形成完整录播处理链路"
+    confidence: 0.9
+
+  - id: "CDB-VOD-002"
+    from_domain: "腾讯云点播VOD"
+    to_domain: "腾讯云即时通信IM"
+    bridge_type: "场景衔接"
+    description: "IM直播群弹幕/消息→直播结束→录像→VOD上传/处理/审核→IM分享回放链接"
+    integration_point: "直播结束触发录像→VOD PullUpload→ProcessMedia(转码+审核)→回放URL→IM消息推送"
+    scrm_fusion_value: "直播+点播一体化，直播结束后的录播审核+点播分发形成完整内容生命周期管理"
+    confidence: 0.85
+
+  - id: "CDB-VOD-003"
+    from_domain: "腾讯云点播VOD"
+    to_domain: "腾讯云直播"
+    bridge_type: "数据流衔接"
+    description: "直播录制→COS存储→VOD拉取上传→VOD转码/审核→CDN分发"
+    integration_point: "直播录制文件URL → VOD PullUpload → VOD FileId → 审核回调"
+    scrm_fusion_value: "直播录播审核闭环：直播录制→VOD审核（ReviewAudioVideo）→审核结果回调SCRM→处置决策"
+    confidence: 0.9
+
+  - id: "CDB-VOD-004"
+    from_domain: "腾讯云点播VOD"
+    to_domain: "内容安全审核(ai)"
+    bridge_type: "能力衔接"
+    description: "VOD音视频审核(ReviewAudioVideo)→审核结果回调→SCRM审核处置流程"
+    integration_point: "VOD审核回调URL → SCRM审核处置API（统一审核事件入口）"
+    scrm_fusion_value: "VOD审核与SCRM审核统一管理，VOD审核事件接入SCRM审核处置矩阵，实现点播+直播跨场景统一审核策略"
+    confidence: 0.95
+
+# ============================================
+# Part C: 角色视角（SDL Layer 3）
+# ============================================
+role_perspectives:
+  - scene_id: "S-VOD-003"
+    scene_name: "内容审核闭环"
+    role: "内容审核员"
+    operations: ["发起审核任务", "查看审核结果", "处理违规视频", "查看审核统计"]
+    kpi: ["审核覆盖率", "违规检出率", "审核延迟", "审核准确率"]
+    pain_points: ["审核策略配置复杂", "不同视频类型需要不同审核模板", "异步审核结果处理流程长"]
+    scrm_expectation: "VOD审核事件接入SCRM统一审核看板，与IM审核+MPS审核数据汇总"
+
+  - scene_id: "S-VOD-003"
+    scene_name: "内容审核闭环"
+    role: "系统管理员"
+    operations: ["创建审核模板", "配置任务流", "设置审核回调URL", "查看审核统计"]
+    kpi: ["模板配置效率", "任务流编排灵活性", "回调到达率"]
+    pain_points: ["审核模板参数复杂", "任务流编排需要理解10种任务类型"]
+    scrm_expectation: "SCRM后台统一管理VOD审核模板，与IM审核策略联动配置"
+
+  - scene_id: "S-VOD-002"
+    scene_name: "视频转码处理"
+    role: "App运营人员"
+    operations: ["发起转码任务", "配置转码模板", "查看任务状态", "管理媒资"]
+    kpi: ["转码成功率", "转码耗时", "多端适配覆盖率"]
+    pain_points: ["转码模板选择困难", "任务状态监控不便"]
+    scrm_expectation: "转码+审核一体化任务流，转码完成自动触发审核"
+
+# ============================================
+# Part D: 场景地图增强（SDL Layer 1增强）
+# ============================================
+scenario_maps:
+  - id: "S-VOD-001"
+    name: "视频上传管理"
+    related_topics: ["T-VOD-001", "T-VOD-006"]
+    related_business_problems: ["BP-VOD-001"]
+    flow: "申请上传(ApplyUpload) → 客户端/服务端上传 → 确认上传(CommitUpload) → 获取FileId → 媒体管理"
+    participants: ["开发者", "VOD服务端", "COS存储"]
+    closure: "申请上传→文件上传→确认上传→获取FileId→媒资可管理"
+    api_chain: ["ApplyUpload", "CommitUpload", "DescribeMediaInfos"]
+
+  - id: "S-VOD-002"
+    name: "视频转码处理"
+    related_topics: ["T-VOD-002", "T-VOD-004"]
+    related_business_problems: ["BP-VOD-002", "BP-VOD-007"]
+    flow: "发起ProcessMedia(转码+截图+水印+分析+识别) → 任务流执行 → 事件通知 → 输出多规格视频"
+    participants: ["运营", "VOD服务端", "转码引擎", "AI引擎"]
+    closure: "发起处理→任务流执行→多规格输出→事件通知→媒资更新"
+    api_chain: ["ProcessMedia(或ProcessMediaByProcedure)", "DescribeTasks", "PullEvents"]
+    scrm_relevance: "MEDIUM — 转码时可同步触发审核，实现处理+审核一体化"
+
+  - id: "S-VOD-003"
+    name: "内容审核闭环"
+    related_topics: ["T-VOD-003"]
+    related_business_problems: ["BP-VOD-003", "BP-VOD-004", "BP-VOD-005"]
+    flow: "上传/指定FileId → 发起ReviewAudioVideo(或ProcessMedia含AiContentReviewTask) → 异步审核 → 审核结果回调 → 审核统计 → 违规处理"
+    participants: ["审核员", "VOD服务端", "审核引擎", "App后台(回调)"]
+    closure: "发起审核→异步执行→结果回调→违规处理→统计更新"
+    api_chain: ["ReviewAudioVideo(音视频审核)", "ReviewImage(图片审核)", "PullEvents(拉取事件)", "DescribeReviewDetails(审核详情)"]
+    scrm_relevance: "HIGH — VOD音视频审核可接入SCRM审核处置流程，与MPS擦音+IM弹幕审核形成三重审核闭环"
+
+  - id: "S-VOD-004"
+    name: "视频分发播放"
+    related_topics: ["T-VOD-005", "T-VOD-009"]
+    related_business_problems: ["BP-VOD-006"]
+    flow: "转码完成 → CDN分发配置 → 缓存预热(PushUrlCache) → 播放器SDK播放 → 播放数据采集 → 质量监控"
+    participants: ["运营", "CDN", "播放器SDK", "最终用户"]
+    closure: "转码完成→CDN分发→缓存预热→播放器播放→数据采集→质量监控"
+    api_chain: ["PushUrlCache(预热)", "RefreshUrlCache(刷新)", "DescribeCDNUsageData(CDN统计)"]
+
+# ============================================
+# Part 1: 业务泳道图
+# ============================================
+business_swimlane: |
+  ```mermaid
+  flowchart LR
+      subgraph 上传方
+          A1[申请上传] --> A2[上传文件] --> A3[确认上传]
+      end
+      subgraph VOD服务端
+          B1[接收文件] --> B2[生成FileId] --> B3[存储到COS]
+          B3 --> C1[发起媒体处理]
+          C1 --> C2{任务类型}
+          C2 -->|转码| C3[视频转码]
+          C2 -->|审核| C4[内容审核]
+          C2 -->|分析| C5[AI分析]
+          C2 -->|识别| C6[AI识别]
+          C3 --> D1[输出多规格]
+          C4 --> D2[审核结果]
+          C5 --> D3[标签/封面]
+          C6 --> D4[人脸/文本]
+          D2 --> E1[回调通知App后台]
+      end
+      subgraph App后台
+          F1[接收审核回调] --> F2[审核结果处理] --> F3[违规视频处理]
+      end
+      subgraph 播放方
+          G1[获取播放URL] --> G2[CDN加速分发] --> G3[播放器播放]
+      end
+      A3 --> B1
+      E1 --> F1
+      D1 --> G1
+  ```
+
+# ============================================
+# Part 2: 业务流程
+# ============================================
+business_process:
+  normal_flow: "上传→转码→审核(通过)→分发→播放→数据采集"
+  exception_flow: "上传→转码→审核(违规)→回调通知→违规处理(下架/标记)→统计更新"
+  branch_flow: "上传→转码+审核(一体化任务流)→审核结果决定是否分发"
+  mermaid: |
+    ```mermaid
+    flowchart TD
+        A[视频上传] --> B[生成FileId]
+        B --> C[发起媒体处理]
+        C --> D{处理方式?}
+        D -->|单独审核| E[ReviewAudioVideo]
+        D -->|任务流含审核| F[ProcessMedia含AiContentReviewTask]
+        D -->|仅转码| G[ProcessMedia转码]
+        E --> H[异步审核执行]
+        F --> H
+        H --> I{审核结果}
+        I -->|通过| J[正常分发]
+        I -->|违规| K[回调通知App后台]
+        I -->|可疑| L[标记+人工复审]
+        K --> M[违规处理:下架/标记]
+        G --> N[多规格输出]
+        N --> J
+        J --> O[CDN分发+播放]
+    ```
+
+# ============================================
+# Part 3: 信息流图
+# ============================================
+information_flow: |
+  ```mermaid
+  flowchart TD
+      subgraph 上传
+          U1[客户端/服务端] -->|文件| U2[VOD上传API]
+          U2 -->|存储| U3[COS对象存储]
+      end
+      subgraph 处理
+          P1[VOD FileId] -->|ProcessMedia| P2[转码引擎]
+          P1 -->|ReviewAudioVideo| P3[审核引擎]
+          P1 -->|AiAnalysisTask| P4[AI分析引擎]
+          P2 -->|多规格视频| P5[输出存储]
+          P3 -->|审核结果| P6[事件通知]
+          P4 -->|标签/封面| P5
+      end
+      subgraph 分发
+          D1[CDN] -->|加速| D2[播放器SDK]
+          D2 -->|播放数据| D3[数据统计]
+      end
+      subgraph 回调
+          C1[事件通知] -->|HTTP回调| C2[App后台]
+          C2 -->|审核日志| C3[审核统计]
+      end
+      U3 --> P1
+      P5 --> D1
+      P6 --> C1
+  ```
+
+# ============================================
+# Part 4: 状态机
+# ============================================
+state_machine:
+  entity: "媒体处理任务状态"
+  states: ["待处理", "处理中", "处理成功", "处理失败", "审核通过", "审核违规", "审核可疑"]
+  transitions:
+    - { from: "—", to: "待处理", trigger: "发起ProcessMedia/ReviewAudioVideo", operator: "运营/系统" }
+    - { from: "待处理", to: "处理中", trigger: "任务开始执行", operator: "VOD服务端" }
+    - { from: "处理中", to: "处理成功", trigger: "转码/处理完成", operator: "VOD服务端" }
+    - { from: "处理中", to: "处理失败", trigger: "处理出错", operator: "VOD服务端" }
+    - { from: "处理成功", to: "审核通过", trigger: "审核结果=通过", operator: "审核引擎" }
+    - { from: "处理成功", to: "审核违规", trigger: "审核结果=违规", operator: "审核引擎" }
+    - { from: "处理成功", to: "审核可疑", trigger: "审核结果=可疑", operator: "审核引擎" }
+  mermaid: |
+    ```mermaid
+    stateDiagram-v2
+        [*] --> 待处理: 发起处理/审核
+        待处理 --> 处理中: 任务开始
+        处理中 --> 处理成功: 处理完成
+        处理中 --> 处理失败: 处理出错
+        处理成功 --> 审核通过: 审核结果=通过
+        处理成功 --> 审核违规: 审核结果=违规
+        处理成功 --> 审核可疑: 审核结果=可疑
+        审核通过 --> [*]: 正常分发
+        审核违规 --> [*]: 下架/标记
+        审核可疑 --> [*]: 人工复审
+        处理失败 --> [*]: 重试或放弃
+    ```
+
+# ============================================
+# Part 5: 业务操作矩阵
+# ============================================
+business_operation_matrix:
+  roles: ["运营", "审核员", "管理员", "开发者"]
+  states: ["待处理", "处理中", "处理成功", "审核通过", "审核违规", "审核可疑"]
+  matrix:
+    - { role: "运营", state: "待处理", operations: ["发起处理", "设置优先级"] }
+    - { role: "运营", state: "处理中", operations: ["查看任务状态"] }
+    - { role: "运营", state: "处理成功", operations: ["查看输出", "分发播放"] }
+    - { role: "审核员", state: "审核通过", operations: ["确认通过"] }
+    - { role: "审核员", state: "审核违规", operations: ["下架视频", "标记违规"] }
+    - { role: "审核员", state: "审核可疑", operations: ["人工复审", "保持/下架"] }
+    - { role: "管理员", state: "—", operations: ["创建审核模板", "配置任务流", "设置回调URL"] }
+    - { role: "开发者", state: "—", operations: ["集成上传SDK", "集成播放器SDK", "处理回调"] }
+
+# ============================================
+# Part 6: 业务时序图
+# ============================================
+business_sequence: |
+  ```mermaid
+  sequenceDiagram
+      participant OP as 运营
+      participant VOD as VOD服务端
+      participant AU as 审核引擎
+      participant CD as CDN
+      participant US as 最终用户
+      participant BA as App后台
+      OP->>VOD: ProcessMedia(FileId, 转码+审核任务)
+      VOD->>VOD: 任务流编排(转码→审核)
+      VOD->>AU: 发起审核(ReviewAudioVideo)
+      AU-->>VOD: 审核结果(异步回调)
+      alt 审核通过
+          VOD->>CD: 推送转码文件(缓存预热)
+          VOD->>BA: 事件通知(审核通过)
+          US->>CD: 播放视频
+      else 审核违规
+          VOD->>BA: 事件通知(审核违规)
+          BA->>VOD: 下架/标记违规视频
+      else 审核可疑
+          VOD->>BA: 事件通知(审核可疑)
+          BA->>BA: 人工复审
+      end
+      VOD->>BA: 统计数据更新
+  ```
+
+# ============================================
+# Part 7: 数据实体(ER)
+# ============================================
+data_entities:
+  - name: "媒资文件"
+    fields:
+      - { name: "FileId", type: "string", required: true, desc: "媒资唯一标识" }
+      - { name: "Name", type: "string", required: false, desc: "文件名" }
+      - { name: "Url", type: "string", required: false, desc: "播放URL" }
+      - { name: "MediaType", type: "enum", required: true, desc: "媒体类型(video/audio/image)" }
+      - { name: "Size", type: "number", required: false, desc: "文件大小(字节)" }
+      - { name: "Duration", type: "number", required: false, desc: "时长(秒)" }
+      - { name: "Status", type: "enum", required: true, desc: "状态(normal/transcoding/auditing/blocked)" }
+
+  - name: "处理任务"
+    fields:
+      - { name: "TaskId", type: "string", required: true, desc: "任务ID" }
+      - { name: "FileId", type: "string", required: true, desc: "关联媒资FileId" }
+      - { name: "TaskType", type: "enum", required: true, desc: "任务类型(transcode/review/analysis/recognition)" }
+      - { name: "Status", type: "enum", required: true, desc: "任务状态(waiting/processing/done/failed)" }
+      - { name: "Priority", type: "integer", required: false, desc: "优先级(-10~10)" }
+      - { name: "SessionContext", type: "string", required: false, desc: "来源上下文(透传)" }
+
+  - name: "审核记录"
+    fields:
+      - { name: "AuditId", type: "string", required: true, desc: "审核记录ID" }
+      - { name: "FileId", type: "string", required: true, desc: "关联媒资FileId" }
+      - { name: "TaskId", type: "string", required: true, desc: "关联任务ID" }
+      - { name: "ContentType", type: "enum", required: true, desc: "内容类型(audio/video/image)" }
+      - { name: "Result", type: "enum", required: true, desc: "审核结果(pass/block/suspect)" }
+      - { name: "AuditType", type: "enum", required: false, desc: "审核维度(令人反感/不安全/不适宜)" }
+      - { name: "Definition", type: "integer", required: false, desc: "审核模板ID" }
+
+# ============================================
+# Part 8: 解决方案概括
+# ============================================
+solution_summary:
+  product_name: "腾讯云点播VOD"
+  product_url: "https://cloud.tencent.com/product/vod"
+  api_categories:
+    - { category: "AI创作", count: 23, base_action: "CreateAigc*" }
+    - { category: "媒体处理", count: 14, base_action: "ProcessMedia/EditMedia/ComposeMedia/ReviewAudioVideo等" }
+    - { category: "图片处理", count: 1, base_action: "ReviewImage" }
+    - { category: "参数模板", count: 63, base_action: "Create/Describe/Modify/Delete + *Template" }
+    - { category: "任务流", count: 4, base_action: "*ProcedureTemplate" }
+    - { category: "任务管理", count: 3, base_action: "ManageTask/DescribeTask*" }
+    - { category: "媒体上传", count: 4, base_action: "ApplyUpload/CommitUpload/PullUpload" }
+    - { category: "媒体管理", count: 10, base_action: "DescribeMediaInfos/SearchMedia*" }
+    - { category: "事件通知", count: 5, base_action: "PullEvents/ConfirmEvents/ModifyEventConfig" }
+    - { category: "媒体分类", count: 4, base_action: "*Class" }
+    - { category: "域名管理", count: 9, base_action: "*VodDomain*" }
+    - { category: "分发", count: 6, base_action: "PushUrlCache/RefreshUrlCache/SetDrm*" }
+    - { category: "AI样本管理", count: 8, base_action: "*Sample*" }
+    - { category: "园区管理", count: 3, base_action: "*StorageRegion*" }
+    - { category: "数据统计", count: 15, base_action: "Describe*UsageData/Describe*Data" }
+    - { category: "轮播", count: 6, base_action: "*RoundPlay*" }
+    - { category: "实时日志", count: 7, base_action: "*CLS*" }
+    - { category: "其他", count: 18, base_action: "LiveRealTimeClip/SimpleHlsClip等" }
+  total_api_count: 227
+  security_requirements:
+    - "API请求需TC3-HMAC-SHA256签名认证"
+    - "频率限制：API+地域+子账号维度（5/20/100/200次/秒）"
+    - "DRM加密保护版权视频"
+    - "Key防盗链控制访问权限"
+    - "子应用(SubAppId)隔离"
+  integration_steps:
+    - "1. 开通VOD服务（控制台）"
+    - "2. 创建子应用（SubAppId）"
+    - "3. 配置存储地域（园区）"
+    - "4. 创建转码/审核/截图参数模板"
+    - "5. 配置任务流模板（编排转码+审核+分析）"
+    - "6. 配置事件通知回调URL"
+    - "7. 集成上传SDK + 播放器SDK"
+    - "8. App服务端调用REST API管理媒资"
+  common_issues:
+    - "Q: 审核用哪个接口？A: ReviewAudioVideo(音视频)/ReviewImage(图片)，不建议用ProcessMedia的AiContentReviewTask"
+    - "Q: 如何获取审核结果？A: 配置TasksNotifyMode + 回调URL 或 PullEvents拉取"
+    - "Q: 转码和审核能否同时进行？A: 可通过任务流编排(ProcessMedia含多任务)或ProcessMediaByProcedure"
+    - "Q: 旧版ContentReviewTemplate能用吗？A: 已废弃，改用ReviewTemplate系列"
+
+# ============================================
+# Part 9: 主题清单
+# ============================================
+topics:
+  - { id: "T-VOD-001", name: "视频上传管理", content_ratio: "8%", related_apis: 4, related_bp: ["BP-VOD-001"] }
+  - { id: "T-VOD-002", name: "视频转码处理", content_ratio: "15%", related_apis: 14, related_bp: ["BP-VOD-002"] }
+  - { id: "T-VOD-003", name: "内容审核", content_ratio: "12%", related_apis: 8, related_bp: ["BP-VOD-003", "BP-VOD-004", "BP-VOD-005"], scrm_relevance: "HIGH" }
+  - { id: "T-VOD-004", name: "参数模板管理", content_ratio: "15%", related_apis: 63, related_bp: ["BP-VOD-002", "BP-VOD-005"] }
+  - { id: "T-VOD-005", name: "视频分发播放", content_ratio: "8%", related_apis: 15, related_bp: ["BP-VOD-006"] }
+  - { id: "T-VOD-006", name: "媒体管理", content_ratio: "5%", related_apis: 10, related_bp: ["BP-VOD-001"] }
+  - { id: "T-VOD-007", name: "事件通知", content_ratio: "5%", related_apis: 5, related_bp: ["BP-VOD-004"] }
+  - { id: "T-VOD-008", name: "AIGC创作", content_ratio: "10%", related_apis: 23, related_bp: ["BP-VOD-008"] }
+  - { id: "T-VOD-009", name: "数据统计监控", content_ratio: "7%", related_apis: 22, related_bp: ["BP-VOD-009"] }
+  - { id: "T-VOD-010", name: "版权保护", content_ratio: "5%", related_apis: 6, related_bp: ["BP-VOD-006"] }
+  - { id: "T-VOD-011", name: "任务流编排", content_ratio: "5%", related_apis: 8, related_bp: ["BP-VOD-002", "BP-VOD-005"] }
+  - { id: "T-VOD-012", name: "AI内容分析识别", content_ratio: "5%", related_apis: 8, related_bp: ["BP-VOD-007"] }
+
+# ============================================
+# Part 10: 场景清单
+# ============================================
+scenes:
+  - { id: "S-VOD-001", name: "视频上传管理", related_topics: ["T-VOD-001", "T-VOD-006"], related_bp: ["BP-VOD-001"] }
+  - { id: "S-VOD-002", name: "视频转码处理", related_topics: ["T-VOD-002", "T-VOD-004"], related_bp: ["BP-VOD-002", "BP-VOD-007"] }
+  - { id: "S-VOD-003", name: "内容审核闭环", related_topics: ["T-VOD-003"], related_bp: ["BP-VOD-003", "BP-VOD-004", "BP-VOD-005"], scrm_relevance: "HIGH" }
+  - { id: "S-VOD-004", name: "视频分发播放", related_topics: ["T-VOD-005", "T-VOD-009"], related_bp: ["BP-VOD-006"] }
+
+# ============================================
+# Part 11: 接口串联
+# ============================================
+api_list:
+  # 媒体处理-核心
+  - { name: "媒体处理", action: "ProcessMedia", category: "媒体处理", rate_limit: "200/s", scene: "S-VOD-002", note: "核心接口：转码+截图+水印+审核+分析+识别一体化" }
+  - { name: "任务流模板处理", action: "ProcessMediaByProcedure", category: "媒体处理", rate_limit: "100/s", scene: "S-VOD-002" }
+  - { name: "视频编辑", action: "EditMedia", category: "媒体处理", rate_limit: "100/s" }
+  - { name: "视频合成", action: "ComposeMedia", category: "媒体处理", rate_limit: "100/s" }
+  - { name: "视频拆条", action: "SplitMedia", category: "媒体处理", rate_limit: "20/s" }
+  - { name: "音画质重生", action: "EnhanceMediaQuality", category: "媒体处理", rate_limit: "20/s" }
+  - { name: "音画质检测", action: "InspectMediaQuality", category: "媒体处理", rate_limit: "20/s" }
+  - { name: "音视频审核", action: "ReviewAudioVideo", category: "媒体处理", rate_limit: "20/s", scene: "S-VOD-003", note: "审核核心API" }
+  - { name: "图片审核", action: "ReviewImage", category: "图片处理", rate_limit: "20/s", scene: "S-VOD-003", note: "审核核心API" }
+  # 审核模板
+  - { name: "创建审核模板", action: "CreateReviewTemplate", category: "参数模板", rate_limit: "20/s", scene: "S-VOD-003" }
+  - { name: "获取审核模板列表", action: "DescribeReviewTemplates", category: "参数模板", rate_limit: "20/s" }
+  - { name: "修改审核模板", action: "ModifyReviewTemplate", category: "参数模板", rate_limit: "20/s" }
+  - { name: "删除审核模板", action: "DeleteReviewTemplate", category: "参数模板", rate_limit: "20/s" }
+  # 上传
+  - { name: "申请上传", action: "ApplyUpload", category: "媒体上传", scene: "S-VOD-001" }
+  - { name: "确认上传", action: "CommitUpload", category: "媒体上传", scene: "S-VOD-001" }
+  - { name: "拉取上传", action: "PullUpload", category: "媒体上传", scene: "S-VOD-001", note: "URL拉取生成媒资" }
+  # 媒体管理
+  - { name: "获取媒资信息", action: "DescribeMediaInfos", category: "媒体管理", scene: "S-VOD-001" }
+  - { name: "搜索媒资", action: "SearchMedia", category: "媒体管理" }
+  - { name: "语义搜索媒资", action: "SearchMediaBySemantics", category: "媒体管理", note: "AI语义搜索" }
+  # 事件通知
+  - { name: "拉取事件通知", action: "PullEvents", category: "事件通知", scene: "S-VOD-003", note: "审核结果获取" }
+  - { name: "确认事件", action: "ConfirmEvents", category: "事件通知" }
+  - { name: "修改事件配置", action: "ModifyEventConfig", category: "事件通知", note: "配置回调URL" }
+  # 任务管理
+  - { name: "管理任务", action: "ManageTask", category: "任务管理" }
+  - { name: "查询任务列表", action: "DescribeTasks", category: "任务管理", scene: "S-VOD-002" }
+  - { name: "查询任务详情", action: "DescribeTaskDetail", category: "任务管理" }
+  # 分发
+  - { name: "缓存预热", action: "PushUrlCache", category: "分发", scene: "S-VOD-004" }
+  - { name: "缓存刷新", action: "RefreshUrlCache", category: "分发" }
+  # 数据统计
+  - { name: "CDN用量统计", action: "DescribeCDNUsageData", category: "数据统计" }
+  - { name: "存储用量统计", action: "DescribeStorageData", category: "数据统计" }
+  - { name: "处理用量统计", action: "DescribeMediaProcessUsageData", category: "数据统计" }
+  - { name: "图片审核用量", action: "DescribeImageReviewUsageData", category: "数据统计", scene: "S-VOD-003", note: "审核统计" }
+  - { name: "内容识别详情", action: "DescribeReviewDetails", category: "数据统计", scene: "S-VOD-003", note: "审核详情" }
+
+api_chaining:
+  scene_s_vod_003_content_audit:
+    name: "内容审核闭环接口串联"
+    chain:
+      - { step: 1, api: "ReviewAudioVideo", desc: "对FileId发起音视频审核（或ProcessMedia含AiContentReviewTask）" }
+      - { step: 2, api: "审核引擎异步执行", desc: "VOD内部审核引擎异步处理（3类信息审核）" }
+      - { step: 3, api: "PullEvents / 回调URL", desc: "通过事件通知获取审核结果（Finish/Change模式）" }
+      - { step: 4, api: "DescribeReviewDetails", desc: "查询审核详情（违规类型/时间点/置信度）" }
+      - { step: 5, api: "DescribeImageReviewUsageData", desc: "查询审核用量统计" }
+      - { step: 6, api: "DeleteMedia(如需)", desc: "违规视频下架处理" }
+
+  cross_scene_live_to_vod_audit:
+    name: "跨场景：直播录制→VOD审核"
+    chain:
+      - { step: 1, api: "直播录制→COS", desc: "直播结束录制文件存储到COS" }
+      - { step: 2, api: "PullUpload", desc: "VOD拉取上传录像文件生成FileId" }
+      - { step: 3, api: "ProcessMedia(转码+审核)", desc: "一体化任务流：转码+内容审核" }
+      - { step: 4, api: "PullEvents/回调", desc: "获取审核结果" }
+      - { step: 5, api: "违规处理", desc: "审核违规→下架/标记→通知SCRM" }
+      - { step: 6, api: "PushUrlCache", desc: "审核通过→CDN缓存预热→分发播放" }
+
+orphan_apis: []

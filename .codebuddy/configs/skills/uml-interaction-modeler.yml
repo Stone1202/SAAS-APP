@@ -1,0 +1,140 @@
+# ============================================
+# UML动态交互建模器（UML Interaction Modeler Skill）
+# 版本: V1.0.0
+# 创建日期: 2026-07-24
+# 用途: UML动态交互图建模（组合片段+通信图+交互概览图）+时序图
+# ============================================
+
+skill_id: "uml-interaction-modeler"
+name: "UML动态交互建模器"
+version: "1.0.0"
+description: "生成UML动态交互模型——业务时序图、三方接口时序图、通信图/交互概览图，含组合片段（alt/loop/par/opt/break/ref）标注"
+
+# ============================================
+# 触发条件
+# ============================================
+trigger:
+  context: "需求分析阶段——BA分析系统间/模块间交互流程时触发"
+  auto_detect:
+    - "PRD中出现多模块/多系统协作"
+    - "用例基本流程涉及≥2个参与者"
+    - "BR中定义跨系统交互规则"
+    - "PRD标注外部接口（三方API）"
+
+# ============================================
+# 输入
+# ============================================
+inputs:
+  - "业务流程图/泳道图"
+  - "用例基本流程和备选流程"
+  - "BR中涉及跨系统交互的规则"
+  - "外部接口清单（PRD §15）"
+  - "领域知识（Part12 API参数字典，如有）"
+
+# ============================================
+# 建模流程
+# ============================================
+stages:
+
+  i1:
+    name: "交互参与者分析"
+    actions:
+      - "从泳道图/用例中提取所有交互参与者（Actor）"
+      - "识别参与者的角色类型（用户/前端/后端/第三方API/数据库/消息队列）"
+      - "识别交互触发条件和结束条件"
+    output: "参与者清单+角色分类"
+
+  i2:
+    name: "组合片段分析（Combined Fragments）"
+    actions:
+      - "从UC备选流程/BR中识别条件分支→alt片段"
+      - "从UC基本流程中识别循环操作→loop片段"
+      - "从BR中识别并行操作→par片段"
+      - "识别可选操作→opt片段"
+      - "识别异常中断→break片段"
+      - "跨页面/跨模块复用→ref片段"
+    output: "组合片段映射表（场景×片段类型×条件/边界）"
+
+  i3:
+    name: "业务时序图生成"
+    actions:
+      - "基于泳道图+UC基本流程生成序列号（sequenceDiagram参与者声明）"
+      - "逐步骤标注Actor之间的消息传递（实线同步→→，虚线返回值-->）"
+      - "嵌入组合片段（alt/loop/par/opt/break/ref）"
+      - "为每个消息标注数据载体（DTO/Entity/枚举值）"
+      - "标注Note注释（关键决策点/数据范围/边界条件）"
+    output: "Mermaid sequenceDiagram 代码块（业务时序图）"
+
+  i4:
+    name: "三方接口时序图生成"
+    actions:
+      - "从外部接口清单提取三方API调用链"
+      - "生成Gateway→三方API的时序图"
+      - "标注接口HTTP方法+路径+参数+签名机制"
+      - "标注超时/重试/降级组合片段"
+      - "引用Part12 API参数字典（如有）"
+    output: "Mermaid sequenceDiagram 代码块（三方接口时序图）"
+
+  i5:
+    name: "通信图/交互概览图（按需）"
+    actions:
+      - "复杂多模块协作场景→生成通信图（对象间链接+消息编号）"
+      - "多条时序图间调用关系→生成交互概览图（ref引用）"
+    condition: "模块≥4个 且 时序图≥3条"
+    output: "通信图/交互概览图（可选）"
+
+  i6:
+    name: "一致性校验"
+    actions:
+      - "校验时序图消息与UC基本流程步骤一一对应"
+      - "校验组合片段条件与BR规则一致"
+      - "校验三方接口时序图与API参数字典参数一致"
+      - "校验Actor与泳道图泳道一致"
+    output: "一致性校验报告"
+
+# ============================================
+# 输出产物
+# ============================================
+outputs:
+  business_sequence_diagram:
+    format: "Mermaid sequenceDiagram"
+    filename: "MD-{PREFIX}-{NNN}.md"
+    description: "业务时序图（含组合片段）"
+  
+  third_party_sequence_diagram:
+    format: "Mermaid sequenceDiagram"
+    filename: "MD-{PREFIX}-{NNN}.md"
+    description: "三方接口时序图"
+  
+  communication_diagram:
+    format: "Mermaid"
+    condition: "模块≥4个 且 时序图≥3条"
+    description: "通信图/交互概览图"
+  
+  consistency_report:
+    format: "Markdown"
+    description: "UC/BR/API一致性校验报告"
+
+# ============================================
+# 引用规范
+# ============================================
+references:
+  - "common/doc-standards.yml#interaction_diagram_format"
+  - "common/gates-registry.yml#G-REQ-06"
+  - "common/gates-registry.yml#G-REQ-07"
+  - "common/iron-rules-registry.yml#BA-06"
+
+# ============================================
+# 质量门禁
+# ============================================
+quality_gates:
+  - id: "IM-01"
+    rule: "所有跨系统/跨模块用例必须产出业务时序图"
+  - id: "IM-02"
+    rule: "时序图必须使用组合片段（alt/loop/par/opt/break）标注分支/循环/并行"
+  - id: "IM-03"
+    rule: "每条消息标注数据载体（DTO/Entity/枚举值）"
+  - id: "IM-04"
+    rule: "三方接口时序图必须含HTTP方法+路径+错误处理"
+  - id: "IM-05"
+    rule: "时序图消息与UC步骤一一对应，无遗漏无多余"

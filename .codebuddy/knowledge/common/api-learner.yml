@@ -1,0 +1,299 @@
+# ============================================
+# API学习技能公共定义 V1.0.0
+# ============================================
+# 定位：全局共享的API学习技能规则定义，供 learn-project 和 learn-domain 共同引用
+# 关联：learn-domain.yml V3.0.0 Step4.5 / learn-project.yml V6.0.0 Stage2.3
+# 触发条件：来源含接口文档 / --deep-params / 领域分类=thirdparty
+# 最终目的：服务于7部分业务产物 + 7项业务分析建模（API映射：接口名称×业务场景+调用顺序）
+# 版本：v1.0.0
+# 创建日期：2026-07-17
+# ============================================
+
+version: "1.0.0"
+description: |
+  API学习技能公共定义。独立于 learn-project 和 learn-domain，两者均引用本文件。
+  当学习来源包含接口文档时触发，产出 Part12 API参数字典 + Part13 参数流转图 + 参数校验报告。
+  产出最终服务于7部分业务产物和7项业务分析建模——梳理API在不同业务中的接口名称映射和调用顺序。
+
+# ============================================
+# 触发条件（满足任一即触发）
+# ============================================
+trigger_conditions:
+  - condition: "来源包含 --api=外部接口文档.md"
+    description: "用户显式提供接口文档文件"
+  - condition: "来源包含 --source=api-endpoint:https://..."
+    description: "用户提供API端点URL"
+  - condition: "抓取内容中检测到API参数表"
+    detection_rules:
+      - "页面含'请求参数'/'响应参数'/'Request Parameters'/'Response Parameters'标题"
+      - "页面含HTML table且列头含'参数'/'类型'/'必填'/'描述'"
+      - "页面含JSON Schema定义"
+      - "页面含OpenAPI/Swagger规范内容"
+  - condition: "--deep-params 参数显式指定"
+    description: "用户强制开启深度参数提取"
+  - condition: "领域分类=thirdparty"
+    description: "第三方API文档学习必然触发（来源都是接口文档）"
+
+# ============================================
+# 处理流程（3阶段）
+# ============================================
+processing:
+
+  # ========== 阶段A：API参数深度提取 ==========
+  stage_a:
+    name: "API参数深度提取"
+    output: "Part12 API参数字典"
+    description: |
+      对每个API，从接口文档中提取完整参数定义。
+    
+    extraction_items:
+      request_params:
+        description: "输入参数（每个参数含以下字段）"
+        fields:
+          - { field: "field", type: "string", description: "字段名" }
+          - { field: "type", type: "string", description: "类型（string/number/boolean/object/array/enum/file）" }
+          - { field: "required", type: "boolean", description: "是否必填" }
+          - { field: "max_length", type: "string", description: "最大长度（如有）" }
+          - { field: "description", type: "string", description: "字段含义说明" }
+          - { field: "enum_values", type: "array", description: "枚举值列表（type=enum时）" }
+          - { field: "default", type: "string", description: "默认值（如有）" }
+          - { field: "source_type", type: "enum", description: "参数来源类型", enum: ["user_input", "upstream_api", "system_generated", "config", "computed"] }
+          - { field: "source_api", type: "string", description: "来源API编号（source_type=upstream_api时）" }
+          - { field: "source_field", type: "string", description: "来源API的出参字段名" }
+          - { field: "encryption", type: "enum", description: "加密要求", enum: ["none", "rsa", "aes", "mask"] }
+          - { field: "validation", type: "string", description: "校验规则（如'金额>0''手机号11位'）" }
+          - { field: "semantic_role", type: "enum", description: "参数语义角色", enum: ["PRIMARY_KEY", "IDEMPOTENT_KEY", "AMOUNT", "STATUS", "SENSITIVE", "TIMESTAMP", "SIGNATURE", "REFERENCE", "BUSINESS_PARAM", "PAGINATION", "QUERY_FILTER", "RESPONSE_META"] }
+      
+      response_params:
+        description: "输出参数（每个参数含以下字段）"
+        fields:
+          - { field: "field", type: "string", description: "字段名" }
+          - { field: "type", type: "string", description: "类型" }
+          - { field: "description", type: "string", description: "字段含义" }
+          - { field: "enum_values", type: "array", description: "枚举值列表" }
+          - { field: "nullable", type: "boolean", description: "是否可空" }
+          - { field: "downstream_usage", type: "array", description: "下游消费方（API编号列表）" }
+          - { field: "semantic_role", type: "string", description: "参数语义角色" }
+      
+      notification_params:
+        description: "异步通知参数（async=true时）"
+        fields:
+          - { field: "notification_event", type: "string", description: "通知事件名" }
+          - { field: "params", type: "array", description: "通知参数列表（同response_params结构）" }
+          - { field: "correlation_field", type: "string", description: "关联字段（如requestNo，用于关联同步请求）" }
+      
+      error_codes:
+        description: "错误码"
+        fields:
+          - { field: "code", type: "string", description: "错误码" }
+          - { field: "message", type: "string", description: "错误描述" }
+          - { field: "handling", type: "string", description: "处理建议" }
+
+    # 参数语义角色定义（12种）
+    semantic_roles:
+      - { role: "PRIMARY_KEY", description: "主键标识（如merchantNo/orderNo/requestNo）" }
+      - { role: "IDEMPOTENT_KEY", description: "幂等键（如requestNo，用于防重）" }
+      - { role: "AMOUNT", description: "金额字段（需校验>0、精度、币种）" }
+      - { role: "STATUS", description: "状态字段（关联状态机）" }
+      - { role: "SENSITIVE", description: "敏感数据（身份证号/银行卡号/手机号，需加密）" }
+      - { role: "TIMESTAMP", description: "时间戳字段" }
+      - { role: "SIGNATURE", description: "签名字段" }
+      - { role: "REFERENCE", description: "引用字段（指向其他实体的外键）" }
+      - { role: "BUSINESS_PARAM", description: "业务参数（如费率、限额、产品类型）" }
+      - { role: "PAGINATION", description: "分页参数（pageNo/pageSize）" }
+      - { role: "QUERY_FILTER", description: "查询过滤条件" }
+      - { role: "RESPONSE_META", description: "响应元数据（code/message/totalCount）" }
+
+    # 参数来源类型定义（5种）
+    source_types:
+      - { type: "user_input", description: "用户手动输入" }
+      - { type: "upstream_api", description: "上游API输出传入" }
+      - { type: "system_generated", description: "系统自动生成（如requestNo/timestamp）" }
+      - { type: "config", description: "配置项（如merchantNo）" }
+      - { type: "computed", description: "计算得出（如signature）" }
+
+  # ========== 阶段B：参数流转图 ==========
+  stage_b:
+    name: "参数流转图"
+    output: "Part13 参数流转图"
+    description: |
+      将所有API的参数进行跨API融合分析，生成参数流转图。
+    
+    analysis_items:
+      intra_scene_param_flow:
+        description: "场景内参数流转（每个场景内A出参→B入参的映射）"
+        structure:
+          - { field: "scene_id", description: "场景编号" }
+          - { field: "scene_name", description: "场景名称" }
+          - { field: "flows", description: "流转列表（from_api/from_field/to_api/to_field/dependency）" }
+          - { field: "mermaid", description: "场景内参数流转Mermaid图" }
+      
+      cross_scene_param_flow:
+        description: "跨场景参数流转（场景间参数传递）"
+        structure:
+          - { field: "from_scene/from_api/from_field", description: "生产者" }
+          - { field: "to_scene/to_api/to_field", description: "消费者" }
+          - { field: "dependency", description: "required/optional" }
+          - { field: "mermaid", description: "跨场景参数流转Mermaid图" }
+      
+      param_source_trace:
+        description: "参数来源溯源（关键参数完整来源链）"
+        key_param_roles: ["PRIMARY_KEY", "IDEMPOTENT_KEY", "AMOUNT", "SENSITIVE"]
+        structure:
+          - { field: "param_name", description: "参数名" }
+          - { field: "semantic_role", description: "语义角色" }
+          - { field: "origin", description: "最初来源（api_id/source_type）" }
+          - { field: "flows_to", description: "流入的API编号列表" }
+          - { field: "trace_chain", description: "完整来源链描述" }
+      
+      param_dependency_matrix:
+        description: "参数依赖矩阵（行=消费者API，列=生产者API）"
+        structure:
+          - { field: "consumer_api", description: "消费者API" }
+          - { field: "producer_api", description: "生产者API" }
+          - { field: "params", description: "依赖的参数列表" }
+          - { field: "dependency", description: "required/optional" }
+      
+      param_state_association:
+        description: "参数×状态机关联"
+        structure:
+          - { field: "param_name", description: "参数名" }
+          - { field: "state_machine", description: "关联的状态机实体" }
+          - { field: "effect", description: "对状态的影响" }
+      
+      param_rule_association:
+        description: "参数×业务规则关联"
+        structure:
+          - { field: "rule_id", description: "BR编号" }
+          - { field: "related_params", description: "涉及的参数列表" }
+      
+      param_security_analysis:
+        description: "参数安全分析"
+        sub_items:
+          sensitive_fields: "敏感字段（param_name/api_id/encryption/risk）"
+          idempotent_keys: "幂等键（param_name/api_id/uniqueness_mechanism）"
+          amount_fields: "金额字段（param_name/api_id/validation/precision）"
+          signature_analysis: "签名分析（algorithm/sign_scope/verify_scope）"
+
+  # ========== 阶段C：参数级校验 ==========
+  stage_c:
+    name: "参数级校验"
+    output: "参数流转校验报告"
+    description: |
+      基于Part12和Part13进行8项参数级校验。
+    
+    checks:
+      - id: 1
+        name: "参数来源一致性校验"
+        rule: "source_type=upstream_api的参数，其source_api是否在当前API之前调用？source_api出参字段是否确实存在？"
+        severity: "error"
+      
+      - id: 2
+        name: "参数类型匹配校验"
+        rule: "上游API出参类型 vs 下游API入参类型是否匹配？枚举值范围是否兼容？"
+        severity: "error"
+      
+      - id: 3
+        name: "必填参数可达性校验"
+        rule: "每个API的required=true入参，其来源是否可达？"
+        severity: "error"
+        action: "不可达时建议补充调用上游API获取该参数"
+      
+      - id: 4
+        name: "幂等键唯一性校验"
+        rule: "IDEMPOTENT_KEY语义角色的参数，是否标注了唯一性生成规则？source_type应为system_generated或user_input（非upstream_api）"
+        severity: "warning"
+        focus: "Arch重点关注"
+      
+      - id: 5
+        name: "敏感字段加密校验"
+        rule: "SENSITIVE语义角色的参数是否标注了encryption≠none？身份证号/银行卡号/手机号等如encryption=none→error"
+        severity: "error"
+        focus: "Arch重点关注"
+      
+      - id: 6
+        name: "金额字段校验"
+        rule: "AMOUNT语义角色的参数是否有validation校验规则？金额精度是否定义？"
+        severity: "warning"
+        focus: "Arch重点关注"
+      
+      - id: 7
+        name: "参数-状态机一致性校验"
+        rule: "状态转换条件涉及的参数是否在相关API中存在？"
+        severity: "error"
+      
+      - id: 8
+        name: "参数-业务规则一致性校验"
+        rule: "业务规则涉及的参数是否在API参数字典中定义？"
+        severity: "error"
+
+# ============================================
+# 产出服务目标（API学习技能的输出如何服务于业务建模）
+# ============================================
+service_targets:
+
+  # 服务于7部分业务产物
+  for_business_products:
+    - product: "业务泳道图"
+      service: "API操作映射到角色×阶段×动作"
+    - product: "业务流程"
+      service: "API调用顺序映射到流程节点（标注接口路径）"
+    - product: "信息流"
+      service: "API入参/出参映射到信息主体的key_fields"
+    - product: "业务操作矩阵"
+      service: "API操作映射到角色×状态×操作单元格"
+    - product: "业务规则"
+      service: "API参数中的校验规则映射到BR"
+    - product: "业务动作"
+      service: "每个API调用映射为一个业务动作(ACT)"
+    - product: "状态机"
+      service: "API参数中的STATUS语义角色映射到状态转换"
+
+  # 服务于7项业务分析建模
+  for_business_analysis:
+    - analysis: "场景识别与分类"
+      service: "API按业务场景分组（场景×API映射表）"
+    - analysis: "场景流程泳道图"
+      service: "API调用顺序融入泳道图节点（标注调用的API）"
+    - analysis: "业务流程图"
+      service: "API调用作为流程节点（标注接口路径）"
+    - analysis: "信息流分析"
+      service: "API出参→下游API入参的参数流转关系"
+    - analysis: "业务状态机"
+      service: "API参数中的STATUS语义角色映射到状态转换触发条件"
+    - analysis: "业务操作矩阵"
+      service: "API操作映射到角色×状态×操作"
+    - analysis: "时序流"
+      service: "API调用顺序直接作为时序图的消息"
+
+  # API映射（核心产出）
+  api_mapping:
+    description: "梳理API在不同业务中涉及的接口名称+调用顺序"
+    structure:
+      - { item: "接口名称×业务场景映射表", description: "每个业务场景涉及哪些API" }
+      - { item: "调用顺序图", description: "API调用先后顺序（Mermaid sequenceDiagram）" }
+      - { item: "参数流转链", description: "A出参→B入参的完整链路" }
+
+# ============================================
+# 调用方引用方式
+# ============================================
+caller_integration:
+  learn_domain:
+    trigger: "Step4.5（条件触发）"
+    note: "领域分类=thirdparty时必然触发；其他分类条件触发"
+    output_integration: "Part12/Part13写入领域知识.yml的api_param_dictionary和param_flow部分"
+  
+  learn_project:
+    trigger: "Stage2.3（条件触发）"
+    note: "项目文档含接口文档时触发"
+    output_integration: "Part12/Part13写入PRD的§16外部接口标注章节+§17需求深度分析摘要"
+
+# ============================================
+# 质量指标
+# ============================================
+quality_metrics:
+  - { metric: "参数提取覆盖率", formula: "有参数定义的API数/总API数", target: "≥80%" }
+  - { metric: "参数流转完整度", formula: "已建立流转的参数数/应流转参数数", target: "≥85%" }
+  - { metric: "参数-状态机关联数", description: "参数与状态机的关联数量" }
+  - { metric: "参数-业务规则关联数", description: "参数与业务规则的关联数量" }
+  - { metric: "安全风险项数", description: "敏感字段未加密/幂等键来源不当/金额缺少校验等", target: "0" }

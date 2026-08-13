@@ -1,0 +1,14 @@
+skill:
+  id: "arch-contract-definer"
+  name: "服务契约定义器"
+  version: "1.0.0"
+  agents: ["arch-agent"]
+  triggers: ["/create 阶段2", "/new 阶段2-架构Gate", "/change 阶段A2-架构Gate"]
+  description: "定义服务契约规范，落库 projects/{project}/docs/04-arch/api-specs.yml，使后端按契约直开发"
+  inputs:
+    - "需求/变更文档"
+    - "行业模板接口约定"
+  outputs:
+    - type: "api_specs"
+      description: "projects/{project}/docs/04-arch/api-specs.yml 服务契约总表"
+  dependencies: ["arch-tech-stack-keeper"]

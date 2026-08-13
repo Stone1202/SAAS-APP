@@ -1,0 +1,824 @@
+# ============================================
+# Workflow: requirement-flow（需求分析流程 V3.5.0）
+# 版本: v3.5.0
+# 最后更新: 2026-07-22
+# ============================================
+#
+# V3.5.0 升级：§0.5引用公共流程demand-impact-fusion-flow.yml
+#   1. §0.5a/§0.5b/§0.5c三步整合为引用公共流程三层架构（Layer1需求理解+Layer2影响分析+Layer3融合分析）
+#   2. 新增知识库映射(Layer1) + 5层知识库全量检索(Layer2) + 2轮收窄机制(Layer2) + 三维业务融合度(Layer3) + 版本规划判断(Layer3)
+#   3. quality_forecast + history_correlation从§0.5c下沉到Layer3融合分析
+#   4. journey_map_input + system_common_sense_blind_spots保留在全景图组装
+#   5. /change也引用同一公共流程(standard模式)，保证/init和/change影响分析一致
+#
+# V3.4.0 升级：三阶段业务分析 + 环节化扫盲 + NFR前移 + 研发友好用例
+#   1. 三阶段分析：阶段1业务还原(§3) → 阶段2系统划分(§3.5新增) → 阶段3终端划分(§3.8新增)
+#   2. 闭环验证标准：§3新增业务闭环验证(7要素) + §3.5新增系统闭环验证(9要素)
+#   3. 环节化扫盲：§2.5标注为阶段1扫盲 + §3.5新增阶段2扫盲 + §3.8新增阶段3扫盲
+#   4. NFR前移：每个阶段扫盲增加NFR技术扫盲（技术专家帮产品经理识别异步/同步/并发/时效等）
+#   5. 冻结机制：每阶段扫盲后用户确认冻结 → 冻结内容传入下一阶段 → 补充则退回
+#   6. 研发友好用例：§5用例模板增强（入口路径+接口标注+状态机关联+终端信息+页面路由）
+#   7. 引用expert-registry.yml（专家统一配置管理：18盲区专家+7系统划分专家）
+#   8. 新增铁律 BA-31(三阶段不可跳过) + BA-32(闭环验证不可跳过) + BA-33(冻结机制)
+#   9. 新增门禁 G-REQ-22(业务闭环) + G-REQ-23(系统闭环) + G-REQ-24(系统划分) + G-REQ-25(终端划分)
+#
+# V3.3.0 升级：BA AI大脑深度增强——规划边界感知+端到端闭环+全面用例设计
+#   1. 新增reasoning_modules：planning_boundary_detector/e2e_closure_analyzer/comprehensive_uc_designer
+#   2. §0.5 新增规划边界探测——BA基于PO Backlog识别In-Scope/Out-of-Scope/边界交叉点
+#   3. §5 新增端到端闭环校验——每个FN做6链闭环检查（入口/操作/状态/异常/信息/统计）
+#   4. §7 新增全面用例设计——AI基于闭环缺口自动补全UC+四向一致性校验
+#   5. 新增铁律 BA-29：端到端闭环+规划边界感知
+#   6. 新增门禁 G-REQ-20：端到端闭环校验
+#
+# V5.1.1根因修复：UC格式完整性门禁——防止UC只列表格不写详细说明
+#   1. §7 新增门禁 G-REQ-17 UC格式完整性（每个UC必须包含六段标准格式）
+#   2. 新增铁律 BA-27：UC六段不可省略
+#   3. doc-standards.yml UC模板补充"数据范围(R/W)"和"关联UC"两个字段
+#
+# V3.2.1 升级：统一ai_brain结构——对齐arch-flow/test-flow标准格式
+#   1. 将brain_memory_import/brain_sync_export统一收归到ai_brain段下
+#   2. 新增reasoning_modules定义段（quality_predictor/history_correlator）
+#   3. 结构对齐arch-flow/test-flow的标准ai_brain格式
+#
+# V3.2.0 升级：BA大脑增强——质量预测+历史关联+脑力协同输出
+#   1. §0.5c 融合分析新增 quality_prediction（跨版本Bug模式→预判高风险FN）
+#   2. §0.5c 融合分析新增 history_correlation（相似需求→相似问题模式关联）
+#   3. §0.5c 新增 brain_sync_export（向UX/Arch/QA输出大脑推理结果）
+#   4. §7 新增门禁 G-REQ-16 大脑推理完整性检查
+#   5. 新增铁律 BA-26：大脑推理完整性
+#   6. §0.5 新增 memory_import（从上游大脑记忆加载历史洞察）
+#
+# V3.1.0 升级：AI增强Agent思考能力——系统常识补全+5W2H盲区探测
+#   1. §0.5c 新增 system-common-sense-analyzer 调用——AI按系统类型推理功能域盲区
+#   2. §2 5W2H 引入 AI 盲区探测——AI对每个旅程节点的5W2H进行二次展开
+#   3. §7 新增门禁 G-REQ-15 系统常识完整性检查
+#   4. 新增铁律 BA-25：系统常识完整性
+#   5. 引用新增知识库 system-blueprints.yml（AI推理框架）
+#
+# V3.0.1~V3.0.0 历史升级：门禁单一事实源/CONFIG/METRIC/参数路由包
+# ============================================
+
+workflow:
+  id: "requirement-flow"
+  name: "需求分析流程（V3.5.0 引用公共流程+三阶段业务分析+环节化扫盲+NFR前移+研发友好用例）"
+  version: "3.5.0"
+  trigger_command: "/init（PM 调度 BA）"
+  owner: "ba-agent"
+  supervisor: "pm-agent"
+  gates_reference: ".codebuddy/knowledge/common/gates-registry.yml#stages.requirement"
+  iron_rules_reference: ".codebuddy/knowledge/common/iron-rules-registry.yml#agents.ba_agent"
+  doc_standard_reference: ".codebuddy/knowledge/common/doc-standards.yml"
+  system_blueprints_reference: ".codebuddy/knowledge/common/system-blueprints.yml"  # V3.1.0
+  brain_memory_spec: ".codebuddy/knowledge/common/brain-memory-spec.yml"  # V3.2.0新增
+
+  # ============================================
+  # V3.2.1统一：BA需求洞察大脑（标准ai_brain结构，对齐arch-flow/test-flow）
+  # ============================================
+  ai_brain:
+    id: "ba_brain_v1"
+    name: "需求洞察大脑"
+    description: |
+      BA不再是机械套用PRD模板——BA大脑基于历史质量数据、跨版本Bug模式
+      和需求特征指纹，推理出当前需求的高风险区域和质量预测。
+      在PRD撰写前即预判风险焦点，而非等QA测试才暴露。
+    reasoning_modules:
+      - id: "quality_predictor"
+        name: "质量预测推理"
+        description: |
+          基于跨版本Bug模式和需求复杂度，AI预判每个FN的质量风险评分。
+          输入：跨版本Bug模式（QA Bug+AC Bug） + 当前FN清单 + 变更范围
+          输出：FN级风险评分（CRITICAL/HIGH/MEDIUM/LOW）+ 风险类型标签
+          示例：「支付模块 × 历史5次金额精度Bug + 本次新增分期付款 → CRITICAL风险」
+        triggered_by: "requirement-flow §0.5c（融合分析阶段）"
+        priority: "HIGH（必须在PRD输出前完成，影响后续测试策略）"
+      
+      - id: "history_correlator"
+        name: "历史关联推理"
+        description: |
+          AI将当前需求的语义特征与历史需求进行指纹匹配，
+          发现相似需求→相似问题模式，提前预警。
+          输入：当前需求语义特征 + 历史PRD指纹库 + 历史Bug关联
+          输出：关联需求清单（相似度+关联问题）+ 引以为戒清单
+          示例：「当前需求'词库批量导入'特征指纹匹配到'商品批量导入'→该需求曾出现编码/超时/部分成功3类Bug → 预警」
+        triggered_by: "requirement-flow §0.5c（融合分析阶段）"
+
+      - id: "planning_boundary_detector"
+        name: "规划边界探测器（V5.1.4新增）"
+        description: |
+          基于PO的Backlog识别需求边界——BA不是凭空分析，而是在PO规划的边界内做端到端闭环。
+          输入：PO的PROD-BACKLOG + PROD-ROADMAP + 价值评估 + 实现方式标记
+          输出：In-Scope/Out-of-Scope/边界交叉点 + 每个边界的依赖声明
+          分析维度：
+            1. In-Scope边界：本次版本必须完成哪些FN？（来自PO Backlog的Must/Should项）
+            2. Out-of-Scope边界：哪些功能明确排除？（来自PO Non-Goals + backend_config项排入patch小版本）
+            3. 边界交叉点：本次需求与已有模块的复用边界/依赖边界/数据流边界
+          示例：
+            「FN-009回放 → 复用FN-005实时擦音回放组件（跨版本复用边界）
+             FN-010统计 → 复用AuditEvent数据源（跨模块依赖边界）
+             多MPS模板 → PO标记backend_config排入v2.0.1（Out-of-Scope边界）」
+          价值：BA明确知道"分析到哪里为止"，避免过度分析或遗漏边界依赖。
+
+      - id: "e2e_closure_analyzer"
+        name: "端到端闭环分析器（V5.1.4新增）"
+        description: |
+          对每个规划项做端到端闭环校验——不是只看单个FN，而是确保每个FN有完整的6链闭环。
+          输入：FN清单 + UC清单 + 状态机 + 业务操作矩阵 + 数据实体 + 信息流转图
+          输出：每个FN的6链闭环校验结果 + 缺口清单 + 补充建议
+          6链闭环校验：
+            1. 入口链：用户/系统如何进入这个功能？有触发条件吗？
+            2. 操作链：进入后能做什么操作？操作链是否完整（查看→操作→反馈）？
+            3. 状态链：涉及的状态是否全部覆盖？状态过渡是否完整？
+            4. 异常链：异常场景是否有备选流程？失败是否有兜底？
+            5. 信息链：数据从哪来→经过什么处理→到哪去？信息流是否闭环？
+            6. 统计链：这个功能的数据是否被统计/看板消费？统计链是否闭环？
+          缺口识别规则：
+            - 入口链无触发条件 → 缺少[事件驱动]UC
+            - 状态链有状态无UC覆盖 → 缺少状态触发UC
+            - 异常链无备选流程 → 缺少异常处理UC
+            - 统计链断裂 → 缺少METRIC或看板UC
+          示例：
+            「FN-009端到端闭环校验：
+              入口链✅(直播结束→检测录像→创建任务)
+              操作链✅(列表→详情→回放)
+              状态链✅(待处理→处理中→已完成/已失败)
+              异常链✅(API失败→重试→上限→记录)
+              信息链✅(录像URL→MPS任务→擦音后URL→统计)
+              统计链✅(任务数→完成数→失败数→看板UC-010-05)
+              ⚠️缺口：回放操作未声明权限校验UC → 建议补充UC-009-07」
+          价值：确保每个FN是"端到端完整闭环"而非"功能碎片"。
+
+      - id: "comprehensive_uc_designer"
+        name: "全面用例设计器（V5.1.4新增）"
+        description: |
+          基于闭环分析自动补全UC——AI不是替代BA写UC，而是帮BA发现遗漏的UC。
+          输入：e2e_closure_analyzer的缺口清单 + 状态机 + 业务操作矩阵 + BR清单
+          输出：UC补全建议（缺口UC编号+名称+建议内容）+ 四向一致性校验报告
+          UC覆盖规则：
+            1. 每个FN覆盖Happy Path + ≥2 Ugly Path + ≥1 Corner Case（BA-04铁律）
+            2. UC覆盖状态机的所有状态分支（每个状态至少有1个UC触发/观察）
+            3. UC覆盖业务操作矩阵的所有✅单元格（每个可操作单元格至少1个UC）
+            4. UC六段完整（BA-27铁律：前置/基本流程/备选/数据范围/后置/关联UC）
+          四向一致性校验：
+            UC ↔ BR：每个BR至少被1个UC引用
+            UC ↔ 状态机：UC的触发操作对应状态机的状态过渡
+            UC ↔ 业务操作矩阵：UC的操作对应矩阵的✅单元格
+            UC ↔ 数据实体：UC的数据范围(R/W)对应ENT的字段
+          价值：BA不再靠经验"想"UC，AI基于结构化分析"推"出遗漏的UC。
+    
+    brain_memory_import:
+      description: |
+        BA需求分析开始前，从PM编排器接收上游大脑记忆，
+        作为当前分析的"历史洞察"输入。
+      sources:
+        - priority: 1
+          source: "上版本BA大脑记忆"
+          content: "质量预测命中率 + 盲区发现→实际影响 + 常识推理覆盖度"
+        - priority: 2
+          source: "跨版本QA Bug模式"
+          content: "按FN的Bug密度统计 + Bug类型分布 + 严重度分布"
+        - priority: 3
+          source: "跨版本AC验收Bug（UX类+功能类）"
+          content: "验收阶段发现的需求遗漏模式"
+        - priority: 4
+          source: "经验库/需求分析模式库"
+          content: "跨版本成功的需求分析模式 + 踩坑记录"
+    
+    brain_sync_export:
+      description: |
+        BA需求分析完成后，向PM编排器输出大脑推理结果，
+        供下游Agent大脑（UX/Arch/QA）使用。
+      to_ux:
+        - field: "页面复杂度评分"
+          description: "每个页面的交互复杂度评级（simple/medium/complex/very_complex）"
+          basis: "基于FN数量×状态数×操作类型数"
+        - field: "状态数统计"
+          description: "每个模块的状态机状态总数+转换数"
+        - field: "交互密度预估"
+          description: "每个页面的预估交互密度（按钮数+弹窗数+表单字段数）"
+      to_arch:
+        - field: "接口复杂度评分"
+          description: "预估新接口数量和复杂度"
+          basis: "基于FN中的外部依赖+接口契约初稿"
+        - field: "预估新接口数"
+          description: "本版本需要新增的接口数量"
+        - field: "外部依赖数"
+          description: "依赖的外部系统/服务数量"
+      to_qa:
+        - field: "关键业务规则数"
+          description: "本版本涉及的BR总数（含新增+修改）"
+        - field: "高风险FN清单"
+          description: "基于历史Bug模式+本次变更预测的高风险FN（含置信度）"
+          basis: "quality_prediction输出"
+
+  # ============================================
+  # 步骤定义
+  # ============================================
+  steps:
+    # ---- §0.0 终端冻结（v2.0.0 保留） ----
+    - id: "0.0"
+      name: "终端冻结"
+      agent: "ba-agent"
+      description: |
+        BA 在需求分析一开始，基于业务描述拆出「业务子系统 → 端建议清单」，
+        交用户一次性确认冻结，写入 stream.scope.platforms（逐系统映射）。
+        后续 UX/Arch/FD/QA/AC 任何阶段不得再向用户询问「支持哪些端」。
+      input: "用户业务描述"
+      output:
+        - "stream.scope.platforms（逐业务系统→端映射）"
+        - "business_systems[{id, suggest_terminals, reason}]"
+      checkpoint: true
+      note: "用户一次性确认后冻结；若为单系统项目可用扁平 platforms 列表"
+
+    # ---- §0 项目判定与需求路由（V3.0.0 拆分重构，PM负责） ----
+    - id: "0"
+      name: "项目判定与需求路由"
+      agent: "pm-agent"
+      description: |
+        V3.0.0 拆分重构：PM 负责参数判定和路由，不再交互式询问"新项目/存量项目"。
+        PM 接收 /init 全部参数，自动检测项目性质，加载上下文，组装「参数路由包」传递给 BA。
+      input: "/init 全部参数（--project/--type/--desc/--file/--api/--source/--priority）"
+      output: "参数路由包（param_route_package）"
+      checkpoint: false
+      sub_steps:
+        §0.1_项目性质自动检测: |
+          扫描 projects/{--project}/ 目录：
+          - 存在 → 存量项目（运行 ensure-project.sh {project} --check 进行6项完整性校验，缺失则补建）
+          - 不存在 → 新项目（运行 ensure-project.sh 创建骨架）
+        §0.2_需求类型路由: |
+          根据 --type 确定分析深度和版本递增策略：
+          - 新增：analysis_depth=full, run_impact_analysis=false, version_bump=minor
+          - 迭代：analysis_depth=full, run_impact_analysis=true, version_bump=minor
+          - 变更：analysis_depth=full, run_impact_analysis=true(重点), version_bump=patch
+          - 修复：analysis_depth=lite, run_impact_analysis=true(精简), version_bump=patch
+        §0.3_上下文加载: |
+          按优先级加载9项上下文：
+          1.项目骨架 2.已学PRD 3.版本沉淀 4.经验库 5.PO Backlog(如有)
+          6.脑暴确认稿 7.领域知识(继承脑暴清单或自动匹配)
+          8.跨版本反馈 9.行业统计指标规则 metrics-standards.yml（V3.0.0新增）
+          → 组装「参数路由包」传递给 BA
+      param_route_package_structure: |
+        param_route_package:
+          project, project_type, requirement_type, priority, version, goal, goal_title
+          demand_sources: { desc, files, api_docs, knowledge_sources }
+          context: { project_skeleton, knowledge_prd, version_sediment,
+                     experience_library, po_backlog, brainstorm_confirmed,
+                     domain_knowledge_list, metrics_standards }
+          route: { analysis_depth, run_impact_analysis, run_domain_fusion,
+                   run_config_identification, run_metric_identification }
+          version_chain: { previous_closed_version, current_version, version_bump_strategy, goal }  # V4.1.0：version_chain 含 goal 维度
+      note: "PM 完成路由后（V4.1.0：含 goal 信息），将参数路由包传递给 BA，BA 从 §0.5 开始深度分析"
+
+    # ---- §0.5 需求理解+影响分析+融合分析（V3.5.0：引用公共流程 demand-impact-fusion-flow.yml）----
+    - id: "0.5"
+      name: "需求理解+影响分析+融合分析"
+      agent: "ba-agent"
+      skills: ["req-impact-analyzer", "change-impact-analyzer", "system-common-sense-analyzer"]
+      workflow_ref: "demand-impact-fusion-flow.yml"
+      workflow_version: "V1.0.0"
+      description: |
+        V3.5.0 重大重构：原§0.5a/§0.5b/§0.5c三步整合为引用公共流程demand-impact-fusion-flow.yml。
+        三层架构（详见demand-impact-fusion-flow.yml）：
+          Layer1 需求理解（替代原§0.5a）→ 6维深度分析+知识库映射（新需求概念×项目PRD/ENT/BR/领域知识/已close版本）
+          Layer2 影响分析（替代原§0.5b）→ 5层知识库全量检索+10维影响扫描+2轮人机交互收窄机制
+          Layer3 融合分析（替代原§0.5c的quality_forecast+history_correlation）→ 三维业务融合度+综合评分+AI预测+版本规划判断
+        新项目(--type=新增)跳过Layer2/L3，只执行Layer1（无存量可扫描）。
+        修复类型(--type=修复)走lite模式：L1精简+L2精简+L3跳过。
+        /change也引用同一公共流程（standard模式），保证/init和/change影响分析一致。
+      input: |
+        参数路由包（全部输入源+领域知识+行业指标规则+项目存量）
+        → 传入 demand-impact-fusion-flow.yml 执行三层分析
+      output: |
+        Layer1产出：需求深度分析报告 + 知识库映射表
+        Layer2产出：影响报告 + 收窄日志 + 冻结的影响范围
+        Layer3产出：融合分析报告 + 版本规划决策
+        → 基于三层产出组装需求全景图（demand_panorama）
+      checkpoint: true
+
+      # ---- 全景图组装（基于Layer1-3产出，保留原§0.5c的journey_map_input+system_common_sense）----
+      panorama_assembly:
+        description: |
+          基于demand-impact-fusion-flow三层产出组装需求全景图。
+          全景图是后续§1旅行地图/§2场景挖掘/§3业务流程的输入基础。
+          journey_map_input和system_common_sense_blind_spots保留在此处组装
+          （这两个不属于影响分析/融合分析的职责，属于需求全景图的组装逻辑）。
+        input: |
+          Layer1的demand_analysis_report + knowledge_mapping_table
+          Layer2的impact_report + frozen_scope
+          Layer3的fusion_report（含quality_forecast + history_correlation）
+        methodology: |
+          全景图组装逻辑：
+          1. 需求范围：从Layer1的demand_analysis_report提取explicit+implicit+domain_referenced
+          2. 影响范围：从Layer2的impact_report提取new/modified/reused artifacts
+          3. 三方对齐：从Layer1的knowledge_mapping_table提取concept×domain_standard×project_existing
+          4. 旅行地图输入：基于Layer1-3产出组装journey_map_input
+          5. 场景提示：从Layer1的implicit_requirements + Layer3的history_correlation组装scenario_hints
+          6. 质量预测：从Layer3的fusion_report.quality_forecast注入（原§0.5c下沉到Layer3）
+          7. 历史关联：从Layer3的fusion_report.history_correlation注入（原§0.5c下沉到Layer3）
+          8. 系统常识盲区：调用system-common-sense-analyzer（基于系统类型声明+PRD FN列表）
+        output_structure: |
+          demand_panorama:
+            requirement_scope: { explicit, implicit, domain_referenced }  # from Layer1
+            impact_scope: { new_artifacts, modified_artifacts, reused_artifacts }  # from Layer2
+            alignment: [{ concept, domain_standard, project_existing, new_requirement, gap }]  # from Layer1 mapping
+            journey_map_input: { personas, entry_points, key_touchpoints, exit_points, cross_terminal }  # 组装
+            scenario_hints: [...]  # from Layer1 implicit + Layer3 history
+            quality_forecast:  # from Layer3（原§0.5c下沉到Layer3，此处引用）
+              high_risk_fns: [{ fn_id, risk_score, risk_types, confidence, reasoning }]
+              risk_summary: { total_fns, high_risk_count, medium_risk_count, low_risk_count }
+            history_correlation:  # from Layer3（原§0.5c下沉到Layer3，此处引用）
+              similar_requirements: [{ version, req_name, fingerprint_match, problems_encountered }]
+              warnings: [{ type, description, source_version, source_pbl }]
+            system_common_sense_blind_spots:  # 保留在此处（系统常识盲区探测）
+              total_blind_spots: N
+              critical: [{ area, layer, ai_reasoning, risk_if_missing }]
+              important: [{ area, layer, ai_reasoning, risk_if_missing }]
+              nice_to_have: [{ area, layer, ai_reasoning }]
+              confirmed_exclusions: [{ area, reason }]
+              ai_confidence: "high | medium | low"
+            # V3.5.0新增：版本规划决策（from Layer3）
+            version_planning:
+              need_planning: true|false
+              decision: "single_version | split"
+              split_plan: [...]
+              risk_flag: null|string
+            # V3.5.0新增：影响收窄日志（from Layer2）
+            impact_narrowing_log:
+              focused_modules: [...]
+              excluded_modules: [{ module, reason, risk_flag }]
+              referenced_versions: [...]
+      note: |
+        V3.5.0变更要点：
+        1. §0.5a/§0.5b/§0.5c三步 → 引用demand-impact-fusion-flow.yml三层
+        2. quality_forecast + history_correlation从§0.5c下沉到Layer3融合分析
+        3. 新增知识库映射(Layer1) + 5层知识库全量检索(Layer2) + 2轮收窄机制(Layer2) + 三维业务融合度(Layer3) + 版本规划判断(Layer3)
+        4. journey_map_input + system_common_sense_blind_spots保留在全景图组装
+        5. /change也引用同一公共流程(standard模式)，保证/init和/change影响分析一致
+
+    # ---- §1 用户旅行地图（基于§0.5c全景图） ----
+    - id: "1"
+      name: "用户旅行地图"
+      agent: "ba-agent"
+      skills: ["state-enumerator"]
+      input: "需求全景图（§0.5c 的 journey_map_input）"
+      output:
+        - "journey-map（逐节点：入口→关键触点→出口，含各端差异）"
+      methodology: |
+        V3.0.0 变更：基于§0.5c需求全景图的journey_map_input重新梳理，
+        而非直接从裸--desc出发。确保旅行地图覆盖隐含需求、领域标准路径、跨终端差异。
+        1. 识别用户角色（Persona）—— 来自全景图
+        2. 绘制端到端旅程节点（发现→了解→使用→离开）
+        3. 标注每个节点的触点（页面/按钮/通知）
+        4. 标注各端差异（PC端/小程序/APP 的旅程差异）
+
+    # ---- §2 需求场景挖掘（5W2H + V3.1.0 AI盲区展开） ----
+    - id: "2"
+      name: "需求场景挖掘（5W2H + AI盲区展开）"
+      agent: "ba-agent"
+      input: "journey-map 每节点 + 需求全景图 scenario_hints + 盲区报告（V3.1.0新增）"
+      output:
+        - "需求场景（含商业7要素：Who/What/When/Where/Why/How/How much）"
+        - "5W2H盲区展开报告（V3.1.0新增）"
+      methodology: |
+        V3.0.0 变更：基于§0.5c全景图的scenario_hints挖掘更深场景。
+        V3.1.0 增强：引入 AI 5W2H盲区展开——在BA完成每个旅程节点的5W2H后，
+        AI对每个维度进行二次展开推理，发现BA可能遗漏的视角。
+
+        ═══ V3.1.0新增：AI 5W2H盲区展开 ═══
+        对每个旅程节点，BA先写出初始5W2H，然后AI进行二次展开推理：
+
+        【Who（谁）盲区展开】
+        AI推理问题：
+        - 除了BA写的「主要用户」，是否还有：
+          * 系统管理员/平台管理员？（谁来管理系统？）
+          * 租户管理者？（多租户场景下，租户内部谁来管？）
+          * 审批者/审核者？
+          * 外部协作者/第三方？
+          * 系统本身？（自动化流程的触发者）
+        - 当前Persona列表是否覆盖了所有这些角色？
+
+        【What（做什么）盲区展开】
+        AI推理问题：
+        - 除了BA写的「核心业务流程」，是否还有：
+          * 系统管理类操作？（用户管理/系统配置/日志查看）
+          * 数据维护类操作？（导入/导出/批量处理）
+          * 从7层推理框架中各层应该存在的操作？
+        - 对照§0.5c的盲区报告，是否有遗漏的功能域？
+
+        【How（怎么做）盲区展开】
+        AI推理问题：
+        - 对于每个操作，深度推理How：
+          * 操作的准入条件？（登录？权限？数据就绪？）
+          * 操作的前置动作？（需要先完成什么？）
+          * 操作的反馈机制？（用户如何知道操作成功/失败？）
+          * 操作的异常处理？（超时/权限不足/数据冲突？）
+        - 特别检查：
+          * 登录/认证流程（如果有）——怎么登？怎么认证？
+          * 权限控制流程——怎么检查？怎么拦截？
+          * 通知/消息流程——怎么发？什么时候发？
+
+        【Where（在哪里）盲区展开】
+        AI推理问题：
+        - 这个操作只在PC端？还是也应在移动端/小程序？
+        - 这个操作应该出现在哪个页面？工作台首页能看到吗？
+
+        【When（何时）盲区展开】
+        AI推理问题：
+        - 除了正常时序，还有什么触发条件？
+          * 定时触发？事件触发？手动触发？
+          * 状态变更后的连锁反应？
+        - 系统全生命周期：初始化→运行→维护→升级的时序？
+
+        【Why（为什么）盲区展开】
+        AI推理问题：
+        - 用户为什么要在系统里做这件事？（深层目标）
+        - 如果这个操作不可用，用户会怎么办？（替代路径）
+        - 为什么用户需要知道这件事发生了？（通知的价值）
+
+        【How much（多少/多久）盲区展开】
+        AI推理问题：
+        - 容量维度：能支持多少并发用户？数据量级？
+        - 频率维度：这个操作多久发生一次？
+        - 时效维度：这个操作必须在多长时间内完成？
+
+        ═══ 盲区展开原则 ═══
+        - AI的二次展开是「建议」，不是「强制」——BA判断是否采纳
+        - 展开基于系统类型和行业常识——不同系统类型有不同的展开重点
+        - 展开结果不直接写入PRD——由BA消化后，决定哪些纳入后续分析
+        - 参考§0.5c的系统常识盲区报告，5W2H展开与之形成互补
+
+    # ---- §2.5 多专家联合盲区审查（V5.4.1调整：从§6.5移到§2之后，场景级审查） ----
+    - id: "2.5"
+      name: "多专家联合盲区审查（场景级）"
+      agent: "pm-agent + ba-agent"
+      skills: ["system-common-sense-analyzer"]
+      input: "§0.5需求全景图 + §1旅行地图 + §2初步场景清单"
+      output:
+        - "盲区审查报告（场景级：AI发现+成员补充+确认结果）"
+        - "盲区决策日志 blindspot-decisions-v{version}.yml"
+        - "涟漪影响清单（迭代需求专用）"
+        - "需求冲突检查报告"
+        - "补充后的完整场景清单（冻结，作为§3用例设计的输入）"
+        - "★场景操作类型矩阵（V5.6.0新增，BA-35铁律）：场景×操作类型矩阵，标记每个场景涉及哪些操作类型（10大类69种），标记'有'的操作必须在§5用例设计中编写独立UC"
+      reference: ".codebuddy/knowledge/common/expert-checklists.yml"
+      decision_template: ".codebuddy/knowledge/common/blindspot-decision-template.yml"
+      methodology: |
+        V5.4.1调整：从§6.5移到§2之后。核心变化——审查对象从"用例/BR/状态机"改为"场景/旅行地图/需求描述"。
+        在场景挖掘后、用例设计前执行扫盲，发现遗漏的场景/流程/维度，补充后基于完整场景做用例设计。
+        符合人类思考过程：先发现遗漏→补充场景→再设计用例，而非先设计用例再打补丁。
+
+        Step1 专家匹配（AI根据需求内容自动匹配专家类型）：
+          - 提取需求关键词 → 匹配expert-checklists.yml的expert_matching.rules
+          - 迭代需求（--type=迭代/变更）→ 触发全部相关专家 + 涟漪效应分析
+          - 默认匹配3个基础专家（architecture/security/qa）
+
+        Step2 场景级盲区检查（审查场景完整性，非用例细节）：
+          - 加载匹配到的专家checklist的scene_level检查项
+          - 逐项检查：有没有考虑XXX场景？（宏观）
+          - 例：营销专家→"有没有考虑防刷场景？"
+          - 例：架构专家→"有没有考虑定时任务宕机场景？"
+          - 例：数据专家→"有没有考虑统计指标场景？"
+          - 未覆盖的场景 → 加入盲区清单
+
+        Step3 跨领域影响评估（迭代需求专用）：
+          - 识别变更内容（改了什么？状态机/字段/规则/接口）
+          - 匹配受影响领域（改订单状态→电商/库存/财务/数据/客服/物流）
+          - 每个受影响领域由对应专家评估旧需求影响
+          - 输出涟漪影响清单（受影响的旧场景/旧流程/旧指标）
+
+        Step4 盲区清单呈现给成员（高效反馈机制）：
+          - 按优先级排序（P0→P1→P2）
+          - 每项含：专家类型+盲区描述+AI建议方案（2-3个方案+利弊+推荐）
+          - 每项可选状态：✅需要补充 / ⬜不适用 / ❓需讨论
+          - 支持[全选需要补充] [全选不适用]批量操作
+          - [+添加盲区]入口：成员可补充AI未发现的盲区
+
+        Step5 成员确认后BA补充场景（不是补充用例，是补充场景清单）：
+          ✅需要补充 → BA在场景清单中新增遗漏的场景/流程/维度
+            → AI辅助生成场景描述（基于专家建议+成员说明）
+          ⬜不适用 → 记录到盲区决策日志（标注原因+skip_in_future=true）
+          ❓需讨论 → AI展开方案讨论 → 成员选择 → 转为"需要补充"
+
+        Step6 闭环验证（补充后重新审查场景完整性）：
+          - AI重新走Step2场景级盲区检查
+          - 确认所有"需要补充"的场景已补充
+          - 检查是否发现新盲区
+          - 循环上限3次，超过PM介入
+          - 验证通过 → 场景清单冻结 → 作为§3用例设计的输入
+
+      note: |
+        V5.4.1核心调整——扫盲从"用例设计后"移到"场景挖掘后"。
+        V3.4.0标注——本节为"阶段1业务还原扫盲"，聚焦业务完整性（逆向流程/生命周期/运营增长/业务连续性/数据生命周期）。
+        审查对象：场景/旅行地图/需求描述（宏观），非用例/BR/状态机（微观）。
+        补充方式：补充场景清单（用例设计时自然包含），非在已完成的用例上打补丁。
+        NFR技术扫盲：技术专家(architecture/social)帮产品经理识别业务场景涉及的技术NFR（高并发/异步/时效等）。
+        用例级检查（边界值/状态覆盖等）保留在§7门禁校验中，不在此处重复。
+        冻结：扫盲通过 → 场景清单冻结 → 作为§3业务还原的输入。用户确认冻结；补充则退回重新分析。
+
+    # ---- §3 业务场景与流程（V3.4.0：阶段1业务还原） ----
+    - id: "3"
+      name: "业务场景与流程（阶段1：业务还原）"
+      agent: "ba-agent"
+      input: "需求场景（冻结的场景清单）"
+      output:
+        - "业务流程：主干/分支/异常/跨部门/跨角色/跨系统"
+        - "业务泳道图（Mermaid flowchart，按角色/部门分泳道）"
+        - "跨系统信息流图（Mermaid flowchart）"
+        - "状态机（stateDiagram-v2）+ 状态过渡操作表"
+        - "业务时序图（sequenceDiagram）"
+        - "业务闭环验证（V3.4.0新增：7要素验证——角色人/销售方式/支付方式/谁支付/谁收款/如何结算/结算给谁）"
+        - "行业对标验证（V3.4.0新增：行业标准环节覆盖完整性）"
+      methodology: |
+        V3.4.0 定位——本节是三阶段分析的"阶段1：业务还原"。
+        还原真实业务：谁参与？做什么？从哪开始？到哪结束？
+        泳道图按角色/部门分（不是按系统/终端），还原业务全貌。
+        闭环验证：从"角色人"出发，沿"销售→支付→收款→结算"链路走一遍，每个环节都有明确的角色和方式，没有断点。
+        行业对标：拿行业标准环节清单逐一对照，每个环节都有对应流程步骤，没有遗漏。
+        冻结：业务还原+闭环验证+行业对标全部通过 → 用户确认冻结场景清单 → 作为§3.5系统划分的输入。
+      checkpoint: true  # V3.4.0新增：阶段1冻结点
+      freeze: "场景清单（冻结后作为§3.5系统划分输入）"
+
+    # ---- §3.5 系统划分（V3.4.0新增：阶段2系统划分） ----
+    - id: "3.5"
+      name: "系统划分（阶段2：系统视角分析）"
+      agent: "ba-agent"
+      input: "冻结的场景清单 + 商业模式(B2C/B2B/F2B2C等) + 行业系统专家(expert-registry.yml)"
+      output:
+        - "业务系统清单（系统名/缩写/边界/职责/复用性）"
+        - "系统泳道图（Mermaid flowchart，按业务系统分泳道）"
+        - "系统间配合分析（系统间接口+第三方接口时序图）"
+        - "系统闭环验证（9要素：商品创建/展示/下单/支付/发货/查看/售后/处理/系统归属）"
+        - "阶段2扫盲产出（技术专家×系统盲区：数据一致性/第三方依赖/涟漪效应/需求冲突/法律审计）"
+        - "NFR技术扫盲产出（技术专家帮产品经理识别系统层NFR：异步/同步/数据一致性等）"
+      methodology: |
+        V3.4.0 新增——三阶段分析的"阶段2：系统划分"。
+        划分维度：业务边界内聚 + 数据归属 + 行业经验(系统专家) + 商业模式 + 复用性 + 第三方依赖。
+        系统专家匹配：根据商业模式匹配expert-registry.yml中的系统划分专家（电商/直播/SAAS/ERP/分销/广告/中台）。
+        系统泳道图：泳道=业务系统，系统间配合用双线箭头(==>)标注。
+        系统间配合：画系统间接口+第三方接口时序图，标注调用方是哪个业务系统。
+        系统闭环验证：从"商品创建"出发，沿"展示→下单→支付→发货→收货→售后"链路走一遍，每个环节都有明确的系统归属。
+        阶段2扫盲：技术专家(架构/数据/安全/财务/支付)×系统盲区 + NFR技术扫盲。
+        冻结：系统边界+系统间接口清单冻结 → 作为§3.8终端划分的输入。
+      checkpoint: true  # 阶段2冻结点
+      freeze: "系统边界+系统间接口清单（冻结后作为§3.8终端划分输入）"
+      expert_registry: ".codebuddy/knowledge/common/expert-registry.yml#system_experts"
+      note: |
+        系统划分是分析的结果，不是前提。
+        必须在阶段1业务还原闭环后才能做系统划分。
+        系统专家提供行业经验参考，BA做最终决策。
+
+    # ---- §3.8 终端划分（V3.4.0新增：阶段3终端划分） ----
+    - id: "3.8"
+      name: "终端划分（阶段3：终端视角分析）"
+      agent: "ba-agent"
+      input: "冻结的系统边界 + 商业模式 + 使用者角色 + 使用场景"
+      output:
+        - "终端清单（业务系统×终端矩阵：哪个系统运行在哪个终端）"
+        - "终端泳道图（Mermaid flowchart，按终端分泳道，跨端流转用双线箭头）"
+        - "跨端流转路径（哪些操作跨端，跨端数据传递点）"
+        - "阶段3扫盲产出（终端专家×终端盲区：权限隔离/用户体验/边界值/性能容量/国际化合规）"
+        - "NFR技术扫盲产出（技术专家帮产品经理识别终端层NFR：弱网/响应效率/定时任务等）"
+      methodology: |
+        V3.4.0 新增——三阶段分析的"阶段3：终端划分"。
+        终端划分规则：管理操作→PC后台，消费者操作→APP/H5，工厂操作→PC/专用终端。
+        商业模式影响：B2C→C端(APP)+B端(PC)；F2B2C→F端+B端+C端；SAAS→租户端+平台端。
+        终端泳道图：泳道=终端，跨端流转用双线箭头(==>)标注，人类一眼看出涉及几端。
+        阶段3扫盲：终端专家(UX/QA/安全/性能)×终端盲区 + NFR技术扫盲。
+        冻结：终端清单+跨端流转路径冻结 → 作为§5用例设计和架构评审的输入。
+      checkpoint: true  # 阶段3冻结点
+      freeze: "终端清单+跨端流转路径（冻结后作为§5用例设计+架构评审输入）"
+      note: |
+        终端划分必须在阶段2系统划分后才能做。
+        架构师从终端泳道图提取：需要几套前端代码+几个base path+跨端流转API。
+
+    # ---- §4 版本规划 ----
+    - id: "4"
+      name: "版本规划"
+      agent: "ba-agent"
+      input: "场景深度 + 跨部门/跨角色复杂度 + PO Backlog优先级（如有）"
+      output:
+        - "版本路线图（每版业务流程闭环）"
+        - "版本优先级排序（P0/P1/P2/P3）"
+      methodology: |
+        基于PO Backlog优先级（如有）+场景深度进行版本拆分。
+        V3.0.0增强：版本规划须考虑CONFIG/METRIC的影响范围。
+
+    # ---- §5 首版详设（V3.0.0扩展：+CONFIG+METRIC，V5.6.0强化：用例追溯链） ----
+    - id: "5"
+      name: "首版详设（信息流→状态机→原子用例→矩阵→CONFIG→METRIC，V5.6.0用例追溯链）"
+      agent: "ba-agent"
+      input: |
+        ★V5.6.0强化——用例设计的输入必须明确引用以下§3/§3.5/§3.8冻结产物：
+        1. §3业务还原：业务流程图(Mermaid flowchart) + 跨系统信息流图 + 状态机(stateDiagram-v2)+状态过渡操作表 + 业务操作矩阵(角色×状态×操作)
+        2. §3.5系统划分：系统边界 + 系统间接口清单
+        3. §3.8终端划分：终端清单 + 跨端流转路径
+        4. §2/§2.5场景操作类型矩阵（BA-35铁律）：场景×操作类型矩阵（标记"有"的操作必须编写UC）
+        禁止跳过§3分析产物直接写用例——用例必须有依据。
+      output:
+        - "信息流：信息主体 + 字段 + 跨系统流转路径（基于§3信息流图深化）"
+        - "状态机：Mermaid stateDiagram-v2 + 状态过渡操作表（基于§3状态机深化）"
+        - "原子功能用例（FN/UC）：标准表格模板 + ★trace_to追溯字段（V5.6.0新增）"
+        - "业务操作矩阵：角色×部门×状态×操作（基于§3操作矩阵深化）"
+        - "集中配置清单（CONFIG）：V3.0.0新增"
+        - "统计指标清单（METRIC）：V3.0.0新增"
+      methodology: |
+        V3.0.0 扩展：在原有信息流/状态机/原子用例/矩阵基础上，新增CONFIG和METRIC。
+        V5.6.0 强化：用例追溯链——用例必须基于业务流程/状态机/操作矩阵/信息流设计，不能凭空写。
+
+        ═══ V5.6.0 用例追溯链（BA-34铁律）═══
+        用例是全流程的单一事实源——需求分析得出的用例→设计依据用例全面设计→
+        架构与开发依据用例实现→测试依据用例编写场景→验收依据用例逐个验收。
+        任何环节遗漏用例→返工成本巨大。
+
+        用例设计必须基于以下分析产物（每个UC必须标注来源）：
+        1. 业务流程图：每个UC对应流程图的某个节点/分支/路径
+        2. 状态机：每个UC对应状态机的某个状态过渡（触发操作→状态变化）
+        3. 业务操作矩阵：每个UC对应矩阵的某个✅单元格（角色×状态×操作）
+        4. 信息流：每个UC涉及的信息主体和流转路径
+        5. 场景操作类型矩阵：每个UC对应矩阵中标记"有"的操作类型
+
+        ★每个UC必须包含trace_to追溯字段（V5.6.0新增）：
+        trace_to:
+          flowchart_node: "对应业务流程图的节点编号/名称"
+          state_transition: "对应状态机的状态过渡（如：待处理→已记录）"
+          matrix_cell: "对应操作矩阵的单元格（如：运营×直播中×记录）"
+          operation_type: "操作类型（list/write/row/form/batch/nav/state/interaction/data/comm）"
+          info_entity: "涉及的信息主体（如：ReviewViolation）"
+
+        ★用例设计顺序（V5.6.0新增）：
+        Step 1: 基于业务流程图→识别流程节点→每个节点对应一个FN
+        Step 2: 基于状态机→识别状态过渡→每个过渡对应一个UC（触发操作）
+        Step 3: 基于操作矩阵→识别✅单元格→每个单元格对应一个UC
+        Step 4: 基于场景操作类型矩阵→识别操作类型→每个"有"的操作编写UC
+        Step 5: 基于信息流→识别信息主体→每个主体的CRUD操作编写UC
+        Step 6: 补全列表操作（搜索/排序/筛选/分页/列头排序/查看/导出/刷新）
+        Step 7: 补全表单操作（新建/编辑/审批/引用数据/校验规则）
+        Step 8: 补全批量操作（批量启用/禁用/删除/分配）
+        Step 9: 补全导航操作（跳转/Tab/弹窗/返回）
+        Step 10: 四向一致性校验（UC↔状态机/UC↔操作矩阵/UC↔流程图/UC↔信息流）
+
+        ═══ CONFIG 集中配置清单 ═══
+        识别需求中涉及的、需要统一管理的可配置项：
+        - 全局参数：如"最低提现金额""最大退款天数""默认费率"
+        - 全局开关：如"是否开启自动提现""是否允许跨商户转账"
+        - 控制器：如"每日转账限额""频率限制""单商户最多绑卡数"
+        - 规则引擎：如"风控规则""费率计算规则""分账规则"
+        - 枚举字典：如"商户类型枚举""支付渠道枚举""状态枚举"
+
+        CONFIG与BR边界规则：
+        - 用例(FN/UC)中明细说明的可配置参数值 → CONFIG
+        - BR定义"规则是什么"（如"提现须校验最低金额"）
+        - CONFIG定义"参数值是什么+谁可配+怎么校验"（如"最低提现金额=100元，运营可配，>0"）
+        - 可配置的规则引擎 → CONFIG(rule_engine) + BR（引用CONFIG）
+
+        CONFIG编号：CONFIG-{系统缩写}-{NNN}
+        CONFIG章节组织：双维度（全局视图按类型分组 + 业务系统视图按系统×页面呈现影响范围）
+
+        ═══ METRIC 统计指标清单 ═══
+        识别需求中涉及的统计指标，从 common/metrics-standards.yml 匹配行业标准定义：
+        - 触发关键词：看板/报表/数据统计/指标/大屏/数据分析
+        - 按行业匹配标准指标（11个行业：电商/财务/物流/仓库/直播/AARRR/广告/CRM/SaaS/教育/医疗）
+        - 在METRIC中引用industry_standard字段对齐标准指标ID
+        - 自定义指标标注industry_standard: null并定义完整formula
+
+        METRIC编号：METRIC-{系统缩写}-{NNN}
+        每个METRIC含：name/industry_standard/type/entity/formula/dimensions/granularity/source_apis/source_entities/display_on/related_br/related_bg/alert_threshold
+
+    # ---- §6 BR 依赖声明 + 接口契约初稿（v2.0.0 保留） ----
+    - id: "6"
+      name: "BR 依赖声明 + 接口契约初稿"
+      agent: "ba-agent"
+      skills: ["state-enumerator"]
+      input: "原子用例 + 业务规则 + CONFIG + METRIC"
+      output:
+        - "BR 依赖声明：BR-{系统}-{NNN} depends_on [BR-{系统}-{NNN}, ...]"
+        - "接口契约初稿：接口路径 + 入参/出参结构（自然语言描述）"
+        - "CONFIG-BR关联：每个CONFIG标注关联的BR编号"
+        - "METRIC-BG关联：每个METRIC标注关联的BG编号"
+      methodology: |
+        V2.0.0保留 + V3.0.0增强：BR依赖声明须包含CONFIG关联，
+        接口契约初稿须标注涉及的CONFIG参数。
+
+    # ---- §7 产物体系输出（V3.0.0扩展：+CONFIG+METRIC+深度分析摘要） ----
+    - id: "7"
+      name: "产物体系输出"
+      agent: "ba-agent"
+      skills: ["doc-splitter", "doc-processor"]
+      input: "上述全部分析"
+      output:
+        - "REQ-场景需求（按 User Story 格式）"
+        - "REQ-流程闭环（含业务泳道图）"
+        - "REQ-信息流（含信息主体+跨系统流转）"
+        - "REQ-状态机（含状态过渡操作表）"
+        - "REQ-业务操作矩阵（角色×部门×状态×操作）"
+        - "REQ-时序流（sequenceDiagram）"
+        - "REQ-ER关系与用例（FN/UC 标准表格）"
+        - "REQ-集中配置清单 CONFIG（V3.0.0新增，双维度组织）"
+        - "REQ-统计指标清单 METRIC（V3.0.0新增，引用行业标准）"
+        - "REQ-需求深度分析摘要（V3.0.0新增）"
+        - "系统常识盲区分析报告（V3.1.0新增，system-common-sense-analyzer产出）"
+        - "多端差异矩阵"
+        - "全局文档契约附录"
+      path: "projects/{project}/docs/01-requirements/"
+      checkpoint: true
+      note: "用户确认全部产物体系 → 才进设计"
+      # V3.0.1新增：门禁引用，PM在checkpoint时按gates-registry逐条校验
+      gates_reference: ".codebuddy/knowledge/common/gates-registry.yml#stages.requirement"
+      gates_enforcement: |
+        PM在§7 checkpoint时按gates-registry.yml的G-REQ-01~16逐条校验：
+        G-REQ-01 FN编号存在 → G-REQ-02 UC编号存在 → G-REQ-03 泳道图 → G-REQ-04 信息流转图
+        → G-REQ-05 状态机+过渡表 → G-REQ-06 业务操作矩阵 → G-REQ-07 BR编号 → G-REQ-08 ENT编号
+        → G-REQ-09 CONFIG清单 → G-REQ-10 METRIC清单 → G-REQ-11 系统类型声明 → G-REQ-12 五类图齐全
+        → G-REQ-13 BO/BG映射 → G-REQ-14 验收标准双层矩阵
+        → G-REQ-15 系统常识完整性（V3.1.0新增：检查system-common-sense-analyzer是否已执行+盲区是否已确认处理）
+        → G-REQ-16 大脑推理完整性（V3.2.0新增：检查quality_prediction+history_correlation是否已执行+brain_sync_export是否已产出）
+        → G-REQ-17 UC格式完整性（V5.1.1根因修复：每个UC必须包含六段标准格式——前置条件/基本流程/备选流程/数据范围/后置条件/关联UC，缺任一段视为PRD不合格）
+        → G-REQ-21 多专家盲区审查完整性（V5.4.1调整：检查§2.5是否已执行+盲区决策日志是否已产出+所有need_supplement是否已supplemented+闭环验证是否通过）
+        任一hard_gate不通过 → PM驳回BA，BA补充后重新提交
+      prd_chapters: |
+        V3.0.0 PRD 从15章升级为17章：
+        1.版本历史 → 2.目录 → 3.背景与问题 → 4.目标与度量 → 5.范围 →
+        6.与既有模块关系 → 7.业务目标映射(BO/BG) → 8.用户故事 →
+        9.功能需求列表与用例(FN/UC) → 10.业务规则(BR) →
+        11.集中配置清单(CONFIG)【V3.0.0新增，独立板块+双维度组织】 →
+        12.数据实体(ENT) → 13.统计指标清单(METRIC)【V3.0.0升级】 →
+        14.验收标准 → 15.五类图 → 16.外部接口 →
+        17.需求深度分析摘要【V3.0.0新增，摘要模式】
+
+        §17 摘要内容（非全文归档）：
+        - 影响的流程清单
+        - 影响的模块清单（+影响级别）
+        - 影响的状态机清单（新增/修改的状态）
+        - 过往用例的前置/后置条件影响
+        - 隐含需求摘要（+优先级）
+        - 领域知识引用摘要（Part12/Part13/BR/状态机）
+
+  # ============================================
+  # 全类型同步铁律（v2.0.0 保留）
+  # ============================================
+  sync_iron_rule: |
+    无论何种需求类型（新增/迭代/变更/修复），凡需求变动，
+    受影响模块 REQ 产物必须同步更新。
+    当前立项存在未 close 需求流时，开工新版本前 BA 须补齐历史版本 REQ 产物缺口。
+
+  # ============================================
+  # 全局文档契约附录（v2.0.0 保留）
+  # ============================================
+  global_doc_appendix:
+    description: "BA 在产物体系输出时，必须生成全局文档契约附录，记录所有产物的交叉引用索引"
+    fields:
+      - "产物路径 → 关联 FN 编号"
+      - "FN 编号 → 关联 BR 编号"
+      - "BR 编号 → 关联接口契约初稿"
+      - "接口 → 关联状态机节点"
+      - "状态机节点 → 关联业务操作矩阵行"
+      - "CONFIG 编号 → 关联 BR/FN/PG/API（V3.0.0新增）"
+      - "METRIC 编号 → 关联 BG/PG/FN/API（V3.0.0新增）"
+
+  # ============================================
+  # BA 铁律（V3.1.0 新增 BA-25）
+  # ============================================
+  iron_rules:
+    - id: "BA-01"
+      rule: "需求描述 ≠ 需求文档：用户的 --desc 只是起点，BA 必须展开为结构化产物"
+    - id: "BA-02"
+      rule: "影响范围是分析结果，非用户预声明：BA 必须跑 req-impact-analyzer"
+    - id: "BA-03"
+      rule: "终端在 §0.0 一次性冻结，后续禁止零散重复确认"
+    - id: "BA-04"
+      rule: "每个 User Story 必须包含 Happy Path + ≥2 Ugly Path + ≥1 Corner Case"
+    - id: "BA-05"
+      rule: "业务流程必须覆盖：主干/分支/异常/跨部门/跨角色/跨系统"
+    - id: "BA-06"
+      rule: "状态机必须配套状态过渡操作表"
+    - id: "BA-07"
+      rule: "每个 FN 使用标准用例模板（编号/用例编号/名称/页面/参与者/优先级/关联BG/自动化类型）"
+    - id: "BA-08"
+      rule: "BR 必须独立编号 BR-{系统}-{NNN}，声明 depends_on 依赖链"
+    - id: "BA-09"
+      rule: "需求阶段产出接口契约初稿（自然语言）"
+    - id: "BA-10"
+      rule: "版本规划必须包含优先级排序（P0~P3）"
+    - id: "BA-11"
+      rule: "产物体系缺一不可，少任一视为需求分析未完成"
+    - id: "BA-12"
+      rule: "全类型同步铁律：无论何种类型，REQ 产物必须同步更新"
+    - id: "BA-13"
+      rule: "全局文档契约附录：所有产物必须有交叉引用索引"
+    - id: "BA-14"
+      rule: "§0.5 不可跳过：旅行地图前必须完成§0.5需求深度分析整合，禁止直接从--desc跳到旅行地图（修复类型走精简版）"
+    - id: "BA-15"
+      rule: "领域知识深度结合：§0.5a必须引用领域知识Part12(API参数字典)和Part13(参数流转图)，不可仅做关键词匹配"
+    - id: "BA-16"
+      rule: "CONFIG必识别：§5详设必须产出集中配置清单(CONFIG)，用例中明细说明的可配置项须归入CONFIG，双维度组织（全局视图+业务系统视图）"
+    - id: "BA-17"
+      rule: "METRIC引标准：§5详设统计指标(METRIC)必须引用common/metrics-standards.yml行业标准定义，自定义指标须标注industry_standard=null"
+    - id: "BA-25"
+      rule: "系统常识完整性（V3.1.0新增）：§0.5c必须调用system-common-sense-analyzer，基于系统类型声明的AI常识推理发现需求盲区，BA确认后纳入或排除。禁止跳过盲区分析直接出PRD。"
+    - id: "BA-26"
+      rule: "大脑推理完整性（V3.2.0新增）：§0.5c必须调用quality-predictor（质量预测）+history-correlator（历史关联），产出高风险FN清单+brain_sync_export（向UX/Arch/QA的大脑输出）。禁止跳过大脑推理直接出PRD。"
+    - id: "BA-31"
+      rule: "三阶段分析不可跳过（V3.4.0新增）：必须按阶段1业务还原(§3)→阶段2系统划分(§3.5)→阶段3终端划分(§3.8)顺序执行。禁止跳过业务还原直接做系统划分，禁止跳过系统划分直接定终端。业务系统划分是分析结果不是前提。"
+    - id: "BA-32"
+      rule: "闭环验证不可跳过（V3.4.0新增）：阶段1必须通过业务闭环验证（7要素：角色人/销售方式/支付方式/谁支付/谁收款/如何结算/结算给谁）+行业对标验证；阶段2必须通过系统闭环验证（9要素：商品创建/展示/下单/支付/发货/查看/售后/处理/系统归属）。未通过闭环验证不得进入下一阶段。"
+    - id: "BA-33"
+      rule: "冻结机制（V3.4.0新增）：每阶段扫盲完成后PM展示冻结内容→用户确认→冻结→传入下一阶段。用户有补充则退回重新分析。冻结内容：阶段1=场景清单，阶段2=系统边界+系统间接口，阶段3=终端清单+跨端流转路径。"

@@ -1,0 +1,32 @@
+# Skill: 知识融合器（Knowledge Integrator）
+skill:
+  id: "knowledge-integrator"
+  name: "knowledge-integrator"
+  version: "1.0.0"
+  agent: "pm-agent"
+  description: >
+    知识融合与复盘提炼器。仅在两个收口节点触发：
+      (1) /learn-project 流程末阶段 —— 融合六视角提取的知识、检测冲突、生成学习报告；
+      (2) /close 收尾 —— 提炼 lessons-learned/{project}.yml 复盘。
+    不挂各业务 Agent，避免"每个阶段都融合"导致语义稀释。
+  triggers:
+    - command: "/learn-project"
+      stage: "阶段4"
+      description: "/learn-project 流程最后一个阶段，融合所有 Agent 提取的知识"
+    - command: "/close"
+      stage: "close"
+      description: "PM 收尾时提炼 lessons-learned 复盘"
+  workflow:
+    - name: "知识去重"
+      rule: "识别多来源相同知识，保留最新版本，标记旧版本为 deprecated"
+    - name: "冲突检测"
+      rule: "检测同一业务规则的不同描述、原型与需求不一致、设计稿与需求偏差"
+    - name: "知识关联建立"
+      rule: "建立跨类型文档关联，填充 TRACEABILITY_MATRIX.md，更新 INDEX.md"
+    - name: "生成学习报告 / 复盘"
+      rule: "输出项目学习报告（/learn）到 .codebuddy/knowledge/projects/{project}/，或 lessons-learned.yml（/close）到 projects/{project}/.codebuddy/"
+  output:
+    - ".codebuddy/knowledge/projects/{project}/学习报告.md"
+    - "projects/{project}/.codebuddy/TRACEABILITY_MATRIX.md"
+    - "projects/{project}/.codebuddy/INDEX.md"
+    - "projects/{project}/.codebuddy/lessons-learned.yml"

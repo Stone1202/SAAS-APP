@@ -1,0 +1,33 @@
+# VERSION-INDEX.yml — SAAS 版本索引
+# 维护者：PM Agent | 每次 /close 时更新
+
+project: "SAAS"
+last_updated: "2026-07-27T12:00+08:00"
+
+versions:
+  - version: "v1.0.0"
+    date: "2026-07-27"
+    stream: "STR-SAAS-001"
+    status: "closed"
+    modules:
+      - name: "内容审查域"
+        scope: "直播实时审查+回放审查+擦音/静音仿真"
+        terminals: ["PC运营后台", "PC租户后台", "H5观众端"]
+        fns: 6
+        ucs: 5
+        brs: 16
+        ents: 5
+        configs: 8
+        metrics: 5
+        pages: 6
+    prd: "docs/01-requirements/16-内容审查域-PRD-v1.0.0.md"
+    prd_html: "docs/09-versions/v1.0.0/prd-html/SAAS-内容审查域-v1.0.0.html"
+    design: "docs/03-design/v1.0.0/内容审查/设计文档-内容审查-v1.0.0.md"
+    architecture: "docs/04-architecture/v1.0.0/架构设计文档-内容审查域-V1.0.0.md"
+    snapshot: "docs/09-versions/v1.0.0/SNAPSHOT-v1.0.0.yml"
+    rev_summary: "docs/版本沉淀/v1.0.0/REV-SUMMARY-v1.0.0.md"
+    acceptance: "docs/05-acceptance/accept-reports/ACR-audit-v1.0.0-20260727.md"
+    test_pass_rate: "100%"
+    acceptance_result: "4/4通过"
+    quality_score: 92
+    git_tag: "v1.0.0-saas-audit"

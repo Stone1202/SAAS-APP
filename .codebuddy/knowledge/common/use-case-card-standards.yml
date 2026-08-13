@@ -1,0 +1,288 @@
+# ============================================
+# 可交互用例卡片规范（Use Case Card Standards）
+# 版本: v2.0.0
+# 创建日期: 2026-07-18
+# 所属议题: POM V5.0 议题五
+# ============================================
+#
+# V2.0.0 重大升级：
+#   1. 引用 uc-taxonomy.yml V1.0.0 的完整页面类型+操作类型体系
+#   2. 页面类型从「管理列表」扩展为7种（管理列表/表单创建/编辑/详情/弹窗表单/仪表盘/认证）
+#   3. 操作类型从4种扩展为8种（新增filter/cancel/batch_operation/delete）
+#   4. AI自动识别：按 uc-taxonomy.yml 的 auto_detect 规则生成标准UC
+#   5. 卡片 header 新增 page_type 和 related_pg 字段
+#   6. 关联 uc-taxonomy.yml 的 traceability 规则
+# ============================================
+version: "2.0.0"
+name: "use-case-card-standards"
+description: "可交互用例卡片规范——每张卡片=一个用例(UC)的交互式演示。V2.0.0扩展7种页面类型+8种操作类型"
+ref: ".codebuddy/knowledge/common/flow-standards/uc-taxonomy.yml"
+
+# ============================================
+# 一、定义
+# ============================================
+definition: |
+  每张卡片对应一个用例(UC)，以可交互的HTML卡片形式呈现。
+  研发团队可：看前置条件 → 按步骤操作 → 看后置条件 → 验证预期结果。
+  卡片直接嵌入高保真仿真原型中，操作时联动原型页面。
+
+# ============================================
+# 1.5 用例分层 + 页面类型体系（V2.0.0 升级）
+# ============================================
+# 完整定义详见 uc-taxonomy.yml，本文引用核心内容。
+uc_layering:
+  description: |
+    每个页面拆分为「1个页面用例 + N个操作用例」。
+    页面用例描述页面整体（布局/区域/能力），操作用例按触发元素独立。
+    N由页面类型决定，AI按 uc-taxonomy.yml 的 auto_detect 规则自动生成。
+
+  taxonomy_ref: ".codebuddy/knowledge/common/flow-standards/uc-taxonomy.yml"
+    
+  page_level:
+    description: "页面用例（ucLevel='page'）——描述页面是什么、有哪些区域、能做什么"
+    uc_id_format: "UC-{系统}-{终端}-{NNN}"
+    trigger_location: "页面标题右侧【？】"
+    page_types:
+      - management_list: "管理列表——搜索区+表格+分页"
+      - form_create: "表单/创建——空表单+提交+取消"
+      - edit: "编辑——预填表单+保存+取消"
+      - detail: "详情——只读展示+返回+操作按钮"
+      - modal_form: "弹窗表单（归属父页面FN，不作为独立页面UC）"
+      - dashboard: "仪表盘/统计——图表+指标卡片"
+      - auth: "登录/认证"
+    
+  operation_level:
+    description: "操作用例（ucLevel='operation'）——每个交互元素的独立操作"
+    uc_id_format: "UC-{系统}-{终端}-{NNN}-{SS}"
+    operation_types:
+      search:
+        description: "搜索/实时筛选（文本输入→模糊匹配）"
+        trigger_location: "搜索框旁【？】"
+        color: "#1677ff"
+        icon: "SearchOutlined"
+        applicable: ["management_list"]
+      sort:
+        description: "列表排序（点击表头→升序/降序）"
+        trigger_location: "表头列旁【？】"
+        color: "#722ed1"
+        icon: "SortAscendingOutlined"
+        applicable: ["management_list"]
+      navigate:
+        description: "跳转/导航（页面跳转/弹窗打开/链接跳转）"
+        trigger_location: "操作按钮/链接旁【？】"
+        color: "#fa8c16"
+        icon: "LoginOutlined"
+        applicable: ["management_list", "form_create", "edit", "detail", "dashboard"]
+        note: "每个独立的跳转触发元素=一个独立的navigate UC"
+      save:
+        description: "保存/提交（校验表单→提交数据→持久化）"
+        trigger_location: "弹窗/表单「提交」按钮旁【？】"
+        color: "#52c41a"
+        icon: "SaveOutlined"
+        applicable: ["management_list", "form_create", "edit", "auth"]
+      filter:
+        description: "结构化筛选（下拉框/日期选择器等结构化条件）"
+        trigger_location: "筛选条件区旁【？】"
+        color: "#13c2c2"
+        icon: "FilterOutlined"
+        applicable: ["management_list", "dashboard"]
+      cancel:
+        description: "取消/返回（放弃操作→回退）"
+        trigger_location: "取消/返回按钮旁【？】"
+        color: "#8c8c8c"
+        icon: "CloseOutlined"
+        applicable: ["form_create", "edit"]
+      batch_operation:
+        description: "批量操作（勾选多项→统一操作）"
+        trigger_location: "批量操作按钮旁【？】"
+        color: "#eb2f96"
+        icon: "UngroupOutlined"
+        applicable: ["management_list"]
+      delete:
+        description: "删除（删除记录→二次确认）"
+        trigger_location: "删除按钮旁【？】"
+        color: "#ff4d4f"
+        icon: "DeleteOutlined"
+        applicable: ["edit", "detail"]
+    
+  auto_detect:
+    description: |
+      AI按 uc-taxonomy.yml → page_types → {type}.auto_detect.features 规则自动识别页面类型，
+      然后按 standard_operations 自动生成对应操作UC。
+      识别依据：组件特征（Table/Search/Form/Descriptions等）+ 关键词（创建/编辑/详情/概览等）。
+      用户可在BA确认阶段修正AI识别结果。
+      
+      标准生成规则：
+      - management_list → 4核心(search/sort/navigate/save) + 可选(filter/batch/export)
+      - form_create → 2核心(save/navigate)
+      - edit → 2核心(save/navigate) + 可选(delete)
+      - detail → 1核心(navigate) + 可选(navigate操作按钮)
+      - dashboard → 1核心(filter) + 可选(navigate)
+      - auth → 1核心(save)
+
+# ============================================
+# 二、卡片结构
+# ============================================
+card_structure:
+
+  header:
+    uc_id: "UC-{系统}-{终端}-{NNN} 或 UC-{系统}-{终端}-{父FN}-{子序号}"
+    uc_name: "用例名称"
+    related_fn: "FN-{系统}-{终端}-{NNN}"
+    page_type: "management_list|form_create|edit|detail|modal_form|dashboard|auth（V2.0.0新增，仅page级）"
+    related_pg: "PG-{系统}-{终端}-{NNN}（V2.0.0新增）"
+    uc_level: "page|operation"
+    operation_type: "search|sort|navigate|save|filter|cancel|batch_operation|delete（仅operation级，V2.0.0扩展）"
+    trigger_element: "触发元素描述（如'搜索框'/'创建按钮'，仅operation级）"
+    priority: "P0|P1|P2"
+    automation_type: "手动|系统自动|事件驱动"
+
+  body:
+    preconditions:
+      description: "前置条件（可点击跳转到对应页面状态）"
+      example: ["用户已登录", "当前在商品列表页", "已存在至少1个商品"]
+
+    steps:
+      description: "操作步骤（可点击触发原型页面操作）"
+      item_fields:
+        step: "步骤序号"
+        action: "操作描述"
+        expected: "预期结果"
+        interactive: "true|false（是否可点击触发）"
+
+    postconditions:
+      description: "后置条件（操作后验证）"
+      example: ["商品列表新增一条记录", "商品状态=上架中", "操作日志新增一条记录"]
+
+    alternatives:
+      description: "备选流程（分支）"
+      item_fields:
+        branch: "分支名称"
+        trigger: "触发条件"
+        expected: "预期结果"
+        interactive: "true|false"
+
+    exceptions:
+      description: "异常流程"
+      item_fields:
+        exception: "异常名称"
+        trigger: "触发条件"
+        expected: "预期结果"
+        interactive: "true|false（异常通常不可交互模拟）"
+
+  footer:
+    data_scope: "R: 读取范围 / W: 写入范围"
+    related_br: ["BR-{系统}-001"]
+    related_sc: ["SC-{系统}-001"]
+    last_verified: "AI运行时验证时间+结果"
+
+# ============================================
+# 三、三种交互模式
+# ============================================
+interaction_modes:
+
+  guided:
+    name: "引导式"
+    description: "逐步高亮当前步骤，用户点击'下一步'推进"
+    use_when: "研发团队首次理解用例时"
+
+  free:
+    name: "自由式"
+    description: "用户自由操作原型页面，卡片显示当前状态匹配的用例步骤"
+    use_when: "研发团队已理解用例，自由验证时"
+
+  auto_play:
+    name: "自动播放"
+    description: "AI自动执行所有步骤，用户观看"
+    use_when: "快速浏览所有用例时"
+
+# ============================================
+# 四、卡片数据模型（YAML）
+# ============================================
+card_data_schema:
+  uc_id: "UC-LIVE-APP-001"
+  uc_name: "进入直播间"
+  related_fn: "FN-LIVE-APP-001"
+  priority: "P0"
+  automation_type: "手动"
+
+  preconditions:
+    - "用户已登录APP"
+    - "存在进行中的直播"
+
+  steps:
+    - step: 1
+      action: "点击直播入口"
+      expected: "进入直播间观看页"
+      interactive: true
+    - step: 2
+      action: "观看直播"
+      expected: "可看到主播视频+听到音频"
+      interactive: true
+
+  postconditions:
+    - "进入直播间观看页"
+    - "观看记录+1"
+    - "在线人数+1"
+
+  alternatives:
+    - branch: "直播已结束"
+      trigger: "点击时直播已结束"
+      expected: "提示'直播已结束'"
+      interactive: true
+
+  exceptions:
+    - exception: "网络断开"
+      trigger: "观看时网络断开"
+      expected: "提示'网络异常，请重试'"
+      interactive: false
+
+  footer:
+    data_scope: "R: 直播列表 / W: 观看记录"
+    related_br: ["BR-LIVE-001"]
+    related_sc: ["SC-LIVE-001"]
+    last_verified: "2026-07-18 AI运行时验证通过"
+
+# ============================================
+# 五、生成与验证
+# ============================================
+generation:
+  source: "BA的产物体系（FN/UC/BR/状态机/业务操作矩阵）"
+  taxonomy_ref: ".codebuddy/knowledge/common/flow-standards/uc-taxonomy.yml"
+  generator: "instruction-card-generator.yml V3.0.0"
+  trigger: "/handoff（仅此入口，V3.0.0变更）"
+
+verification:
+  auto_play_check: "AI自动执行每张卡片的auto_play模式，验证步骤可触发+预期结果达成+后置条件生效"
+  output: "card-verification-report（每张卡片是否可交互+预期结果是否达成）"
+
+# ============================================
+# 六、样式规范（V1.1.0新增——内容区滚动+底部操作区固定）
+# ============================================
+layout_style:
+  principle: "用例过长时内容区可上下滚动，底部操作区始终固定可见"
+  structure:
+    header:
+      desc: "标题区域：UC编号+名称+优先级标签+自动化类型标签"
+      style: "固定在顶部，不随内容滚动"
+      css: "flex-shrink: 0; padding: 12px 16px; border-bottom: 1px solid #f0f0f0"
+    content:
+      desc: "内容区域：前置条件+操作步骤+备选流程+数据范围"
+      style: "可上下滚动，只有这个区域滚动"
+      css: "flex: 1; overflow-y: auto; padding: 16px; max-height: calc(100vh - 140px)"
+      scrollbar: "thin scrollbar（滚动条不占用内容空间）"
+    footer:
+      desc: "底部操作区：关联BR/SC标签+验证状态+操作按钮"
+      style: "固定在底部，不随内容滚动"
+      css: "flex-shrink: 0; padding: 12px 16px; border-top: 1px solid #f0f0f0; background: #fff; position: sticky; bottom: 0"
+  scroll_rule:
+    content_only: "只有内容区域（content）可滚动，头部（header）和底部（footer）固定不动"
+    trigger: "内容区域内容超出可视高度时自动出现纵向滚动条"
+    no_horizontal_scroll: "禁止横向滚动，内容宽度自适应容器"
+  interaction_buttons:
+    guided_mode: "底部操作区显示 [上一步] [下一步] 按钮，始终固定可见（即使用例很长也能随时操作）"
+    free_mode: "底部操作区显示 [关闭] 按钮，固定可见"
+    auto_play_mode: "底部操作区显示 [暂停] [跳过] 按钮，固定可见"
+  responsive:
+    desktop: "最小宽度 400px，最大宽度 600px（抽屉式）"
+    mobile: "全屏宽度，底部操作区贴底"

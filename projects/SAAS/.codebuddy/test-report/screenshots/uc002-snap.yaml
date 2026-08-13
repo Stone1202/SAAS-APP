@@ -1,0 +1,151 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - navigation [ref=e4]:
+      - button "💬 聊天室" [ref=e5] [cursor=pointer]:
+        - generic [ref=e6]: 💬
+        - generic [ref=e7]: 聊天室
+      - button "🎁 互动工具" [ref=e8] [cursor=pointer]:
+        - generic [ref=e9]: 🎁
+        - generic [ref=e10]: 互动工具
+      - button "🛒 商品卡片" [ref=e11] [cursor=pointer]:
+        - generic [ref=e12]: 🛒
+        - generic [ref=e13]: 商品卡片
+      - button "📋 直播订单" [ref=e14] [cursor=pointer]:
+        - generic [ref=e15]: 📋
+        - generic [ref=e16]: 直播订单
+    - generic [ref=e17]:
+      - complementary [ref=e18]:
+        - generic [ref=e19]:
+          - generic [ref=e20]: 聊天室
+          - combobox [ref=e21]:
+            - option "全部" [selected]
+            - option "粉丝"
+            - option "管理员"
+        - generic [ref=e22]:
+          - generic [ref=e23]:
+            - generic [ref=e24]: 用户A
+            - generic [ref=e25]: 主播好！
+          - generic [ref=e26]:
+            - generic [ref=e27]: 用户B
+            - generic [ref=e28]: 这个福利怎么领？
+          - generic [ref=e29]:
+            - generic [ref=e30]: 管理员
+            - generic [ref=e31]: 请大家遵守直播间秩序
+          - generic [ref=e32]:
+            - generic [ref=e33]: 粉丝C
+            - generic [ref=e34]: 已下单～
+        - generic [ref=e35]:
+          - generic [ref=e36] [cursor=pointer]:
+            - checkbox "置顶消息" [ref=e37]
+            - text: 置顶消息
+          - generic [ref=e38]:
+            - textbox "请输入消息..." [ref=e39]
+            - button "发送" [ref=e40] [cursor=pointer]
+      - main [ref=e41]:
+        - generic [ref=e42]:
+          - generic:
+            - generic:
+              - generic: 直播-stream-001
+              - generic: 直播中
+            - generic:
+              - generic: 主播：主播小A
+              - generic: 已播 01:23:45
+              - generic: 25,600 人观看
+          - generic [ref=e44]:
+            - generic [ref=e45]: 📹
+            - generic [ref=e46]: 直播画面 — stream-001
+          - generic [ref=e60]:
+            - generic [ref=e62]:
+              - generic [ref=e63]:
+                - generic [ref=e64]: L1
+                - generic [ref=e65]: 涉政
+                - generic [ref=e66]: 11:06:10
+              - generic [ref=e67]: "[涉政-核心] 违规涉政言论片段——模拟ASR语音识别文本"
+              - generic [ref=e68]:
+                - button "断流" [ref=e69] [cursor=pointer]
+                - button "记录" [ref=e70] [cursor=pointer]
+                - button "忽略" [disabled] [ref=e71]
+            - generic [ref=e72]:
+              - button "‹" [disabled] [ref=e73]
+              - generic [ref=e74] [cursor=pointer]:
+                - text: 1 / 1
+                - generic [ref=e75]: 展开
+              - button "›" [disabled] [ref=e76]
+        - generic [ref=e77]:
+          - generic [ref=e78]: 擦音模式：
+          - generic [ref=e79] [cursor=pointer]:
+            - radio "静音" [checked] [ref=e80]
+            - generic [ref=e81]: 静音
+          - generic [ref=e82] [cursor=pointer]:
+            - radio "擦音" [ref=e83]
+            - generic [ref=e84]: 擦音
+          - button "查看用例说明" [ref=e85] [cursor=pointer]:
+            - img [ref=e86]
+      - complementary [ref=e89]:
+        - generic [ref=e90]:
+          - button "互动工具" [ref=e91] [cursor=pointer]
+          - button "商品卡片" [ref=e92] [cursor=pointer]
+          - button "直播订单" [ref=e93] [cursor=pointer]
+          - button "内容审查" [ref=e94] [cursor=pointer]
+          - button "查看用例说明" [ref=e95] [cursor=pointer]:
+            - img [ref=e96]
+        - generic [ref=e99]:
+          - generic [ref=e100]:
+            - generic [ref=e101]:
+              - generic [ref=e102]: "1"
+              - text: 违规总数
+            - generic [ref=e104]:
+              - generic [ref=e105]: "1"
+              - text: 红（L1+L2）
+            - generic [ref=e107]:
+              - generic [ref=e108]: "0"
+              - text: 黄（L3）
+            - generic [ref=e110]:
+              - generic [ref=e111]: "0"
+              - text: 蓝（L4）
+            - generic [ref=e113]: 审查中
+            - button "查看用例说明" [ref=e115] [cursor=pointer]:
+              - img [ref=e116]
+          - generic [ref=e119]:
+            - generic [ref=e120]:
+              - combobox [ref=e121]:
+                - option "全部级别" [selected]
+                - option "L1-涉黄/涉暴"
+                - option "L2-违规"
+                - option "L3-辱骂"
+                - option "L4-其他"
+              - combobox [ref=e122]:
+                - option "全部状态" [selected]
+                - option "待处理"
+                - option "已记录"
+                - option "已断流"
+                - option "已忽略"
+                - option "已归档"
+              - combobox [ref=e123]:
+                - option "时间↓" [selected]
+                - option "时间↑"
+                - option "严重度"
+              - button "查看用例说明" [ref=e124] [cursor=pointer]:
+                - img [ref=e125]
+            - generic [ref=e131] [cursor=pointer]:
+              - generic [ref=e132]:
+                - generic [ref=e133]: 11:06:10
+                - generic [ref=e134]: L1
+                - generic [ref=e135]: 待处理
+              - generic [ref=e136]: 涉政-核心
+              - generic [ref=e137]: "[涉政-核心] 违规涉政言论片段——模拟ASR语音识别文本"
+          - generic [ref=e138]:
+            - generic [ref=e139]:
+              - button "记录" [disabled] [ref=e140]
+              - generic "查看「记录」按钮用例说明"
+            - generic [ref=e141]:
+              - button "断流" [disabled] [ref=e142]
+              - generic: L4仅可记录
+              - generic "查看「断流」按钮用例说明"
+            - generic [ref=e143]:
+              - button "忽略" [disabled] [ref=e144]
+              - generic: L1不可忽略
+              - generic "查看「忽略」按钮用例说明"
+  - button "用例卡" [ref=e146] [cursor=pointer]:
+    - img [ref=e147]
+    - generic [ref=e150]: 用例卡

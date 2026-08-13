@@ -1,0 +1,295 @@
+# ============================================
+# Sprint敏捷拆解规范（Sprint Planning Standards）
+# 版本: v1.1.0
+# 创建日期: 2026-07-18
+# 所属议题: POM V5.0 议题四
+# V1.1.0升级：新增小版本快迭代策略 + 版本粒度定义 + 配置优先原则
+# ============================================
+# 设计说明：
+#   基于Scrum 334框架 + 敏捷实践经验
+#   定义Sprint拆解策略+DoD+依赖管理+Sprint Backlog+Velocity
+#   V1.1.0新增：小版本多迭代策略 + 后台可配置优先原则
+#   SM Agent作为Sprint守护人引用本规范
+# ============================================
+
+version: "1.1.0"
+name: "sprint-planning-standards"
+description: "Sprint敏捷拆解规范——拆解策略+DoD+依赖管理+Velocity+小版本迭代"
+
+# ============================================
+# 一、敏捷原则（基于Scrum 334框架）
+# ============================================
+agile_principles:
+  - principle: "Sprint目标是增量可演示"
+    implementation: "每Sprint交付1-3个页面 + 运行时验证通过 + Demo报告"
+  - principle: "Sprint长度固定"
+    implementation: "默认1个Sprint = 1次完整流程周期（AI加速下可更短）"
+  - principle: "DoD显式定义"
+    implementation: "每Sprint的DoD 6项显式化，SM校验"
+  - principle: "Sprint Backlog不可变"
+    implementation: "Sprint启动后SM不再向Sprint Backlog加项，变更走change-request"
+  - principle: "AI每日同步"
+    implementation: "SM每阶段自动生成进度报告，无需人工每日站会"
+  - principle: "Sprint Review可演示"
+    implementation: "Sprint结束SM主持AI Demo + PO商业价值审视"
+  - principle: "Retrospective学习"
+    implementation: "SM主持Sprint回顾会，经验提炼追加到lessons-learned"
+  - principle: "Velocity可预测"
+    implementation: "SM记录每Sprint实际交付页面数/工时，用于下一版本规划"
+
+# ============================================
+# 二、Sprint拆解规则
+# ============================================
+splitting_strategies:
+
+  strategy_1:
+    name: "按业务流程闭环拆"
+    description: "一个Sprint完成一个端到端业务流程闭环"
+    example: "S1=商品上架→下单→支付闭环；S2=退款→售后闭环"
+    when_to_use: "业务流程清晰且闭环独立时"
+
+  strategy_2:
+    name: "按终端拆"
+    description: "一个Sprint完成一个终端的核心功能"
+    example: "S1=PC运营后台；S2=APP端；S3=H5端"
+    when_to_use: "多终端项目，终端间相对独立时"
+
+  strategy_3:
+    name: "按模块拆"
+    description: "一个Sprint完成一个业务模块"
+    example: "S1=商品模块；S2=订单模块；S3=支付模块"
+    when_to_use: "模块间耦合低时"
+
+  strategy_4:
+    name: "MVP优先拆"
+    description: "S1做MVP最小可用版本，后续Sprint增量增强"
+    example: "S1=商品CRUD；S2=商品分类+搜索；S3=商品批量导入"
+    when_to_use: "新项目首版本，需快速验证时"
+
+  strategy_5:
+    name: "混合拆"
+    description: "组合以上策略，PO声明组合方式"
+    when_to_use: "复杂项目，单一策略不适用时"
+
+  strategy_6:
+    name: "小版本快迭代（V1.1.0新增）"
+    description: |
+      不追求一次性大版本交付，而是拆为多个小版本快速迭代。
+      每个小版本围绕1-2个需求目标完成即可，不求全但求可用。
+      配置项优先交付（后台可配置的功能先上线），开发项后续迭代补充。
+    example: |
+      v1.0.0-S1=核心审核闭环（实时擦音+处置）——代码开发
+      v1.0.0-S2=审核增强（租户只读+擦除配置）——代码开发
+      v1.0.0-S3=录播擦音+统计看板+Gap修复——代码开发
+      v1.0.1=多MPS模板配置+审核阈值调优——后台配置（无需开发，快速上线）
+      v1.0.2=通知模板配置+处置规则配置——后台配置
+    when_to_use: |
+      1. 需求中有部分功能可通过后台配置实现（如云直播模板/MPS擦音模板/系统参数）
+      2. 需求目标可拆分为独立的小目标，每个小目标可在1-2个Sprint内完成
+      3. 业务方期望快速看到可用成果而非等待完整大版本
+      4. 需求涉及第三方平台能力（如腾讯云直播/MPS），部分能力通过配置即可启用
+    principles:
+      - "目标导向：每个小版本只需围绕1-2个需求目标完成即可，不求全"
+      - "配置优先：后台可配置的功能优先交付，无需等待代码开发"
+      - "可用即发：小版本达到可用状态即可发布，不必等所有功能完成"
+      - "快速反馈：小版本发布后快速收集反馈，指导下一个小版本规划"
+      - "渐进增强：每个小版本在前一个小版本基础上增量增强"
+
+# ============================================
+# 三、拆解约束
+# ============================================
+splitting_constraints:
+  - "每Sprint页面数 ≤ 5（超过则拆分）"
+  - "每Sprint必须包含至少1个场景闭环（SC）"
+  - "Sprint间依赖必须显式声明，不允许隐式依赖"
+  - "Sprint 1通常做MVP或核心闭环，后续Sprint增量"
+  - "跨Sprint的共享组件（如通用弹窗/通用Store）放在依赖它的第一个Sprint"
+  - "V1.1.0新增：配置项优先排期——implementation_approach=backend_config的Backlog项优先安排到靠前的Sprint或独立小版本"
+  - "V1.1.0新增：小版本最少1个Sprint即可发布，不强制3个Sprint起步"
+
+# ============================================
+# 三-A、版本粒度定义（V1.1.0新增——支持小版本多迭代）
+# ============================================
+version_granularity:
+  description: |
+    V1.1.0新增：版本粒度划分标准，支持小版本快速迭代。
+    PO根据需求目标复杂度和实现方式选择合适的版本粒度。
+  levels:
+    patch:
+      pattern: "v{major}.{minor}.{patch}（如v2.0.1）"
+      description: "补丁版本——小修复/配置项上线/参数调优"
+      min_sprints: 1
+      max_sprints: 2
+      typical_content: "后台配置项、Bug修复、参数调优、小交互优化"
+      example: "v2.0.1=多MPS模板配置+审核阈值调优（纯配置，无需开发）"
+    minor:
+      pattern: "v{major}.{minor}.0（如v2.1.0）"
+      description: "小版本——新功能模块或场景闭环增量"
+      min_sprints: 2
+      max_sprints: 4
+      typical_content: "新FN/新页面/新交互/场景闭环扩展"
+      example: "v2.1.0=直播中控端+观众端弹幕审核（2-3 Sprint）"
+    major:
+      pattern: "v{major}.0.0（如v3.0.0）"
+      description: "大版本——新产品线/重大架构升级/业务模式变更"
+      min_sprints: 5
+      max_sprints: 10
+      typical_content: "新产品线、重大架构重构、核心业务模式变更"
+      example: "v3.0.0=AI智能客服模块全量上线（5-8 Sprint）"
+  selection_rule: |
+    PO根据以下因素选择版本粒度：
+    1. 需求目标数量：1-2个目标→patch，3-5个目标→minor，6+个目标→major
+    2. 实现方式占比：配置项占比>50%→patch，开发项占比>70%→minor，新架构→major
+    3. 业务紧迫度：紧急上线→patch小版本快速交付，正常迭代→minor，战略转型→major
+    4. 依赖关系：无跨模块依赖→patch，模块内依赖→minor，跨模块/跨系统→major
+
+# ============================================
+# 三-B、配置优先原则（V1.1.0新增）
+# ============================================
+config_first_principle:
+  description: |
+    V1.1.0新增：配置优先于开发原则。
+    当一个需求可以通过后台配置实现时，不应作为代码开发项。
+    PO在规划时必须先识别哪些需求可通过配置实现，将其拆为独立小版本快速交付。
+  rules:
+    - "识别阶段：PO在po-2价值评估时同步识别implementation_approach"
+    - "拆分阶段：backend_config项拆为独立patch小版本，不与code_development项混在同一Sprint"
+    - "排期阶段：配置项小版本优先于开发项版本发布"
+    - "验证阶段：配置项只需验证配置生效+功能可用，无需五层测试"
+  ai_assist: "AI辅助PO识别第三方平台可配置能力——基于领域知识中第三方平台能力清单（如腾讯云直播支持哪些模板配置、MPS支持哪些擦音模板配置）"
+
+# ============================================
+# 四、项目规模与Sprint数量
+# ============================================
+sprint_size_guidance:
+  small_project: "1-2 Sprint（lite流程）"
+  medium_project: "3-5 Sprint（standard流程）"
+  large_project: "6+ Sprint（full流程）"
+
+# ============================================
+# 五、Sprint计划Schema
+# ============================================
+sprint_plan_schema:
+  version: "v1.0.0"
+  project: "{project}"
+  target_version: "v1.0.0"
+  splitting_strategy: "strategy_1"
+  splitting_rationale: "本项目业务流程清晰，闭环独立"
+
+  sprints:
+    - sprint_id: "S1"
+      name: "Sprint名称"
+      goal: "Sprint目标（必须可演示）"
+      pages: ["页面1", "页面2"]
+      backlog_items: ["BL-001", "BL-002"]
+      scenarios: ["SC-001"]
+      
+      definition_of_done:
+        code_runnable: true
+        runtime_verification_passed: true
+        tests_passed: true
+        post_conditions_implemented: true
+        human_confirmed: true
+        demo_report_generated: true
+      
+      dependencies: []
+      dependents: ["S2"]
+      process_tier: "lite|standard|full"
+
+  sprint_sequence: ["S1", "S2"]
+  total_sprints: 2
+
+# ============================================
+# 六、DoD（Definition of Done）
+# ============================================
+definition_of_done:
+  description: "每Sprint的完成标准，SM校验"
+  items:
+    - id: "DoD-1"
+      name: "代码可运行"
+      check: "npm run build 通过"
+      verified_by: "sm-agent"
+    - id: "DoD-2"
+      name: "运行时验证通过"
+      check: "build+test+dev启动+页面访问+菜单跳转+数据保存+后置条件+流程跑通 全通过"
+      verified_by: "sm-agent"
+    - id: "DoD-3"
+      name: "测试通过"
+      check: "五层测试通过（契约+单元+集成+E2E+可用性）"
+      verified_by: "qa-agent"
+    - id: "DoD-4"
+      name: "后置条件实现"
+      check: "FN后置条件全部翻译为代码并生效"
+      verified_by: "fd-agent + sm-agent"
+    - id: "DoD-5"
+      name: "人确认"
+      check: "人确认通过（按human-confirm-protocol）"
+      verified_by: "pm-agent"
+    - id: "DoD-6"
+      name: "Demo报告生成"
+      check: "AI Demo报告含截图+流程跑通证据+问题清单"
+      verified_by: "sm-agent"
+
+# ============================================
+# 七、Sprint间依赖管理
+# ============================================
+dependency_management:
+  types:
+    - type: "data_dependency"
+      description: "S2需要S1的数据结构/Store"
+      handling: "S1必须在DoD中包含数据契约定义；S2启动前SM校验契约存在"
+    
+    - type: "component_dependency"
+      description: "S2需要S1的通用组件"
+      handling: "通用组件在S1开发时同步抽取为共享组件；S2启动前SM校验组件可用"
+    
+    - type: "scenario_dependency"
+      description: "S2的场景闭环依赖S1的场景"
+      handling: "S1场景必须跑通且验收通过；S2启动前SM运行S1场景作为前置验证"
+  
+  blocking_handling:
+    - "若S1未达DoD，S2不得启动（G-SM-03阻塞）"
+    - "若S1部分完成，PO重新评估是否拆分S2或调整S2范围"
+    - "阻塞超过2天，SM触发defect-reflow流程"
+
+# ============================================
+# 八、Sprint Backlog管理
+# ============================================
+sprint_backlog:
+  description: "每Sprint启动时SM从PROD-BACKLOG提取该Sprint的项"
+  schema:
+    sprint_id: "S1"
+    status: "in_progress|done|blocked"
+    items:
+      - bl_id: "BL-001"
+        status: "done|in_progress|todo|blocked"
+        actual_effort: "2天"
+        blocker: null
+    burndown:
+      planned_pages: 4
+      completed_pages: 2
+      remaining_pages: 2
+      velocity: "2页面/天"
+
+  immutability_rule: "Sprint启动后SM不再向Sprint Backlog加项，变更走change-request"
+
+# ============================================
+# 九、Velocity记录
+# ============================================
+velocity_tracking:
+  description: "SM记录每Sprint实际交付速度，用于下一版本规划"
+  metrics:
+    - "实际交付页面数"
+    - "实际工时"
+    - "阻塞时长"
+    - "DoD达标率"
+  storage: "Sprint Retrospective报告 + 版本沉淀学习"
+
+# ============================================
+# 十、引用关系
+# ============================================
+references:
+  - "被 po-planning-flow.yml po-6阶段引用"
+  - "被 sm-agent.md 引用（Sprint守护人职责）"
+  - "被 sprint-planner.yml Skill 实现"
+  - "被 gates-registry.yml G-SM-01~06 引用"

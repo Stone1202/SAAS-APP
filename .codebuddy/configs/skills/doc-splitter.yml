@@ -1,0 +1,146 @@
+# Skill: 文档拆分器（Doc Splitter）
+# 版本: v2.0.0（2026-07-15）
+# 变更: 新增 learn-project HTML 原型逐文件全文加载模式
+skill:
+  id: "doc-splitter"
+  name: "doc-splitter"
+  version: "2.0.0"
+  agent: "ba-agent,doc-agent"
+  description: "当文档过大时自动拆分，避免 Agent 上下文压缩导致信息失真。v2.0.0 新增 HTML 原型逐文件全文加载模式（learn-project 专用），确保逐字段逐注释照录不遗漏。"
+
+  triggers:
+    - event: "doc_exceeds_threshold"
+      description: "文档超过阈值时自动触发拆分"
+    - command: "/new"
+      description: "--split 手动触发或大需求自动建议"
+    - command: "/learn"
+      description: "learn-project 工作流 Stage 2 自动调用，逐文件全文加载"
+
+  # ============================================
+  # 通用拆分阈值（v1.0.0 保留）
+  # ============================================
+  thresholds:
+    - doc_type: "业务场景需求"
+      max: "5个场景"
+      split_method: "按角色拆分"
+    - doc_type: "场景流程闭环"
+      max: "3个流程"
+      split_method: "按业务阶段拆分"
+    - doc_type: "场景信息流"
+      max: "5个字段组"
+      split_method: "按实体拆分"
+    - doc_type: "场景状态机流"
+      max: "1个实体（≤10个状态）"
+      split_method: "按实体拆分"
+    - doc_type: "场景时序流"
+      max: "3个时序"
+      split_method: "按复杂度拆分"
+    - doc_type: "ER关系与用例"
+      max: "5个关键动作"
+      split_method: "按实体拆分"
+    - doc_type: "测试用例"
+      max: "20个用例"
+      split_method: "按优先级拆分"
+    - doc_type: "其他文档"
+      max: "3000字"
+      split_method: "按章节拆分"
+
+  # ============================================
+  # HTML 原型专用模式（v2.0.0 新增，learn-project 集成）
+  # ============================================
+  html_proto_mode:
+    enabled: true
+    description: >
+      针对 HTML 高保真原型的逐文件全文加载模式。
+      核心原则：每个 HTML 文件 = 1 个不可再拆的原子文档单元，
+      全文加载、逐字段逐注释照录，确保还原度 100%。
+    trigger: "learn-project Stage 2（source_type=html-proto）"
+    source_type: "html-proto"
+
+    # 文档单元注册
+    unit_registration:
+      rule: |
+        扫描源目录中所有 .html 文件，每个文件注册为 1 个原子文档单元。
+        非业务页面（如 index.html / start.html / 框架页面）标记为「辅助页面」，
+        内容照录但标注为非业务页面。
+      output: "文档单元索引（文件名 → 所属模块 → 预估大小 → 批次分配）"
+
+    # 拆分策略（HTML 专用）
+    split_strategy:
+      method: "by_html_file"
+      rule: "每个 HTML 文件 = 1 个文档单元，不按内容语义再拆分"
+      max_per_batch: 2
+      single_file_threshold: 5000  # 单文件超过 5000 字时拆分为子单元
+      sub_unit_naming: "{原文件名}-part{N}"
+
+    # 批次加载策略
+    batch_loading:
+      step_1: "doc-splitter 扫描源目录，将每个 HTML 文件注册为一个文档单元"
+      step_2: "按 Stage 1 确认的模块分组，将同模块的 HTML 文件归入同一批次"
+      step_3: "每批次 ≤2 个 HTML 文件，逐个全文加载（不截断、不摘要）"
+      step_4: "单文件超大（>5000 字）时，拆分为子单元（父子关系标注），分批加载"
+      step_5: "每批次加载完成后执行完整性验证（见 quality_gate）"
+      rule: >
+        严禁使用子 agent 做摘要提取——Agent 必须直接读取原始 HTML 文件全文。
+        每个 HTML 的完整内容（包括所有注释、便签、标记）必须全部进入 Agent 上下文。
+
+    # 完整性验证（质量门禁）
+    quality_gate:
+      description: "每批次加载完成后必须执行的完整性检查"
+      checks:
+        - id: "QG-01"
+          name: "元素计数核对"
+          rule: "统计原文中的交互元素数量（按钮/表单字段/下拉选项/注释标记）→ 与提取结果逐一核对"
+        - id: "QG-02"
+          name: "注释完整性核对"
+          rule: "统计原文中的 sticky_1/sticky_2/marker 数量 → 确认全部照录"
+        - id: "QG-03"
+          name: "字段覆盖率核对"
+          rule: "统计原文中的 input/select/textarea 数量 → 确认每个字段的属性全部提取"
+        - id: "QG-04"
+          name: "页面跳转关系核对"
+          rule: "统计原文中的 href/window.location/navigate 数量 → 确认全部跳转关系已登记"
+      fail_action: "若任何一项检查不通过，回读原文补全，重新验证"
+
+    # 全文提取清单（逐项对照）
+    extraction_checklist:
+      - item: "页面标题（<title> / 页面头部文字）"
+      - item: "页面布局描述（整体结构）"
+      - item: "所有按钮（名称、位置、触发行为、目标页面/弹窗）"
+      - item: "所有表单字段（字段名、类型、必填、默认值、下拉选项、占位符、校验规则）"
+      - item: "所有表格列（列名、排序规则、筛选条件）"
+      - item: "所有筛选/搜索条件（名称、类型、匹配规则）"
+      - item: "所有弹窗/抽屉/确认框（触发条件、内容、按钮）"
+      - item: "所有注释/便签（sticky_1/sticky_2 完整文字）"
+      - item: "所有标记（marker 编号 + 对应注释内容）"
+      - item: "所有状态标签/筛选项（状态名、颜色、含义）"
+      - item: "所有页面跳转关系（源页面 → 目标页面 → 触发条件）"
+      - item: "所有版本描述/变更说明条目"
+
+  # ============================================
+  # 通用拆分流程（v1.0.0 保留，非 HTML 文档使用）
+  # ============================================
+  workflow:
+    - name: "检测文档大小"
+      rule: "按类型阈值（场景数/流程数/字数）对比"
+    - name: "自动拆分"
+      rule: "按角色/业务阶段/实体拆分，生成子文档索引，原始文档保留为索引"
+    - name: "更新关联"
+      rule: "子文档继承upstream/downstream，互相标记soft关联"
+
+  # ============================================
+  # 上下文加载策略（全局适用）
+  # ============================================
+  context_loading:
+    general:
+      rule: "先读索引(≈500字)，按需加载1-2个子文档，超3000字需用户确认"
+    html_proto:
+      rule: "逐文件全文加载，不截断；每批次 ≤2 个文件；单文件超大时分批加载子单元"
+
+  output:
+    - type: "子文档集合"
+      description: "拆分后的子文档与索引文档（通用模式）"
+    - type: "文档单元索引"
+      description: "HTML 原型逐文件注册的文档单元索引（HTML 模式专用）"
+    - type: "完整性验证报告"
+      description: "每批次的元素计数/注释完整性/字段覆盖率核对结果（HTML 模式专用）"

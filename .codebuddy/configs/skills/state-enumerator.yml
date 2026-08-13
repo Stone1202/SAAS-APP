@@ -1,0 +1,21 @@
+# Skill: 状态穷举器（State Enumerator）
+skill:
+  id: "state-enumerator"
+  name: "state-enumerator"
+  agent: "ba-agent"
+  description: "为每个用户故事生成完整的状态矩阵，确保不遗漏任何状态（loading/empty/error/success/edge）"
+  triggers:
+    - command: "/new"
+      stage: "阶段1"
+      description: "BA Agent 分析需求时自动触发"
+    - command: "/analyze"
+  workflow:
+    - name: "识别异步边界"
+      rule: "发现网络请求/文件读写等异步边界即触发状态穷举"
+    - name: "五态穷举"
+      rule: "loading/empty/error/success/edge 每类细分项逐一检查"
+    - name: "输出状态矩阵"
+      rule: "为每个用户故事输出 状态类别/名称/触发条件/UI表现/数据变化 表"
+  output:
+    - type: "状态矩阵"
+      description: "嵌入 REQ 状态机流文档的状态清单"

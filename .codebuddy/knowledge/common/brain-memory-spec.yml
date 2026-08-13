@@ -1,0 +1,239 @@
+# ============================================
+# Brain Memory Spec（大脑记忆规范 V1.0.0）
+# 版本: v1.0.0
+# 最后更新: 2026-07-20
+# ============================================
+#
+# 定义了每个Agent大脑记忆的标准格式。
+# 大脑记忆是结构化的、可跨版本传递的、可进化的。
+# 每个Agent在/close时导出自己的大脑记忆快照，
+# 下一版本/init时加载上一版本的大脑记忆。
+#
+# 核心原则：
+#   1. 结构化 > 文字描述：记忆是数据结构，不是文字段落
+#   2. 可量化：每个模式有置信度、命中率、成功率的量化指标
+#   3. 可进化：权重和准确率随版本迭代自动调整
+#   4. 可追溯：每条记忆标注来源版本和触发条件
+# ============================================
+
+brain_memory_spec:
+  version: "1.0.0"
+  
+  # ============================================
+  # 通用记忆结构（所有Agent共有）
+  # ============================================
+  common_schema:
+    metadata:
+      agent_id: "string"           # Agent标识：ba/ux/arch/fd/qa/ac/pm/po/sm/bs/doc
+      brain_version: "string"      # 大脑版本号，格式 v{major}.{minor}
+      last_updated: "ISO datetime"
+      parent_brain_version: "string"  # 上一版本的大脑版本号
+      total_versions_trained: "int"   # 累计训练版本数
+    
+    # 模式库：大脑从历史中学到的重复模式
+    patterns:
+      - id: "PAT-{agent}-{NNN}"
+        type: "bug_pattern | design_pattern | risk_pattern | success_pattern | failure_pattern"
+        category: "string"         # 模式分类（如 state_machine / contract / interaction）
+        trigger_conditions: "string"  # 什么情况下此模式适用（自然语言+可匹配特征）
+        feature_vector: {}         # 特征向量（机器可匹配的结构化特征）
+        recommendation: "string"   # 推荐的应对/预防方式
+        confidence: 0.85           # 置信度（0~1，AI根据命中次数动态调整）
+        hit_count: 12              # 累计命中次数（跨版本）
+        success_rate: 0.92         # 采纳此模式后的成功率
+        false_positive_rate: 0.03  # 误报率
+        first_seen: "v1.0.0"       # 首次发现版本
+        last_seen: "v2.1.0"        # 最后出现版本
+        source_feedback: ["PBL-001", "AC-BUG-003"]  # 来源追溯
+        deprecated: false           # 是否已过时
+    
+    # 预测记录：大脑的预测→实际结果追踪
+    predictions:
+      - id: "PRED-{agent}-{NNN}"
+        content: "string"          # 预测内容
+        target: "string"           # 预测目标（如 FN-ORDER-PC-003）
+        confidence: 0.80           # 预测时的置信度
+        result: "correct | incorrect | partially_correct"
+        actual: "string"           # 实际结果
+        version: "v1.1.0"
+        timestamp: "ISO datetime"
+    
+    # 跨脑协同记录
+    cross_brain_syncs:
+      - from_brain: "ba_brain"     # 来源大脑
+        to_brain: "ux_brain"       # 目标大脑
+        content_type: "complexity_estimate | risk_warning | pattern_transfer"
+        content: "string"
+        accuracy: 0.88             # 来源大脑预估 → 目标大脑实际感受的准确率
+        version: "v1.1.0"
+    
+    # 进化增量
+    evolution_deltas:
+      - version: "v1.1.0"
+        new_patterns: 3
+        pattern_adjustments: 2
+        deprecated_patterns: 1
+        confidence_change: +0.05
+        accuracy_change: +0.03
+        key_learnings: ["string"]
+
+  # ============================================
+  # 各Agent专属记忆字段
+  # ============================================
+  agent_specific_schemas:
+    
+    # BA（需求洞察大脑）专属
+    ba_brain:
+      common_sense_coverage:
+        total_blind_spots_found: 15      # 累计发现的系统常识盲区
+        blind_spots_confirmed_by_user: 12 # 用户确认纳入的盲区
+        false_positive_blind_spots: 3    # AI标记盲区但用户确认不需要的
+        blind_spot_accuracy: 0.80        # 盲区发现的准确率
+      quality_forecast_accuracy:
+        total_predictions: 25
+        high_risk_hit_rate: 0.75         # 标记高风险的FN→实际出Bug的比例
+        false_negative_rate: 0.10        # 未标记高风险但实际出Bug的比例
+      history_correlation_effectiveness:
+        similar_req_found: 8
+        problems_correctly_warned: 6
+        correlation_precision: 0.75
+    
+    # UX（体验洞察大脑）专属
+    ux_brain:
+      system_analysis_accuracy:
+        grid_recommendations: 8
+        grid_accepted_by_user: 7
+        grid_accuracy: 0.875
+      interaction_risk_predictions:
+        total_warnings: 12
+        warnings_materialized: 4         # 预警变为实际问题的数量
+        false_alarms: 2
+      state_coverage_gaps_found:
+        total_gaps: 10
+        gaps_fixed_before_dev: 8         # 在开发前修复的缺口
+      design_to_deviation_patterns: []    # 设计决策→验收偏差的模式
+    
+    # Arch（架构决策大脑）专属
+    arch_brain:
+      contract_defect_predictions:
+        total_warnings: 15
+        warnings_materialized_as_bugs: 7
+        false_alarms: 3
+        prediction_precision: 0.70
+      security_pattern_hits:
+        vulnerabilities_found: 5
+        false_positives: 1
+      dependency_chain_accuracy:
+        impact_predictions: 10
+        actual_impact_matched: 8
+        chain_accuracy: 0.80
+    
+    # QA（质量推理大脑）专属
+    qa_brain:
+      bug_hotspot_accuracy:
+        total_fns_marked_hot: 12
+        hot_fns_with_actual_bugs: 9
+        hotspot_precision: 0.75
+        cold_fns_with_bugs: 3          # 未标记热区但出Bug的FN
+        hotspot_recall: 0.75
+      coverage_blind_spot_accuracy:
+        total_blind_spots_found: 8
+        actual_missed_in_testing: 2
+        blind_spot_validity: 0.80
+      regression_set_efficiency:
+        avg_regression_set_size: 15
+        bugs_found_by_regression: 5
+        efficiency_ratio: 0.33
+    
+    # AC（体验验证大脑）专属
+    ac_brain:
+      acceptance_pattern_accuracy:
+        total_checklists_generated: 8
+        checklist_items_matched_bugs: 20
+        checklist_precision: 0.70
+      ux_deviation_detection:
+        deviations_found: 5
+        false_positives: 1
+        deviation_accuracy: 0.83
+      quality_trend_analysis:
+        versions_analyzed: 3
+        trend_direction: "improving | stable | declining"
+    
+    # FD（实现模式大脑）专属
+    fd_brain:
+      pattern_recommendation_accuracy:
+        recommendations_made: 10
+        recommendations_adopted: 7
+        adoption_rate: 0.70
+        adopted_without_bugs: 6
+        pattern_success_rate: 0.86
+      bug_prevention_effectiveness:
+        upstream_warnings_received: 8
+        warnings_acted_upon: 7
+        bugs_prevented: 5
+      compliance_precheck_accuracy:
+        violations_predicted: 12
+        actual_violations: 10
+        precheck_precision: 0.83
+    
+    # PM（流程治理大脑）专属
+    pm_brain:
+      process_risk_predictions:
+        stage_duration_estimates: []      # 各阶段耗时预估→实际
+        bottleneck_predictions: []        # 瓶颈预测→实际
+        escalation_predictions: []        # 问题升级预测→实际
+      workflow_efficiency:
+        avg_stage_duration: {}             # 各阶段平均耗时（按类型）
+        review_pass_first_time_rate: 0.70 # Review一次通过率
+        reflow_rate: 0.15                 # 回流率（回流次数/总stage数）
+
+    # PO（产品战略大脑）专属
+    po_brain:
+      value_forecast_accuracy:
+        total_bg_estimates: 20
+        bg_achieved_as_estimated: 14
+        value_accuracy: 0.70
+      roadmap_deviation:
+        avg_deviation_per_version: 0.12
+        trend: "stable"
+      backlog_priority_effectiveness:
+        high_priority_items_value_delivered: 0.85
+        low_priority_items_that_became_urgent: 2
+    
+    # SM（敏捷协同大脑）专属
+    sm_brain:
+      sprint_velocity_accuracy:
+        estimated_vs_actual: []           # 预估故事点→实际完成
+        avg_accuracy: 0.80
+      impediment_patterns:
+        common_blockers: []               # 常见障碍模式
+        avg_resolution_time: {}           # 按类型平均解决时间
+      dod_success_rate:
+        sprints_total: 5
+        dod_achieved: 4
+        dod_rate: 0.80
+
+# ============================================
+# 大脑记忆存储路径
+# ============================================
+storage:
+  version_memory: ".codebuddy/knowledge/projects/{project}/版本沉淀/{version}/大脑记忆/{agent}_memory_{version}.yml"
+  latest_memory: ".codebuddy/knowledge/projects/{project}/大脑记忆/latest/{agent}_memory_latest.yml"
+  cross_project_library: ".codebuddy/knowledge/common/大脑模式库/"
+  
+# ============================================
+# 大脑记忆加载优先级
+# ============================================
+load_priority:
+  - priority: 1
+    source: "上一版本同Agent大脑记忆"
+    reason: "最近的经验最重要"
+  - priority: 2
+    source: "上版本其他Agent的brain_sync_export"
+    reason: "上游大脑的发现对下游大脑有参考价值"
+  - priority: 3
+    source: "跨版本模式库（common/大脑模式库/）"
+    reason: "跨项目的通用模式"
+  - priority: 4
+    source: "经验库/（文字描述经验）"
+    reason: "非结构化的经验作为补充"

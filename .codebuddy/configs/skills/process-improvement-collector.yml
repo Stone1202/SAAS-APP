@@ -1,0 +1,79 @@
+# ============================================
+# Skill: process-improvement-collector（流程改进建议收集器 V1.0.0）
+# 版本: v1.0.0
+# 创建: 2026-07-21
+# ============================================
+#
+# 触发条件：knowledge-sedimentation step 2 产出 _pending/流程改进建议 时自动触发
+# 核心职责：收集各项目/close后的流程改进建议，汇总到流程改进待办.yml
+# 配套命令：/review-process-improvements（管理员审核）
+# ============================================
+
+skill:
+  id: "process-improvement-collector"
+  name: "流程改进建议收集器"
+  version: "1.0.0"
+  owner: "pm-agent"
+
+  trigger:
+    event: "sedimentation_step2_completed"
+    condition: "common/经验库/_pending/ 下存在流程改进建议文件"
+
+  # ============================================
+  # 收集流程
+  # ============================================
+  flow:
+    - step: 1
+      name: "扫描_pending目录"
+      action: |
+        扫描 .codebuddy/knowledge/common/经验库/_pending/ 下所有
+        流程改进建议-v{version}.yml 文件
+
+    - step: 2
+      name: "解析改进建议"
+      action: |
+        从每个文件提取：
+        - source_project: 来源项目
+        - source_version: 来源版本
+        - improvement_type: 改进类型（workflow/agent/skill/iron_rule/gate/config）
+        - target_file: 目标文件（如requirement-flow.yml）
+        - description: 改进描述
+        - evidence: 证据（哪个阶段Review发现的/哪个Bug模式）
+        - suggested_change: 建议修改内容
+        - priority: 优先级（P0/P1/P2）
+        - status: pending
+
+    - step: 3
+      name: "追加到流程改进待办"
+      action: |
+        将每条建议追加到 .codebuddy/knowledge/common/流程改进待办.yml
+        分配唯一ID：PI-{seq}（如PI-001）
+        去重检查：与已有待办比较，避免重复
+
+    - step: 4
+      name: "通知管理员"
+      action: |
+        在conversation-log中记录：
+        "本次/close产出 {n} 条流程改进建议，已追加到流程改进待办。
+         管理员可通过 /review-process-improvements --mode list 查看。
+         当前待审核总数：{total} 条"
+
+  # ============================================
+  # 改进建议文件格式（_pending/流程改进建议-v{version}.yml）
+  # ============================================
+  suggestion_schema:
+    source_project: "{project}"
+    source_version: "{version}"
+    suggestions:
+      - id: "PI-{seq}"
+        type: "workflow|agent|skill|iron_rule|gate|config"
+        target: "目标文件路径"
+        title: "一句话标题"
+        description: "详细描述"
+        evidence: "证据来源（Review报告/PBL/大脑误报）"
+        suggested_change: "建议修改内容"
+        priority: "P0|P1|P2"
+        status: "pending|approved|rejected|applied"
+        reviewed_by: null
+        reviewed_at: null
+        review_note: null

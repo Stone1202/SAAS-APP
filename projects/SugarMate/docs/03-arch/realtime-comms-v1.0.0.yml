@@ -1,0 +1,204 @@
+# ============================================
+# SugarMate 实时通信方案 v1.0.0
+# WebSocket/SSE/MQTT·统一推送网关·通道选择
+# ============================================
+version: "1.0.0"
+project: "SugarMate"
+date: "2026-07-29"
+owner: "Arch Agent"
+reference: "terminal-matrix·通信中心·数据一致性"
+
+---
+
+## 一、通信通道矩阵
+
+| 通道 | 协议 | 适用终端 | 适用场景 | QoS | 并发能力 |
+|------|:--:|:------:|----------|:---:|:------:|
+| WebSocket·主推送通道 | ws/wss | APP | 订单状态·通知·处方状态·弹幕 | at-least-once | 高 |
+| WebSocket·IM | ws/wss | APP/PC | 问诊消息·客服消息 | at-least-once | 高 |
+| WebSocket·CGM | ws/wss | APP | 血糖实时数据推送 | at-least-once | 中 |
+| MQTT·IoT | mqtt/tls | - | 冷链设备·温控数据上报 | QoS2·exactly-once | 低 |
+| SSE·备用 | HTTP/2 SSE | MP(微信限制·WS并发≤5) | 订单状态·通知·处方状态 | at-least-once | 低 |
+| APNs/FCM | push | APP | 静默推送·后台唤醒 | at-least-once | 极高 |
+| 微信订阅消息 | push | MP | 通知推送 | best-effort | 高 |
+| 短信 | SMS | ALL | 紧急告警·验证码 | at-least-once | 中 |
+
+---
+
+## 二、统一推送网关架构
+
+```
+  ┌─────────────────────────────────────────────┐
+  │           Unified Push Gateway             │
+  │                                             │
+  │  接收：业务模块 → 推送消息(domain event)     │
+  │                                            │
+  │  路由：消息类型 → 通道选择 → 批量/单点       │
+  │        ├─ 类型判定(IM / 通知 / 告警)         │
+  │        ├─ 目标平台判定(APP / MP / PC / LIVE) │
+  │        └─ 优先级判定(紧急→全通道 / 普通→主通道)│
+  │                                            │
+  │  投递：WebSocket → APNs/FCM → 微信订阅 → 短信 │
+  │        ├─ 主通道失败 → 自动降级              │
+  │        └─ 全部失败 → 离线存储(24h)           │
+  │                                            │
+  │  确认：终端ACK → 标记已送达                   │
+  └─────────────────────────────────────────────┘
+```
+
+---
+
+## 三、WebSocket主推送通道
+
+### 3.1 连接生命周期
+
+```
+  [客户端] 连接 ws://host/ws?token={jwt}&platform={APP|PC|LIVE}
+      │
+      ├→ [服务端] 验证token→建立连接→分配session ID
+      │       ↓
+      ├→ [心跳] 客户端每30s发送ping→服务端回复pong
+      │       ├─ 60s无响应→断开连接
+      │       └─ 服务端每15s发送server ping
+      │
+      ├→ [消息] 服务端按用户订阅推送
+      │       ├─ 订单状态变更 → 对应订单参与者
+      │       ├─ 处方状态 → 医生/患者/药房
+      │       ├─ 通知 → 当前用户+平台
+      │       └─ 弹幕 → 直播间所有观众
+      │
+      ├→ [重连] 连接断开→指数退避重连 (1s/2s/4s/8s/...max30s)
+      │       └─ 重连成功后→请求增量数据(connection sequence number)
+      │
+      └→ [断开] 客户端主动关闭→服务端清理session
+```
+
+### 3.2 消息帧格式
+
+```typescript
+type WsMessage<T> = {
+  version: 1,
+  type: "ORDER_STATUS" | "PRESCRIPTION" | "NOTIFICATION" | "CGM_READING" | "LIVE_DANMAKU" | "SYSTEM",
+  seq: number,              // 序列号·用于断线恢复
+  timestamp: number,
+  ttl: number,              // 消息有效期(ms)·超期不补发
+  payload: T,
+  ack_required: boolean     // 是否需要客户端确认
+}
+```
+
+### 3.3 断线恢复协议
+
+```
+  恢复流程：
+    重连成功 → 发送{last_seq: 断线前最后收到的seq}
+                                        ↓
+    服务端回复 → {
+      type: "RECOVERY",
+      messages: 增量消息列表(seq > last_seq),
+      current_seq: 当前最新seq号
+    }
+       ↓
+    客户端按seq排序 → 去重 → 按时间顺序重放
+```
+
+---
+
+## 四、小程序SSE备用通道
+
+### 4.1 使用场景
+- 微信小程序：WebSocket并发连接限制≤5·可能被其他业务占用
+- 降级方案：当WebSocket不可用时·切换到SSE
+
+### 4.2 SSE端点
+```
+GET /api/v1/stream/events?token={jwt}&last_seq={last_seq}
+```
+- 长连接·服务端推送text/event-stream
+- 默认30min超时·断线自动重连
+- 消息格式同WebSocket·自动distinct
+
+---
+
+## 五、推送优先级与降级链路
+
+### 5.1 优先级定义
+
+| 优先级 | 消息类型 | 通道策略 | 去重窗口 |
+|:----:|----------|----------|:------:|
+| 🔴 P0·紧急 | 冷链超温告警·安全事件·支付异常 | 全通道(MQTT+WebSocket+APNs+短信) | 30s |
+| 🟡 P1·重要 | 订单状态变更·处方流转·审核结果 | WebSocket+APNs+微信订阅(降级) | 60s |
+| 🟢 P2·普通 | 通知·积分变动·等级升级 | WebSocket+静默模式 | 5min |
+| ⚪ P3·静默 | 内容推荐·数据更新 | WebSocket·不打扰用户 | 30min |
+
+### 5.2 降级链路
+
+```
+  [消息产生]
+       │
+       ├─ step1. 主通道(WebSocket)
+       │   ├─ 在线→投递成功 ✅
+       │   └─ 不在线→step2
+       │
+       ├─ step2. 推送通道(APNs/FCM/微信订阅)
+       │   ├─ 推送成功→用户打开后WebSocket连接→拉取消息 ✅
+       │   └─ 推送失败→step3
+       │
+       └─ step3. 离线存储(24h)
+             └─ 下次WebSocket连接→断线恢复拉取 ✅
+```
+
+---
+
+## 六、冷链IoT MQTT专有通道
+
+### 6.1 连接配置
+```
+URI: mqtts://iot.sugarmate.com:8883
+Client: {device_type}/{device_id}
+Topic:
+  · 上报: sugarmate/iot/{device_id}/temperature/report
+  · 告警: sugarmate/iot/{device_id}/temperature/alert
+  · 指令: sugarmate/iot/{device_id}/command (温控箱设置)
+QoS: 2 (exactly-once)
+KeepAlive: 60s
+```
+
+### 6.2 温度上报协议
+```typescript
+type TemperatureReport = {
+  device_id: string;
+  shipment_id: string;
+  timestamp: number;
+  readings: {
+    temperature: number;    // 摄氏度·精确到0.1
+    humidity: number;       // 相对湿度%
+    battery_level: number;  // 剩余电量%
+    signal_strength: number; // 信号强度dBm
+  }[];
+  sequence: number;
+}
+```
+
+### 6.3 告警条件
+| 告警类型 | 触发条件 | 持续阈值 | 处置SLA |
+|----------|----------|:------:|:------:|
+| 超温预警 | temp > max+0.5°C | 持续≥5min | 通知药房·15min响应 |
+| 低温预警 | temp < min-0.5°C | 持续≥5min | 通知药房·15min响应 |
+| 临界温度 | temp > max+2°C 或 < min-2°C | 持续≥2min | 紧急通知·自动触发补发流程 |
+| 设备离线 | 120s无上报 | - | 通知药房·30min确认 |
+| 低电量 | battery < 10% | - | 通知药房更换设备 |
+
+---
+
+## 七、通信性能基线
+
+| 指标 | 目标 | 测量方式 |
+|------|:--:|----------|
+| WebSocket连接建立时间 | ≤500ms | 客户端计时 |
+| WebSocket消息端到端延迟 | ≤500ms | 发送→接收时间戳差 |
+| SSE端到端延迟 | ≤2s | MP弱网下≤3s |
+| MQTT温度上报投递 | ≤30s | IoT上报→服务端接收 |
+| 断线重连时间 | ≤3s | 指数退避·最大30s |
+| 多端同步窗口 | ≤30s | 通知已读·订单状态 |
+| 消息去重有效性 | 100% | 去重窗口内绝对不重复 |

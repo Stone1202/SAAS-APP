@@ -1,0 +1,1841 @@
+# ============================================
+# 企业微信（WeChat Work）领域知识 V2.0.0
+# 聚焦：SAAS应用 + 第三方服务商对接 + B端客户生命周期管理
+# 分类：thirdparty
+# 学习方法：场景驱动学习法（Scenario-Driven Learning）V1.0.0
+# 学习日期：2026-07-20
+# ============================================
+
+domain:
+  name: "企业微信"
+  category: "thirdparty"
+  version: "v2.0.0"
+  learned_at: "2026-07-20"
+  learning_method: "scenario_driven_v1.0.0"
+  source_urls:
+    - "https://open.work.weixin.qq.com/help2/pc"
+    - "https://developer.work.weixin.qq.com/document?from=help"
+    - "https://developer.work.weixin.qq.com/document/path/90594"
+    - "https://developer.work.weixin.qq.com/document/path/97111"
+    - "https://developer.work.weixin.qq.com/document/path/91201"
+    - "https://developer.work.weixin.qq.com/document/path/96307"
+  description: >
+    企业微信（WeChat Work / WeCom）是腾讯推出的面向企业的专业通讯与办公工具。
+    本领域知识聚焦两大核心场景：
+    1) SAAS应用——基于企业微信开放平台构建SAAS产品，直接服务B端企业客户；
+    2) 第三方服务商——作为ISV通过企微服务商体系为多个企业提供标准化SCRM解决方案。
+    核心能力覆盖：客户联系（外部联系人）、客户群运营、客户朋友圈、离职/在职继承、
+    消息推送、通讯录管理、应用管理与授权、素材管理、标签管理、统计与数据分析。
+    目标业务场景：B端客户生命周期管理——获客→跟进→转化→服务→留存全链路。
+  status: "draft"
+
+  # ═══════════════════════════════════════════════════════════════
+  # SDL V1.0.0 新增区块A：领域角色
+  # ═══════════════════════════════════════════════════════════════
+  domain_roles:
+    - id: "R-WW-001"
+      name: "企业微信服务商(ISV)"
+      description: "开发标准化SAAS应用、上架企微应用市场、代开发定制应用。拥有SuiteID/Secret/Token等凭证，通过服务商API体系为多个企业客户提供服务。"
+      key_concerns: ["应用市场曝光", "多企业复用", "授权转化率", "suite_ticket稳定性"]
+    - id: "R-WW-002"
+      name: "企业客户(使用方)"
+      description: "安装授权第三方应用的企业组织，通过企业微信管理后台管理应用权限、可见范围、数据授权。"
+      key_concerns: ["数据安全", "权限管控", "员工使用体验", "授权可控"]
+    - id: "R-WW-003"
+      name: "企业员工"
+      description: "使用企业微信与外部联系人沟通的一线人员（销售/客服/运营），通过企微应用添加客户、群发消息、跟进客户。"
+      key_concerns: ["操作便捷", "客户管理效率", "离职客户不丢失"]
+    - id: "R-WW-004"
+      name: "外部联系人(消费者)"
+      description: "通过企业微信被企业员工添加的微信用户（C端消费者），接收企业消息、参与客户群、查看朋友圈。"
+      key_concerns: ["隐私保护", "消息免打扰", "不被骚扰"]
+    - id: "R-WW-005"
+      name: "企业微信平台"
+      description: "腾讯企业微信开放平台，提供API、回调、授权、应用市场等基础设施，是ISV与企业客户之间的中间层。"
+      key_concerns: ["API稳定性", "安全合规", "生态健康"]
+
+  # ═══════════════════════════════════════════════════════════════
+  # SDL V1.0.0 新增区块B：核心业务问题
+  # ═══════════════════════════════════════════════════════════════
+  business_problems:
+    - id: "BP-WW-001"
+      problem: "企业缺乏统一的客户关系管理触点，客户分散在个人微信中"
+      pain_point: >
+        销售/客服使用个人微信添加客户，企业无法统一管理客户资源。
+        员工离职后客户关系随之断裂，企业丢失客户资产。
+        客户沟通记录散落在个人设备中，无法形成企业级数据资产。
+      value: >
+        企业微信提供标准化的客户联系API，将个人微信客户转化为企业资产。
+        客户关系与企业绑定而非个人，离职继承机制保障客户资源不流失。
+        所有客户互动数据通过回调实时同步至SCRM，形成统一客户画像。
+      evidence: "企业微信官方：客户联系能力已服务超1000万企业，连接微信用户超5亿"
+      priority: "P0"
+      scrm_relevance: "核心——SCRM通过企微客户联系API实现客户资产企业化"
+
+    - id: "BP-WW-002"
+      problem: "客户加粉后缺乏系统化运营手段，80%客户沉默流失"
+      pain_point: >
+        企业通过活动/广告获客加粉后，没有系统化的后续运营机制。
+        欢迎语千篇一律、标签体系缺失、群发无针对性。
+        客户添加后72小时内无有效互动即大概率沉默流失。
+      value: >
+        企微提供标签体系+欢迎语+群发+客户群+朋友圈全套运营工具。
+        SCRM基于企微API构建自动化运营流水线：加粉→自动打标签→个性化欢迎语→
+        定期群发→客户群运营→朋友圈触达，将加粉后的72小时黄金窗口利用率提升至90%+。
+      evidence: "行业数据：加粉后48h内有效互动可降低沉默率50%+"
+      priority: "P0"
+      scrm_relevance: "核心——SCRM运营能力完全依赖企微API实现"
+
+    - id: "BP-WW-003"
+      problem: "员工离职导致客户资源流失，无法有效继承"
+      pain_point: >
+        销售/客服离职带走大量客户关系，企业无法追溯和挽回。
+        客户已建立信任关系的对接人突然消失，体验差且商机流失。
+        手工分配客户效率低、易遗漏、缺乏追踪。
+      value: >
+        企微提供离职继承+在职继承API，实现客户关系的企业级管控。
+        离职后24小时内发起继承，客户无需确认自动转移。
+        在职员工间客户可灵活重新分配，适应组织调整。
+        SCRM可自动化继承流程：检测离职→批量分配→追踪接替结果→通知接替员工。
+      evidence: "企微API：离职继承黄金24小时，客户自动转移无需确认"
+      priority: "P0"
+      scrm_relevance: "核心——SCRM客户资产保护的关键能力"
+
+    - id: "BP-WW-004"
+      problem: "SCRM SaaS服务商需要企业微信作为核心渠道入口"
+      pain_point: >
+        SCRM产品需要触达B端客户，传统获客渠道（广告/地推）成本高、转化低。
+        企业客户分散在各个行业，缺乏统一的发现和安装入口。
+        SaaS产品的授权、鉴权、回调体系需要从零搭建。
+      value: >
+        企微应用市场是SCRM SaaS产品的天然分发渠道，企业客户主动搜索安装。
+        企微提供标准OAuth授权+suite_ticket推送+回调体系，ISV无需自建鉴权。
+        服务商模式支持一次开发多企业复用，降低边际成本。
+      evidence: "企微应用市场已有数千款第三方应用，覆盖CRM/SCRM/ERP/HR等品类"
+      priority: "P1"
+      scrm_relevance: "关键——ISV模式是SCRM SaaS产品的主要商业模式"
+
+    - id: "BP-WW-005"
+      problem: "客户群运营效率低，缺乏自动化工具"
+      pain_point: >
+        客户群创建、管理、运营全靠人工。群发消息无法定时、无法按标签筛选。
+        群活跃度无法量化，群成员流失无预警。
+        群主离职后群归属混乱，客户群资产流失。
+      value: >
+        企微客户群API支持：批量创建群、入群欢迎语、群发消息、群活码。
+        SCRM可实现：自动建群（按标签/来源渠道）→群发定时任务→群数据统计→
+        群活跃度预警→离职群主自动转让→群运营全自动化。
+      evidence: "企微客户群API：支持客户群列表/详情/群发/转让/统计全链路管理"
+      priority: "P1"
+      scrm_relevance: "重要——客户群是私域运营的核心阵地"
+
+  # ═══════════════════════════════════════════════════════════════
+  # SDL V1.0.0 新增区块C：场景地图
+  # ═══════════════════════════════════════════════════════════════
+  scenario_maps:
+    - scene_id: "SC-WW-001"
+      scene_name: "第三方应用授权安装"
+      problem_ref: "BP-WW-004"
+      trigger: "企业管理员在企业微信后台搜索SCRM应用，点击安装授权"
+      participant_roles: ["企业管理员", "企微开放平台", "ISV服务商"]
+      api_chain:
+        - seq: 1
+          api: "企业管理员在企微后台安装应用，选择可见范围"
+        - seq: 2
+          api: "企微平台生成临时授权码(auth_code)，回调通知服务商"
+        - seq: 3
+          api: "POST /cgi-bin/service/get_permanent_code — 服务商用auth_code换取永久授权码"
+        - seq: 4
+          api: "POST /cgi-bin/service/get_corp_token — 服务商获取企业access_token"
+        - seq: 5
+          api: "GET /cgi-bin/department/list — 同步企业组织架构"
+        - seq: 6
+          api: "GET /cgi-bin/user/list_id — 同步企业成员列表"
+      closure: "服务商完成企业初始化，SCRM系统可开始为该企业提供服务"
+
+    - scene_id: "SC-WW-002"
+      scene_name: "客户联系获客（联系我/欢迎语）"
+      problem_ref: "BP-WW-001"
+      trigger: "企业需要生成渠道获客二维码，客户扫码添加员工企微"
+      participant_roles: ["一线员工", "客户", "SCRM系统", "企微平台"]
+      api_chain:
+        - seq: 1
+          api: "POST /cgi-bin/externalcontact/add_contact_way — 配置「联系我」二维码（含state渠道参数）"
+        - seq: 2
+          api: "客户扫码→企微回调 add_external_contact 事件→SCRM接收"
+        - seq: 3
+          api: "POST /cgi-bin/externalcontact/mark_tag — 自动打标签（按渠道/活动来源）"
+        - seq: 4
+          api: "POST /cgi-bin/externalcontact/add_msg_template — 发送个性化欢迎语"
+        - seq: 5
+          api: "GET /cgi-bin/externalcontact/get — 获取客户详情（含add_way来源）"
+      closure: "客户成功添加，自动完成标签+欢迎语，SCRM记录获客渠道和客户档案"
+
+    - scene_id: "SC-WW-003"
+      scene_name: "客户群运营"
+      problem_ref: "BP-WW-005"
+      trigger: "运营人员需要按客户分层创建客户群，进行群发运营"
+      participant_roles: ["运营人员", "一线员工", "客户", "SCRM系统"]
+      api_chain:
+        - seq: 1
+          api: "POST /cgi-bin/externalcontact/groupchat/list — 获取客户群列表（按状态过滤）"
+        - seq: 2
+          api: "POST /cgi-bin/externalcontact/groupchat/get — 获取群详情（成员/群主/公告）"
+        - seq: 3
+          api: "POST /cgi-bin/externalcontact/add_msg_template — 配置入群欢迎语素材"
+        - seq: 4
+          api: "POST /cgi-bin/externalcontact/message/send — 按群标签/群主进行群发"
+        - seq: 5
+          api: "POST /cgi-bin/externalcontact/groupchat/statistic — 获取群统计数据"
+      closure: "群运营数据回流SCRM，驱动下一轮群运营策略优化"
+
+    - scene_id: "SC-WW-004"
+      scene_name: "离职继承/在职继承"
+      problem_ref: "BP-WW-003"
+      trigger: "员工离职或组织调整，需要将客户关系转移给其他员工"
+      participant_roles: ["业务负责人", "离职员工", "接替员工", "客户", "企微平台"]
+      api_chain:
+        - seq: 1
+          api: "GET /cgi-bin/externalcontact/list — 获取离职员工的客户列表"
+        - seq: 2
+          api: "POST /cgi-bin/externalcontact/transfer_customer — 分配离职成员的客户（单次最多100个）"
+        - seq: 3
+          api: "企微回调 change_external_contact 事件 — 客户确认/拒绝接替"
+        - seq: 4
+          api: "POST /cgi-bin/externalcontact/transfer_result — 查询客户接替结果"
+        - seq: 5
+          api: "POST /cgi-bin/externalcontact/groupchat/transfer — 分配离职成员的客户群"
+      closure: "客户和客户群完成转移，SCRM更新客户归属，接替员工收到通知"
+
+    - scene_id: "SC-WW-005"
+      scene_name: "客户朋友圈营销"
+      problem_ref: "BP-WW-002"
+      trigger: "运营人员策划朋友圈营销活动，需要统一配置内容并分配给员工发送"
+      participant_roles: ["运营人员", "一线员工", "客户", "SCRM系统"]
+      api_chain:
+        - seq: 1
+          api: "POST /cgi-bin/externalcontact/add_moment_task — 创建朋友圈任务（文本+附件+可见范围）"
+        - seq: 2
+          api: "员工在企业微信确认发送"
+        - seq: 3
+          api: "GET /cgi-bin/externalcontact/get_moment_task — 获取任务执行结果"
+        - seq: 4
+          api: "SCRM统计员工发送率+客户互动率"
+      closure: "朋友圈营销数据回流SCRM，分析内容效果，优化下一轮内容策略"
+
+  # ═══════════════════════════════════════════════════════════════
+  # SDL V1.0.0 新增区块D：跨域衔接
+  # ═══════════════════════════════════════════════════════════════
+  cross_domain_bridges:
+    connections:
+      - target_domain: "微信公众平台/微信账号"
+        connection_type: "identity_bridge"
+        description: >
+          企业微信 external_userid 与微信 openid/unionid 映射。
+          同一微信用户在不同企业微信中的 external_userid 不同，
+          通过 unionid 可实现跨企业的客户身份统一。
+          SCRM需维护 external_userid ↔ openid/unionid 映射表，
+          实现企微私域+公众号+小程序的客户身份打通。
+        key: "external_userid ↔ openid/unionid 映射"
+        managed_by: "SCRM统一客户ID服务"
+
+      - target_domain: "火山引擎智能外呼"
+        connection_type: "channel_complement"
+        description: >
+          企微消息触达 + 外呼语音触达 双通道互补：
+          1. 日常运营走企微消息（免打扰、异步）
+          2. 紧急通知/高价值客户走外呼（高触达率）
+          3. 外呼未接通→降级为企微消息兜底
+          4. 企微加粉后48h触发外呼欢迎
+          5. 外呼高意向→企微创建跟进任务
+        key: "企微消息 ↔ 外呼语音 双通道触达矩阵"
+        scenario_refs: ["SC-WW-002", "SC-SO-002"]
+
+      - target_domain: "Coze智能体平台"
+        connection_type: "intelligence_layer"
+        description: >
+          Coze智能体作为企微客户沟通的AI大脑：
+          1. 客户消息通过企微回调→SCRM→Coze工作流→意图识别+话术推荐→返回SCRM→企微展示
+          2. Coze知识库存储话术库+FAQ+产品知识，供企微沟通中实时检索
+          3. Coze长期记忆存储客户画像，跨会话上下文传递
+          4. Coze多Agent团队（销售+客服+运营）协同服务同一客户
+        key: "企微消息 → Coze AI处理 → 智能回复"
+        scenario_refs: ["SC-CZ-001", "SC-CZ-002"]
+
+  # ═══════════════════════════════════════════════════════════════
+  # SDL V1.0.0 新增区块E：角色视角
+  # ═══════════════════════════════════════════════════════════════
+  role_perspectives:
+    - role_id: "R-WW-001"
+      role_name: "ISV服务商视角"
+      scenarios: ["SC-WW-001"]
+      perspective: >
+        关注应用市场曝光率、授权转化率、多企业复用效率。
+        需要确保suite_ticket接收稳定（每10分钟推送）、
+        access_token刷新机制健壮、回调服务高可用（5秒内返回success）。
+        多企业数据隔离、授权过期处理、API频率限制是核心运维关注点。
+
+    - role_id: "R-WW-002"
+      role_name: "企业管理员视角"
+      scenarios: ["SC-WW-001", "SC-WW-004"]
+      perspective: >
+        关注数据安全、权限管控、员工使用体验。
+        需要控制应用可见范围（部门/成员/标签粒度）、
+        监控员工客户添加和流失情况、处理离职继承审批。
+        客户数据归属权是核心关注点。
+
+    - role_id: "R-WW-003"
+      role_name: "一线员工视角"
+      scenarios: ["SC-WW-002", "SC-WW-003", "SC-WW-005"]
+      perspective: >
+        关注操作便捷性、客户管理效率。
+        需要快速获取「联系我」二维码、一键发送欢迎语、
+        批量打标签、查看客户跟进历史。
+        客户关系不被个人绑定（离职可继承）是安全感来源。
+
+    - role_id: "R-WW-004"
+      role_name: "客户视角"
+      scenarios: ["SC-WW-002", "SC-WW-003"]
+      perspective: >
+        关注隐私保护、消息免打扰、服务质量。
+        期望添加企业微信后获得有价值的服务而非骚扰。
+        有权单方面删除企业员工、拒绝客户继承。
+        消息接收频率和内容质量决定留存率。
+
+  # ═══════════════════════════════════════════
+  # 1. 业务泳道图（角色×阶段×动作）
+  # ═══════════════════════════════════════════
+  swimlane:
+    roles:
+      - "企业管理员"        # 安装/授权应用、配置权限
+      - "业务负责人"        # 查看数据报表、管理客户分配
+      - "一线员工"          # 添加客户、群发消息、跟进客户
+      - "客户（外部联系人）" # 接收消息、参与群聊
+      - "第三方服务商"      # 开发应用、上架应用市场、代开发
+      - "企微开放平台"      # 提供API、回调、授权
+    stages:
+      - "应用注册与授权"
+      - "客户获取与沉淀"
+      - "客户运营与触达"
+      - "客户转化与跟进"
+      - "客户服务与留存"
+      - "客户流失与继承"
+    actions:
+      - role: "第三方服务商"
+        stage: "应用注册与授权"
+        action: "在企微服务商后台创建第三方应用，配置OAuth回调、可信域名、权限集"
+        input: "企业资质、应用基本信息"
+        output: "SuiteID、Secret、Token、EncodingAESKey"
+        sources: ["企微第三方应用开发文档"]
+      - role: "企业管理员"
+        stage: "应用注册与授权"
+        action: "在企业微信管理后台安装第三方应用，授权通讯录/客户联系/消息推送等权限"
+        input: "应用市场找到应用"
+        output: "企业永久授权码(permanent_code)、企业ID(corpid)"
+        sources: ["企微授权流程文档"]
+      - role: "企微开放平台"
+        stage: "应用注册与授权"
+        action: "推送授权成功通知→suite_ticket回调→服务商获取企业凭证(access_token)"
+        input: "授权码(auth_code)"
+        output: "企业凭证(access_token)，有效期2小时"
+        sources: ["企微第三方授权文档"]
+      - role: "一线员工"
+        stage: "客户获取与沉淀"
+        action: "通过企微添加客户微信为外部联系人（扫码/搜索/群聊添加）"
+        input: "客户微信号"
+        output: "外部联系人关系(external_userid)"
+        sources: ["企微客户联系API"]
+      - role: "客户（外部联系人）"
+        stage: "客户获取与沉淀"
+        action: "通过员工分享的名片/二维码添加企微员工为企业微信联系人"
+        input: "员工二维码"
+        output: "双向好友关系建立"
+        sources: ["企微帮助文档"]
+      - role: "业务负责人"
+        stage: "客户运营与触达"
+        action: "创建客户标签体系，按标签分组客户，配置群发任务和欢迎语"
+        input: "标签分类规则"
+        output: "标签组、群发任务"
+        sources: ["企微客户标签API", "企微群发API"]
+      - role: "一线员工"
+        stage: "客户运营与触达"
+        action: "向客户推送消息（图文/小程序/链接）、创建客户群、群发消息"
+        input: "消息内容素材"
+        output: "发送记录、客户群(group_chat_id)"
+        sources: ["企微消息推送API", "企微客户群API"]
+      - role: "一线员工"
+        stage: "客户转化与跟进"
+        action: "记录客户跟进状态、打标签、设置跟进提醒"
+        input: "客户互动数据"
+        output: "客户跟进记录"
+        sources: ["企微客户联系API", "企微外部联系人事件回调"]
+      - role: "业务负责人"
+        stage: "客户服务与留存"
+        action: "查看客户统计分析（新增/流失/活跃）、群活跃度、消息触达率"
+        input: "客户数据"
+        output: "客户统计数据报表"
+        sources: ["企微统计API"]
+      - role: "企微开放平台"
+        stage: "客户流失与继承"
+        action: "员工离职时触发客户继承流程：离职员工客户→在职员工（可分配、可拒绝）"
+        input: "离职员工userid"
+        output: "客户继承结果（客户同意/拒绝）"
+        sources: ["企微离职继承API"]
+      - role: "业务负责人"
+        stage: "客户流失与继承"
+        action: "在职员工间客户重新分配（无需客户同意）"
+        input: "分配规则"
+        output: "客户归属变更"
+        sources: ["企微在职继承API"]
+
+  # ═══════════════════════════════════════════
+  # 2. 业务流程图（核心流程）
+  # ═══════════════════════════════════════════
+  flow:
+    happy_path: >
+      【SAAS应用接入→客户全生命周期管理】
+      服务商注册应用(SuiteID)→企业授权安装(permanent_code)→服务商获取access_token→
+      同步企业通讯录→员工通过应用添加外部联系人→系统接收回调同步客户关系→
+      配置标签+欢迎语→群发消息/创建客户群→客户互动→统计分析→
+      员工离职→离职继承→在职继承→客户持续运营闭环
+    exceptions:
+      - desc: "access_token 过期（2小时）→ 使用 refresh_token 刷新或重新获取"
+        sources: ["企微API文档"]
+        conflict: false
+      - desc: "客户删除员工（单方面解除关系）→ 回调通知 delete_external_contact 事件"
+        sources: ["企微外部联系人事件回调"]
+        conflict: false
+      - desc: "授权过期/企业取消授权 → 回调通知 cancel_auth 事件 → 服务商清理企业数据"
+        sources: ["企微第三方授权文档"]
+        conflict: false
+      - desc: "添加客户失败（客户设置隐私/未实名）→ 提示员工引导客户完成实名认证"
+        sources: ["企微帮助文档"]
+        conflict: false
+      - desc: "客户继承失败（客户24小时内不确认）→ 系统标记继承超时 → 重新分配"
+        sources: ["企微离职继承API"]
+        conflict: false
+    branches:
+      - desc: "主动获客分支：通过'联系我'二维码/小程序按钮→客户扫码→自动添加员工→自动打标签+发送欢迎语"
+        sources: ["企微联系我API", "企微欢迎语API"]
+        conflict: false
+      - desc: "客户群运营分支：创建客户群→配置入群欢迎语→群发消息→群活码→离职群主转让"
+        sources: ["企微客户群API"]
+        conflict: false
+      - desc: "客户朋友圈分支：企业统一配置朋友圈内容→员工确认发送→客户查看/互动→数据统计"
+        sources: ["企微客户朋友圈API"]
+        conflict: false
+
+  # ═══════════════════════════════════════════
+  # 3. 业务信息流（信息主体×生产者×消费者×依赖）
+  # ═══════════════════════════════════════════
+  info_flow:
+    entities:
+      - name: "企业信息(corp_info)"
+        producer: "企业微信开放平台"
+        consumer: "服务商SAAS系统"
+        depends_on: "企业完成授权安装"
+        sources: ["企微授权文档"]
+      - name: "access_token(企业凭证)"
+        producer: "企微开放平台（通过corpid+secret或suite_access_token换取）"
+        consumer: "所有业务API调用"
+        depends_on: "corpid+secret(saas直连) 或 suite_access_token+auth_corpid(服务商)"
+        sources: ["企微API鉴权文档"]
+      - name: "外部联系人关系(external_userid+follow_userid)"
+        producer: "客户通过员工添加/员工通过搜索添加"
+        consumer: "客户管理、消息推送、标签、离职继承"
+        depends_on: "员工在企业通讯录内且应用有客户联系权限"
+        sources: ["企微客户联系API"]
+      - name: "客户标签(tag_id)"
+        producer: "业务负责人通过API创建"
+        consumer: "客户过滤、群发筛选、统计分析"
+        depends_on: "标签组已创建"
+        sources: ["企微客户标签API"]
+      - name: "客户群(group_chat_id)"
+        producer: "员工创建客户群"
+        consumer: "群发消息、群数据统计、离职群转让"
+        depends_on: "群内至少1个外部联系人"
+        sources: ["企微客户群API"]
+      - name: "suite_ticket(定时推送票据)"
+        producer: "企微开放平台（每10分钟推送）"
+        consumer: "服务商获取suite_access_token"
+        depends_on: "应用上线且回调URL配置正确"
+        sources: ["企微第三方授权文档"]
+      - name: "permanent_code(企业永久授权码)"
+        producer: "企微开放平台（企业安装授权后生成）"
+        consumer: "服务商获取企业access_token"
+        depends_on: "企业管理员完成授权确认"
+        sources: ["企微第三方授权文档"]
+      - name: "回调事件(外部联系人变更/客户群变更/授权变更)"
+        producer: "企微开放平台"
+        consumer: "服务商SAAS系统（实时同步客户关系变更）"
+        depends_on: "回调URL配置正确且返回success"
+        sources: ["企微回调文档"]
+    cross_system: >
+      企微开放平台 ↔ 服务商SAAS系统 双向信息流：
+      企微→服务商：授权事件(cancel_auth/reset_permanent_code)、
+        suite_ticket推送、外部联系人变更回调(add/delete_external_contact)、
+        客户群变更回调(create/update/dismiss)、成员变更回调、通讯录变更回调。
+      服务商→企微：调用客户联系API管理客户关系、调用消息推送API发送消息、
+        调用统计API获取数据、调用通讯录API同步组织架构。
+
+  # ═══════════════════════════════════════════
+  # 4. 业务操作矩阵（角色×状态×操作）
+  # ═══════════════════════════════════════════
+  operation_matrix:
+    roles:
+      - "企业管理员"
+      - "业务负责人"
+      - "一线员工"
+      - "第三方服务商"
+    states:
+      - "应用未授权"
+      - "应用已授权"
+      - "客户未添加"
+      - "客户已添加"
+      - "客户跟进中"
+      - "客户已成交"
+      - "员工在职"
+      - "员工待离职"
+      - "客户继承中"
+      - "客户继承完成"
+      - "客户已流失"
+    matrix:
+      - role: "第三方服务商"
+        state: "应用未授权"
+        operations:
+          - "提交应用上架审核"
+          - "配置回调URL与可信域名"
+          - "预设权限集"
+        sources: ["企微第三方应用开发文档"]
+      - role: "企业管理员"
+        state: "应用未授权"
+        operations:
+          - "在企业微信后台搜索应用"
+          - "安装并授权应用"
+          - "配置可见范围（部门/成员/标签）"
+        sources: ["企微管理后台帮助"]
+      - role: "一线员工"
+        state: "客户未添加"
+        operations:
+          - "生成'联系我'二维码"
+          - "通过搜索微信号/手机号添加"
+          - "通过群聊添加客户"
+        sources: ["企微客户联系API"]
+      - role: "一线员工"
+        state: "客户已添加"
+        operations:
+          - "给客户打标签"
+          - "发送消息/素材"
+          - "发送欢迎语"
+          - "将客户拉入客户群"
+        sources: ["企微客户标签API", "企微消息API"]
+      - role: "业务负责人"
+        state: "客户跟进中"
+        operations:
+          - "查看客户跟进记录和统计"
+          - "配置自动化跟进提醒"
+          - "创建群发任务分配给员工"
+        sources: ["企微统计API", "企微群发API"]
+      - role: "业务负责人"
+        state: "员工待离职"
+        operations:
+          - "发起离职继承（指定接替员工）"
+          - "查看继承进度"
+          - "处理继承超时客户重新分配"
+        sources: ["企微离职继承API"]
+      - role: "一线员工"
+        state: "客户继承中"
+        operations:
+          - "接替员工：接收继承通知"
+          - "接替员工：一键添加继承客户"
+        sources: ["企微离职继承API"]
+      - role: "业务负责人"
+        state: "客户已流失"
+        operations:
+          - "查看流失分析报告"
+          - "对已流失客户做再触达策略"
+        sources: ["企微统计API"]
+      - role: "一线员工"
+        state: "客户已流失"
+        operations:
+          - "重新添加客户（需对方重新通过）"
+        sources: ["企微外部联系人事件回调"]
+
+  # ═══════════════════════════════════════════
+  # 5. 解决方案概括
+  # ═══════════════════════════════════════════
+  solution:
+    patterns:
+      - desc: >
+          【服务商SAAS模式（推荐）】
+          作为企业微信第三方应用服务商，开发标准化SAAS应用，上架企微应用市场。
+          核心链路：应用注册→授权安装→获取企业凭证→调用API→接收回调。
+          优势：一次开发、多企业复用；企业通过应用市场发现和安装；
+          企微提供标准OAuth授权+suite_ticket推送+回调体系+代开发能力。
+          适用：面向多B端客户的标准化SCRM产品。
+        sources: ["企微第三方应用开发文档", "企微服务商文档"]
+        conflict: false
+      - desc: >
+          【直连模式】
+          应用仅服务单一企业，企业自行开发或外包，通过corpid+secret直接调用API。
+          无需应用市场上架，但需企业微信管理员在后台配置可信IP和回调URL。
+          适用：企业内部SCRM系统或定制化单租户部署。
+        sources: ["企微企业内部开发文档"]
+        conflict: false
+      - desc: >
+          【代开发模式】
+          服务商以企业身份代开发应用，不经过应用市场，直接在企业后台创建应用。
+          适用：企业定制化需求，需服务商获取企业管理员权限。
+        sources: ["企微代开发文档"]
+        conflict: false
+    tech_considerations:
+      - desc: "access_token 有效期仅2小时，需实现自动刷新+缓存+重试机制"
+        sources: ["企微API鉴权文档"]
+      - desc: "suite_ticket 每10分钟推送一次，服务商需在30分钟内用ticket换取suite_access_token"
+        sources: ["企微第三方授权文档"]
+      - desc: "API 频率限制：客户联系类API一般2000次/分钟，消息推送类5000次/天/企业"
+        sources: ["企微API频率限制文档"]
+      - desc: "回调URL需在5秒内返回success，业务处理需异步化（先返回success再处理）"
+        sources: ["企微回调文档"]
+      - desc: "客户external_userid 在企业间不互通，同一客户在不同企业中external_userid不同"
+        sources: ["企微客户联系API"]
+    best_practices:
+      - desc: "使用消息队列异步处理企微回调，保证5秒内返回success，避免回调超时重试风暴"
+        sources: ["企微回调最佳实践"]
+      - desc: "access_token 统一管理，使用 Redis + 提前5分钟刷新，避免高并发下频繁获取"
+        sources: ["企微开发最佳实践"]
+      - desc: "客户标签体系提前设计：建议3层标签（行为标签/属性标签/价值标签），每标签组不超过100个标签"
+        sources: ["企微标签API文档"]
+      - desc: "离职继承黄金24小时：员工离职后24小时内发起继承，客户无需确认自动转移"
+        sources: ["企微离职继承API"]
+      - desc: "客户群人数上限500人（认证企业），超过需做分群管理策略"
+        sources: ["企微客户群API"]
+      - desc: "欢迎语+标签自动化：添加客户时同步打标签+发送欢迎语，提升客户留存率"
+        sources: ["企微欢迎语API", "企微客户标签API"]
+
+  # ═══════════════════════════════════════════
+  # 6. 整合差异报告（V1.3.0）
+  # 本次为全量学习，非增量，此项留空
+  # ═══════════════════════════════════════════
+  integration_report: {}
+
+  # ═══════════════════════════════════════════
+  # 7. 图片识别结果（V1.4.0）
+  # 无图片来源，此项留空
+  # ═══════════════════════════════════════════
+  images: []
+
+  # ═══════════════════════════════════════════
+  # 8. 视频文字稿（V1.5.0）
+  # 无视频来源，此项留空
+  # ═══════════════════════════════════════════
+  transcripts: []
+
+  # ═══════════════════════════════════════════
+  # 9. 视频关键帧（V1.5.0）
+  # 无视频来源，此项留空
+  # ═══════════════════════════════════════════
+  key_frames: []
+
+  # ═══════════════════════════════════════════
+  # 10. API接口自动发现与串联（V1.4.0）
+  # ═══════════════════════════════════════════
+  api_integration:
+    discovered_apis:
+      # ── 鉴权类 ──
+      - path: "GET /cgi-bin/gettoken"
+        name: "获取企业access_token"
+        source_url: "https://developer.work.weixin.qq.com/document/path/91039"
+        inputs: ["corpid", "corpsecret"]
+        outputs: ["access_token", "expires_in"]
+        confirmed: true
+      - path: "POST /cgi-bin/service/get_suite_token"
+        name: "获取服务商suite_access_token"
+        source_url: "https://developer.work.weixin.qq.com/document/path/90600"
+        inputs: ["suite_id", "suite_secret", "suite_ticket"]
+        outputs: ["suite_access_token", "expires_in"]
+        confirmed: true
+      - path: "POST /cgi-bin/service/get_corp_token"
+        name: "获取企业access_token(服务商)"
+        source_url: "https://developer.work.weixin.qq.com/document/path/90605"
+        inputs: ["suite_access_token", "auth_corpid", "permanent_code"]
+        outputs: ["access_token", "expires_in"]
+        confirmed: true
+      - path: "POST /cgi-bin/service/get_permanent_code"
+        name: "获取企业永久授权码"
+        source_url: "https://developer.work.weixin.qq.com/document/path/90603"
+        inputs: ["suite_access_token", "auth_code"]
+        outputs: ["permanent_code", "auth_corp_info", "auth_info", "auth_user_info"]
+        confirmed: true
+      - path: "POST /cgi-bin/service/get_auth_info"
+        name: "获取企业授权信息"
+        source_url: "https://developer.work.weixin.qq.com/document/path/90604"
+        inputs: ["suite_access_token", "auth_corpid", "permanent_code"]
+        outputs: ["auth_corp_info", "auth_info"]
+        confirmed: true
+
+      # ── 客户联系类 ──
+      - path: "GET /cgi-bin/externalcontact/list"
+        name: "获取客户列表"
+        source_url: "https://developer.work.weixin.qq.com/document/path/92113"
+        inputs: ["access_token", "userid"]
+        outputs: ["external_userid[]"]
+        confirmed: true
+      - path: "GET /cgi-bin/externalcontact/get"
+        name: "获取客户详情"
+        source_url: "https://developer.work.weixin.qq.com/document/path/92114"
+        inputs: ["access_token", "external_userid", "cursor"]
+        outputs: ["external_contact{name/avatar/type/gender}", "follow_user{userid/remark/tags/description/add_way/state...}"]
+        confirmed: true
+      - path: "POST /cgi-bin/externalcontact/batch/get_by_user"
+        name: "批量获取客户详情"
+        source_url: "https://developer.work.weixin.qq.com/document/path/92994"
+        inputs: ["access_token", "userid_list[]", "cursor", "limit"]
+        outputs: ["external_contact_list"]
+        confirmed: true
+      - path: "POST /cgi-bin/externalcontact/add_contact_way"
+        name: "配置「联系我」方式"
+        source_url: "https://developer.work.weixin.qq.com/document/path/92228"
+        inputs: ["access_token", "type", "scene", "style", "remark", "skip_verify", "state", "user[]", "party[]", "is_temp"]
+        outputs: ["config_id", "qr_code"]
+        confirmed: true
+      - path: "POST /cgi-bin/externalcontact/update_contact_way"
+        name: "更新「联系我」方式"
+        source_url: "https://developer.work.weixin.qq.com/document/path/92229"
+        inputs: ["access_token", "config_id", "remark", "skip_verify", "style", "state", "user[]", "party[]"]
+        outputs: []
+        confirmed: true
+      - path: "GET /cgi-bin/externalcontact/get_contact_way"
+        name: "获取「联系我」方式详情"
+        source_url: "https://developer.work.weixin.qq.com/document/path/92230"
+        inputs: ["access_token", "config_id"]
+        outputs: ["contact_way{config_id/type/scene/...}"]
+        confirmed: true
+      - path: "POST /cgi-bin/externalcontact/del_contact_way"
+        name: "删除「联系我」方式"
+        source_url: "https://developer.work.weixin.qq.com/document/path/92231"
+        inputs: ["access_token", "config_id"]
+        outputs: []
+        confirmed: true
+      - path: "POST /cgi-bin/externalcontact/close_temp_chat"
+        name: "结束临时会话"
+        source_url: "https://developer.work.weixin.qq.com/document/path/92232"
+        inputs: ["access_token", "userid", "external_userid"]
+        outputs: []
+        confirmed: true
+      - path: "POST /cgi-bin/externalcontact/mark_tag"
+        name: "编辑客户企业标签"
+        source_url: "https://developer.work.weixin.qq.com/document/path/92118"
+        inputs: ["access_token", "userid", "external_userid", "add_tag[]", "remove_tag[]"]
+        outputs: []
+        confirmed: true
+      - path: "POST /cgi-bin/externalcontact/get_corp_tag_list"
+        name: "获取企业标签库"
+        source_url: "https://developer.work.weixin.qq.com/document/path/92117"
+        inputs: ["access_token", "tag_id[]", "group_id[]"]
+        outputs: ["tag_group[{group_id/group_name/tag[{id/name/order}]}]"]
+        confirmed: true
+      - path: "POST /cgi-bin/externalcontact/add_corp_tag"
+        name: "添加企业客户标签"
+        source_url: "https://developer.work.weixin.qq.com/document/path/92117"
+        inputs: ["access_token", "group_id", "group_name", "order", "tag[{name/order}]"]
+        outputs: ["tag_group"]
+        confirmed: true
+
+      # ── 客户群类 ──
+      - path: "POST /cgi-bin/externalcontact/groupchat/list"
+        name: "获取客户群列表"
+        source_url: "https://developer.work.weixin.qq.com/document/path/92120"
+        inputs: ["access_token", "status_filter", "owner_filter", "cursor", "limit"]
+        outputs: ["group_chat_list[{chat_id,status}]", "next_cursor"]
+        confirmed: true
+      - path: "POST /cgi-bin/externalcontact/groupchat/get"
+        name: "获取客户群详情"
+        source_url: "https://developer.work.weixin.qq.com/document/path/92122"
+        inputs: ["access_token", "chat_id", "need_name"]
+        outputs: ["group_chat{chat_id/name/owner/create_time/notice/member_list/admin_list}"]
+        confirmed: true
+      - path: "POST /cgi-bin/externalcontact/groupchat/transfer"
+        name: "分配离职成员的客户群"
+        source_url: "https://developer.work.weixin.qq.com/document/path/92127"
+        inputs: ["access_token", "chat_id_list[]", "new_owner"]
+        outputs: ["failed_chat_list"]
+        confirmed: true
+
+      # ── 客户朋友圈类 ──
+      - path: "POST /cgi-bin/externalcontact/add_moment_task"
+        name: "创建发表朋友圈任务"
+        source_url: "https://developer.work.weixin.qq.com/document/path/95094"
+        inputs: ["access_token", "text{content}", "attachments[{msgtype,image/link/video}]", "visible_range{sender_list/external_contact_list}", "agentid"]
+        outputs: ["jobid"]
+        confirmed: true
+      - path: "GET /cgi-bin/externalcontact/get_moment_task"
+        name: "获取朋友圈任务执行结果"
+        source_url: "https://developer.work.weixin.qq.com/document/path/95095"
+        inputs: ["access_token", "jobid"]
+        outputs: ["task_status", "task_info"]
+        confirmed: true
+
+      # ── 离职继承类 ──
+      - path: "POST /cgi-bin/externalcontact/transfer_customer"
+        name: "分配离职成员的客户"
+        source_url: "https://developer.work.weixin.qq.com/document/path/92125"
+        inputs: ["access_token", "handover_userid", "takeover_userid", "external_userid[]"]
+        outputs: ["customer[{external_userid,errcode}]"]
+        confirmed: true
+      - path: "POST /cgi-bin/externalcontact/transfer_result"
+        name: "查询客户接替结果"
+        source_url: "https://developer.work.weixin.qq.com/document/path/94088"
+        inputs: ["access_token", "handover_userid", "takeover_userid", "cursor"]
+        outputs: ["customer[{external_userid,status,takeover_time}]", "next_cursor"]
+        confirmed: true
+      - path: "POST /cgi-bin/externalcontact/transfer_customer"
+        name: "在职成员的客户转接"
+        source_url: "https://developer.work.weixin.qq.com/document/path/94096"
+        inputs: ["access_token", "handover_userid", "takeover_userid", "external_userid[]"]
+        outputs: ["customer[{external_userid,errcode}]"]
+        confirmed: true
+
+      # ── 消息推送类 ──
+      - path: "POST /cgi-bin/message/send"
+        name: "发送应用消息"
+        source_url: "https://developer.work.weixin.qq.com/document/path/90236"
+        inputs: ["access_token", "touser/toparty/totag", "msgtype", "agentid", "content{text/image/voice/video/file/textcard/news/mpnews/markdown/miniprogram}"]
+        outputs: ["invaliduser/invalidparty/invalidtag"]
+        confirmed: true
+      - path: "POST /cgi-bin/externalcontact/message/send"
+        name: "创建企业群发(客户群发)"
+        source_url: "https://developer.work.weixin.qq.com/document/path/92698"
+        inputs: ["access_token", "chat_type", "external_userid[]/sender", "text{content}", "attachments[{msgtype,...}]"]
+        outputs: ["msgid", "fail_list"]
+        confirmed: true
+      - path: "POST /cgi-bin/externalcontact/add_msg_template"
+        name: "添加入群欢迎语素材"
+        source_url: "https://developer.work.weixin.qq.com/document/path/92199"
+        inputs: ["access_token", "text{content}", "image/media_id", "link...", "miniprogram..."]
+        outputs: ["template_id"]
+        confirmed: true
+
+      # ── 通讯录类 ──
+      - path: "GET /cgi-bin/user/list_id"
+        name: "获取成员ID列表"
+        source_url: "https://developer.work.weixin.qq.com/document/path/91334"
+        inputs: ["access_token", "cursor", "limit"]
+        outputs: ["dept_user[{userid,department_id}]", "next_cursor"]
+        confirmed: true
+      - path: "GET /cgi-bin/department/list"
+        name: "获取部门列表"
+        source_url: "https://developer.work.weixin.qq.com/document/path/90208"
+        inputs: ["access_token", "id"]
+        outputs: ["department[{id/name/parentid/order}]"]
+        confirmed: true
+
+      # ── 素材管理类 ──
+      - path: "POST /cgi-bin/media/upload"
+        name: "上传临时素材"
+        source_url: "https://developer.work.weixin.qq.com/document/path/90253"
+        inputs: ["access_token", "type(image/voice/video/file)", "media"]
+        outputs: ["type", "media_id", "created_at"]
+        confirmed: true
+      - path: "POST /cgi-bin/media/uploadimg"
+        name: "上传永久图片"
+        source_url: "https://developer.work.weixin.qq.com/document/path/90256"
+        inputs: ["access_token", "media"]
+        outputs: ["url"]
+        confirmed: true
+
+      # ── 统计类 ──
+      - path: "POST /cgi-bin/externalcontact/get_user_behavior_data"
+        name: "获取「联系客户统计」"
+        source_url: "https://developer.work.weixin.qq.com/document/path/92132"
+        inputs: ["access_token", "userid[]", "partyid[]", "start_time", "end_time"]
+        outputs: ["behavior_data[{stat_time/new_apply_cnt/new_contact_cnt/chat_cnt/message_cnt/reply_percentage/avg_reply_time/transfer_customer_cnt}]"]
+        confirmed: true
+      - path: "POST /cgi-bin/externalcontact/groupchat/statistic"
+        name: "获取客户群统计数据"
+        source_url: "https://developer.work.weixin.qq.com/document/path/92133"
+        inputs: ["access_token", "day_begin_time", "owner_filter{userid_list/partyid_list}"]
+        outputs: ["total", "next_offset", "items[{owner/chat_id/group_name/new_member_cnt/total_msg_cnt/total_member_cnt}]"]
+        confirmed: true
+
+      # ── 回调事件 ──
+      - path: "POST [服务商回调URL]/suite_ticket"
+        name: "接收suite_ticket"
+        source_url: "https://developer.work.weixin.qq.com/document/path/90628"
+        inputs: ["SuiteId", "InfoType(suite_ticket)", "TimeStamp", "SuiteTicket"]
+        outputs: ["success"]
+        confirmed: true
+      - path: "POST [服务商回调URL]/change_external_contact"
+        name: "外部联系人变更回调"
+        source_url: "https://developer.work.weixin.qq.com/document/path/92130"
+        inputs: ["ToUserName", "FromUserName", "CreateTime", "MsgType(event)", "Event(change_external_contact)", "ChangeType(add/delete/edit_external_contact)"]
+        outputs: ["success"]
+        confirmed: true
+      - path: "POST [服务商回调URL]/change_external_chat"
+        name: "客户群变更回调"
+        source_url: "https://developer.work.weixin.qq.com/document/path/92130"
+        inputs: ["ToUserName", "FromUserName", "CreateTime", "MsgType(event)", "Event(change_external_chat)", "ChangeType(create/update/dismiss)"]
+        outputs: ["success"]
+        confirmed: true
+
+    call_sequence:
+      - step: 1
+        api: "获取服务商suite_access_token"
+        next: "获取企业永久授权码"
+        relation: "confirmed"
+        inference_reason: ""
+      - step: 2
+        api: "获取企业永久授权码"
+        next: "获取企业access_token(服务商)"
+        relation: "confirmed"
+        inference_reason: ""
+      - step: 3
+        api: "获取企业access_token(服务商)"
+        next: "获取客户列表"
+        relation: "confirmed"
+        inference_reason: "所有业务API均依赖access_token鉴权"
+      - step: 4
+        api: "获取客户列表"
+        next: "批量获取客户详情"
+        relation: "confirmed"
+        inference_reason: "先获取external_userid列表再批量获取详情"
+      - step: 5
+        api: "批量获取客户详情"
+        next: "客户打标签/发送消息/拉群/统计分析"
+        relation: "confirmed"
+        inference_reason: "获取客户详情后可执行后续业务操作"
+      - step: 6
+        api: "编辑客户企业标签"
+        next: "客户群发(按标签筛选)"
+        relation: "inferred"
+        inference_reason: "先打标签后可按标签精确筛选目标客户群发"
+      - step: 7
+        api: "创建企业群发"
+        next: "获取「联系客户统计」"
+        relation: "inferred"
+        inference_reason: "群发后可统计分析触达效果"
+      - step: 8
+        api: "分配离职成员的客户"
+        next: "查询客户接替结果"
+        relation: "confirmed"
+        inference_reason: "分配后需异步查询接替结果"
+    sequence_diagram: >
+      sequenceDiagram
+        participant SP as 服务商SAAS
+        participant WX as 企微开放平台
+        participant ENT as 企业管理员
+        participant EMP as 一线员工
+        participant CUS as 客户
+
+        Note over SP,WX: 授权阶段
+        WX->>SP: 每10分钟推送suite_ticket
+        SP->>WX: 获取suite_access_token
+        ENT->>WX: 安装授权应用
+        WX->>SP: 推送临时授权码(auth_code)
+        SP->>WX: 获取permanent_code
+        SP->>WX: 获取企业access_token
+
+        Note over SP,CUS: 客户生命周期
+        SP->>WX: 获取企业标签库+配置「联系我」
+        EMP->>SP: 获取「联系我」二维码
+        CUS->>EMP: 扫码添加
+        WX->>SP: 回调add_external_contact
+        SP->>WX: 自动打标签+发送欢迎语
+        SP->>WX: 获取客户详情
+        EMP->>SP: 查看客户列表/详情
+        SP->>WX: 创建群发任务
+        EMP->>CUS: 推送消息
+        SP->>WX: 获取统计数据
+
+        Note over SP,EMP: 离职继承
+        SP->>WX: 分配离职成员客户
+        WX->>EMP: 接替通知
+        EMP->>WX: 确认接替
+        SP->>WX: 查询接替结果
+    orphan_apis: []
+
+  # ═══════════════════════════════════════════
+  # 11. API参数字典（V1.6.0 新增，Part12）
+  # 聚焦：客户生命周期核心API的参数定义
+  # ═══════════════════════════════════════════
+  api_param_dictionary:
+    description: "企业微信客户生命周期核心API的完整参数定义，含语义角色、加密、枚举、校验规则"
+    apis:
+      - api_id: "API-WX-001"
+        api_name: "获取企业access_token(服务商)"
+        api_path: "POST /cgi-bin/service/get_corp_token"
+        request_params:
+          - field: "suite_access_token"
+            type: "string"
+            required: true
+            description: "服务商凭证"
+            semantic_role: "SIGNATURE"
+            source_type: "upstream_api"
+            source_api: "API-WX-AUTH-001"
+            source_field: "suite_access_token"
+            encryption: "none"
+            validation: "非空，有效期内"
+          - field: "auth_corpid"
+            type: "string"
+            required: true
+            description: "授权企业ID"
+            semantic_role: "PRIMARY_KEY"
+            source_type: "upstream_api"
+            source_api: "API-WX-AUTH-002"
+            source_field: "auth_corp_info.corpid"
+            encryption: "none"
+            validation: "企业微信corpid格式：ww开头+16位"
+          - field: "permanent_code"
+            type: "string"
+            required: true
+            description: "企业永久授权码"
+            semantic_role: "IDEMPOTENT_KEY"
+            source_type: "upstream_api"
+            source_api: "API-WX-AUTH-002"
+            source_field: "permanent_code"
+            encryption: "none"
+            validation: "非空"
+        response_params:
+          - field: "access_token"
+            type: "string"
+            description: "企业访问凭证，有效期7200秒"
+            nullable: false
+            downstream_usage: ["API-WX-002", "API-WX-003", "API-WX-004", "API-WX-005", "API-WX-006", "API-WX-007", "API-WX-008", "API-WX-009", "API-WX-010", "API-WX-011", "API-WX-012"]
+            semantic_role: "SIGNATURE"
+          - field: "expires_in"
+            type: "number"
+            description: "过期时间(秒)，默认7200"
+            nullable: false
+            downstream_usage: []
+            semantic_role: "BUSINESS_PARAM"
+        error_codes:
+          - code: "40001"
+            message: "不合法的secret参数"
+            handling: "检查suite_access_token是否正确且未过期"
+          - code: "40003"
+            message: "无效的UserID"
+            handling: "检查auth_corpid格式"
+          - code: "42001"
+            message: "access_token已过期"
+            handling: "重新获取suite_access_token后重试"
+
+      - api_id: "API-WX-002"
+        api_name: "获取客户列表"
+        api_path: "GET /cgi-bin/externalcontact/list"
+        request_params:
+          - field: "access_token"
+            type: "string"
+            required: true
+            description: "企业access_token"
+            semantic_role: "SIGNATURE"
+            source_type: "upstream_api"
+            source_api: "API-WX-001"
+            source_field: "access_token"
+            encryption: "none"
+            validation: "非空，有效期内"
+          - field: "userid"
+            type: "string"
+            required: true
+            description: "企业成员的userid"
+            semantic_role: "PRIMARY_KEY"
+            source_type: "user_input"
+            encryption: "none"
+            validation: "企业在企微通讯录中的成员ID"
+        response_params:
+          - field: "external_userid"
+            type: "array[string]"
+            description: "该成员添加的外部联系人userid列表"
+            nullable: false
+            downstream_usage: ["API-WX-003", "API-WX-004", "API-WX-006", "API-WX-009"]
+            semantic_role: "PRIMARY_KEY"
+          - field: "errcode"
+            type: "number"
+            description: "错误码，0表示成功"
+            nullable: false
+            semantic_role: "RESPONSE_META"
+        error_codes:
+          - code: "84061"
+            message: "不存在外部联系人的关系"
+            handling: "该成员暂无添加外部联系人，正常显示空列表"
+          - code: "40003"
+            message: "不合法的UserID"
+            handling: "检查userid是否正确"
+
+      - api_id: "API-WX-003"
+        api_name: "获取客户详情"
+        api_path: "GET /cgi-bin/externalcontact/get"
+        request_params:
+          - field: "access_token"
+            type: "string"
+            required: true
+            semantic_role: "SIGNATURE"
+            source_type: "upstream_api"
+            source_api: "API-WX-001"
+            encryption: "none"
+            validation: "非空，有效期内"
+          - field: "external_userid"
+            type: "string"
+            required: true
+            semantic_role: "PRIMARY_KEY"
+            source_type: "upstream_api"
+            source_api: "API-WX-002"
+            source_field: "external_userid"
+            encryption: "none"
+            validation: "企微外部联系人ID格式"
+          - field: "cursor"
+            type: "string"
+            required: false
+            semantic_role: "PAGINATION"
+            source_type: "computed"
+            encryption: "none"
+            validation: "获取企业标签和备注时传此参数"
+        response_params:
+          - field: "external_contact.name"
+            type: "string"
+            description: "外部联系人的名称"
+            nullable: false
+            downstream_usage: []
+            semantic_role: "BUSINESS_PARAM"
+          - field: "external_contact.avatar"
+            type: "string"
+            description: "外部联系人头像URL"
+            nullable: true
+            semantic_role: "BUSINESS_PARAM"
+          - field: "external_contact.type"
+            type: "number"
+            description: "外部联系人类型：1-个人微信 2-企业微信"
+            enum_values: [1, 2]
+            nullable: false
+            semantic_role: "BUSINESS_PARAM"
+          - field: "external_contact.gender"
+            type: "number"
+            description: "性别：0-未知 1-男 2-女"
+            enum_values: [0, 1, 2]
+            nullable: false
+            semantic_role: "BUSINESS_PARAM"
+          - field: "follow_user.userid"
+            type: "string"
+            description: "添加了此客户的企微成员userid"
+            nullable: false
+            downstream_usage: []
+            semantic_role: "REFERENCE"
+          - field: "follow_user.remark"
+            type: "string"
+            description: "该成员对客户的备注（敏感信息：可能含真实姓名）"
+            nullable: true
+            downstream_usage: []
+            semantic_role: "SENSITIVE"
+          - field: "follow_user.description"
+            type: "string"
+            description: "该成员对客户的描述"
+            nullable: true
+            semantic_role: "BUSINESS_PARAM"
+          - field: "follow_user.createtime"
+            type: "number"
+            description: "添加时间（Unix时间戳）"
+            nullable: false
+            semantic_role: "TIMESTAMP"
+          - field: "follow_user.tags"
+            type: "array"
+            description: "该成员给客户打的标签[{group_name,tag_name}]"
+            nullable: true
+            downstream_usage: ["API-WX-005", "API-WX-008"]
+            semantic_role: "BUSINESS_PARAM"
+          - field: "follow_user.add_way"
+            type: "number"
+            description: "添加来源：0-未知 1-扫描二维码 2-搜索手机号 3-名片分享 4-群聊 5-手机通讯录 6-微信联系人 7-第三方应用 8-邮箱 9-视频号 10-日程"
+            enum_values: [0,1,2,3,4,5,6,7,8,9,10]
+            nullable: false
+            semantic_role: "BUSINESS_PARAM"
+          - field: "follow_user.state"
+            type: "string"
+            description: "「联系我」方式配置的state参数，用于区分渠道来源"
+            nullable: true
+            downstream_usage: []
+            semantic_role: "REFERENCE"
+        error_codes:
+          - code: "84061"
+            message: "不存在外部联系人的关系"
+            handling: "检查external_userid是否正确"
+          - code: "40096"
+            message: "不合法的external_userid"
+            handling: "检查external_userid是否在该企业下有效"
+
+      - api_id: "API-WX-004"
+        api_name: "编辑客户企业标签"
+        api_path: "POST /cgi-bin/externalcontact/mark_tag"
+        request_params:
+          - field: "access_token"
+            type: "string"
+            required: true
+            semantic_role: "SIGNATURE"
+            source_type: "upstream_api"
+            source_api: "API-WX-001"
+            encryption: "none"
+            validation: "非空，有效期内"
+          - field: "userid"
+            type: "string"
+            required: true
+            description: "添加外部联系人的企业成员userid"
+            semantic_role: "REFERENCE"
+            source_type: "user_input"
+            encryption: "none"
+            validation: "该成员必须已添加此客户"
+          - field: "external_userid"
+            type: "string"
+            required: true
+            semantic_role: "PRIMARY_KEY"
+            source_type: "upstream_api"
+            source_api: "API-WX-002"
+            encryption: "none"
+            validation: "外部联系人ID"
+          - field: "add_tag"
+            type: "array[{tag_id}]"
+            required: false
+            description: "要添加的标签ID列表"
+            semantic_role: "BUSINESS_PARAM"
+            source_type: "user_input"
+            encryption: "none"
+            validation: "tag_id必须在企业标签库中存在"
+          - field: "remove_tag"
+            type: "array[{tag_id}]"
+            required: false
+            description: "要移除的标签ID列表"
+            semantic_role: "BUSINESS_PARAM"
+            source_type: "user_input"
+            encryption: "none"
+            validation: "tag_id必须在客户已打的标签中存在"
+        response_params:
+          - field: "errcode"
+            type: "number"
+            description: "0表示成功"
+            nullable: false
+            semantic_role: "RESPONSE_META"
+        error_codes:
+          - code: "40070"
+            message: "不合法的标签ID"
+            handling: "检查标签ID是否存在"
+
+      - api_id: "API-WX-005"
+        api_name: "获取企业标签库"
+        api_path: "POST /cgi-bin/externalcontact/get_corp_tag_list"
+        request_params:
+          - field: "access_token"
+            type: "string"
+            required: true
+            semantic_role: "SIGNATURE"
+            source_type: "upstream_api"
+            source_api: "API-WX-001"
+            encryption: "none"
+          - field: "tag_id"
+            type: "array[string]"
+            required: false
+            description: "要查询的标签ID，不传则返回所有标签"
+            semantic_role: "QUERY_FILTER"
+            source_type: "user_input"
+            encryption: "none"
+          - field: "group_id"
+            type: "array[string]"
+            required: false
+            description: "要查询的标签组ID，不传则返回所有标签组"
+            semantic_role: "QUERY_FILTER"
+            source_type: "user_input"
+            encryption: "none"
+        response_params:
+          - field: "tag_group[].group_id"
+            type: "string"
+            description: "标签组ID"
+            nullable: false
+            downstream_usage: ["API-WX-004"]
+            semantic_role: "PRIMARY_KEY"
+          - field: "tag_group[].group_name"
+            type: "string"
+            description: "标签组名称"
+            nullable: false
+            semantic_role: "BUSINESS_PARAM"
+          - field: "tag_group[].tag[].id"
+            type: "string"
+            description: "标签ID"
+            nullable: false
+            downstream_usage: ["API-WX-004"]
+            semantic_role: "PRIMARY_KEY"
+          - field: "tag_group[].tag[].name"
+            type: "string"
+            description: "标签名称"
+            nullable: false
+            semantic_role: "BUSINESS_PARAM"
+        error_codes:
+          - code: "0"
+            message: "success"
+            handling: ""
+
+      - api_id: "API-WX-006"
+        api_name: "创建企业群发"
+        api_path: "POST /cgi-bin/externalcontact/message/send"
+        request_params:
+          - field: "access_token"
+            type: "string"
+            required: true
+            semantic_role: "SIGNATURE"
+            source_type: "upstream_api"
+            source_api: "API-WX-001"
+            encryption: "none"
+          - field: "chat_type"
+            type: "string"
+            required: true
+            description: "群发类型：single-个人群发 group-客户群群发"
+            enum_values: ["single", "group"]
+            semantic_role: "BUSINESS_PARAM"
+            source_type: "user_input"
+          - field: "external_userid"
+            type: "array[string]"
+            required: false
+            description: "客户external_userid列表（chat_type=single且sender未指定时必传，上限10000个/次）"
+            semantic_role: "PRIMARY_KEY"
+            source_type: "upstream_api"
+            source_api: "API-WX-002"
+            encryption: "none"
+            validation: "每个成员单次最多10000个客户，每人每天最多接收10条"
+          - field: "sender"
+            type: "string"
+            required: false
+            description: "发送成员userid（不传则由系统自动分配）"
+            semantic_role: "REFERENCE"
+            source_type: "user_input"
+            encryption: "none"
+          - field: "text.content"
+            type: "string"
+            required: false
+            description: "消息文本内容"
+            max_length: "4000"
+            semantic_role: "BUSINESS_PARAM"
+            source_type: "user_input"
+            encryption: "none"
+          - field: "attachments"
+            type: "array"
+            required: false
+            description: "附件列表，支持image/link/miniprogram/video/file"
+            semantic_role: "BUSINESS_PARAM"
+            source_type: "user_input"
+            encryption: "none"
+            validation: "最多9个附件"
+        response_params:
+          - field: "msgid"
+            type: "string"
+            description: "消息ID，可用于查询发送结果"
+            nullable: true
+            downstream_usage: []
+            semantic_role: "PRIMARY_KEY"
+          - field: "fail_list"
+            type: "array"
+            description: "发送失败的客户列表[{external_userid,errcode}]"
+            nullable: true
+            semantic_role: "BUSINESS_PARAM"
+        error_codes:
+          - code: "41048"
+            message: "给客户发送消息频率过高"
+            handling: "降低群发频率，客户每人每天最多接收10条"
+          - code: "41049"
+            message: "发送条数超过上限"
+            handling: "减少单次群发人数"
+
+      - api_id: "API-WX-007"
+        api_name: "获取客户群列表"
+        api_path: "POST /cgi-bin/externalcontact/groupchat/list"
+        request_params:
+          - field: "access_token"
+            type: "string"
+            required: true
+            semantic_role: "SIGNATURE"
+            source_type: "upstream_api"
+            source_api: "API-WX-001"
+            encryption: "none"
+          - field: "status_filter"
+            type: "number"
+            required: false
+            description: "客户群状态：0-所有 1-正常 2-解散"
+            enum_values: [0, 1, 2]
+            default: "0"
+            semantic_role: "QUERY_FILTER"
+            source_type: "user_input"
+          - field: "limit"
+            type: "number"
+            required: true
+            description: "分页大小，最大1000"
+            semantic_role: "PAGINATION"
+            source_type: "user_input"
+            validation: "1-1000"
+          - field: "cursor"
+            type: "string"
+            required: false
+            description: "分页游标，首次不传"
+            semantic_role: "PAGINATION"
+            source_type: "computed"
+        response_params:
+          - field: "group_chat_list[].chat_id"
+            type: "string"
+            description: "客户群ID"
+            nullable: false
+            downstream_usage: ["API-WX-008", "API-WX-009"]
+            semantic_role: "PRIMARY_KEY"
+          - field: "group_chat_list[].status"
+            type: "number"
+            description: "群状态：0-正常 1-解散"
+            enum_values: [0, 1]
+            nullable: false
+            semantic_role: "STATUS"
+          - field: "next_cursor"
+            type: "string"
+            description: "下一页游标，为空时表示最后一页"
+            nullable: true
+            semantic_role: "PAGINATION"
+
+      - api_id: "API-WX-008"
+        api_name: "获取客户群详情"
+        api_path: "POST /cgi-bin/externalcontact/groupchat/get"
+        request_params:
+          - field: "access_token"
+            type: "string"
+            required: true
+            semantic_role: "SIGNATURE"
+            source_type: "upstream_api"
+            source_api: "API-WX-001"
+          - field: "chat_id"
+            type: "string"
+            required: true
+            semantic_role: "PRIMARY_KEY"
+            source_type: "upstream_api"
+            source_api: "API-WX-007"
+            source_field: "chat_id"
+          - field: "need_name"
+            type: "number"
+            required: false
+            description: "是否返回群成员名字：0-不返回 1-返回"
+            enum_values: [0, 1]
+            default: "0"
+            semantic_role: "BUSINESS_PARAM"
+        response_params:
+          - field: "group_chat.chat_id"
+            type: "string"
+            description: "客户群ID"
+            nullable: false
+            semantic_role: "PRIMARY_KEY"
+          - field: "group_chat.name"
+            type: "string"
+            description: "群名"
+            nullable: true
+            semantic_role: "BUSINESS_PARAM"
+          - field: "group_chat.owner"
+            type: "string"
+            description: "群主userid"
+            nullable: false
+            semantic_role: "REFERENCE"
+          - field: "group_chat.create_time"
+            type: "number"
+            description: "创建时间"
+            nullable: false
+            semantic_role: "TIMESTAMP"
+          - field: "group_chat.notice"
+            type: "string"
+            description: "群公告"
+            nullable: true
+            semantic_role: "BUSINESS_PARAM"
+          - field: "group_chat.member_list"
+            type: "array"
+            description: "群成员列表[{userid,type,join_time,join_scene,invitor}]"
+            nullable: false
+            downstream_usage: []
+            semantic_role: "BUSINESS_PARAM"
+
+      - api_id: "API-WX-009"
+        api_name: "分配离职成员的客户"
+        api_path: "POST /cgi-bin/externalcontact/transfer_customer"
+        request_params:
+          - field: "access_token"
+            type: "string"
+            required: true
+            semantic_role: "SIGNATURE"
+            source_type: "upstream_api"
+            source_api: "API-WX-001"
+          - field: "handover_userid"
+            type: "string"
+            required: true
+            description: "原跟进成员的userid（离职成员）"
+            semantic_role: "REFERENCE"
+            source_type: "user_input"
+            validation: "该成员必须在企业通讯录中且已离职"
+          - field: "takeover_userid"
+            type: "string"
+            required: true
+            description: "接替成员的userid"
+            semantic_role: "REFERENCE"
+            source_type: "user_input"
+            validation: "该成员必须在企业通讯录中且在职"
+          - field: "external_userid"
+            type: "array[string]"
+            required: true
+            description: "需转接的客户external_userid列表，单次最多100个"
+            semantic_role: "PRIMARY_KEY"
+            source_type: "upstream_api"
+            source_api: "API-WX-002"
+            validation: "必须都是handover_userid的客户"
+        response_params:
+          - field: "customer[].external_userid"
+            type: "string"
+            description: "转接的客户ID"
+            nullable: false
+            semantic_role: "PRIMARY_KEY"
+          - field: "customer[].errcode"
+            type: "number"
+            description: "转接结果：0-成功，其他-失败"
+            nullable: false
+            semantic_role: "STATUS"
+        error_codes:
+          - code: "84073"
+            message: "成员离职状态不正常"
+            handling: "检查handover_userid是否确实已离职"
+          - code: "84074"
+            message: "接替成员接替数已达上限"
+            handling: "每人单次最多接替5000个客户"
+          - code: "84061"
+            message: "不存在外部联系人的关系"
+            handling: "检查客户是否未被其他成员添加"
+
+      - api_id: "API-WX-010"
+        api_name: "获取联系客户统计"
+        api_path: "POST /cgi-bin/externalcontact/get_user_behavior_data"
+        request_params:
+          - field: "access_token"
+            type: "string"
+            required: true
+            semantic_role: "SIGNATURE"
+            source_type: "upstream_api"
+            source_api: "API-WX-001"
+          - field: "userid"
+            type: "array[string]"
+            required: true
+            description: "成员ID列表（与partyid二选一）"
+            semantic_role: "QUERY_FILTER"
+            source_type: "user_input"
+            validation: "最大100个"
+          - field: "start_time"
+            type: "number"
+            required: true
+            description: "开始时间（Unix时间戳）"
+            semantic_role: "TIMESTAMP"
+            source_type: "user_input"
+            validation: "日期范围最大30天"
+          - field: "end_time"
+            type: "number"
+            required: true
+            description: "结束时间（Unix时间戳）"
+            semantic_role: "TIMESTAMP"
+            source_type: "user_input"
+            validation: "不超过昨天"
+        response_params:
+          - field: "behavior_data[].new_apply_cnt"
+            type: "number"
+            description: "新增发起申请数"
+            nullable: false
+            semantic_role: "BUSINESS_PARAM"
+          - field: "behavior_data[].new_contact_cnt"
+            type: "number"
+            description: "新增客户数"  
+            nullable: false
+            semantic_role: "BUSINESS_PARAM"
+          - field: "behavior_data[].chat_cnt"
+            type: "number"
+            description: "聊天总数"
+            nullable: false
+            semantic_role: "BUSINESS_PARAM"
+          - field: "behavior_data[].message_cnt"
+            type: "number"
+            description: "发送消息数"
+            nullable: false
+            semantic_role: "BUSINESS_PARAM"
+          - field: "behavior_data[].reply_percentage"
+            type: "number"
+            description: "已回复聊天占比(0-100)"
+            nullable: false
+            semantic_role: "BUSINESS_PARAM"
+          - field: "behavior_data[].avg_reply_time"
+            type: "number"
+            description: "平均回复时长(秒)"
+            nullable: false
+            semantic_role: "BUSINESS_PARAM"
+          - field: "behavior_data[].transfer_customer_cnt"
+            type: "number"
+            description: "被转接客户数"
+            nullable: false
+            semantic_role: "BUSINESS_PARAM"
+        error_codes:
+          - code: "0"
+            message: "success"
+            handling: ""
+
+  # ═══════════════════════════════════════════
+  # 12. 参数流转图（V1.6.0 新增，Part13）
+  # ═══════════════════════════════════════════
+  param_flow:
+    description: "企业微信客户生命周期跨API参数融合分析"
+
+    intra_scene_param_flow:
+      - scene_id: "SC-WX-001"
+        scene_name: "服务商授权→获取企业访问凭证"
+        flows:
+          - from_api: "API-WX-AUTH-001"
+            from_field: "suite_access_token"
+            to_api: "API-WX-AUTH-002"
+            to_field: "suite_access_token"
+            dependency: "required"
+          - from_api: "API-WX-AUTH-002"
+            from_field: "permanent_code"
+            to_api: "API-WX-001"
+            to_field: "permanent_code"
+            dependency: "required"
+          - from_api: "API-WX-AUTH-002"
+            from_field: "auth_corp_info.corpid"
+            to_api: "API-WX-001"
+            to_field: "auth_corpid"
+            dependency: "required"
+          - from_api: "API-WX-001"
+            from_field: "access_token"
+            to_api: "API-WX-002"
+            to_field: "access_token"
+            dependency: "required"
+        mermaid: >
+          graph LR
+            AUTH001[suite_access_token] -->|携带| AUTH002[获取permanent_code]
+            AUTH002 -->|permanent_code| CORP001[获取企业access_token]
+            CORP001 -->|access_token| BIZ[所有业务API]
+
+      - scene_id: "SC-WX-002"
+        scene_name: "客户列表→客户详情→打标签"
+        flows:
+          - from_api: "API-WX-002"
+            from_field: "external_userid"
+            to_api: "API-WX-003"
+            to_field: "external_userid"
+            dependency: "required"
+          - from_api: "API-WX-002"
+            from_field: "external_userid"
+            to_api: "API-WX-004"
+            to_field: "external_userid"
+            dependency: "required"
+          - from_api: "API-WX-005"
+            from_field: "tag_group[].tag[].id"
+            to_api: "API-WX-004"
+            to_field: "add_tag[].tag_id"
+            dependency: "required"
+        mermaid: >
+          graph LR
+            LIST[客户列表] -->|external_userid| DETAIL[客户详情]
+            DETAIL -->|tags可读| TAGLIB[标签库查询]
+            TAGLIB -->|tag_id| MARK[打标签]
+
+      - scene_id: "SC-WX-003"
+        scene_name: "客户标签→按标签群发→统计分析"
+        flows:
+          - from_api: "API-WX-004"
+            from_field: "add_tag"
+            to_api: "API-WX-006"
+            to_field: "external_userid(按标签筛选)"
+            dependency: "required"
+          - from_api: "API-WX-006"
+            from_field: "msgid"
+            to_api: "API-WX-010"
+            to_field: "userid(统计成员)"
+            dependency: "optional"
+        mermaid: >
+          graph LR
+            TAG[客户打标签] -->|标签筛选| GROUP[按标签群发]
+            GROUP -->|发送记录| STAT[联系客户统计]
+
+      - scene_id: "SC-WX-004"
+        scene_name: "客户列表→离职继承→继承结果查询"
+        flows:
+          - from_api: "API-WX-002"
+            from_field: "external_userid"
+            to_api: "API-WX-009"
+            to_field: "external_userid"
+            dependency: "required"
+          - from_api: "API-WX-009"
+            from_field: "external_userid"
+            to_api: "API-WX-009-RESULT"
+            to_field: "external_userid(查询状态)"
+            dependency: "required"
+
+    cross_scene_param_flow:
+      - from_scene: "SC-WX-001(授权)"
+        from_api: "API-WX-001"
+        from_field: "access_token"
+        to_scene: "SC-WX-002(客户管理)"
+        to_api: "API-WX-002"
+        to_field: "access_token"
+        dependency: "required"
+      - from_scene: "SC-WX-001(授权)"
+        from_api: "API-WX-001"
+        from_field: "access_token"
+        to_scene: "SC-WX-003(群发统计)"
+        to_api: "API-WX-006"
+        to_field: "access_token"
+        dependency: "required"
+      - from_scene: "SC-WX-001(授权)"
+        from_api: "API-WX-001"
+        from_field: "access_token"
+        to_scene: "SC-WX-004(离职继承)"
+        to_api: "API-WX-009"
+        to_field: "access_token"
+        dependency: "required"
+      - from_scene: "SC-WX-002(客户管理)"
+        from_api: "API-WX-002"
+        from_field: "external_userid"
+        to_scene: "SC-WX-004(离职继承)"
+        to_api: "API-WX-009"
+        to_field: "external_userid"
+        dependency: "required"
+      mermaid: >
+        graph TB
+          subgraph 授权域
+            ACCESS[access_token]
+          end
+          subgraph 客户管理域
+            LIST[客户列表] --> DETAIL[客户详情]
+            DETAIL --> TAG[打标签]
+          end
+          subgraph 运营域
+            GROUP[群发消息] --> STAT[统计分析]
+          end
+          subgraph 生命周期域
+            TRANSFER[离职继承] --> RESULT[继承结果]
+          end
+          ACCESS -->|凭证| LIST
+          ACCESS -->|凭证| GROUP
+          ACCESS -->|凭证| TRANSFER
+          LIST -->|external_userid| TRANSFER
+
+    param_source_trace:
+      - param_name: "access_token"
+        semantic_role: "SIGNATURE"
+        origin:
+          api_id: "API-WX-001"
+          source_type: "system_generated"
+        flows_to: ["API-WX-002", "API-WX-003", "API-WX-004", "API-WX-005", "API-WX-006", "API-WX-007", "API-WX-008", "API-WX-009", "API-WX-010", "API-WX-011", "API-WX-012"]
+        trace_chain: "suite_access_token → permanent_code → access_token → 所有业务API"
+      - param_name: "external_userid"
+        semantic_role: "PRIMARY_KEY"
+        origin:
+          api_id: "API-WX-002"
+          source_type: "system_generated"
+        flows_to: ["API-WX-003", "API-WX-004", "API-WX-006", "API-WX-009"]
+        trace_chain: "客户列表 → 客户详情/打标签/群发/离职继承"
+      - param_name: "userid"
+        semantic_role: "REFERENCE"
+        origin:
+          api_id: "API-WX-013"
+          source_type: "system_generated"
+        flows_to: ["API-WX-002", "API-WX-004", "API-WX-006", "API-WX-009"]
+        trace_chain: "通讯录同步 → 客户列表查询 → 客户操作 → 离职分配"
+      - param_name: "permanent_code"
+        semantic_role: "IDEMPOTENT_KEY"
+        origin:
+          api_id: "API-WX-AUTH-002"
+          source_type: "system_generated"
+        flows_to: ["API-WX-001"]
+        trace_chain: "企业授权安装 → 永久授权码 → 换取access_token"
+
+    param_dependency_matrix:
+      description: "行=消费者API，列=生产者API，单元格=依赖参数列表"
+      matrix:
+        - consumer_api: "API-WX-002(获取客户列表)"
+          producer_api: "API-WX-001(获取access_token)"
+          params: ["access_token"]
+          dependency: "required"
+        - consumer_api: "API-WX-003(获取客户详情)"
+          producer_api: "API-WX-002(获取客户列表)"
+          params: ["external_userid"]
+          dependency: "required"
+        - consumer_api: "API-WX-004(编辑标签)"
+          producer_api: "API-WX-002(获取客户列表)"
+          params: ["external_userid"]
+          dependency: "required"
+        - consumer_api: "API-WX-004(编辑标签)"
+          producer_api: "API-WX-005(获取标签库)"
+          params: ["tag_id"]
+          dependency: "required"
+        - consumer_api: "API-WX-006(创建群发)"
+          producer_api: "API-WX-002(获取客户列表)"
+          params: ["external_userid"]
+          dependency: "required"
+        - consumer_api: "API-WX-008(获取群详情)"
+          producer_api: "API-WX-007(获取群列表)"
+          params: ["chat_id"]
+          dependency: "required"
+        - consumer_api: "API-WX-009(离职继承)"
+          producer_api: "API-WX-002(获取客户列表)"
+          params: ["external_userid"]
+          dependency: "required"
+        - consumer_api: "API-WX-010(联系客户统计)"
+          producer_api: "API-WX-001(获取access_token)"
+          params: ["access_token"]
+          dependency: "required"
+
+    param_state_association:
+      - param_name: "access_token"
+        state_machine: "授权状态机"
+        effect: "access_token有效→所有API可用 / access_token过期→所有API返回42001→触发刷新流程"
+      - param_name: "external_userid"
+        state_machine: "客户关系状态机"
+        effect: "external_userid存在→可获取详情/打标签/群发 / 客户删除员工→external_userid变为invalid→API返回84061"
+      - param_name: "permanent_code"
+        state_machine: "企业授权状态机"
+        effect: "permanent_code有效→可获取access_token / 企业取消授权→permanent_code失效→API返回40001"
+      - param_name: "handover_userid"
+        state_machine: "员工离职状态机"
+        effect: "handover_userid状态为离职→继承API可用 / 在职→返回84073(需用在职继承接口)"
+
+    param_rule_association:
+      - rule_id: "BR-WX-001(标签约束)"
+        related_params: ["add_tag", "remove_tag", "tag_group[].tag[].id"]
+      - rule_id: "BR-WX-002(群发频率约束)"
+        related_params: ["external_userid", "sender", "limit"]
+      - rule_id: "BR-WX-003(继承数量约束)"
+        related_params: ["handover_userid", "takeover_userid", "external_userid"]
+      - rule_id: "BR-WX-004(统计时间范围约束)"
+        related_params: ["start_time", "end_time"]
+
+    param_security_analysis:
+      sensitive_fields:
+        - param_name: "external_contact.name"
+          api_id: "API-WX-003"
+          encryption: "none"
+          risk: "客户微信昵称，需遵守隐私政策存储"
+        - param_name: "follow_user.remark"
+          api_id: "API-WX-003"
+          encryption: "none"
+          risk: "可能含真实姓名/手机号，存储需脱敏或加密"
+        - param_name: "external_contact.avatar"
+          api_id: "API-WX-003"
+          encryption: "none"
+          risk: "头像URL含微信CDN密钥，不可长期存储"
+      idempotent_keys:
+        - param_name: "permanent_code"
+          api_id: "API-WX-001"
+          uniqueness_mechanism: "每企业唯一，企业取消授权后重新授权会生成新的permanent_code"
+        - param_name: "auth_corpid"
+          api_id: "API-WX-001"
+          uniqueness_mechanism: "企业微信corpid全局唯一，ww开头+16位格式"
+        - param_name: "suite_ticket"
+          api_id: "API-WX-AUTH-001"
+          uniqueness_mechanism: "由企微每10分钟推送，服务商通过时间戳检测重复推送"
+      amount_fields: []
+
+  # ═══════════════════════════════════════════
+  # 13. 自动化巡检配置
+  # ═══════════════════════════════════════════
+  auto_check:
+    enabled: true
+    schedule: "monthly"
+    last_checked: "2026-07-20"
+    last_changed: "2026-07-20"
+    status: "up_to_date"

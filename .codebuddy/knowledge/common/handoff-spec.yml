@@ -1,0 +1,305 @@
+# handoff 交互说明卡挂载规范（全局 · 开发侧铁律）
+# 目的：让开发工程师把「需求文档」的交互用例说明，挂载到高保真原型对应位置，
+#       用户在原型中点击【？】图标，以抽屉形式从右到左弹出「交互用例说明卡」。
+# 关联：knowledge/common/doc-standards.yml（铁律④/⑧/⑨ 需求文档侧义务）
+#       + knowledge/common/flow-standards/uc-taxonomy.yml（用例分类体系）
+#       + 各项目主 PRD（docs/01-requirements/{项目}-超级需求文档-PRD-{version}.md）
+#       + configs/workflows/handoff.yml（handoff流程，V4.1.0代码注入阶段）
+#
+# V2.2.0 (2026-07-18) 缺陷修复：
+#   1. 【关键修复】新增 code_injection_requirement 铁律：
+#      - AI必须在用户审阅前将【？】挂载到每个原型页面
+#      - 禁止仅产出YAML/Markdown而不注入代码
+#      - 注入后自检：G-HO-INJECT-01~03
+#   2. 注入内容清单明确化：useCaseCardData + HelpButton + UseCaseDrawer + 页面标注
+#   3. dev_redlines 新增：未注入代码即展示handoff报告 → 视为流程执行不完整
+#
+# V2.1.0 (2026-07-18) 升级：
+#   1. 明确 handoff 为交互说明的「唯一集中触发入口」，开发过程不生成交互说明
+#   2. 引用 uc-taxonomy.yml 的页面类型+操作类型体系
+#   3. 对应性校验新增 UC taxonomy 合规检查
+#   4. 「开发过程中不需要交互说明」——handoff 是交付前检查点，非开发辅助
+#
+# V2.0.0 (2026-07-17) 重大升级：
+#   1. handoff 移到 /close 之前（AC→handoff→close）
+#   2. 交互卡支持就地编辑（新增/修改/补充用例）
+#   3. 编辑后回传BA，重新跑需求分析，再重跑handoff校验
+#   4. 标注粒度扩展为4级（page/button/metric/field）
+#   5. 编号体系统一为方案B扩展（UC-{系统}-{终端}-{NNN}-{SS}）
+#
+# v1.0.0 (2026-07-15) 提炼自 AI-SCRM 实践，全局生效。
+
+handoff_spec:
+  version: "2.2.0"
+  taxonomy_ref: ".codebuddy/knowledge/common/flow-standards/uc-taxonomy.yml"
+  workflow_ref: ".codebuddy/configs/workflows/handoff.yml"
+
+  # ============================================
+  # 核心约束：handoff 是交互说明的唯一集中入口
+  # ============================================
+  centralization_rule:
+    description: |
+      handoff（/handoff 命令）是项目中「交互说明卡生成+挂载+校验」的唯一集中触发点。
+      开发过程中不需要、也不应该生成交互说明——交互说明是交付物，不是开发辅助。
+      类比：代码审查在 PR 合并前集中做，而不是每写一行代码就审查一次。
+    only_trigger: "/handoff"
+    not_during: ["开发过程", "Sprint执行中", "日常编码"]
+    when_to_trigger: "AC验收通过后、/close之前（版本级）/ Sprint Review后（Sprint级）"
+    rationale: |
+      1. 交互说明的来源是「PRD用例」+「UI设计」，开发阶段两者尚在变化
+      2. 开发阶段生成交互说明会引入大量无用变更噪音
+      3. 集中触发保证PRD→Design→交互说明的三位一体一致性
+      4. handoff = 交付前质量门禁，非开发过程辅助工具
+
+  # 触发指令语义（PM / 用户下发 /handoff 时的含义）
+  trigger:
+    meaning: >
+      handoff 指令 = 开发工程师需依据「当前高保真原型的功能名称、页面名称」，
+      到「本次版本需求文档（单一主 PRD）」中检索对应 UC / PG，并将其挂载到原型对应位置。
+    mount_marker: "【？】"   # 原型中可点击的问号图标
+    panel_behavior: "点击【？】→ 抽屉从页面右侧向左滑出（right-to-left drawer）"
+
+  # 检索与挂载流程（开发必须按序执行）
+  workflow:
+    - step: 1_retrieve
+      desc: >
+        以高保真原型的「页面名称」或「功能/按钮名称」为关键词，在主 PRD 中检索：
+          - 页面级用例：PG-{系统缩写}-{终端缩码}-{NNN}（页面名一致）
+          - 功能用例：UC-{系统缩写}-{终端缩码}-{NNN}-{SS}（功能名一致）
+        命名须同源：原型页面名 = PRD 中 PG 名称；原型按钮名 = PRD 中子 UC 功能名。
+    - step: 2_match
+      desc: >
+        命中后，取该 UC / PG 的结构化内容（业务流程定位、前置条件、基本流程、
+        备选流程、数据范围、后置条件、页面指标统计）作为说明卡正文。
+    - step: 3_mount
+      desc: >
+        在原型的对应页面 / 对应操作控件旁渲染【？】图标；
+        点击后从右向左滑出抽屉，抽屉内渲染命中 UC/PG 的说明卡。
+    - step: 4_link
+      desc: >
+        说明卡底部附「查看完整需求文档」深链，指向 PRD 锚点（#fn-{系统缩写}-{终端缩码}-nnn 等）。
+
+  # ⚠️ 字体大小规范（用户明确要求"注意字体大小"）
+  typography:
+    drawer_title: 16px / 600 字重 / 主色
+    section_label: 13px / 500 字重 / 次要色（如"基本流程""备选流程"小标题）
+    body_text: 14px / 400 字重 / 正文色（行高 1.6）
+    step_number: 14px / 600 字重（流程步骤编号）
+    tag_text: 12px / 自动类型标签 [手动]/[系统自动]/[事件驱动]
+    rule: >
+      说明卡为正文辅助阅读场景，禁止小于 12px；流程步骤与正文不得低于 14px，
+      保证原型评审/验收时清晰可读。
+
+  # 抽屉交互细节
+  drawer:
+    direction: right-to-left   # 从右到左滑出
+    width: 420px               # 桌面端建议宽度
+    overlay: true              # 半透明遮罩，点击关闭
+    close: "点击遮罩 / 右上角 ✕ / ESC"
+    animation: "transform translateX，时长 240ms ease-out"
+
+  # 内容渲染约束（来自 PRD 标准用例模板，逐字段映射）
+  card_fields_mapping:
+    - prd_field: 功能编号 / 用例编号
+      card_render: 顶部徽标 "FN-{系统缩写}-{终端缩码}-NNN · UC-{系统缩写}-{终端缩码}-NNN-SS"
+    - prd_field: 所属页面(PG)
+      card_render: "所属页面：PG-{系统缩写}-{终端缩码}-NNN 页面名"
+    - prd_field: 业务流程定位（PG 级）
+      card_render: 页面卡特有，单列"页面定位"段
+    - prd_field: 页面指标统计（PG 级）
+      card_render: 页面卡特有，指标列表（含指标登记 key）
+    - prd_field: 前置条件
+      card_render: "前置：…"
+    - prd_field: 基本流程
+      card_render: 有序步骤列表（带[手动]/[系统自动]标签）
+    - prd_field: 备选流程
+      card_render: "备选/异常：…"
+    - prd_field: 数据范围(R/W)
+      card_render: "数据：R=… / W=…"
+    - prd_field: 后置条件
+      card_render: "后置：…"
+    - prd_field: 关联UC
+      card_render: 可点击跳转其他说明卡
+
+  # ⚠️ 代码注入要求（V2.2.0新增——handoff不可跳过步骤）
+  code_injection_requirement:
+    description: |
+      handoff 不仅是「生成文档」，更是「将交互卡注入高保真原型」。
+      AI 在生成 YAML/Markdown 数据后，必须将【？】按钮挂载到每个原型页面。
+      用户在原型中看不到【？】= handoff 执行不完整。
+    iron_rule: |
+      【铁律】handoff 产出物 = 文档（YAML/Markdown/Report）+ 代码（useCaseCardData + HelpButton + UseCaseDrawer + 页面标注）
+      两者缺一不可。禁止仅产出文档而不注入代码。
+    injection_checklist:
+      - item: "useCaseCardData.ts 包含本Sprint/版本所有卡片数据（allCards()全覆盖）"
+        gate: "G-HO-INJECT-01"
+      - item: "每个FN对应页面文件中有 HelpButton + UseCaseDrawer import和使用"
+        gate: "G-HO-INJECT-02"
+      - item: "npm run build 无新增TS类型错误"
+        gate: "G-HO-INJECT-03"
+
+  # 开发侧红线
+  dev_redlines:
+    - 未检索到对应 UC/PG 不得挂载空卡；须回 BA 补用例（触发 doc-standards 铁律④b）
+    - 原型页面名 / 按钮名 与 PRD 不一致时，先对齐命名（同源命名铁律）
+    - 说明卡字体不得小于 12px（typography.rule）
+    - 抽屉必须右到左滑出，不得改为模态弹窗替代
+    - 【V2.2.0新增】handoff 仅产出 YAML/Markdown 而不注入代码 → 视为流程执行不完整，必须补做 Stage 2 代码注入
+    - 【V2.2.0新增】用户在原型中看不到【？】按钮 → handoff 未完成，不允许进入 /close
+    - 【V2.3.0新增★铁律】handoff必须全量扫描所有页面的所有操作——列表操作(搜索/排序/筛选/分页/列头排序/查看/导出)+写入操作(新增/编辑/删除/导入/禁用/启用)+行内操作(查看/编辑/删除/禁用/跳转)+表单操作(新建/编辑/审批/引用数据/校验)+批量操作+导航操作——每个操作必须有独立用例卡。遗漏任何操作→handoff未完成，不允许进入/close
+    - 【V2.3.0新增★铁律】用例卡必须包含操作级UC（不限于页面级）——页面级用例卡展示该页面全部UC概览，每个操作按钮旁必须有按钮级用例卡InlineHelpMark
+
+  # ============================================
+  # 标注粒度（V2.0.0 扩展为4级）
+  # ============================================
+  annotation_levels:
+    - level: "page"
+      icon: "【？】"
+      position: "页面标题右侧"
+      content: "页面用例说明（页面目标+核心操作+状态说明）"
+      number: "PG-{系统缩写}-{终端缩码}-{NNN}"
+
+    - level: "button"
+      icon: "【？】"
+      position: "按钮hover时显示"
+      content: "操作用例说明（触发→前置→执行→反馈→后置）"
+      number: "FN-{系统缩写}-{终端缩码}-{NNN} · UC-{系统缩写}-{终端缩码}-{NNN}-{SS}"
+
+    - level: "metric"
+      icon: "【？】"
+      position: "统计指标右侧"
+      content: "指标说明（指标定义+计算公式+数据来源+更新频率+关联FN）"
+      number: "关联 FN-{系统缩写}-{终端缩码}-{NNN}"
+
+    - level: "field"
+      icon: "【？】"
+      position: "表单字段label右侧"
+      content: "字段说明（字段定义+校验规则+数据来源+是否可编辑）"
+      number: "关联 UC-{系统缩写}-{终端缩码}-{NNN}-{SS}"
+
+  # ============================================
+  # 交互卡编辑能力（V2.0.0 新增）
+  # ============================================
+  card_editing:
+    editable_fields:
+      - field: "FN编号（只读，系统生成）"
+      - field: "UC编号（只读，系统生成）"
+      - field: "用例名称（可编辑）"
+      - field: "所属页面PG（只读）"
+      - field: "参与者（可编辑）"
+      - field: "前置条件（可编辑）"
+      - field: "基本流程（可编辑，分步编号，每步标注[手动]/[系统自动]/[事件驱动]）"
+      - field: "备选流程/异常流（可编辑，可新增步骤）"
+      - field: "后置条件（可编辑）"
+      - field: "数据范围R/W（可编辑）"
+      - field: "变更标记（系统自动：new/updated/modified）"
+
+    edit_actions:
+      - action: "新增用例（页面级→在PG下新增FN/UC）"
+        trigger: "页面有交互功能但无对应FN/UC标注"
+        temp_number: "FN-NEW-{NNN}（临时编号，回传后BA正式编号）"
+      - action: "编辑现有用例（修改任意字段）"
+        trigger: "FN/UC存在但描述不完整或不一致"
+        change_mark: "updated（补充描述）或 modified（修改描述）"
+      - action: "新增异常流步骤（在现有用例下追加）"
+        trigger: "用例缺少异常场景"
+        change_mark: "updated"
+      - action: "删除用例（标记删除，回传BA确认）"
+        trigger: "功能已移除但用例仍存在"
+        change_mark: "deprecated"
+
+    save_behavior:
+      - "保存到本地（交互卡数据文件）"
+      - "标记变更类型（new/updated/modified/deprecated）"
+      - "触发批量回传（非逐条）"
+
+  # ============================================
+  # 回传机制（V2.0.0 新增——handoff回传闭环）
+  # ============================================
+  writeback_mechanism:
+    # 回传触发条件
+    trigger: "用户编辑交互卡并保存后，系统检测到变更（new/updated/modified/deprecated）"
+
+    # 回传三种类型
+    feedback_types:
+      - type: "missing_usecase"
+        name: "用例缺失（新增）"
+        trigger: "页面有交互功能但无对应FN/UC标注"
+        user_action: "在交互卡上新增用例描述"
+        system_action:
+          - "生成交互卡（临时FN编号：FN-NEW-{NNN}）"
+          - "保存后下发回传指令"
+          - "BA接收 → 在REQ中正式新增FN/UC（编号规范化为FN-{系统}-{终端}-{NNN}）"
+          - "BA更新受影响产物（信息流/状态机/业务操作矩阵等）"
+
+      - type: "insufficient_description"
+        name: "用例描述不充分（补充）"
+        trigger: "FN/UC存在但描述不完整"
+        user_action: "在交互卡上补充用例描述"
+        system_action:
+          - "更新交互卡内容（标记updated）"
+          - "保存后下发回传指令"
+          - "BA接收 → 在REQ中更新对应UC的描述"
+          - "BA同步更新受影响产物（如补充异常流→更新状态机）"
+
+      - type: "inconsistent_description"
+        name: "用例与实现不一致（修改）"
+        trigger: "FN/UC描述与实际交互行为不符"
+        user_action: "在交互卡上修改用例描述（以实际交互为准）"
+        system_action:
+          - "更新交互卡内容（标记modified）"
+          - "保存后下发回传指令"
+          - "BA接收 → 在REQ中修正对应UC的描述"
+          - "BA评估是否影响其他产物"
+
+    # 回传写入位置（PRD中的特殊区域）
+    writeback_location:
+      rule: "回传内容写入FN/UC下方的「handoff回传区」"
+      format: |
+        > ### 📝 handoff 回传区（v{version}，{日期}）
+        > **变更类型**：{new/updated/modified}
+        > **变更内容**：{用户在交互卡上编辑的内容}
+        > **回传状态**：待BA纳入需求分析
+
+    # BA处理回传
+    ba_processing:
+      - "BA读取「handoff回传区」内容"
+      - "新增用例 → 在REQ中新增FN/UC（正式编号）"
+      - "补充描述 → 在REQ中更新对应UC字段"
+      - "修改描述 → 在REQ中修正对应UC字段"
+      - "处理完成后清空「handoff回传区」（标记为已纳入）"
+      - "增量重跑受影响产物（仅受影响FN，非全量重跑）"
+
+    # 重跑范围控制
+    rerun_scope:
+      principle: "增量重跑，非全量重跑"
+      scope:
+        - "新增FN → 仅跑新增FN的产物 + 下游受影响阶段"
+        - "补充异常流 → 仅更新受影响FN的产物 + QA补充测试用例"
+        - "修改描述 → 评估是否影响设计/代码 → 如影响则重跑，否则仅更新REQ"
+      version_handling: "同版本内消化，不递增版本号"
+      rerun_handoff: "重跑后重新/handoff校验对应性，循环直到无变更"
+
+  # ============================================
+  # 对应性校验（V2.0.0 新增——handoff门禁）
+  # ============================================
+  correspondence_check:
+    rules:
+      - "每个FN必须有且仅有一个界面标注【？】（按钮级）"
+      - "每个界面标注【？】必须关联一个FN"
+      - "每个PG必须有且仅有一个页面标注【？】（页面级）"
+      - "标注内容与REQ用例描述须一致（差异→触发回传）"
+      - "每个UC编号格式必须为 UC-{系统缩写}-{终端缩码}-{NNN}-{SS}"
+      - "每个FN编号格式必须为 FN-{系统缩写}-{终端缩码}-{NNN}"
+      - "每个PG编号格式必须为 PG-{系统缩写}-{终端缩码}-{NNN}"
+      # V2.1.0 新增——UC taxonomy 合规
+      - "每个页面UC的 page_type 必须在 uc-taxonomy.yml#page_types 中定义"
+      - "每个操作UC的 operation_type 必须在 uc-taxonomy.yml#operation_types 中定义"
+      - "操作UC的触发元素名称必须与Design UI元素名称一致"
+      - "页面类型的操作UC数量必须符合 uc-taxonomy.yml 的标准（核心操作必包含）"
+    fail_action:
+      - "缺对应FN → BA补充用例"
+      - "缺对应标注 → FD补充标注"
+      - "内容不一致 → 触发回传，BA更新REQ"
+      - "UC taxonomy不合规 → 回传BA，按 uc-taxonomy.yml 规范修正"
+    pass_action: "校验通过 → 进入 /close"

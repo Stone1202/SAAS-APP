@@ -1,0 +1,60 @@
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]: 回放 - LIVE-003
+        - generic [ref=e8]: 擦音任务：5/8
+      - generic [ref=e9]:
+        - generic [ref=e10]: ▶
+        - generic [ref=e11]:
+          - text: 回放播放器区域
+          - button "查看「回放播放器」用例说明" [ref=e12] [cursor=pointer]:
+            - img [ref=e13]
+        - generic [ref=e17]:
+          - generic [ref=e18]: 00:15:32 / 01:30:00
+          - button "查看「时间轴违规标记」用例说明" [ref=e19] [cursor=pointer]:
+            - img [ref=e20]
+      - generic [ref=e23]:
+        - generic [ref=e24]:
+          - text: 擦音前后对比
+          - button "查看「擦音前后对比面板」用例说明" [ref=e25] [cursor=pointer]:
+            - img [ref=e26]
+        - generic [ref=e29]:
+          - generic [ref=e30]:
+            - generic [ref=e31]: 擦音前
+            - generic [ref=e32]: "\"欢迎大家进入直播间，今天我们带来一款xxx产品...\""
+          - generic [ref=e33]:
+            - generic [ref=e34]: 擦音后
+            - generic [ref=e35]: "\"欢迎大家进入直播间，今天我们带来一款***产品...\""
+      - generic [ref=e36]:
+        - generic [ref=e37]:
+          - generic [ref=e38]: 发布状态：
+          - generic [ref=e76]: 待核对
+          - button "查看「发布状态标签」用例说明" [ref=e39] [cursor=pointer]:
+            - img [ref=e40]
+        - generic [ref=e43]: 擦音处理中，完成后可进行人工核对
+    - generic [ref=e44]:
+      - generic [ref=e45]:
+        - generic [ref=e46]: 场次信息
+        - generic [ref=e47]: 推流ID：LIVE-003
+        - generic [ref=e48]: 开始时间：2026-07-22 14:00:00
+        - generic [ref=e49]: 结束时间：2026-07-22 15:30:00
+        - generic [ref=e50]: 峰值观看：12,580人
+      - generic [ref=e51]:
+        - generic [ref=e52]:
+          - text: 擦音模式
+          - button "擦音模式" [ref=e53] [cursor=pointer]:
+            - img [ref=e54]
+        - generic [ref=e57] [cursor=pointer]:
+          - radio "静音" [ref=e58]
+          - generic [ref=e59]: 静音
+        - generic [ref=e60] [cursor=pointer]:
+          - radio "擦音（滴滴声）" [checked] [ref=e61]
+          - generic [ref=e62]: 擦音（滴滴声）
+      - generic [ref=e64]:
+        - text: 违规记录（0）
+        - button "查看「违规记录列表」用例说明" [ref=e65] [cursor=pointer]:
+          - img [ref=e66]
+  - button "用例卡" [ref=e70] [cursor=pointer]:
+    - img [ref=e71]
+    - generic [ref=e74]: 用例卡

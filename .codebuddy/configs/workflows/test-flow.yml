@@ -1,0 +1,282 @@
+# ============================================
+# Workflow: test-flow（测试流程 V3.3.0）
+# 版本: v3.3.0
+# 最后更新: 2026-07-24
+# ============================================
+#
+# V3.3.0 升级：测试用例基于Post-Demo冻结产物
+#   1. QA读取Post-Demo冻结版BA PRD + UX设计文档生成测试用例
+#      （Demo验收完成后，BA/UX产物已被冻结，QA基于此版本而非原始PRD）
+#   2. 修复后需重新Demo确认（V5.4.0新增回流链：修复→Demo→再测试）
+#   3. Demo验收报告作为QA输入：包含UC通过状态、边界情况、用户反馈历史
+#
+# V3.2.0 升级：跨端验收+测试扫盲
+#   1. 新增 test_stage 对应扫盲专家（expert-registry.yml）
+#   2. 多端测试清单自动生成
+#
+# V3.1.0 升级：QA大脑注入（质量推理大脑）
+#   1. 新增 ai_brain 段——QA质量推理大脑
+#   2. Bug热力图预测：跨版本Bug分布→FN级热力图→指导测试资源分配
+#   3. 覆盖盲区检测：BA FN/BR vs QA TC→未覆盖测试盲区
+#   4. 回归测试智能推荐：变更影响分析→最小回归测试集
+#   5. 大脑记忆导入：BA/Arch/FD的brain_sync_export + 上版本QA大脑记忆
+#   6. 大脑同步输出→AC：验收高风险点清单
+#
+# V3.0.0 升级：
+#   1. 测试体系升级为五层（新增契约一致性测试+视觉回归）
+#   2. 契约一致性测试：验证 sim/real 返回相同结构（Zod Schema 校验）
+#   3. 对齐 C-A7 红线（单元测试架构）
+#
+# 核心原则：
+#   1. 测试用例源自 BA 产物，不是 QA 凭空编写
+#   2. V3.3.0：BA产物必须是Post-Demo冻结版本（用户已验证通过的最终需求）
+#   3. 用户仅看结果，可 /feedback 追加用例
+#   4. 测试问题 → PM 路由 BA（需求分析）→ 缺陷回流闭环
+#   5. 五层测试：契约一致性 → 单元 → 浏览器 → 白盒 → 视觉回归
+#   6. V3.1.0：QA用大脑推理，不是机械执行——80%资源投在20%高风险区
+#   7. V3.3.0：修复后需重新Demo确认方可回归测试验收
+# ============================================
+
+workflow:
+  id: "test-flow"
+  name: "测试流程（V3.3.0 基于Post-Demo冻结产物+跨端验收+测试扫盲+QA质量推理大脑）"
+  version: "3.3.0"
+  expert_registry: ".codebuddy/knowledge/common/expert-registry.yml#ba_analysis.test_stage"  # V3.2.0新增：测试阶段扫盲专家
+  trigger_command: "/init（PM 调度 QA，Demo验收完成后）"
+  owner: "qa-agent"
+  gates_reference: ".codebuddy/knowledge/common/gates-registry.yml#stages.test"
+  iron_rules_reference: ".codebuddy/knowledge/common/iron-rules-registry.yml#agents.qa_agent"
+  supervisor: "pm-agent"
+
+  # ============================================
+  # V3.1.0新增：QA质量推理大脑
+  # ============================================
+  ai_brain:
+    id: "qa_brain_v1"
+    name: "质量推理大脑"
+    description: |
+      QA不再是机械执行测试用例——QA大脑基于历史Bug模式、
+      需求覆盖分析和变更影响，推理出最高风险的测试区域，
+      指导80%测试资源投向20%高风险FN。
+    reasoning_modules:
+      - id: "bug_hotspot_prediction"
+        name: "Bug热力图预测"
+        description: |
+          基于跨版本Bug分布数据，AI生成FN级别的Bug热力图。
+          输入：跨版本Bug数据 + 当前版本FN清单 + 变更范围
+          输出：FN级Bug热力图（CRITICAL/HIGH/MEDIUM/LOW）
+          推理：历史Bug密度 × 本次变更 × 交互复杂度 → 综合风险评分
+        triggered_by: "test-flow step-1（用例生成前）"
+        priority: "CRITICAL（必须在用例生成前完成，指导测试策略）"
+      
+      - id: "coverage_blind_spot_detection"
+        name: "需求覆盖盲区检测"
+        description: |
+          AI对比BA的FN/BR清单与QA生成的TC清单，
+          检测未覆盖的测试盲区。
+          输入：BA FN清单（含BR引用） + QA TC清单 + 状态机
+          输出：盲区清单（未覆盖的FN/BR/状态转换/多端差异）
+        triggered_by: "test-flow step-1（用例生成后）"
+      
+      - id: "regression_set_recommendation"
+        name: "回归测试智能推荐"
+        description: |
+          基于变更影响分析，AI推荐最小回归测试集。
+          输入：变更影响分析 + 模块依赖拓扑 + 历史Bug关联
+          输出：三层回归集（最小集/推荐集/完整集）
+        triggered_by: "非新增类型需求时"
+      
+      - id: "risk_based_prioritization"
+        name: "风险驱动优先级排序"
+        description: |
+          综合多维风险评分，对测试用例优先级排序。
+          评分维度：历史Bug密度(40%) + 本次变更影响(30%) + 交互复杂度(15%) + 业务重要性(15%)
+        triggered_by: "test-flow step-2（测试执行前）"
+    
+    memory_import:
+      sources:
+        - "BA大脑brain_sync_export：关键BR数 + 高风险FN清单"
+        - "Arch大脑brain_sync_export：高风险接口清单 + 契约一致性检查点"
+        - "FD大脑brain_sync_export：已知高风险区域 + 自测通过场景"
+        - "上版本QA大脑记忆：Bug热力图预测vs实际分布 + 覆盖盲区检测准确率"
+        - "跨版本Bug模式库：按模块/FN/BR的Bug密度统计"
+    
+    brain_sync_export:
+      to_ac: ["验收高风险点清单（FN级+置信度）", "已知限制清单", "被测功能覆盖度报告"]
+      to_ba: ["需求覆盖缺口建议", "测试过程中发现的需求不明确项", "高风险BR验证建议"]
+
+  # ============================================
+  # 步骤定义
+  # ============================================
+  steps:
+    - id: "1"
+      name: "用例生成（源自 Post-Demo 冻结版 BA/UX 产物）"
+      agent: "qa-agent"
+      input: |
+        **V3.3.0强制要求：测试用例必须基于Post-Demo冻结版产物生成**
+        
+        输入源（必须读取Demo完成后已冻结的版本）：
+        1. BA PRD（冻结版）：projects/{project}/docs/01-requirements/*.md
+           - 注意：此PRD已经过Demo阶段的dev-change回流迭代，
+             是用户逐UC验收确认后的最终版本
+        2. UX 设计文档（冻结版）：projects/{project}/docs/03-design/*.md
+           - 视觉回归测试的基线
+        3. Arch 架构文档/契约（冻结版）：projects/{project}/docs/02-architecture/*.md + src/contracts/*.ts
+        4. Demo 验收报告：projects/{project}/docs/05-demo-reports/DEMO-*.md
+           - 包含：每个UC的通过状态、边界情况、用户反馈历史
+      pre_check:
+        description: |
+          在生成测试用例前，QA必须验证输入源是Post-Demo冻结版：
+          ① PRD §1（版本历史）中必须有Demo完成记录
+          ② PROJECT-INDEX.yml 的 current_stage 必须为 stage-6
+          ③ Demo验收报告存在且所有UC状态为PASSED
+          如任一条件不满足，拒绝生成测试用例，提示PM先完成Demo验收。
+      output:
+        - "TC-测试用例（按端拆分）：projects/{project}/docs/04-testing/test-cases/{version}/{module}/"
+      methodology: |
+        测试用例的生成源（基于 Post-Demo 冻结版）：
+        1. Post-Demo PRD的User Story → Happy Path 用例 + Ugly Path 用例 + Corner Case 用例
+        2. Post-Demo PRD的状态机 → 合法状态转换用例 + 非法状态转换用例
+        3. Post-Demo PRD的BR 业务规则 → 每条 BR 对应 ≥1 个测试用例
+        4. Post-Demo PRD的业务操作矩阵 → 每种角色×操作组合的权限验证用例
+        5. Post-Demo PRD的流程闭环 → 正向流程用例 + 逆向流程用例 + 中断恢复用例
+        6. Post-Demo PRD的多端差异 → 逐端差异点的验证用例
+        7. Demo验收报告中标注的边界情况 → 针对性边界测试用例
+        8. Post-Demo UX设计文档 → 视觉回归基线设定
+
+    - id: "2"
+      name: "五层测试执行"
+      agent: "qa-agent"
+      skills:
+        - "contract-consistency-tester"  # 第零层：契约一致性测试（V3.0.0新增）
+        - "test-runner"             # V5.1.0合并：第一~三层（unit/browser/whitebox）
+        - "visual-regression"      # 第四层：视觉回归
+      input: "仿真系统 + 测试用例"
+      output:
+        - "TR-测试报告：projects/{project}/docs/04-testing/test-reports/TR-{module}-{version}-{timestamp}.json"
+        - "BUG-Bug文档：projects/{project}/docs/04-testing/bugs/open/BUG-{YYYYMMDD}-{NNN}.md"
+        - "视觉回归报告：.codebuddy/reports/visual-regression/VR-{stream_id}-{version}.md"
+        - "跨端一致性报告（指定 --platform 时）"
+      checkpoint: true  # 人工卡点④
+      note: "你仅看结果，可 /feedback 追加用例；问题回流 BA（需求分析）"
+
+  # ============================================
+  # 五层测试详解
+  # ============================================
+  test_layers:
+    - layer: 0
+      name: "契约一致性测试（V3.0.0新增）"
+      skill: "contract-consistency-tester"
+      scope:
+        - "Zod Schema 一致性校验（sim/real 返回结构一致）"
+        - "契约定义与实现一致性校验"
+      pass_threshold: "100%"
+
+    - layer: 1
+      name: "单元测试"
+      skill: "test-runner"
+      layer: "unit"
+      scope:
+        - "sim.ts 函数级单元测试（Happy Path + 参数校验 + BR + 边界）"
+        - "adapter 集成测试（sim/real 切换验证）"
+        - "Zod Schema 校验测试（边界条件全覆盖）"
+      pass_threshold: "100%（Happy Path + 参数校验 + BR + adapter）"
+
+    - layer: 2
+      name: "浏览器测试"
+      skill: "test-runner"
+      layer: "browser"
+      scope:
+        - "Playwright 自动化浏览器操作"
+        - "页面截图对比（与设计稿基线对比）"
+        - "多端截图（pc/app/miniapp 逐端执行）"
+      pass_threshold: "95%"
+
+    - layer: 3
+      name: "白盒测试"
+      skill: "test-runner"
+      layer: "whitebox"
+      scope:
+        - "状态覆盖：遍历状态机所有合法/非法转换"
+        - "路径覆盖：遍历所有代码分支"
+        - "边界注入：注入 null/undefined/XSS/SQL注入/超长字符串"
+      pass_threshold: "90%"
+
+    - layer: 4
+      name: "视觉回归测试（v2.0.0 新增）"
+      skill: "visual-regression"
+      scope:
+        - "设计稿 vs 代码截图逐像素对比"
+        - "threshold ≥ 0.95"
+        - "多端逐端对比"
+      pass_threshold: "95% 相似度"
+      report_path: ".codebuddy/reports/visual-regression/"
+
+    # ============================================
+    # 第6层：跨端验收测试（V3.2.0新增）
+    # ============================================
+    - layer: 5
+      name: "跨端验收测试（V3.2.0新增）"
+      description: |
+        V3.2.0新增——从终端泳道图提取跨端场景，验证跨端数据流转。
+        原型阶段：Playwright多上下文 + Mock后端 → 验证跨端数据流转。
+        真实系统阶段：Playwright(后台) + CDP(APP) + 后端直查 → 验证真实跨端流转。
+        两个阶段共享：验收场景(SC-E2E) + 断言逻辑 + 测试数据。
+      scope:
+        - "从终端泳道图提取跨端流转路径（哪些操作跨端，跨端数据传递点）"
+        - "从SC场景级E2E提取跨端验收用例（含终端标注的SC）"
+        - "原型阶段：Playwright多上下文(后台Context+APP Context) + Mock后端数据流转验证"
+        - "真实系统阶段：Playwright(后台Web) + 原生WebSocket CDP(APP WebView) + 后端API直查兜底"
+        - "跨端数据一致性断言（同一数据实体在不同端的呈现一致）"
+      pass_threshold: "100%（跨端场景必须全部通过）"
+      guide: ".codebuddy/knowledge/common/qa/e2e-acceptance-guide.md"
+      scaffold: "projects/{project}/e2e-acceptance/"
+
+  # ============================================
+  # 测试阶段扫盲（V3.2.0新增）
+  # ============================================
+  test_blindspot_scan:
+    description: |
+      V3.2.0新增——测试阶段扫盲，聚焦测试覆盖完整性。
+      专家组合：QA/数据/安全专家（来自expert-registry.yml#ba_analysis.test_stage）
+      盲区焦点：异常分支/状态异常/数据一致性/边界值
+    trigger: "跨端验收场景设计完成后"
+    experts: ["qa", "data", "security"]
+    blindspots:
+      - "异常分支（跨端操作的异常路径？支付失败/网络断开/超时？）"
+      - "状态异常（状态机的非法流转？并发状态变更？）"
+      - "数据一致性（跨端数据不一致的检测？）"
+      - "边界值（极端数据量/并发/网络？）"
+    output: "补充的测试场景 + 异常路径清单"
+    freeze: "测试场景清单冻结 → 作为测试执行依据"
+
+  # ============================================
+  # Bug 管理
+  # ============================================
+  bug_management:
+    output_dir: "projects/{project}/docs/04-testing/bugs/"
+    statuses: ["open", "in_progress", "fixed", "verified", "closed"]
+    severity_levels: ["critical", "high", "medium", "low"]
+    naming: "BUG-{YYYYMMDD}-{NNN}.md"
+
+  # ============================================
+  # 交互反馈模板
+  # ============================================
+  feedback_template: |
+    📋 测试完成确认
+
+    **测试范围**：{模块列表}
+    **测试层级**：
+    - 单元测试：{通过}/{总数}（{通过率}%）
+    - 浏览器测试：{通过}/{总数}（{通过率}%）
+    - 白盒测试：{通过}/{总数}（{通过率}%）
+    - 视觉回归：{通过}/{总数}（{通过率}%）
+
+    **Bug 统计**：
+    - Critical：{数量}
+    - High：{数量}
+    - Medium：{数量}
+    - Low：{数量}
+
+    **请确认**：通过 / 补充用例：xxx / 驳回
+    （可 /feedback 追加测试用例）

@@ -1,0 +1,242 @@
+# ============================================
+# Skill: system-common-sense-analyzer（系统常识补全分析器）
+# 版本：v1.0.0
+# 创建：2026-07-20
+# ============================================
+#
+# 核心理念：
+#   这不是一个硬编码的检查清单技能。这是一个 AI 驱动的推理技能。
+#   当 BA 声明了系统类型后，AI 加载 system-blueprints.yml 推理框架，
+#   结合 PRD 的 FN 列表做语义比对，找出「基于系统常识应该存在但PRD遗漏」的功能域。
+#
+#   本技能的输出是「建议+置信度」，由 BA 做最终决策（人是决策者，AI是思考辅助）。
+#
+# 触发时机：
+#   1. requirement-flow §0.5c 融合分析后（产出需求全景图之前，检查盲区）
+#   2. requirement-flow §7 产物体系输出后（门禁 G-REQ-15 触发）
+#   3. BA 主动调用（当 BA 觉得可能需要补全时）
+#
+# 引用：
+#   - system-blueprints.yml（AI推理框架）
+#   - human-confirm-protocol.yml（确认交互规范）
+# ============================================
+
+skill:
+  id: "system-common-sense-analyzer"
+  name: "system-common-sense-analyzer（系统常识补全分析器）"
+  version: "1.0.0"
+  agents: ["ba-agent"]
+  triggers:
+    - "requirement-flow §0.5c 融合分析阶段（产出需求全景图之前，执行盲区探测）"
+    - "requirement-flow §7 checkpoint 门禁（G-REQ-15 系统常识完整性检查）"
+    - "BA 在分析过程中感觉分析不完整时主动调用"
+
+  description: |
+    AI驱动的系统常识补全分析器。核心能力：
+    1. 读取系统类型声明 + PRD的FN/UC列表 → AI推理该类型系统应该具备哪些功能域
+    2. 与当前PRD做语义比对 → 找出盲区（缺失的功能域）
+    3. 按严重性（严重/重要/锦上添花）分类盲区
+    4. 对每个盲区生成：为什么重要 + 如果不做有什么风险 + 建议的Feature描述
+    5. 产出盲区报告 → 由BA决策是否补充
+
+    这不是"检查清单"——AI会根据系统类型灵活推理，不会对"不需要"的功能提出建议。
+    用户明确排除的功能域（如"登录由SSO负责"），AI记录后不再提示。
+
+  inputs:
+    - name: "system_declaration"
+      type: "yaml"
+      source: "PRD元信息中的 system_declaration 块"
+      required: true
+      description: "系统类型声明：backends/frontends/terminals/density"
+
+    - name: "prd_fn_list"
+      type: "list"
+      source: "PRD §9 功能需求列表中的所有 FN 编号+名称+描述"
+      required: true
+      description: "已定义的功能列表，用于语义比对"
+
+    - name: "industry"
+      type: "string"
+      source: "config.yml#project.industry 或 state.json"
+      required: false
+      description: "行业类型，用于叠加行业推理"
+
+    - name: "excluded_areas"
+      type: "list"
+      source: "用户明确声明的排除项（如'登录由统一SSO负责'）"
+      required: false
+      description: "已确认不归本系统负责的功能域"
+
+    - name: "domain_knowledge"
+      type: "reference"
+      source: "领域知识库 .codebuddy/knowledge/domains/"
+      required: false
+      description: "行业领域知识，用于补充行业特有常识"
+
+  knowledge_base:
+    - ".codebuddy/knowledge/common/system-blueprints.yml"
+
+  # ============================================
+  # AI推理流程
+  # ============================================
+  ai_reasoning_pipeline:
+    description: "AI驱动的4步推理流程"
+
+    # ── 步骤1：系统类型解析 ──
+    step_1_system_type_resolution:
+      name: "系统类型解析"
+      description: |
+        AI 读取 system_declaration，解析系统类型。
+        注意：一个项目可能有多个 backends + frontends，AI 需对每个系统类型分别推理。
+
+      ai_prompt: |
+        你正在分析一个系统。系统类型声明如下：
+        {system_declaration}
+
+        请解析：
+        1. 有哪些业务后端？（如：租户业务后台、运营业务后台、业务中台...）
+        2. 有哪些业务前端？（如：B2C电商平台、数据大屏...）
+        3. 每个后端/前端运行在哪些终端？
+
+        对每个系统类型，加载 system-blueprints.yml 中对应的 layer_weights 和 ai_reasoning_prompt。
+
+    # ── 步骤2：逐层推理 ──
+    step_2_layer_reasoning:
+      name: "逐层推理"
+      description: |
+        AI 对每个系统类型，按 system-blueprints.yml 的7层推理框架逐层推理。
+        对每层，执行3个子步骤：
+          2a. 读取该层的 reasoning_prompt → AI 结合系统类型和行业生成「应该有什么」的推理
+          2b. 扫描 PRD 的 FN 列表 → AI 语义匹配该层的 typical_functional_areas
+          2c. 比对 2a（推理期望）vs 2b（PRD实际）→ 找出差异
+
+      ai_prompt_template: |
+        系统类型：{system_type}
+        行业：{industry}
+        PRD已定义的FN列表：{fn_list}
+
+        对 system-blueprints.yml 的7层推理框架，逐层分析：
+
+        第N层 {layer_name}：
+        1. 【期望推理】基于该层的 reasoning_prompt，这个系统类型应该具备哪些功能？
+        2. 【实际扫描】扫描FN列表，哪些FN覆盖了这层的功能？
+        3. 【差异分析】哪些期望功能在PRD中没有对应的FN？标记为盲区。
+
+        对每个盲区，使用 system-blueprints.yml#blind_spot_classification 分类严重性。
+
+        注意：
+        - 如果用户已经明确声明某功能由外部系统负责（excluded_areas），跳过该功能
+        - 如果某层的 weight < 0.5，可以降低推理深度
+        - 业务功能层（L2）的推理以领域知识库为主要参考
+
+    # ── 步骤3：行业增强推理 ──
+    step_3_industry_augmentation:
+      name: "行业增强推理"
+      description: |
+        AI 加载 system-blueprints.yml#industry_augmentation，
+        对当前行业，叠加行业特有的常识期待。
+
+      ai_prompt: |
+        行业：{industry}
+        行业特有常识：{industry_augmentation.extra_focus}
+
+        请检查：
+        1. 当前PRD的FN列表是否覆盖了该行业的常识功能？
+        2. 如果没有，这些是否已经在排除项中？
+        3. 如果有遗漏，添加到盲区报告中。
+
+    # ── 步骤4：生成盲区报告 ──
+    step_4_blind_spot_report:
+      name: "生成盲区报告"
+      description: |
+        AI 汇总所有盲区，生成结构化盲区报告。
+
+  # ============================================
+  # 输出结构
+  # ============================================
+  output:
+    type: "blind_spot_report"
+    description: "系统常识盲区分析报告"
+    path: "projects/{project}/.codebuddy/reports/blind-spot-reports/BSR-{project}-v{version}.json"
+
+    structure:
+      meta:
+        generated_at: "timestamp"
+        system_types: ["从system_declaration解析"]
+        industry: "行业"
+        total_fn_count: "PRD中FN总数"
+
+      layer_summary:
+        description: "按7层汇总分析结果"
+        fields:
+          - layer_id: "L0~L6"
+            layer_name: "层名称"
+            system_type: "适用的系统类型"
+            weight: "推理权重"
+            expected_count: "AI推理的期望功能域数"
+            covered_count: "PRD实际覆盖数"
+            blind_spots_count: "盲区数"
+
+      blind_spots:
+        description: "盲区详细列表"
+        item_fields:
+          - id: "BS-{NNN}"
+            layer: "L0~L6"
+            system_type: "系统类型"
+            severity: "critical | important | nice_to_have"
+            area: "功能域名称（如：登录认证）"
+            ai_reasoning: "AI推理：为什么这个功能域应该存在"
+            risk_if_missing: "如果缺少，会有什么影响"
+            suggested_features: "建议补充的Feature描述（自然语言）"
+            suggested_priority: "P0/P1/P2/P3"
+            mention_in_ux: "UX设计中是否有涉及（如画了图标但无FN）"
+
+      confirmed_exclusions:
+        description: "用户已确认排除的功能域（标记理由，不再提示）"
+
+      ai_confidence_summary:
+        description: "AI对分析结果的置信度总结"
+        overall_confidence: "high | medium | low"
+        high_confidence_items: "置信度高的盲区（这些几乎肯定是遗漏）"
+        medium_confidence_items: "置信度中的盲区（需BA确认）"
+        low_confidence_items: "置信度低的盲区（可能不是遗漏，需讨论）"
+
+  # ============================================
+  # 与 human-confirm-protocol 的集成
+  # ============================================
+  human_confirm_integration:
+    description: |
+      盲区报告产出后，BA 主导确认流程。
+      遵循 human-confirm-protocol.yml 的规范：
+      1. BA 展示盲区报告摘要 + AI置信度总结
+      2. 使用 Q2（边界确认型）交互：每个盲区提供「纳入/排除/替代方案」
+      3. 使用批量决策清单：多个盲区合并一次性询问
+      4. 人的决策回写到 excluded_areas 或补充到 PRD
+      BA 是最终决策者，AI 只提供建议。
+
+    confirm_template: |
+      ┌─────────────────────────────────────────────┐
+      │ 📋 系统常识盲区分析报告                      │
+      │                                              │
+      │ 系统类型：{system_types}                      │
+      │ 行业：{industry}                              │
+      │ PRD已定义FN：{total_fn_count}个               │
+      │ AI发现盲区：{total_blind_spots}个             │
+      │                                              │
+      │ ── 严重盲区（{critical_count}个）──            │
+      │ {critical_items_summary}                      │
+      │                                              │
+      │ ── 重要盲区（{important_count}个）──           │
+      │ {important_items_summary}                     │
+      │                                              │
+      │ ── 锦上添花（{nice_to_have_count}个）──        │
+      │ {nice_to_have_items_summary}                  │
+      │                                              │
+      │ AI置信度：{overall_confidence}                 │
+      │                                              │
+      │ 请确认哪些盲区需要补充到PRD：                  │
+      │ ① 全部纳入（推荐严重+重要）                   │
+      │ ② 仅纳入严重盲区                             │
+      │ ③ 逐个确认                                   │
+      │ ④ 以上都不对，我直接说                       │
+      └─────────────────────────────────────────────┘

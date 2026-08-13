@@ -1,0 +1,15 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: 📺
+      - generic [ref=e7]: 视频画面区域
+    - generic [ref=e8]:
+      - generic [ref=e9]: 主
+      - generic [ref=e10]:
+        - generic [ref=e11]: 主播小A
+        - generic [ref=e12]: 25,600 人观看
+  - generic [ref=e14]: 房间号：ROOM-001
+  - generic [ref=e15]: 点击画面以启用声音效果
+  - button "用例卡" [ref=e17] [cursor=pointer]:
+    - img [ref=e18]
+    - generic [ref=e21]: 用例卡

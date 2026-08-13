@@ -1,0 +1,327 @@
+# 领域知识：腾讯云直播质检（Live Stream Moderation）
+# 版本: v2.0.0
+# 创建日期: 2026-07-18
+# 来源: 腾讯云CSS文档（国际版）
+# 分类: ai（AI内容审核）
+# SDL升级: V2.0.0 新增场景驱动学习结构
+# ============================================
+# 学习来源：
+#   - https://intl.cloud.tencent.com/zh/document/product/267/37453（新手指南）
+#   - https://intl.cloud.tencent.com/document/product/267/58265（审核模板配置）
+#   - https://intl.cloud.tencent.com/document/product/267/31074（回调模板配置）
+#   - https://intl.cloud.tencent.com/document/product/267/58643（音频审核事件通知）
+#   - https://intl.cloud.tencent.com/document/product/267/70286（智能擦除）
+#   - https://intl.cloud.tencent.com/document/product/267/30760（API概览）
+# ============================================
+
+version: "v2.0.0"
+name: "tencent-live-moderation"
+category: "ai"
+learning_method: "scenario_driven_v1.0.0"
+description: "腾讯云直播质检（直播审核）——实时监测直播内容安全性，含图片审核+音频审核+智能擦除"
+
+# ============================================
+# SDL: Scenario-Driven Learning V1.0.0
+# ============================================
+sdl:
+  domain_roles:
+    - role: "SCRM平台（集成方）"
+      description: "集成腾讯云CSS直播审核能力，为SCRM客户提供内容安全保障"
+    - role: "直播运营人员"
+      description: "配置审核策略、查看审核结果、执行人工处置"
+    - role: "审核人员"
+      description: "处理AI审核标记的疑似违规内容，做出最终判断"
+    - role: "腾讯云CSS平台"
+      description: "提供直播截图、音频审核、智能擦除等底层AI能力"
+
+  business_problems:
+    - id: "BP-LM-001"
+      problem: "直播内容违规风险高，人工审核无法实时覆盖"
+      impact: "直播内容实时产生，违规内容(涉黄/暴恐/违禁词)瞬间流出即造成不可挽回的品牌与合规损失"
+    - id: "BP-LM-002"
+      problem: "直播中的违规内容一旦播出即造成品牌损失"
+      impact: "直播是实时媒体，无事后编辑机会，违规内容播出的每一秒都在放大风险"
+    - id: "BP-LM-003"
+      problem: "审核人员工作量大，重复性内容审核浪费人力"
+      impact: "人工审核员需持续盯屏，疲劳导致漏审，且大量正常内容消耗审核资源"
+    - id: "BP-LM-004"
+      problem: "直播回放中遗留的违规片段需要智能擦除"
+      impact: "直播回放长期留存，历史违规片段若未被清理将成为定时炸弹"
+    - id: "BP-LM-005"
+      problem: "SCRM中的直播营销功能需要内容安全保障"
+      impact: "SCRM平台嵌入直播营销后，内容合规责任从直播平台转移到SCRM运营方"
+
+  scenario_maps:
+    - id: "SC-LM-001"
+      name: "直播实时审核（音频流+截图审核）"
+      flow: "主播推流 → CSS截图/音频分片 → AI审核识别 → 违规触发回调 → SCRM展示审核事件 → 运营处置(断流/忽略)"
+      key_roles: ["主播", "腾讯云CSS平台", "SCRM平台（集成方）", "直播运营人员"]
+    - id: "SC-LM-002"
+      name: "违规内容智能擦除"
+      flow: "AI审核识别违规音频 → 智能擦除模板匹配 → 静音/蜂鸣声替换 → 观众听到处理后音频 → 擦除回调通知SCRM"
+      key_roles: ["腾讯云CSS平台", "主播", "观众"]
+    - id: "SC-LM-003"
+      name: "直播回放审核"
+      flow: "直播结束生成回放 → 回放内容提交审核 → AI识别遗留违规片段 → 审核人员确认 → 执行擦除 → 安全回放上线"
+      key_roles: ["直播运营人员", "审核人员", "腾讯云CSS平台"]
+
+  cross_domain_bridges:
+    - from: "live-moderation"
+      to: "wechat-work"
+      description: "违规审核告警通过企业微信机器人/应用消息实时通知运营人员"
+      trigger: "SC-LM-001 审核事件触发回调"
+    - from: "live-moderation"
+      to: "volcano-smart-outbound"
+      description: "高危违规内容触发火山引擎智能外呼，语音通知相关负责人"
+      trigger: "SC-LM-001 高置信度违规(score>90)触发语音告警"
+
+  role_perspectives:
+    - role: "运营人员视角"
+      concerns: ["审核策略配置便捷性", "违规事件列表的筛选与排序", "处置操作（断流/忽略）的响应速度", "审核数据看板的统计维度"]
+    - role: "审核人员视角"
+      concerns: ["疑似违规内容的置信度展示", "截图/音频证据的可查看性", "批量审核提高效率", "复审(Review)流程的完整性"]
+    - role: "主播视角（合规要求）"
+      concerns: ["审核规则透明（知道什么不能说/不能播）", "智能擦除的延迟感知（静音/蜂鸣声是否影响观众体验）", "误判申诉渠道"]
+
+# ============================================
+# Part 1: 业务泳道
+# ============================================
+business_lanes:
+  - lane: "运营人员"
+    actions: ["配置审核模板", "配置回调模板", "配置智能擦除模板", "配置自定义关键词库", "查看审核记录"]
+  
+  - lane: "腾讯云CSS"
+    actions: ["截图/音频分片", "AI审核识别", "触发回调通知", "执行智能擦除", "存储不合规证据到COS"]
+  
+  - lane: "SAAS平台"
+    actions: ["接收回调通知", "展示审核事件", "人工处置（断流/忽略）", "审核数据看板"]
+  
+  - lane: "主播"
+    actions: ["OBS推流", "音频被实时审核", "违禁内容被静音/蜂鸣声替换"]
+  
+  - lane: "观众"
+    actions: ["观看直播", "听到处理后的音频（静音或蜂鸣声）"]
+
+# ============================================
+# Part 2: 业务流程
+# ============================================
+business_processes:
+  process_1:
+    name: "审核配置流程"
+    steps:
+      - "运营创建审核模板（选择审核类型：图片/音频/音频文字识别）"
+      - "运营配置截图间隔（2-300秒）+音频分片时长（15-60秒）"
+      - "运营配置COS存储桶（存储不合规截图/音频）"
+      - "运营创建回调模板（配置回调URL+回调密钥）"
+      - "运营绑定审核模板+回调模板到推流域名"
+      - "5-10分钟后生效（仅影响新推流，不影响正在进行中的流）"
+  
+  process_2:
+    name: "直播审核执行流程"
+    steps:
+      - "主播通过OBS推流"
+      - "CSS按截图间隔自动截图+按分片时长自动分片音频"
+      - "AI审核引擎识别截图/音频内容"
+      - "若不合规 → 存储证据到COS + 触发回调通知SAAS平台"
+      - "若配置了智能擦除 → 实时静音/蜂鸣声替换违禁音频片段"
+      - "SAAS平台接收回调 → 展示审核事件 → 运营处置"
+  
+  process_3:
+    name: "智能擦除流程（核心）"
+    steps:
+      - "依赖审核模板的'音频文字识别'配置"
+      - "识别不合规音频内容"
+      - "执行擦除：静音擦除（默认）或蜂鸣声擦除（Beep滴滴声）"
+      - "输出擦除后的音频流给观众"
+      - "触发智能擦除回调通知（event_type见回调事件）"
+
+# ============================================
+# Part 3: 业务信息流
+# ============================================
+information_flow:
+  - from: "运营"
+    to: "腾讯云CSS"
+    info: "审核模板配置+回调模板配置+智能擦除配置"
+    trigger: "运营在控制台配置"
+  
+  - from: "腾讯云CSS"
+    to: "COS存储"
+    info: "不合规截图(.jpg)+不合规音频片段(.wav)"
+    trigger: "AI审核识别到不合规内容"
+  
+  - from: "腾讯云CSS"
+    to: "SAAS平台"
+    info: "回调JSON通知（含审核结果+置信度+违规类型+关键词+音频分片URL）"
+    trigger: "审核事件触发"
+  
+  - from: "腾讯云CSS"
+    to: "观众"
+    info: "擦除后的音频流（静音或蜂鸣声）"
+    trigger: "智能擦除生效"
+
+# ============================================
+# Part 4: 审核类型与参数
+# ============================================
+audit_types:
+  image_recognition:
+    name: "图片识别"
+    description: "审核直播截图中的不合规内容"
+    sub_types: ["鉴黄", "OCR文字识别", "自定义关键词库匹配"]
+  
+  audio_recognition:
+    name: "音频识别"
+    description: "审核直播音频中的不合规内容（仅支持中文音频）"
+    sub_types: ["自定义关键词库匹配"]
+  
+  audio_text_recognition:
+    name: "音频文字识别"
+    description: "用于智能擦除功能，不触发审核回调"
+    note: "智能擦除依赖此配置"
+
+audit_template_params:
+  screenshot_interval: { range: "2-300秒", default: 2, description: "截图间隔，越短粒度越细成本越高" }
+  audio_segment_duration: { range: "15-60秒", default: 15, description: "音频分片时长，不影响计费" }
+  cos_storage: { required: true, description: "不合规截图/音频存储到COS存储桶" }
+  storage_path: { default: "/Audit/{Year}-{Month}-{Day}/", description: "存储路径" }
+  file_name: { default: "{StreamID}-Audit-{Hour}-{Minute}-{Second}{Ext}", description: "文件名格式" }
+
+# ============================================
+# Part 5: 智能擦除配置
+# ============================================
+intelligent_erasure:
+  definition: "直播审核2.0功能，实时识别不合规音频+隐私图像并自动擦除"
+  
+  audio_erasure:
+    mute: { name: "静音擦除", description: "将不合规音频片段静音处理（默认）" }
+    beep: { name: "蜂鸣声擦除", description: "将不合规音频片段替换为Beep滴滴声" }
+  
+  privacy_erasure:
+    face_blur: "人脸模糊"
+    license_plate_blur: "车牌模糊"
+    flag_blur: "旗帜模糊"
+  
+  dependencies:
+    - "必须绑定审核模板中已开启'音频文字识别'的模板"
+    - "首次使用需授权MPS（媒体处理服务）产品权限"
+  
+  constraints:
+    - "智能擦除与字幕功能互斥：同时配置时仅字幕+音频擦除生效，图像擦除失效"
+    - "绑定/修改/解绑仅影响新推流，不影响正在进行的流"
+
+# ============================================
+# Part 6: 回调事件通知
+# ============================================
+callback_events:
+  audio_moderation:
+    event_type: 315
+    description: "音频审核事件通知"
+    trigger: "音频审核识别到可能不合规内容（默认仅返回不合规结果）"
+    
+    core_fields:
+      hit_flag: { type: "Number", values: "0未触发/1已触发" }
+      score: { type: "Number", range: "0-100", description: "置信度，100最高" }
+      label: { type: "String", values: "Normal/Porn/Abuse/Ad/Custom" }
+      sub_label: { type: "String", description: "子标签" }
+      suggestion: { type: "String", values: "Block(阻断)/Review(复审)/Pass(通过)" }
+      status: { type: "Number", values: "2正常" }
+      asr_text: { type: "String", description: "文本转写内容" }
+      duration: { type: "Number", description: "语音识别时长（秒）" }
+      seq: { type: "Number", description: "音频序列号" }
+      stream_id: { type: "String", description: "流ID" }
+    
+    text_results:
+      description: "文本对话审核结果"
+      fields: [Label, Keywords, LibId, LibName, LibType, Score, Suggestion, SubLabel, HitInfos]
+      hit_infos: [Type(Model/Keyword), Keyword, LibName, Positions[{Start,End}]]
+    
+    moan_results:
+      description: "低俗内容审核结果"
+      fields: [Label(Moan), Score, Suggestion, StartTime, EndTime, SubLabel]
+    
+    recognition_results:
+      description: "语音识别结果标签"
+      fields: [Label(Teenager/Gender), Tags[{Name, Score, StartTime, EndTime}]]
+    
+    asr_full_results:
+      description: "详细分片检测数据"
+      fields: [appearing_point, confidence, create_time, id, periods, url]
+  
+  intelligent_erasure_callback:
+    event_type: "见智能擦除事件通知"
+    description: "智能擦除执行结果回调"
+    doc_url: "https://intl.cloud.tencent.com/document/product/267/73169"
+  
+  screenshot_callback:
+    description: "截图事件通知"
+    doc_url: "https://intl.cloud.tencent.com/document/product/267/38083"
+  
+  stream_callback:
+    description: "推流/断流回调"
+    doc_url: "https://intl.cloud.tencent.com/document/product/267/38081"
+
+callback_template_params:
+  template_name: { max_length: 30, chars: "中文/字母/数字/下划线/连字符" }
+  template_description: { max_length: 100 }
+  callback_key: { max_length: 32, chars: "字母+数字", description: "签名验证密钥，sign=MD5(key+t)" }
+  callback_url: { description: "接收回调的HTTP/HTTPS地址" }
+
+# ============================================
+# Part 7: API清单
+# ============================================
+api_list:
+  category: "Screencapturing and Porn Detection APIs"
+  apis:
+    - name: "CreateLiveSnapshotRule", action: "创建截图规则", url: "https://intl.cloud.tencent.com/document/api/267/30835"
+    - name: "CreateLiveSnapshotTemplate", action: "创建截图模板", url: "https://intl.cloud.tencent.com/document/api/267/30834"
+    - name: "CreateScreenshotTask", action: "创建截图任务", url: "https://intl.cloud.tencent.com/document/api/267/54799"
+    - name: "DeleteLiveSnapshotRule", action: "删除截图规则", url: "https://intl.cloud.tencent.com/document/api/267/30833"
+    - name: "DeleteLiveSnapshotTemplate", action: "删除截图模板", url: "https://intl.cloud.tencent.com/document/api/267/30832"
+    - name: "DescribeLiveSnapshotRules", action: "获取截图规则列表", url: "https://intl.cloud.tencent.com/document/api/267/30831"
+    - name: "DescribeLiveSnapshotTemplate", action: "获取单个截图模板", url: "https://intl.cloud.tencent.com/document/api/267/30830"
+    - name: "DescribeLiveSnapshotTemplates", action: "获取截图模板列表", url: "https://intl.cloud.tencent.com/document/api/267/30829"
+    - name: "ModifyLiveSnapshotTemplate", action: "修改截图模板配置", url: "https://intl.cloud.tencent.com/document/api/267/30828"
+  data_types_url: "https://intl.cloud.tencent.com/document/product/267/30767"
+  error_codes_url: "https://intl.cloud.tencent.com/document/product/267/30851"
+
+# ============================================
+# Part 8: 计费
+# ============================================
+pricing:
+  image_audit: "0.2294 USD / 千张图片"
+  audio_audit: "0.0021 USD / 分钟"
+  cos_storage: "另行计费（参考COS产品定价）"
+  intelligent_erasure: "CSS增值费用 + MPS智能识别费用"
+
+# ============================================
+# Part 9: 关键注意事项
+# ============================================
+key_notes:
+  - "审核模板绑定后5-10分钟生效"
+  - "绑定/修改/解绑仅影响新推流，不影响正在进行的流（需停止重新推流才应用新规则）"
+  - "默认仅返回不合规结果，合规结果不返回"
+  - "音频审核仅支持中文音频"
+  - "智能擦除依赖审核模板的'音频文字识别'配置"
+  - "智能擦除与字幕功能互斥"
+  - "首次使用智能擦除需授权MPS产品权限"
+  - "COS存储桶如允许公开读取且含敏感内容，可能被封禁"
+
+# ============================================
+# Part 10: 子链接索引（深度学习参考）
+# ============================================
+sub_links:
+  core:
+    - { title: "审核模板配置", url: "https://intl.cloud.tencent.com/document/product/267/58265" }
+    - { title: "回调模板配置", url: "https://intl.cloud.tencent.com/document/product/267/31074" }
+    - { title: "音频审核事件通知", url: "https://intl.cloud.tencent.com/document/product/267/58643" }
+    - { title: "智能擦除", url: "https://intl.cloud.tencent.com/document/product/267/70286" }
+    - { title: "API概览", url: "https://intl.cloud.tencent.com/document/product/267/30760" }
+  extended:
+    - { title: "直播审核总览", url: "https://intl.cloud.tencent.com/document/product/267/58267" }
+    - { title: "审核配置（域名级绑定/解绑）", url: "https://intl.cloud.tencent.com/document/product/267/58266" }
+    - { title: "自定义关键词库", url: "https://intl.cloud.tencent.com/document/product/267/58264" }
+    - { title: "智能擦除事件通知", url: "https://intl.cloud.tencent.com/document/product/267/73169" }
+    - { title: "截图事件通知", url: "https://intl.cloud.tencent.com/document/product/267/38083" }
+    - { title: "推流/断流回调", url: "https://intl.cloud.tencent.com/document/product/267/38081" }
+    - { title: "如何接收事件通知（通用协议）", url: "https://intl.cloud.tencent.com/document/product/267/38080" }
+    - { title: "数据类型定义", url: "https://intl.cloud.tencent.com/document/product/267/30767" }
+    - { title: "错误码", url: "https://intl.cloud.tencent.com/document/product/267/30851" }

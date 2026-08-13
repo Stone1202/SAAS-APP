@@ -1,0 +1,19 @@
+# ============================================
+# 业务规则知识库索引
+# 版本：v1.0.0
+# 最后更新：2026-07-16
+# ============================================
+# 记录所有业务规则的注册表。
+# BA 需求分析时按领域查找相关规则。
+# 每次 /learn-domain Step9 后自动更新。
+# ============================================
+
+rules:
+  # 示例（待 /learn-domain 学习后填充）
+  # - { domain: "退款流", file: "rules/refund-rules.yml", rule_count: 0, version: "" }
+  # - { domain: "分账", file: "rules/split-payment-rules.yml", rule_count: 0, version: "" }
+
+stats:
+  total_domains: 0        # 已提炼规则的领域数
+  total_rules: 0          # 总规则数
+  last_updated: "2026-07-16"
