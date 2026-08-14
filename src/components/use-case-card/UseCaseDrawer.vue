@@ -499,7 +499,7 @@ const PG_NAMES: Record<string, string> = {
   'PG-SHP-APP-013': '项目会员页',
   'PG-SHP-APP-014': '直播详情页',
   'PG-OPS-PC-001': '搜索管理',
-  'PG-OPS-PC-002': '广告位管理',
+  'PG-OPS-PC-002': 'BANNER管理',
   'PG-OPS-PC-003': '金刚区管理',
   'PG-OPS-PC-004': '直播推荐管理',
   'PG-OPS-PC-005': '商品推荐管理',
@@ -511,7 +511,7 @@ const PG_NAMES: Record<string, string> = {
   'PG-TNT-PC-002': '门店管理',
   'PG-TNT-PC-004': '营销分类',
   'PG-TNT-PC-005': '项目信息管理',
-  'PG-TNT-PC-006': '广告位管理',
+  'PG-TNT-PC-006': 'BANNER管理',
   'PG-TNT-PC-007': '金刚区管理',
   '—': '—',
 };

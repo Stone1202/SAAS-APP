@@ -25,7 +25,8 @@
       <el-button type="primary" @click="openAdd">+ 新增入口</el-button>
     </div>
 
-    <el-table :data="filteredEntries" border stripe style="width: 100%">
+    <!-- v3.1.56：el-table 绑定改为分页后的数据 pagedEntries（原 filteredEntries） -->
+    <el-table :data="pagedEntries" border stripe style="width: 100%">
       <el-table-column prop="id" label="入口ID" width="120" show-overflow-tooltip />
       <el-table-column label="图标" width="80" align="center">
         <template #default="{ row }">
@@ -63,6 +64,16 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <!-- v3.1.56 新增：分页（始终渲染，≤1页时翻页按钮自动禁用，每页10条） -->
+    <el-pagination
+      v-model:current-page="kkCurrentPage"
+      :page-size="kkPageSize"
+      :total="filteredEntries.length"
+      layout="total, prev, pager, next"
+      small
+      style="margin-top:12px; justify-content:flex-end;"
+    />
 
     <el-dialog v-model="dialogVisible" :title="editing ? '编辑入口' : '新增入口'" width="560px">
       <el-form :model="form" label-width="90px">
@@ -156,6 +167,7 @@ function applyKkFilters() {
   _kkKeyword.value = kkFilterKeyword.value;
   _kkJumpType.value = kkFilterJumpType.value;
   _kkStatus.value = kkFilterStatus.value;
+  kkCurrentPage.value = 1;
 }
 function resetKkFilters() {
   kkFilterKeyword.value = '';
@@ -164,7 +176,16 @@ function resetKkFilters() {
   _kkKeyword.value = '';
   _kkJumpType.value = '';
   _kkStatus.value = '';
+  kkCurrentPage.value = 1;
 }
+
+// v3.1.56 新增：分页（每页10条，始终渲染）
+const kkCurrentPage = ref(1);
+const kkPageSize = 10;
+const pagedEntries = computed(() => {
+  const start = (kkCurrentPage.value - 1) * kkPageSize;
+  return filteredEntries.value.slice(start, start + kkPageSize);
+});
 
 // 当前操作人（mock）
 const CURRENT_OPERATOR = '租户管理员';

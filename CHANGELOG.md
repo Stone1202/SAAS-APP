@@ -4,6 +4,118 @@
 
 ---
 
+## [v3.1.52] — 2026-08-14 ✅ 手动推荐选择器改编辑模式：总数上限10条+预勾选已有+可取消勾选移除+确认全量同步
+
+**需求流**: STR-SAAS-002 | **阶段**: 开发 | **PRD版本**: v3.1.52
+
+### Changed（选择器弹窗交互重定义）
+1. **"最多10条"=手动推荐总数上限**：`SELECTOR_MAX=10` 由"弹窗单次勾选上限"改为"手动推荐总数上限（含已有+本次勾选）"，超出时提示"手动推荐最多 10 条（当前已选 N 条）"并回滚勾选保留前10条
+2. **候选列表不再过滤已选项**：`selectorOptions` 删除 `addedIds` 排除逻辑——已选内容在弹窗中正常显示（保留搜索），支持取消勾选（=移除）
+3. **打开弹窗预勾选已有**：`openSelector()` 初始化 `selectorSelected` = 当前草稿中已有手动推荐；翻页/搜索变化时 `watch(pagedSelectorOptions)` + `syncSelectorSelection()` 自动对齐勾选态（不清空其它页已选，el-table 加 row-key 保证跨页稳定）
+4. **确认 = 全量同步**：`confirmSelector()` 重写——取消勾选的已有推荐从列表移除、新勾选的追加（保留原 sort_order，新增排后面），允许全取消（=清空手动推荐）；"已选N条"为当前总已选数
+5. **文案微调**：弹窗标题"选择X（可取消已选 · 最多10条）"，底部提示"当前已选 N 条（最多 10 条）"（0条时橙色提示"确认后将清空手动推荐"），确认按钮"确认添加"→"确认"
+
+### 影响范围
+6. 组件单点修改全部5个场景统一生效：首页推荐（直播/商品）+ 商城管理（商城列表/精选商品/精选直播）
+
+### 修改文件清单（1 代码 + 1 用例卡 + 3 文档 = 5 个）
+- 代码：`ScenarioPanel.vue`
+- 用例卡：`admin-use-cases.ts`（UC-OPS-RECOMMEND-001~009 共9个卡：总数上限+编辑模式验收点5处、"已选项在列表中显示并预勾选"5处、basicFlow添加流程4处）
+- 文档：`17-APP端电商域-PRD-v3.1.0.md` + `design-map.json` + `CHANGELOG.md`
+
+### 质量验证
+- TypeScript 类型检查：0错误 ✅
+- IDE Lint：0错误 ✅
+
+### 同步修改文档
+- PRD: v3.1.51 → v3.1.52
+- design-map.json: v3.1.58 → v3.1.59
+
+---
+
+## [v3.1.51] — 2026-08-14 ✅ 首页推荐/商城管理场景面板优化：选择器最多10条+去手动推荐与预览分页
+
+**需求流**: STR-SAAS-002 | **阶段**: 开发 | **PRD版本**: v3.1.51
+
+### Changed（选择器弹窗数量上限）
+1. **ScenarioPanel.vue 列表选择器弹窗**：新增 `SELECTOR_MAX=10` 上限——勾选超过10条时 `ElMessage.warning("最多选择 10 条")`，通过 clearSelection + toggleRowSelection 回滚勾选状态；底部提示由"已选 X 个{类型}"改为"已选 X 条，最多选择 10 条"；弹窗内分页（每页10条）保留不变
+
+### Changed（手动推荐列表去分页）
+2. **ScenarioPanel.vue 手动推荐列表**：删除 el-pagination 分页器，表格 `:data` 由 pagedManualList 改为 manualList 全量展示；isFirstInPage/isLastInPage 排序边界改为全局判断（首条不可上移、末条不可下移）
+
+### Changed（推荐效果预览去分页）
+3. **ScenarioPanel.vue 推荐效果预览**：删除 el-pagination 分页器，新增 `PREVIEW_MAX=30` 前30条截断全量展示（visiblePreviewItems），标题改为"推荐效果预览（手动 + 规则叠加排序 · 前30条）"，角标从1连续编号
+
+### 影响范围
+4. 组件单点修改全部5个场景统一生效：首页推荐（直播/商品）+ 商城管理（商城列表/精选商品/精选直播）
+
+### 修改文件清单（1 代码 + 1 用例卡 + 3 文档 = 5 个）
+- 代码：`ScenarioPanel.vue`
+- 用例卡：`admin-use-cases.ts`（UC-OPS-RECOMMEND-001~009 共9个卡同步：选择器上限验收点4处+去分页描述+前30条截断）
+- 文档：`17-APP端电商域-PRD-v3.1.0.md` + `design-map.json` + `CHANGELOG.md`
+
+### 质量验证
+- TypeScript 类型检查：0错误 ✅
+- IDE Lint：0错误 ✅
+
+### 同步修改文档
+- PRD: v3.1.50 → v3.1.51
+- design-map.json: v3.1.57 → v3.1.58
+
+---
+
+## [v3.1.50] — 2026-08-14 ✅ 首页推荐展示条数去"留空=无上限"文案+规则引擎移除"按项目品类"维度
+
+**需求流**: STR-SAAS-002 | **阶段**: 开发 | **PRD版本**: v3.1.50
+
+### Changed（展示条数文案精简）
+1. **ScenarioPanel.vue 展示条数编辑器**：删除 `placeholder="留空=无上限"`，hint 由"（留空=首页展示全部；填6=首页只展示前6条）"改为"（填6=首页只展示前6条）"——实际范围限制为直播 1-10 / 商品 1-100（v3.1.47 已设上限），不允许无上限
+
+### Changed（规则引擎维度清理）
+2. **recommend-dimensions.ts 移除"按项目品类"维度**：删除 `DIM_PROJECT_CATEGORY` 定义及 `PROJECT_CATEGORY_OPTIONS` 常量，从 `DIMENSION_REGISTRY` 注册表移除——项目类型规则可用维度为按项目/按行业/按会员数/按门店数（存量规则 rule-project-industry-members 使用 industry+member_count，不含 project_category，不受影响）
+
+### 修改文件清单（2 代码 + 1 用例卡 + 3 文档 = 6 个）
+- 代码：`ScenarioPanel.vue` + `recommend-dimensions.ts`
+- 用例卡：`admin-use-cases.ts`（UC-OPS-RECOMMEND-001/004 展示条数文案 6 处 + UC-OPS-RECOMMEND-011 规则类型补"项目"+新增"按项目品类已移除"验收点）
+- 文档：`17-APP端电商域-PRD-v3.1.0.md` + `design-map.json` + `CHANGELOG.md`
+
+### 质量验证
+- TypeScript 类型检查：0错误 ✅（npx vue-tsc --noEmit）
+- IDE Lint：0错误 ✅
+
+### 同步修改文档
+- PRD: v3.1.49 → v3.1.50
+- design-map.json: v3.1.56 → v3.1.57
+
+---
+
+## [v3.1.49] — 2026-08-13 ✅ 直播状态筛选去"已结束"选项+平台首页直播推荐去"N场直播中"文字
+
+**需求流**: STR-SAAS-002 | **阶段**: 开发 | **PRD版本**: v3.1.49
+
+### Changed（直播状态筛选统一去"已结束"选项）
+1. **MallPage.vue 精选直播状态筛选**：`liveStatusOptions` 数组移除 `{ value: 'ended', label: '已结束' }`，保留全部状态/直播中/预告/回放四项（与推荐引擎 sortLivesByDefaultRule 排除 ended 的逻辑一致——已结束直播不进入推荐流，筛选项无意义）
+2. **ProjectMall.vue 项目商城直播Tab状态筛选**：`statusOptions` 数组移除"已结束"选项（同上逻辑）
+3. **StoreItems.vue 门店二级页直播Tab状态筛选**：`liveFilterOptions` 数组移除"已结束"选项（同上逻辑）
+
+### Changed（平台首页直播推荐区精简）
+4. **PlatformHome.vue 直播推荐区**：移除"N场直播中"文字标签及相关 `ph-sec-live-text`/`ph-sec-live-dot`/`liveCount` 计算属性和 pulse 动画 CSS——直播状态已由 LiveCard 组件内部状态标签展示，板块标题仅保留"直播推荐"+图标+"更多"入口，不再重复显示直播数量统计
+
+### 修改文件清单（3 代码 + 3 文档 = 6 个）
+- 代码：`MallPage.vue` + `ProjectMall.vue` + `StoreItems.vue`（状态筛选去"已结束"）
+- 代码：`PlatformHome.vue`（去"N场直播中"文字——已于 v3.1.48 之前完成）
+- 文档：`17-APP端电商域-PRD-v3.1.0.md` + `design-map.json` + `CHANGELOG.md`
+
+### 质量验证
+- TypeScript 类型检查：0错误 ✅（npx vue-tsc --noEmit）
+- IDE Lint：0错误 ✅
+
+### 同步修改文档
+- PRD: v3.1.48 → v3.1.49
+- design-map.json: v3.1.55 → v3.1.56
+
+---
+
 ## [v3.1.48] — 2026-08-13 ✅ 禁用项目会员层权益"允许查看不允许使用"精化（用例卡+BR-SHP-043同步）
 
 **需求流**: STR-SAAS-002 | **阶段**: 开发 | **PRD版本**: v3.1.48

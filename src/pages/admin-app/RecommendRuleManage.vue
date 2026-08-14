@@ -109,9 +109,8 @@
       </el-table-column>
     </el-table>
 
-    <!-- v3.1.42: 分页 -->
+    <!-- v3.1.42: 分页（v3.1.56：去掉v-if条件，始终渲染，≤1页时翻页按钮自动禁用） -->
     <el-pagination
-      v-if="filteredRules.length > rulePageSize"
       v-model:current-page="ruleCurrentPage"
       :page-size="rulePageSize"
       :total="filteredRules.length"

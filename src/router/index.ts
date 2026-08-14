@@ -27,7 +27,7 @@
  * 后台管理路由（v3.1.0）：
  *   /admin/projects        | 运营后台-项目列表（v3.1.37 新增，从租户后台迁移）
  *   /admin/search          | 运营后台-搜索管理
- *   /admin/ad              | 运营后台-广告位管理
+ *   /admin/ad              | 运营后台-BANNER管理
  *   /admin/kingkong        | 运营后台-金刚区管理
  *   /admin/recommend-rule  | 运营后台-规则引擎管理（v3.1.31）
  *   /admin/home-recommend   | 运营后台-首页推荐（v3.1.35，2Tab：直播/商品推荐）
@@ -36,7 +36,7 @@
  *   /tenant/projects/:projectId/stores       | 租户后台-门店管理（v3.1.37：项目列表入口移至运营后台）
  *   /tenant/projects/:projectId/marketing-categories | 租户后台-营销分类管理
  *   /tenant/projects/:projectId/profile        | 租户后台-项目管理
- *   /tenant/projects/:projectId/banners        | 租户后台-广告位管理
+ *   /tenant/projects/:projectId/banners        | 租户后台-BANNER管理
  *   /tenant/projects/:projectId/kingkong       | 租户后台-金刚区管理
  */
 
@@ -209,7 +209,7 @@ const routes: RouteRecordRaw[] = [
         path: 'ad',
         name: 'AdminAd',
         component: AdManage,
-        meta: { terminal: 'pc-operator', system: 'SAAS运营后台', description: '广告位管理' },
+        meta: { terminal: 'pc-operator', system: 'SAAS运营后台', description: 'BANNER管理' },
       },
       {
         path: 'kingkong',
@@ -281,7 +281,7 @@ const routes: RouteRecordRaw[] = [
         path: 'projects/:projectId/banners',
         name: 'TenantProjectBanners',
         component: ProjectBannerManage,
-        meta: { terminal: 'pc-tenant', system: 'SAAS租户后台', description: '广告位管理' },
+        meta: { terminal: 'pc-tenant', system: 'SAAS租户后台', description: 'BANNER管理' },
       },
       {
         path: 'projects/:projectId/kingkong',

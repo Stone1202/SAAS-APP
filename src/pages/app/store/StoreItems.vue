@@ -217,7 +217,6 @@ const liveFilterOptions = [
   { label: '直播中', value: 'live' },
   { label: '预告', value: 'upcoming' },
   { label: '回放', value: 'replay' },
-  { label: '已结束', value: 'ended' },
 ];
 
 const filteredLives = computed(() => {

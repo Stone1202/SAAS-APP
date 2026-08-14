@@ -176,23 +176,6 @@ const DIM_INDUSTRY: DimensionDef = {
   compare: (va, vb, dim) => compareDiscreteMulti(va || '', vb || '', dim.selected_values),
 };
 
-/** 按项目品类维度（仅项目推荐，多选） */
-const PROJECT_CATEGORY_OPTIONS: DimensionOption[] = [
-  { value: 'daily', label: '日用百货' },
-  { value: 'health', label: '常规保健品' },
-];
-
-const DIM_PROJECT_CATEGORY: DimensionDef = {
-  dim_type: 'project_category',
-  label: '按项目品类',
-  value_type: 'discrete_multi',
-  target_types: ['project'],
-  options: PROJECT_CATEGORY_OPTIONS,
-  placeholder: '选择品类（可多选）',
-  getValue: (item: any) => item.category,
-  compare: (va, vb, dim) => compareDiscreteMulti(va || '', vb || '', dim.selected_values),
-};
-
 /** 按会员数维度（仅项目推荐，连续） */
 const DIM_MEMBER_COUNT: DimensionDef = {
   dim_type: 'member_count',
@@ -228,7 +211,6 @@ export const DIMENSION_REGISTRY: DimensionDef[] = [
   DIM_SALES,
   DIM_CREATED_AT,
   DIM_INDUSTRY,
-  DIM_PROJECT_CATEGORY,
   DIM_MEMBER_COUNT,
   DIM_STORE_COUNT,
 ];

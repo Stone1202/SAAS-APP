@@ -211,7 +211,6 @@ const liveStatusOptions = [
   { value: 'live', label: '直播中' },
   { value: 'upcoming', label: '预告' },
   { value: 'replay', label: '回放' },
-  { value: 'ended', label: '已结束' },
 ];
 
 // ============================================

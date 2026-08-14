@@ -1,14 +1,14 @@
 {
-  "doc_id": "UX-APP-DESIGN-v3.1.55",
+  "doc_id": "UX-APP-DESIGN-v3.1.58",
   "module": "APP端配置式装修电商",
-  "version": "v3.1.55",
-  "related_prd": "docs/01-requirements/17-APP端电商域-PRD-v3.1.0.md (v3.1.48)",
+  "version": "v3.1.59",
+  "related_prd": "docs/01-requirements/17-APP端电商域-PRD-v3.1.0.md (v3.1.51)",
   "related_brainstorm": "docs/00-brainstorm/APP端/confirmed/BR-脑暴文档-APP端-确认稿.md",
   "design_flow_version": "V3.5.0",
   "design_standard_version": "V3.0.0",
   "output_standard_version": "V2.0.0",
   "created": "2026-08-08",
-  "last_updated": "2026-08-13 (v3.1.55 禁用项目会员层权益'允许查看不允许使用'用例卡UC-OPS-CONFIG-006+UC-SHP-STORE-001+BR-SHP-043精化)",
+  "last_updated": "2026-08-14 (v3.1.58 首页推荐/商城管理场景面板优化——选择器最多10条+手动推荐列表与预览去分页+预览前30条截断)",
   "designer": "UX Agent",
   "reviewer": "BA Agent",
   "platform": ["PC端(运营后台+租户后台)", "移动端APP(消费者)"],
@@ -53,7 +53,7 @@
       { "id": "PG-OPS-PC-005", "name": "商品推荐管理(首页推荐Tab)", "route": "/admin/home-recommend", "uc": ["UC-OPS-RECOMMEND-004","UC-OPS-RECOMMEND-005","UC-OPS-RECOMMEND-006"], "fn": "FN-OPS-PC-005", "note": "v3.1.35合并至HomeRecommendManage首页推荐页商品Tab" },
       { "id": "PG-OPS-PC-006", "name": "项目列表管理", "route": "/admin/projects", "uc": ["UC-OPS-CONFIG-005","UC-OPS-CONFIG-006","UC-OPS-CONFIG-007"], "fn": "FN-SHP-ADMIN-007", "note": "v3.1.51商城名称全局唯一+不超20汉字校验 | v3.1.50回退：项目名称/所属租户/行业恢复disabled只读 | v3.1.47增强：新增商城名称列+去掉品类/门店数/会员数+logo上传+核心字段只读+菜单归入运营管理子菜单" },
       { "id": "PG-OPS-PC-007", "name": "商城管理", "route": "/admin/mall-manage", "uc": ["UC-OPS-RECOMMEND-007","UC-OPS-RECOMMEND-008","UC-OPS-RECOMMEND-009"], "fn": "FN-OPS-PC-008", "note": "v3.1.41新增：3Tab(商城列表/精选商品/精选直播)，使用ScenarioPanel组件管理3个推荐场景" },
-      { "id": "PG-OPS-PC-008", "name": "规则引擎管理", "route": "/admin/recommend-rule", "uc": ["UC-OPS-RECOMMEND-010","UC-OPS-RECOMMEND-011","UC-OPS-RECOMMEND-012"], "fn": "FN-OPS-PC-009", "note": "v3.1.41新增：规则实体CRUD+维度配置+模板快捷创建+引用计数" },
+      { "id": "PG-OPS-PC-008", "name": "规则引擎管理", "route": "/admin/recommend-rule", "uc": ["UC-OPS-RECOMMEND-010","UC-OPS-RECOMMEND-011","UC-OPS-RECOMMEND-012"], "fn": "FN-OPS-PC-009", "note": "v3.1.41新增：规则实体CRUD+维度配置+模板快捷创建+引用计数 | v3.1.57：项目类型规则移除'按项目品类'维度(可用维度：按项目/按行业/按会员数/按门店数)" },
       { "id": "PG-OPS-PC-009", "name": "功能页面管理", "route": "/admin/function-pages", "uc": ["UC-OPS-OPS-CONFIG-008"], "fn": "FN-OPS-PC-011", "note": "v3.1.44新增：白名单注册表替代自由输入URL，builtin不可删+business/activity可CRUD" }
     ],
     "tenant": [

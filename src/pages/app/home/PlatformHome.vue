@@ -54,8 +54,6 @@
         <div class="ph-sec-left">
           <span class="ph-sec-icon">📺</span>
           <span class="ph-sec-title">直播推荐</span>
-          <span class="ph-sec-live-dot"></span>
-          <span class="ph-sec-live-text">{{ liveCount }}场直播中</span>
         </div>
         <span class="ph-sec-more" @click="router.push('/app/mall?tab=featuredLives')">更多 ›</span>
       </div>
@@ -185,8 +183,6 @@ const liveRecommends = computed(() => {
     // 不传 ruleId —— 走默认规则（sortLivesByDefaultRule 已预排序 allItems）
   });
 });
-
-const liveCount = computed(() => projectStore.liveRooms.filter(l => l.status === 'live').length);
 
 // ========== 商品推荐（叠加模式 BR-SHP-030 + 多维度排序链 + 可见范围过滤 v3.1.30）==========
 // v3.1.31: 接入规则引擎
@@ -346,14 +342,6 @@ function onScan() {
 .ph-sec-left { display: flex; align-items: center; gap: 6px; }
 .ph-sec-icon { font-size: 18px; }
 .ph-sec-title { font-size: 16px; font-weight: 700; color: #111; }
-.ph-sec-live-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: #F5222D;
-  animation: pulse 1.5s infinite;
-}
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-.ph-sec-live-text { font-size: 11px; color: #F5222D; font-weight: 600; }
 .ph-sec-more { font-size: 12px; color: #999; cursor: pointer; }
 
 /* 商品 */

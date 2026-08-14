@@ -19,14 +19,6 @@
         <el-option label="启用" value="active" />
         <el-option label="禁用" value="inactive" />
       </el-select>
-      <el-select v-model="filterTenant" placeholder="全部租户" style="width: 160px" clearable>
-        <el-option
-          v-for="t in projectStore.tenants"
-          :key="t.tenant_id"
-          :label="t.name"
-          :value="t.tenant_id"
-        />
-      </el-select>
       <el-button type="primary" size="small" @click="applyProjectFilters">筛选</el-button>
       <el-button size="small" @click="resetProjectFilters">重置</el-button>
     </div>
@@ -221,11 +213,9 @@ const INDUSTRY_LABELS: Record<string, string> = {
 // 搜索与筛选
 const searchKeyword = ref('');
 const filterStatus = ref<string | undefined>(undefined);
-const filterTenant = ref<string | undefined>(undefined);
 // v3.1.44: 筛选工作副本
 const _keyword = ref('');
 const _status = ref<string | undefined>(undefined);
-const _tenant = ref<string | undefined>(undefined);
 
 const filteredProjects = computed(() => {
   let list = projectStore.projects;
@@ -238,9 +228,6 @@ const filteredProjects = computed(() => {
   if (_status.value) {
     list = list.filter(p => p.status === _status.value);
   }
-  if (_tenant.value) {
-    list = list.filter(p => p.tenant_id === _tenant.value);
-  }
   return list;
 });
 
@@ -248,16 +235,13 @@ const filteredProjects = computed(() => {
 function applyProjectFilters() {
   _keyword.value = searchKeyword.value;
   _status.value = filterStatus.value;
-  _tenant.value = filterTenant.value;
   currentPage.value = 1;
 }
 function resetProjectFilters() {
   searchKeyword.value = '';
   filterStatus.value = undefined;
-  filterTenant.value = undefined;
   _keyword.value = '';
   _status.value = undefined;
-  _tenant.value = undefined;
   currentPage.value = 1;
 }
 

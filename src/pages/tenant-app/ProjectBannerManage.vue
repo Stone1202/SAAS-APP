@@ -65,8 +65,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <!-- v3.1.56：去掉v-if条件，分页始终渲染（≤1页时翻页按钮自动禁用） -->
     <el-pagination
-      v-if="list.length > pageSize"
       v-model:current-page="currentPage"
       :page-size="pageSize"
       :total="filteredList.length"

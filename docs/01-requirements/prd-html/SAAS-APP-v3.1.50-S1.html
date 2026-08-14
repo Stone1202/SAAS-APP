@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SAAS-APP APP端电商域 v3.1.45 — 需求文档</title>
+<title>SAAS-APP APP端电商域 v3.1.50 — 需求文档</title>
 <!-- 五类图已预渲染为高清PNG，无需Mermaid JS运行时 -->
 <style>
 :root{--c-bg:#f8f9fa;--c-surface:#fff;--c-border:#e2e8f0;--c-text:#1a202c;--c-text-muted:#64748b;--c-accent:#FF6B35;--c-accent-light:#fff3ed;--c-accent-dark:#e85a2a;--c-red:#dc2626;--c-orange:#ea580c;--c-green:#16a34a;--c-gray:#94a3b8;--c-blue:#2563eb;}
@@ -103,11 +103,11 @@ tr:nth-child(even) td{background:#fafbfc;}
   <div class="title">SAAS-APP APP端电商域 — 产品需求文档</div>
   <div class="subtitle">配置式装修电商平台 · 四层层级模型(平台→租户→项目→门店) · 三端协同(消费者APP + 运营后台 + 租户后台)</div>
   <div class="meta">
-    <span>版本：v3.1.45</span>
+    <span>版本：v3.1.48</span>
     <span>doc_id：REQ-APP-PRD-v3.1.0</span>
     <span>需求流：STR-SAAS-002</span>
     <span>类型：新增</span>
-    <span>日期：2026-08-07 ~ 2026-08-11</span>
+    <span>日期：2026-08-07 ~ 2026-08-14</span>
     <span class="badge">P0</span>
     <span class="badge">27 FN · 54 UC · 45 BR · 20 ENT</span>
     <span>策略：纯前端模拟 · localStorage 持久化 · 不对接后端 API</span>
@@ -391,6 +391,7 @@ tr:nth-child(even) td{background:#fafbfc;}
     </div>
     <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-auto">系统自动</span> 加载后台商品推荐的所有可见商品 → 渲染 ProductCard 列表（叠加模式排序，无上限）</li></ol></div>
     <div class="uc-segment"><div class="uc-segment-title">分页</div><p>每页 20 条，"加载更多"按钮翻页</p></div>
+    <div class="uc-segment"><div class="uc-segment-title">商品卡说明（v3.1.46 精简）</div><p>ProductCard 已移除收藏按钮与门店标签，全平台 6 处复用（平台首页/商城页/项目首页/项目商城页/搜索结果/门店商品列表）全局生效。</p></div>
     <div class="uc-segment"><div class="uc-segment-title">数据范围 (R/W)</div><p>R: RecommendItem, Product</p></div>
   </div>
 
@@ -614,6 +615,7 @@ tr:nth-child(even) td{background:#fafbfc;}
     </table></div>
     </div>
     <div class="callout callout-info"><b>管理说明：</b>项目首页的 BANNER 位、直播推荐、商品推荐由租户后台管理，与 APP 首页管理分离。</div>
+    <div class="uc-segment"><div class="uc-segment-title">项目停用状态（v3.1.48 精化）</div><p>项目被禁用后显示停用提示条，会员权益<b>仅可查看、不允许使用</b>：积分兑换弹窗拦截"项目已停用，暂不支持兑换"、券抵扣入口不展示、余额提现弹窗拦截"项目已停用，暂不支持提现"、签到按钮禁用。验收点：兑换/抵扣/提现均弹窗拦截。</p></div>
   </div>
 
   <div class="uc-card" id="fn-009a">
@@ -758,19 +760,16 @@ tr:nth-child(even) td{background:#fafbfc;}
   </div>
 
   <div class="uc-card" id="fn-014">
-    <div class="fn-header"><div class="fn-id">FN-SHP-APP-014 · 直播详情页 <span class="badge badge-new">v3.1.1 补充</span></div><div class="fn-name">PG-SHP-APP-014 · /app/live/:liveId · 组件 LiveDetail</div></div>
-    <div class="uc-header"><span class="uc-id">UC-SHP-APP-014-01</span><span class="uc-name">直播详情页加载</span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
-    <div class="screenshot-wrap">
-      <img src="screenshots/PG-SHP-APP-014-直播详情.png" alt="直播详情页（L1锚点截图）" loading="lazy">
-      <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-SHP-APP-014 · 直播详情页 · 2026-08-11 实时截取（390×844）</div>
-    </div>
+    <div class="fn-header"><div class="fn-id">FN-SHP-APP-014 · 直播详情页 <span class="badge badge-new">v3.1.1 补充</span> <span class="badge badge-new">v3.1.46 空展位</span></div><div class="fn-name">PG-SHP-APP-014 · /app/live/:liveId · 组件 LiveDetail</div></div>
+    <div class="uc-header"><span class="uc-id">UC-SHP-APP-014-01</span><span class="uc-name">直播详情页加载（空展位）</span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
+    <div class="callout callout-info"><b>v3.1.46 改版：</b>直播详情页全部内容移除，改为<b>空页展位</b>——删除封面/直播信息/回放入口/直播商品/所属项目入口，保留手机壳容器+顶部状态栏+返回按钮+用例卡，中间显示"直播详情页 / 页面建设中，敬请期待"占位说明。路由 /app/live/:liveId 及 LiveCard 跳转入口保持不变。</div>
     <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol>
       <li><span class="tag tag-auto">系统自动</span> 解析路由参数，获取 liveId</li>
-      <li><span class="tag tag-auto">系统自动</span> 加载 LiveRoom 数据</li>
-      <li><span class="tag tag-auto">系统自动</span> 渲染直播封面/标题/主播名/状态标签/观看人数</li>
-      <li><span class="tag tag-auto">系统自动</span> 根据状态显示回放观看入口（仅 replay 状态可观看）</li>
+      <li><span class="tag tag-auto">系统自动</span> 渲染空展位容器（手机壳+顶部状态栏+返回按钮）</li>
+      <li><span class="tag tag-auto">系统自动</span> 中间区域展示"页面建设中，敬请期待"占位说明</li>
+      <li><span class="tag tag-manual">手动</span> 用户点击返回按钮 → 返回上一页</li>
     </ol></div>
-    <div class="callout callout-info"><b>范围说明：</b>仅展示直播信息+回放入口，<b>不含实时直播推流/观看功能</b></div>
+    <div class="uc-segment"><div class="uc-segment-title">项目禁用拦截</div><p>保留 BR-SHP-043 Layer3 逻辑：onMounted 获取所属 project_id 并 checkProjectActive，inactive 时弹窗拦截返回。</p></div>
   </div>
 
   <!-- §8.2 运营后台 -->
@@ -852,7 +851,8 @@ tr:nth-child(even) td{background:#fafbfc;}
       <img src="screenshots/PG-OPS-PC-003-金刚区管理.png" alt="金刚区管理（L1锚点截图）" loading="lazy">
       <div class="screenshot-caption"><span class="sc-level">L1 锚点截图</span>PG-OPS-PC-003 · 运营后台-金刚区管理 · 2026-08-11 实时截取（1440×900）</div>
     </div>
-    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 新增/编辑/删除金刚区入口 → 设置名称/图标/渐变色/跳转类型(jump_type)/跳转目标(jump_id) → 保存 → 自动记录修改人/修改时间</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 新增/编辑/删除金刚区入口 → 设置名称/图标(上传图片，≤200KB 转 base64)/跳转类型(jump_type)/跳转目标(jump_id) → 保存 → 自动记录修改人/修改时间</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">图标说明（v3.1.47 调整）</div><p>图标由输入框改为 el-upload 上传图片（限制 200KB+FileReader 转 base64），渐变色输入框已删除。APP 端 KingKongGrid 按 icon 值以 http/data: 开头显示 &lt;img&gt;，否则保留 emoji 兼容旧数据。</p></div>
     <div class="uc-segment"><div class="uc-segment-title">状态切换</div><p>列表状态列支持开关直接切换（active/disabled），切换时自动记录修改人/修改时间</p></div>
     <div class="uc-segment"><div class="uc-segment-title">跳转类型统一</div><p>使用 JumpTargetPicker 组件（与广告位/搜索管理统一），jump_type 为 product/project/live/url</p></div>
   </div>
@@ -933,6 +933,7 @@ tr:nth-child(even) td{background:#fafbfc;}
       <div class="screenshot-caption"><span class="sc-level">L2 增量截图</span>PG-OPS-PC-006 · 项目禁用弹窗 · 点击禁用按钮+填写禁用原因</div>
     </div>
     <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol><li><span class="tag tag-manual">手动</span> 点击"禁用" → 弹出禁用确认弹窗 → 填写禁用原因(可选) → 确认禁用 → 项目 status 改为 inactive → BR-SHP-043 分层拦截生效</li></ol></div>
+    <div class="uc-segment"><div class="uc-segment-title">特别说明（v3.1.48 精化）</div><p>禁用后会员权益（积分/优惠券/余额/会员等级/签到）<b>允许查看、不允许使用</b>：积分明细可查看但积分商城兑换弹窗拦截"项目已停用，暂不支持兑换"、抵扣因无法下单（Layer4 下单支付已拦截）自然不可用；券列表/券详情可查看但无抵扣入口；余额明细可查看但提现弹窗拦截"项目已停用，暂不支持提现"；签到按钮禁用不可获取奖励；会员等级/权益清单仅展示不可获取。</p></div>
     <div class="uc-segment"><div class="uc-segment-title">后置条件</div><ol><li>项目及关联内容在前端隐藏，历史订单售后不受影响</li></ol></div>
   </div>
 
@@ -1009,7 +1010,7 @@ tr:nth-child(even) td{background:#fafbfc;}
   </div>
 
   <div class="uc-card" id="fn-tnt-006">
-    <div class="fn-header"><div class="fn-id">FN-TNT-PC-006 · 项目 Banner 管理 <span class="badge badge-new">v3.1.19 新增</span></div><div class="fn-name">PG-TNT-PC-006 · /tenant/projects/:projectId/banners · 组件 ProjectBannerManage</div></div>
+    <div class="fn-header"><div class="fn-id">FN-TNT-PC-006 · 项目广告位管理 <span class="badge badge-new">v3.1.19 新增</span> <span class="badge badge-new">v3.1.47 改名</span></div><div class="fn-name">PG-TNT-PC-006 · /tenant/projects/:projectId/banners · 组件 ProjectBannerManage</div></div>
     <div class="uc-header"><span class="uc-id">UC-TNT-PC-006-01</span><span class="uc-name">项目 Banner CRUD</span><span class="uc-priority"><span class="badge badge-p1">P1</span></span></div>
     <div class="screenshot-wrap">
       <img src="screenshots/PG-TNT-PC-006-项目Banner管理.png" alt="租户后台-项目Banner管理（L1锚点截图）" loading="lazy">
@@ -1035,7 +1036,7 @@ tr:nth-child(even) td{background:#fafbfc;}
     <div class="uc-segment"><div class="uc-segment-title">基本流程</div><ol>
       <li><span class="tag tag-auto">系统自动</span> 加载项目金刚区列表（KingKongEntry project_id=当前项目）</li>
       <li><span class="tag tag-manual">手动</span> 新增/编辑/删除入口（同运营后台 KingKongManage 完整功能）</li>
-      <li><span class="tag tag-manual">手动</span> 设置名称/图标/渐变色/跳转配置（JumpTargetPicker 隐藏"项目主页"跳转+锁定 project_id）</li>
+      <li><span class="tag tag-manual">手动</span> 设置名称/图标(上传图片 ≤200KB 转 base64)/跳转配置（JumpTargetPicker 隐藏"项目主页"跳转+锁定 project_id，v3.1.47 起无渐变色）</li>
       <li><span class="tag tag-manual">手动</span> 设置排序+启用开关（列表状态列开关切换）</li>
       <li><span class="tag tag-manual">手动</span> 保存（自动记录修改人/修改时间）</li>
     </ol></div>
@@ -1092,7 +1093,7 @@ tr:nth-child(even) td{background:#fafbfc;}
     <div class="br-item"><div class="br-id">BR-SHP-040</div><div class="br-text">项目 LOGO 上传校验：JPG/PNG 格式，大小 ≤2MB，建议 200×200px</div></div>
     <div class="br-item"><div class="br-id">BR-SHP-041</div><div class="br-text">项目维度推荐直播默认规则：live→upcoming→replay+started_at 倒序，排除 ended，默认前 4 条</div></div>
     <div class="br-item"><div class="br-id">BR-SHP-042</div><div class="br-text">平台首页直播推荐脱离规则引擎：默认规则排序+手动推荐叠加+display_limit 截取</div></div>
-    <div class="br-item"><div class="br-id">BR-SHP-043</div><div class="br-text">项目禁用分层拦截：5 层（数据层/路由层/详情层/交易层/会员层）"软停用"策略</div></div>
+    <div class="br-item"><div class="br-id">BR-SHP-043</div><div class="br-text">项目禁用分层拦截：5 层（数据层/路由层/详情层/交易层/会员层）"软停用"策略。Layer5 会员层（v3.1.48 精化）：会员权益内容（积分/优惠券/余额/会员等级/签到）<b>允许查看、不允许使用</b>——积分明细可查看但积分商城兑换弹窗拦截"项目已停用，暂不支持兑换"；券列表/券详情可查看但无抵扣入口；余额明细可查看但提现弹窗拦截"项目已停用，暂不支持提现"；签到按钮禁用不可获取奖励；会员等级/权益清单仅展示不可获取</div></div>
     <div class="br-item"><div class="br-id">BR-SHP-044</div><div class="br-text">规则引用生效状态：pending(待生效)→active(已生效)，异步处理 2 秒模拟</div></div>
   </div>
 
@@ -1200,7 +1201,7 @@ tr:nth-child(even) td{background:#fafbfc;}
     <tr><td>FN-SHP-APP-011</td><td>门店详情展示基本信息+位置+推荐直播+商品(按分类)</td><td>人工验证门店详情</td><td>P1</td></tr>
     <tr><td>FN-SHP-APP-012</td><td>商品详情页展示商品信息+门店/项目入口(不含加购下单)</td><td>人工验证商品详情页</td><td>P0</td></tr>
     <tr><td>FN-SHP-APP-013</td><td>项目会员页展示会员积分/优惠券/等级/零钱</td><td>人工验证项目会员页</td><td>P1</td></tr>
-    <tr><td>FN-SHP-APP-014</td><td>直播详情页展示直播信息+回放入口(不含实时流)</td><td>人工验证直播详情页</td><td>P1</td></tr>
+    <tr><td>FN-SHP-APP-014</td><td>直播详情页空展位（v3.1.46：页面建设中占位+返回按钮+项目禁用拦截）</td><td>人工验证直播详情页</td><td>P1</td></tr>
     <tr><td>FN-OPS-PC-001</td><td>搜索管理 CRUD+热搜词关联自定义结果</td><td>人工验证后台配置→APP 生效</td><td>P0</td></tr>
     <tr><td>FN-OPS-PC-002</td><td>广告位 CRUD+图片上传+跳转配置</td><td>人工验证广告配置→APP Banner 展示</td><td>P0</td></tr>
     <tr><td>FN-OPS-PC-003</td><td>金刚区 CRUD+跳转配置，APP 首页金刚区展示</td><td>人工验证金刚区配置→APP 展示</td><td>P1</td></tr>
@@ -1212,7 +1213,7 @@ tr:nth-child(even) td{background:#fafbfc;}
     <tr class="dep"><td>~~FN-TNT-PC-003~~</td><td>~~项目首页配置~~ ⚠️ deprecated</td><td>~~无需验收~~</td><td>—</td></tr>
     <tr><td>FN-TNT-PC-004</td><td>商品营销分类 CRUD→APP 项目商城页分类展示</td><td>人工验证分类管理→商城页展示</td><td>P1</td></tr>
     <tr><td>FN-TNT-PC-005</td><td>项目信息编辑(名称/LOGO 上传/商城名称)</td><td>人工验证项目信息管理</td><td>P1</td></tr>
-    <tr><td>FN-TNT-PC-006</td><td>项目 Banner CRUD(迁移运营后台功能+锁定项目)</td><td>人工验证项目 Banner 配置→项目首页展示</td><td>P1</td></tr>
+    <tr><td>FN-TNT-PC-006</td><td>项目广告位 CRUD(迁移运营后台功能+锁定项目，v3.1.47 由"Banner管理"改名)</td><td>人工验证项目广告位配置→项目首页展示</td><td>P1</td></tr>
     <tr><td>FN-TNT-PC-007</td><td>项目金刚区 CRUD(迁移运营后台功能+锁定项目)</td><td>人工验证项目金刚区配置→项目首页展示</td><td>P1</td></tr>
   </table>
 
@@ -1261,7 +1262,7 @@ tr:nth-child(even) td{background:#fafbfc;}
     <tr><td>门店详情(信息/位置/直播/商品分类)</td><td class="yes">✅ 展示</td><td class="no">—</td><td class="no">—</td></tr>
     <tr><td>项目会员页(积分/优惠券/等级/零钱)</td><td class="yes">✅ 展示</td><td class="no">—</td><td class="no">—</td></tr>
     <tr><td>商品详情页(商品信息+门店/项目入口)</td><td class="yes">✅ 展示</td><td class="no">—</td><td class="no">—</td></tr>
-    <tr><td>直播详情页(直播信息+回放入口)</td><td class="yes">✅ 展示</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td>直播详情页(空展位占位，v3.1.46)</td><td class="yes">✅ 展示</td><td class="no">—</td><td class="no">—</td></tr>
     <tr><td>搜索(搜索页+结果页)</td><td class="yes">✅ 搜索</td><td class="no">—</td><td class="no">—</td></tr>
     <tr><td>广告位管理</td><td class="no">—</td><td class="yes">✅ CRUD</td><td class="no">—</td></tr>
     <tr><td>金刚区管理</td><td class="no">—</td><td class="yes">✅ CRUD</td><td class="no">—</td></tr>
@@ -1312,7 +1313,7 @@ tr:nth-child(even) td{background:#fafbfc;}
 
 <!-- §0.1 变更记录 -->
 <div class="section" id="sec-changelog">
-  <div class="section-title"><span class="num">§</span>变更记录（v3.0.0 → v3.1.45）</div>
+  <div class="section-title"><span class="num">§</span>变更记录（v3.0.0 → v3.1.49）</div>
   <table>
     <tr><th>版本</th><th>日期</th><th>变更摘要</th></tr>
     <tr><td>v3.0.0</td><td>2026-08-07</td><td>初版需求归档：5Tab 平台首页+4Tab 项目首页+搜索体系+运营后台 6 页+租户后台 3 页</td></tr>
@@ -1361,11 +1362,16 @@ tr:nth-child(even) td{background:#fafbfc;}
     <tr><td>v3.1.43</td><td>2026-08-10</td><td>状态用语统一+筛选/重置按钮+用例卡文档同步</td></tr>
     <tr><td>v3.1.44</td><td>2026-08-10</td><td>功能页面管理新增(白名单注册表替代自由输入 URL)</td></tr>
     <tr><td>v3.1.45</td><td>2026-08-11</td><td>跳转体系全面修复：14 代码+1 测试+2 文档；48 用例 E2E 测试方案 6 Phase</td></tr>
+    <tr><td>v3.1.46</td><td>2026-08-12</td><td>商品卡精简+直播详情页空展位：ProductCard 移除收藏按钮+门店标签（6 处复用全局生效）；LiveDetail 改为"页面建设中"占位</td></tr>
+    <tr><td>v3.1.47</td><td>2026-08-12</td><td>功能页面管理只读化+金刚区图标上传+11 个管理页 maxlength 限制+租户"Banner 管理"改名"广告位管理"+展示条数上限调整</td></tr>
+    <tr><td>v3.1.48</td><td>2026-08-13</td><td>禁用项目会员层权益精化：BR-SHP-043 Layer5"允许查看不允许使用"（兑换/抵扣/提现弹窗拦截，签到禁用）</td></tr>
+    <tr><td>v3.1.49</td><td>2026-08-13</td><td>直播状态筛选去"已结束"选项+平台首页直播推荐去"N场直播中"文字：MallPage/ProjectMall/StoreItems 三处直播状态筛选移除"已结束"（与推荐引擎排除 ended 一致）；PlatformHome 直播推荐区移除"N场直播中"文字+liveCount+ph-sec-live-text/pulse 动画</td></tr>
+    <tr><td>v3.1.50</td><td>2026-08-14</td><td>首页推荐展示条数去"留空=无上限"文案+规则引擎移除"按项目品类"维度：ScenarioPanel 展示条数编辑器删除"留空=无上限"提示（实际范围直播 1-10 / 商品 1-100，不允许无上限）；recommend-dimensions.ts 移除 DIM_PROJECT_CATEGORY 维度（项目类型规则可用维度=按项目/按行业/按会员数/按门店数）</td></tr>
   </table>
 </div>
 
 <div class="doc-footer">
-  <p>SAAS-APP APP端电商域 · 产品需求文档 v3.1.45 · 由 BA Agent 生成 · 2026-08-11</p>
+  <p>SAAS-APP APP端电商域 · 产品需求文档 v3.1.50 · 由 BA Agent 生成 · 2026-08-14</p>
   <p>需求流：STR-SAAS-002 · 类型：新增 · 优先级：P0 · 策略：纯前端模拟</p>
 </div>
 

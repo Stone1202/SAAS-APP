@@ -67,8 +67,8 @@
           </template>
         </el-table-column>
       </el-table>
+      <!-- v3.1.56：去掉v-if条件，分页始终渲染（≤1页时翻页按钮自动禁用） -->
       <el-pagination
-        v-if="filteredHotWordList.length > hotPageSize"
         v-model:current-page="hotCurrentPage"
         :page-size="hotPageSize"
         :total="filteredHotWordList.length"
@@ -128,8 +128,8 @@
           </template>
         </el-table-column>
       </el-table>
+      <!-- v3.1.56：去掉v-if条件，分页始终渲染（≤1页时翻页按钮自动禁用） -->
       <el-pagination
-        v-if="filteredCsrList.length > csrPageSize"
         v-model:current-page="csrCurrentPage"
         :page-size="csrPageSize"
         :total="filteredCsrList.length"

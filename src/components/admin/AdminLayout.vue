@@ -46,7 +46,7 @@
           </el-menu-item>
           <el-menu-item index="/admin/ad" @click="navigate('/admin/ad')">
             <el-icon><PictureRounded /></el-icon>
-            <span>广告位管理</span>
+            <span>BANNER管理</span>
           </el-menu-item>
           <el-menu-item index="/admin/kingkong" @click="navigate('/admin/kingkong')">
             <el-icon><Grid /></el-icon>
@@ -107,7 +107,7 @@ const activeMenu = computed(() => route.path);
 
 const menuTitleMap: Record<string, string> = {
   '/admin/search': '搜索管理',
-  '/admin/ad': '广告位管理',
+  '/admin/ad': 'BANNER管理',
   '/admin/kingkong': '金刚区管理',
   '/admin/recommend-rule': '规则引擎',
   '/admin/home-recommend': '首页推荐',
