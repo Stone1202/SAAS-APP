@@ -88,8 +88,10 @@ tr:nth-child(even) td{background:#fafbfc;}
 .terminal-matrix .dep{color:var(--c-gray);text-decoration:line-through;}
 @media (max-width:768px){.container{padding:16px 12px;}.section{padding:16px;}.toc{columns:1;}.br-grid{grid-template-columns:1fr;}.accept-stats{grid-template-columns:repeat(2,1fr);}.ent-item{grid-template-columns:1fr;}}
 /* Screenshot — 系统截图样式（参照SAAS-v1.0.0-S1.html输出标准） */
-.screenshot-wrap{margin:14px 0;border:1px solid var(--c-border);border-radius:8px;overflow:hidden;background:#fafbfc;}
-.screenshot-wrap img{width:100%;display:block;}
+.screenshot-wrap{margin:14px 0;border:1px solid var(--c-border);border-radius:8px;overflow:hidden;background:#fafbfc;text-align:center;}
+.screenshot-wrap img{display:block;margin:0 auto;}
+.screenshot-wrap img[src*="PG-SHP-APP-"]{width:320px;max-width:100%;}
+.screenshot-wrap img[src*="PG-OPS-PC-"],.screenshot-wrap img[src*="PG-TNT-PC-"]{width:780px;max-width:100%;}
 .screenshot-caption{padding:8px 12px;font-size:12px;color:var(--c-text-muted);background:#f8fafc;border-top:1px solid var(--c-border);}
 .screenshot-caption .sc-level{font-weight:700;color:var(--c-accent);margin-right:6px;}
 </style>

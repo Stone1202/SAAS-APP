@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SAAS-APP APP端电商域 v3.1.49 — 需求文档</title>
+<title>SAAS-APP APP端电商域 v3.1.50 — 需求文档</title>
 <!-- 五类图已预渲染为高清PNG，无需Mermaid JS运行时 -->
 <style>
 :root{--c-bg:#f8f9fa;--c-surface:#fff;--c-border:#e2e8f0;--c-text:#1a202c;--c-text-muted:#64748b;--c-accent:#FF6B35;--c-accent-light:#fff3ed;--c-accent-dark:#e85a2a;--c-red:#dc2626;--c-orange:#ea580c;--c-green:#16a34a;--c-gray:#94a3b8;--c-blue:#2563eb;}
@@ -107,7 +107,7 @@ tr:nth-child(even) td{background:#fafbfc;}
     <span>doc_id：REQ-APP-PRD-v3.1.0</span>
     <span>需求流：STR-SAAS-002</span>
     <span>类型：新增</span>
-    <span>日期：2026-08-07 ~ 2026-08-13</span>
+    <span>日期：2026-08-07 ~ 2026-08-14</span>
     <span class="badge">P0</span>
     <span class="badge">27 FN · 54 UC · 45 BR · 20 ENT</span>
     <span>策略：纯前端模拟 · localStorage 持久化 · 不对接后端 API</span>
@@ -1366,11 +1366,12 @@ tr:nth-child(even) td{background:#fafbfc;}
     <tr><td>v3.1.47</td><td>2026-08-12</td><td>功能页面管理只读化+金刚区图标上传+11 个管理页 maxlength 限制+租户"Banner 管理"改名"广告位管理"+展示条数上限调整</td></tr>
     <tr><td>v3.1.48</td><td>2026-08-13</td><td>禁用项目会员层权益精化：BR-SHP-043 Layer5"允许查看不允许使用"（兑换/抵扣/提现弹窗拦截，签到禁用）</td></tr>
     <tr><td>v3.1.49</td><td>2026-08-13</td><td>直播状态筛选去"已结束"选项+平台首页直播推荐去"N场直播中"文字：MallPage/ProjectMall/StoreItems 三处直播状态筛选移除"已结束"（与推荐引擎排除 ended 一致）；PlatformHome 直播推荐区移除"N场直播中"文字+liveCount+ph-sec-live-text/pulse 动画</td></tr>
+    <tr><td>v3.1.50</td><td>2026-08-14</td><td>首页推荐展示条数去"留空=无上限"文案+规则引擎移除"按项目品类"维度：ScenarioPanel 展示条数编辑器删除"留空=无上限"提示（实际范围直播 1-10 / 商品 1-100，不允许无上限）；recommend-dimensions.ts 移除 DIM_PROJECT_CATEGORY 维度（项目类型规则可用维度=按项目/按行业/按会员数/按门店数）</td></tr>
   </table>
 </div>
 
 <div class="doc-footer">
-  <p>SAAS-APP APP端电商域 · 产品需求文档 v3.1.49 · 由 BA Agent 生成 · 2026-08-13</p>
+  <p>SAAS-APP APP端电商域 · 产品需求文档 v3.1.50 · 由 BA Agent 生成 · 2026-08-14</p>
   <p>需求流：STR-SAAS-002 · 类型：新增 · 优先级：P0 · 策略：纯前端模拟</p>
 </div>
 
