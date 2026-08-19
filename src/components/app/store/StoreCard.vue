@@ -1,5 +1,5 @@
 <template>
-  <!-- 门店卡片 — 精简版（去大图标，名称旁小logo，去评分，加联系人电话+拨打电话） -->
+  <!-- 门店卡片 — 精简版（去大图标，名称旁小logo，去评分，去营业时间去联系人，加电话+拨打电话） -->
   <div class="store-card" @click="$emit('click')">
     <div class="sc-info">
       <div class="sc-base">
@@ -9,18 +9,11 @@
         </div>
         <div class="sc-text">
           <div class="sc-name">{{ store.name }}</div>
-          <div class="sc-desc" v-if="store.business_hours">🕒 {{ store.business_hours }}</div>
           <div class="sc-desc" v-if="store.address">📍 {{ store.address }}</div>
-          <!-- 联系人+电话（与地址对齐） -->
-          <div class="sc-desc sc-contact-row" v-if="store.contact_name || store.phone">
-            <span v-if="store.contact_name">👤 {{ store.contact_name }}</span>
-            <span v-if="store.phone">　📞 {{ store.phone }}</span>
-            <a
-              v-if="store.phone"
-              :href="`tel:${store.phone}`"
-              class="sc-call-link"
-              @click.stop
-            >
+          <!-- 电话+拨打按钮（与地址对齐） -->
+          <div class="sc-desc sc-contact-row" v-if="store.phone">
+            <span>📞 {{ store.phone }}</span>
+            <a :href="`tel:${store.phone}`" class="sc-call-link" @click.stop>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
               </svg>

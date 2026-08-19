@@ -4,6 +4,31 @@
 
 ---
 
+## [v3.1.56] — 2026-08-19 ✅ 门店信息展示精简（去营业时间去联系人，保留电话+拨打按钮）
+
+**需求流**: STR-SAAS-002 | **阶段**: 开发 | **PRD版本**: v3.1.56
+
+### Changed（门店信息展示）
+1. **门店详情页 StoreDetailContent**：去掉营业时间展示（business_hours）；去掉联系人展示（contact_name）；保留联系电话，新增橙色「拨打」按钮（`tel:` 链接，右对齐圆角胶囊样式）
+2. **门店列表卡片 StoreCard**：去掉营业时间展示；去掉联系人展示；保留联系电话与拨打按钮
+
+### 影响范围
+3. 两处组件均被多页面复用：StoreDetailContent（门店详情页 StoreDetail + 项目"我的门店"Tab ProjectStores），StoreCard（项目门店列表等）；数据字段 business_hours/contact_name 保留（Schema/Mock 不动），仅移除页面展示
+
+### 修改文件清单（2 代码 + 1 用例卡 + 3 文档 = 6 个）
+- 代码：`StoreDetailContent.vue` + `StoreCard.vue`
+- 用例卡：`app-use-cases.ts`（UC-SHP-STORE-001/003 描述同步）
+- 文档：`17-APP端电商域-PRD-v3.1.0.md` + `design-map.json` + `CHANGELOG.md`
+
+### 质量验证
+- IDE Lint：0错误 ✅
+
+### 同步修改文档
+- PRD: v3.1.55 → v3.1.56
+- design-map.json: v3.1.62 → v3.1.63
+
+---
+
 ## [v3.1.55] — 2026-08-19 ✅ 跳转配置去掉项目行业筛选，恢复二级级联
 
 **需求流**: STR-SAAS-002 | **阶段**: 开发 | **PRD版本**: v3.1.55

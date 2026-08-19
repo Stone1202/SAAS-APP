@@ -11,18 +11,13 @@
         </div>
         <div class="sdi-text">
           <div class="sdi-name">{{ storeInfo.name }}</div>
-          <!-- 营业时间 -->
-          <div class="sdi-hours" v-if="storeInfo.business_hours">
-            <span class="sdi-hours-icon">🕐</span>
-            <span>{{ storeInfo.business_hours }}</span>
-          </div>
-          <!-- 联系人 + 电话 -->
-          <div class="sdi-contact" v-if="storeInfo.contact_name || storeInfo.phone">
+          <!-- 联系电话 + 拨打按钮 -->
+          <div class="sdi-contact" v-if="storeInfo.phone">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF6B35" stroke-width="2.5">
               <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
             </svg>
-            <span v-if="storeInfo.contact_name">联系人：{{ storeInfo.contact_name }}</span>
-            <span v-if="storeInfo.phone">　📞 <a :href="`tel:${storeInfo.phone}`" class="sdi-phone-link">{{ storeInfo.phone }}</a></span>
+            <span class="sdi-phone-text">{{ storeInfo.phone }}</span>
+            <a class="sdi-call-btn" :href="`tel:${storeInfo.phone}`">拨打</a>
           </div>
         </div>
       </div>
@@ -195,29 +190,30 @@ function openMap() {
 }
 .sdi-text { flex: 1; min-width: 0; }
 .sdi-name { font-size: 17px; font-weight: 700; color: #111; margin-bottom: 4px; }
-.sdi-hours {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: #999;
-  margin-top: 2px;
-}
-.sdi-hours-icon { font-size: 12px; }
 .sdi-contact {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   margin-top: 6px;
-  font-size: 12px;
+  font-size: 13px;
   color: #666;
   flex-wrap: wrap;
 }
-.sdi-phone-link {
-  color: #FF6B35;
-  text-decoration: none;
+.sdi-phone-text { color: #333; font-weight: 600; }
+.sdi-call-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 10px;
+  border-radius: 10px;
+  background: #FF6B35;
+  color: #fff;
+  font-size: 12px;
   font-weight: 600;
+  text-decoration: none;
+  margin-left: auto;
 }
+.sdi-call-btn:active { opacity: 0.85; }
 
 /* 门店位置 */
 .sd-location {
