@@ -77,12 +77,8 @@
 
     <!-- ========== 精选直播（显示后台直播推荐的所有可见直播，按配置规则排序） ========== -->
     <div v-else-if="mode === 'featuredLives'" class="mp-content">
-      <!-- 按直播状态筛选 -->
+      <!-- 按直播筛选（v3.1.61：直播中/直播预告/观看记录，直播中含直播中+回放中） -->
       <div class="mp-filter">
-        <span
-          :class="['mp-filter-item', { active: !filterLiveStatus }]"
-          @click="filterLiveStatus = undefined"
-        >全部状态</span>
         <span
           v-for="st in liveStatusOptions"
           :key="st.value"
@@ -126,6 +122,20 @@
               <span class="mpl-project" v-if="liveProjectName(l.project_id)">{{ liveProjectName(l.project_id) }}</span>
             </div>
             <div class="mpl-time" v-if="l.started_at">{{ formatLiveTime(l.started_at, l.status) }}</div>
+            <!-- v3.1.54：直播预告→立即预约/已预约；观看记录中直播中的→观看直播 -->
+            <div class="mpl-actions">
+              <button
+                v-if="l.status === 'upcoming'"
+                class="mpl-btn mpl-btn--reserve"
+                :class="{ 'is-reserved': isLiveReserved(l.live_id) }"
+                @click.stop="toggleLiveReserve(l.live_id)"
+              >{{ isLiveReserved(l.live_id) ? '已预约' : '立即预约' }}</button>
+              <button
+                v-else-if="filterLiveStatus === 'ended' && l.status === 'live'"
+                class="mpl-btn mpl-btn--watch"
+                @click.stop="goLiveDetail(l.live_id)"
+              >观看直播</button>
+            </div>
           </div>
         </div>
       </div>
@@ -183,7 +193,8 @@ const mode = ref<MallMode>(
 const { ucDrawerVisible, ucCards, ucDrawerTitle } = useUseCaseCard('PG-SHP-APP-002', '商城页', () => mode.value);
 const filterIndustry = ref<string | undefined>(undefined);
 const filterProductCategory = ref<string | undefined>(undefined);
-const filterLiveStatus = ref<string | undefined>(undefined);
+// v3.1.61：精选直播筛选项改为「直播中/直播预告/观看记录」，默认选中「直播中」（含直播中+回放中）
+const filterLiveStatus = ref<string>('live');
 
 // 行业选项（从项目数据动态提取）
 const INDUSTRY_LABELS: Record<string, string> = {
@@ -206,11 +217,11 @@ const productCategoryOptions = computed(() => {
   return [...set].sort();
 });
 
-// 直播状态选项
+// 直播筛选选项（v3.1.61：三选项，直播中包含直播中+回放中）
 const liveStatusOptions = [
   { value: 'live', label: '直播中' },
-  { value: 'upcoming', label: '预告' },
-  { value: 'replay', label: '回放' },
+  { value: 'upcoming', label: '直播预告' },
+  { value: 'ended', label: '观看记录' },
 ];
 
 // ============================================
@@ -346,9 +357,34 @@ const filteredFeaturedProducts = computed(() => {
 // 精选直播 — 按状态筛选（在排序结果上二次筛选）
 // ============================================
 const filteredFeaturedLives = computed(() => {
-  if (!filterLiveStatus.value) return allFeaturedLives.value;
+  // v3.1.61：「直播中」选项包含 live + replay 两种状态
+  if (filterLiveStatus.value === 'live') {
+    return allFeaturedLives.value.filter(l => l.status === 'live' || l.status === 'replay');
+  }
+  // v3.1.54：观看记录 = 已结束 + 直播中（直播中的可点击观看直播）
+  if (filterLiveStatus.value === 'ended') {
+    return allFeaturedLives.value.filter(l => l.status === 'ended' || l.status === 'live');
+  }
   return allFeaturedLives.value.filter(l => l.status === filterLiveStatus.value);
 });
+
+// v3.1.54：直播预约状态（localStorage 持久化，key: mall-live-reservations）
+const reservedLiveIds = ref<string[]>([]);
+try {
+  const saved = localStorage.getItem('mall-live-reservations');
+  if (saved) reservedLiveIds.value = JSON.parse(saved);
+} catch { /* 忽略解析错误 */ }
+
+function isLiveReserved(liveId: string): boolean {
+  return reservedLiveIds.value.includes(liveId);
+}
+
+function toggleLiveReserve(liveId: string) {
+  const idx = reservedLiveIds.value.indexOf(liveId);
+  if (idx >= 0) reservedLiveIds.value.splice(idx, 1);
+  else reservedLiveIds.value.push(liveId);
+  localStorage.setItem('mall-live-reservations', JSON.stringify(reservedLiveIds.value));
+}
 
 // ============================================
 // 路由查询参数支持已移至顶部初始化（首页"更多"跳转到指定Tab）
@@ -649,6 +685,38 @@ function liveProjectName(projectId: string): string {
   font-size: 10px;
   color: #bbb;
 }
+/* v3.1.54 操作按钮：预约/观看直播 */
+.mpl-actions { margin-top: 2px; }
+.mpl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  padding: 0 14px;
+  border-radius: 13px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1;
+}
+.mpl-btn--reserve {
+  color: #FF6B35;
+  background: rgba(255,107,53,0.08);
+  border-color: rgba(255,107,53,0.5);
+}
+.mpl-btn--reserve:active { transform: scale(0.96); }
+.mpl-btn--reserve.is-reserved {
+  color: #999;
+  background: #f5f5f5;
+  border-color: #e5e5e5;
+}
+.mpl-btn--watch {
+  color: #fff;
+  background: linear-gradient(135deg, #FF6B35, #FF4D4F);
+}
+.mpl-btn--watch:active { transform: scale(0.96); }
 .mp-empty { text-align: center; color: #bbb; padding: 40px 0; font-size: 14px; }
 .mp-load-more {
   text-align: center;

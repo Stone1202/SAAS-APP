@@ -46,33 +46,18 @@
       </el-select>
     </el-form-item>
 
-    <!-- 商品选择 -->
+    <!-- 商品选择（v3.1.55：去掉行业筛选，运营后台直接选项目→选商品） -->
     <template v-if="jumpType === 'product'">
       <template v-if="!lockProjectId">
-        <el-form-item label="项目行业">
-          <el-select
-            :model-value="industryFilter"
-            @update:model-value="onIndustryChange"
-            placeholder="请选择行业"
-          >
-            <el-option
-              v-for="opt in industryOptions"
-              :key="opt.value"
-              :label="opt.label"
-              :value="opt.value"
-            />
-          </el-select>
-        </el-form-item>
         <el-form-item label="所属项目">
           <el-select
             :model-value="currentProjectId"
             @update:model-value="onProjectChange"
-            :disabled="!industryFilter"
-            :placeholder="industryFilter ? '请选择项目' : '请先选择行业'"
+            placeholder="请选择项目"
             filterable
           >
             <el-option
-              v-for="p in filteredProjects"
+              v-for="p in allProjects"
               :key="p.project_id"
               :label="p.name"
               :value="p.project_id"
@@ -99,32 +84,17 @@
       </el-form-item>
     </template>
 
-    <!-- 项目主页选择 -->
+    <!-- 项目主页选择（v3.1.55：去掉行业筛选，直接选项目） -->
     <template v-else-if="jumpType === 'project'">
-      <el-form-item label="项目行业">
-        <el-select
-          :model-value="industryFilter"
-          @update:model-value="onIndustryChange"
-          placeholder="请选择行业"
-        >
-          <el-option
-            v-for="opt in industryOptions"
-            :key="opt.value"
-            :label="opt.label"
-            :value="opt.value"
-          />
-        </el-select>
-      </el-form-item>
       <el-form-item label="选择项目">
         <el-select
           :model-value="jumpId"
           @update:model-value="(v: string) => emit('update:jumpId', v)"
-          :disabled="!industryFilter"
-          :placeholder="industryFilter ? '请选择项目' : '请先选择行业'"
+          placeholder="请选择项目"
           filterable
         >
           <el-option
-            v-for="p in filteredProjects"
+            v-for="p in allProjects"
             :key="p.project_id"
             :label="p.name"
             :value="p.project_id"
@@ -133,33 +103,18 @@
       </el-form-item>
     </template>
 
-    <!-- 直播选择 -->
+    <!-- 直播选择（v3.1.55：去掉行业筛选，直接选项目→选直播） -->
     <template v-else-if="jumpType === 'live'">
       <template v-if="!lockProjectId">
-        <el-form-item label="项目行业">
-          <el-select
-            :model-value="industryFilter"
-            @update:model-value="onIndustryChange"
-            placeholder="请选择行业"
-          >
-            <el-option
-              v-for="opt in industryOptions"
-              :key="opt.value"
-              :label="opt.label"
-              :value="opt.value"
-            />
-          </el-select>
-        </el-form-item>
         <el-form-item label="所属项目">
           <el-select
             :model-value="currentProjectId"
             @update:model-value="onProjectChange"
-            :disabled="!industryFilter"
-            :placeholder="industryFilter ? '请选择项目' : '请先选择行业'"
+            placeholder="请选择项目"
             filterable
           >
             <el-option
-              v-for="p in filteredProjects"
+              v-for="p in allProjects"
               :key="p.project_id"
               :label="p.name"
               :value="p.project_id"
@@ -274,15 +229,6 @@ const emit = defineEmits<{
 const appStore = useAppConfigStore();
 const projectStore = useProjectStore();
 
-// ───── 项目行业选项（运营平台模式：先选行业→再选项目） ─────
-const industryOptions = [
-  { label: '日用品', value: 'daily_necessities' },
-  { label: '保健品', value: 'health_products' },
-  { label: '食品饮料', value: 'food_beverage' },
-  { label: '家居家电', value: 'home_appliance' },
-  { label: '美妆个护', value: 'beauty_care' },
-];
-
 // 当前选中的跳转类型（内部状态，双向绑定与父组件同步）
 const jumpType = computed(() => props.jumpType);
 const jumpId = computed(() => props.jumpId);
@@ -293,15 +239,6 @@ watch(() => props.projectId, (v) => { currentProjectId.value = v || ''; });
 
 // 项目列表
 const allProjects = computed(() => projectStore.activeProjects);
-
-// 行业筛选值（运营平台模式：先选行业再选项目）
-const industryFilter = ref('');
-
-// 按行业过滤后的项目列表（行业必选，未选时返回空）
-const filteredProjects = computed(() => {
-  if (!industryFilter.value) return [];
-  return allProjects.value.filter(p => (p as any).industry === industryFilter.value);
-});
 
 // 当前选中项目下的商品/直播（用于 product/live 类型选择器）
 const projectProducts = computed(() => {
@@ -374,17 +311,7 @@ function onJumpTypeChange(val: string) {
     emit('update:projectId', '');
   }
   currentProjectId.value = '';
-  industryFilter.value = ''; // 切换跳转类型时重置行业筛选
   fpCategoryFilter.value = '';
-}
-
-// 切换行业筛选（运营平台模式：先选行业→再选项目→再选商品/直播）
-function onIndustryChange(val: string) {
-  industryFilter.value = val;
-  // 切换行业时清空项目选择 + 商品/直播选择
-  currentProjectId.value = '';
-  emit('update:projectId', '');
-  emit('update:jumpId', '');
 }
 
 function onProjectChange(pid: string) {

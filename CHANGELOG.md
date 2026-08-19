@@ -4,6 +4,86 @@
 
 ---
 
+## [v3.1.55] — 2026-08-19 ✅ 跳转配置去掉项目行业筛选，恢复二级级联
+
+**需求流**: STR-SAAS-002 | **阶段**: 开发 | **PRD版本**: v3.1.55
+
+### Changed（跳转配置组件 JumpTargetPicker）
+1. **去掉「项目行业」选择层级**：运营后台选择商品/直播时，由「行业→项目→商品/直播」三级级联恢复为「项目→商品/直播」二级级联；选择项目主页时由「行业→项目」恢复为直接选项目
+2. **项目下拉取消 disabled**：`allProjects`（仅启用项目）直接可选，不再依赖行业筛选；placeholder 由"请先选择行业"恢复为"请选择项目"
+3. **脚本清理**：删除 `industryOptions` 常量、`industryFilter` ref、`filteredProjects` computed、`onIndustryChange` 函数及 `onJumpTypeChange` 中的行业重置逻辑
+4. **租户后台不受影响**：`lockProjectId` 模式（仅当前项目商品/直播）保持不变
+
+### 影响范围
+5. 仅 `JumpTargetPicker.vue` 生效（金刚区/广告位/搜索 + 租户后台 2 个共 5 个调用方统一生效）；项目本身的「行业」字段展示（项目列表行业列、商城列表行业筛选等）保持不变
+
+### 修改文件清单（1 代码 + 3 文档 = 4 个）
+- 代码：`JumpTargetPicker.vue`（3 处模板 + 脚本清理）
+- 文档：`17-APP端电商域-PRD-v3.1.0.md` + `design-map.json` + `CHANGELOG.md`
+
+### 质量验证
+- IDE Lint：0错误 ✅
+
+### 同步修改文档
+- PRD: v3.1.54 → v3.1.55
+- design-map.json: v3.1.61 → v3.1.62
+
+---
+
+## [v3.1.54] — 2026-08-19 ✅ 精选直播预告预约按钮 + 观看记录直播中可观看
+
+**需求流**: STR-SAAS-002 | **阶段**: 开发 | **PRD版本**: v3.1.54
+
+### Added（精选直播 Tab 操作按钮）
+1. **直播预告「立即预约」按钮**：筛选「直播预告」时，卡片信息区显示橙色描边【立即预约】按钮，点击后变灰色【已预约】，再点取消恢复；预约状态 localStorage 持久化（key: `mall-live-reservations`）
+2. **观看记录「观看直播」按钮**：「观看记录」筛选的数据范围由「仅 ended」扩展为「ended + live」；其中 live 状态的直播显示橙色实心【观看直播】按钮，点击进入直播详情页；ended 不显示按钮
+3. **按钮 `@click.stop` 阻止冒泡**：点击按钮不触发卡片整体跳转
+
+### Changed（观看记录数据范围）
+4. `filteredFeaturedLives` 的 `'ended'` 分支改为匹配 `status === 'ended' || status === 'live'`
+
+### 影响范围
+5. 仅 `MallPage.vue` 精选直播 Tab 生效，其它页面状态筛选不受影响
+
+### 修改文件清单（1 代码 + 3 文档 = 4 个）
+- 代码：`MallPage.vue`（filteredFeaturedLives ended 分支 + reservedLiveIds/isLiveReserved/toggleLiveReserve + 模板 mpl-actions 按钮区 + 样式 mpl-btn）
+- 文档：`17-APP端电商域-PRD-v3.1.0.md` + `design-map.json` + `CHANGELOG.md`
+
+### 质量验证
+- IDE Lint：0错误 ✅
+
+### 同步修改文档
+- PRD: v3.1.53 → v3.1.54
+- design-map.json: v3.1.60 → v3.1.61
+
+---
+
+## [v3.1.53] — 2026-08-19 ✅ 精选直播列表筛选项改为「直播中/直播预告/观看记录」三选项
+
+**需求流**: STR-SAAS-002 | **阶段**: 开发 | **PRD版本**: v3.1.53
+
+### Changed（精选直播筛选）
+1. **筛选项重构**：`liveStatusOptions` 由「直播中/预告/回放」改为「直播中/直播预告/观看记录」三选项，移除「全部状态」项
+2. **默认选中「直播中」**：`filterLiveStatus` 初始值由 `undefined`（全部）改为 `'live'`，进入精选直播 Tab 默认展示直播中
+3. **「直播中」= 直播中 + 回放中**：过滤逻辑对 `'live'` 选项匹配 `status === 'live' || status === 'replay'` 两种状态；「直播预告」匹配 `upcoming`；「观看记录」匹配 `ended`
+4. **卡片状态标签不变**：`liveStatusText`/`formatLiveTime` 保持按实际 status 显示（直播中/预告/回放/已结束），仅筛选维度变化
+
+### 影响范围
+5. 仅 `MallPage.vue` 精选直播 Tab 生效，其它页面（项目商城页/门店二级页等）状态筛选不受影响
+
+### 修改文件清单（1 代码 + 3 文档 = 4 个）
+- 代码：`MallPage.vue`（liveStatusOptions + filterLiveStatus 默认值 + 模板筛选区 + filteredFeaturedLives 过滤逻辑）
+- 文档：`17-APP端电商域-PRD-v3.1.0.md` + `design-map.json` + `CHANGELOG.md`
+
+### 质量验证
+- IDE Lint：0错误 ✅
+
+### 同步修改文档
+- PRD: v3.1.52 → v3.1.53
+- design-map.json: v3.1.59 → v3.1.60
+
+---
+
 ## [v3.1.52] — 2026-08-14 ✅ 手动推荐选择器改编辑模式：总数上限10条+预勾选已有+可取消勾选移除+确认全量同步
 
 **需求流**: STR-SAAS-002 | **阶段**: 开发 | **PRD版本**: v3.1.52
